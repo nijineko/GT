@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.tools;
+package com.galactanet.gametable.ui.tools;
 
 import java.awt.Color;
 import java.awt.Graphics;

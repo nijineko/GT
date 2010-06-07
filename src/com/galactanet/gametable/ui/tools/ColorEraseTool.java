@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.tools;
+package com.galactanet.gametable.ui.tools;
 
 /**
  * Eraser tool that erases only the currently selected color.

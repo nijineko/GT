@@ -29,7 +29,7 @@ import javax.swing.text.JTextComponent;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.PogType.Type;
-import com.galactanet.gametable.tools.NullTool;
+import com.galactanet.gametable.ui.tools.NullTool;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 
