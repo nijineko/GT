@@ -7,7 +7,7 @@ package com.galactanet.gametable.data;
 
 import java.awt.Point;
 
-import com.galactanet.gametable.net.Connection;
+import com.galactanet.gametable.data.net.Connection;
 
 
 

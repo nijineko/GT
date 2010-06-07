@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import com.galactanet.gametable.data.PogType.Type;
-import com.galactanet.gametable.net.Connection;
+import com.galactanet.gametable.data.net.Connection;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
 import com.galactanet.gametable.util.Log;

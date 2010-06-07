@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
