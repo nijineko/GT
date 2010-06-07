@@ -18,44 +18,38 @@ public class Card
     /**
      * Card description. ex: "This is the Jack of Clubs!"
      */
-    protected String m_cardDesc;
+    protected String m_cardDesc = "";
 
     /**
      * Card image file. ex: "j_club.png"
      */
-    protected String m_cardFile;
+    protected String m_cardFile = "";
 
     /**
      * Card identifier number
      */
-    protected int    m_cardId;
+    protected int    m_cardId = -1;
 
     /**
      * Card name. ex: "Jack of Clubs"
      */
-    protected String m_cardName;
+    protected String m_cardName = "";
 
     /**
      * Name of the deck this card is issued from
      */
-    protected String m_deckName;
+    protected String m_deckName = "";
 
     /**
      * the number of instances of this card found within this deck.
      */
-    protected int    m_quantityInDeck;
+    protected int    m_quantityInDeck = 0;
 
     /**
      * Constructor (blank card)
      */
     public Card()
     {
-        m_cardName = "";
-        m_cardFile = "";
-        m_cardDesc = "";
-        m_quantityInDeck = 0;
-        m_cardId = -1;
-        m_deckName = "";
     }
 
     /*
@@ -72,9 +66,9 @@ public class Card
      */
     public void copy(final Card in)
     {
-        m_cardName = "" + in.m_cardName;
-        m_cardFile = "" + in.m_cardFile;
-        m_cardDesc = "" + in.m_cardDesc;
+        m_cardName = in.m_cardName;
+        m_cardFile = in.m_cardFile;
+        m_cardDesc = in.m_cardDesc;
         m_quantityInDeck = in.m_quantityInDeck;
         m_cardId = in.m_cardId;
         m_deckName = in.m_deckName;
