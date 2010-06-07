@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.net;
+package com.galactanet.gametable.data.net;
 
 /**
  * Encapsulation for a packet as it moves through the system.

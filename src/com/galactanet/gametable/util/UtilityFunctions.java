@@ -24,6 +24,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
 import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.handler.gtuser.Handler;
 
 
 
@@ -178,7 +179,7 @@ public class UtilityFunctions
     {
         try
         {
-            final URL url = new URL("gtuser", urlEncode(name), "/");
+            final URL url = new URL(Handler.PROTOCOL_NAME, urlEncode(name), "/");
 
             return "<a class=\"user\" href=\"" + url + "\">" + text + "</a>";
         }

@@ -27,6 +27,7 @@ import javax.swing.text.html.HTMLDocument;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.handler.gtuser.Handler;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -304,7 +305,7 @@ public class ChatLogPane extends JEditorPane
             {
                 if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
                 {
-                    if (e.getURL().getProtocol().equals("gtuser"))
+                    if (e.getURL().getProtocol().equals(Handler.PROTOCOL_NAME))
                     {
                         final String username = UtilityFunctions.urlDecode(e.getURL().getHost());
                         GametableFrame.getGametableFrame().startTellTo(username);
@@ -315,7 +316,7 @@ public class ChatLogPane extends JEditorPane
                 }
                 else if (e.getEventType().equals(HyperlinkEvent.EventType.ENTERED))
                 {
-                    if (e.getURL().getProtocol().equals("gtuser"))
+                    if (e.getURL().getProtocol().equals(Handler.PROTOCOL_NAME))
                     {
                         final String username = UtilityFunctions.urlDecode(e.getURL().getHost());
                         setRolloverText("Send a tell to " + username + ".", new Point(mousePosition));
@@ -384,7 +385,7 @@ public class ChatLogPane extends JEditorPane
         });
 
         if(m_id == 0)
-        addText("Welcome to <a href=\"http://gametable.mornproductions.com/\">" + GametableApp.VERSION + "</a>.");
+        addText("Welcome to <a href=\"http://gametable.sourceforge.net/\">" + GametableApp.VERSION + "</a>.");
     }
 
     public void addText(final String text)

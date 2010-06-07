@@ -53,7 +53,7 @@ public class GametableApp
         try
         {
             System.setProperty("swing.aatext", "true");         // Set anti-aliasing to true
-            System.setProperty("java.protocol.handler.pkgs", "com.galactanet.gametable.protocol"); // Register the package as a protocol handler
+            System.setProperty("java.protocol.handler.pkgs", "com.galactanet.gametable.ui.handler"); // Register the package as a protocol handler
             Log.initializeLog(Log.SYS, SYS_LOG_FILE);           // Initialize system log
             Log.initializeLog(Log.NET, NET_LOG_FILE);           // Initialize network log
             Log.initializeLog(Log.PLAY, PLAY_LOG_FILE);         // Initialize play log

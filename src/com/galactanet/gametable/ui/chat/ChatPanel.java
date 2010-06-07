@@ -9,7 +9,10 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Rectangle;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import javax.swing.JSplitPane;
 
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.ui.FloatingWindow;
@@ -197,40 +200,60 @@ public class ChatPanel extends JPanel
 
     public void setUseMechanicsLog(final boolean useMechanicsLog)
     {
-        m_useMechanicsLog = useMechanicsLog;
+    	if (useMechanicsLog)
+    		showMechanicsWindow();
+    	else
+    		hideMechanicsWindow();
+    }
+    
+    /**
+     * Show mechanics window 
+     */
+    private void showMechanicsWindow()
+    {
+    	if (m_useMechanicsLog)
+    		return;
+    	
+      m_chatSplitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
+      m_chatSplitPane.setContinuousLayout(true);
+      m_chatSplitPane.setResizeWeight(1.0);
+      m_chatSplitPane.setBorder(null);        
+      m_chatSplitPane.add(m_mechanicsLog.getComponentToAdd(), JSplitPane.RIGHT);
+      m_chatSplitPane.add(m_chatLog.getComponentToAdd(),JSplitPane.LEFT);
+      m_textAndEntryPanel.add(m_chatSplitPane, BorderLayout.CENTER);
+      
+      m_textAreaPanel.add(m_textAndEntryPanel, BorderLayout.CENTER);
+      this.add(m_textAreaPanel, BorderLayout.CENTER);
+      
+      m_useMechanicsLog = true;      
+
+      validate();
+    }
+    
+    /**
+     * Hide the mechanics window
+     */
+    private void hideMechanicsWindow()
+    {
+    	if (!m_useMechanicsLog)
+    		return;
+    	
+      m_textAndEntryPanel.remove(m_chatSplitPane);
+      m_textAndEntryPanel.validate();
+
+      m_textAndEntryPanel.add(m_chatLog.getComponentToAdd(), BorderLayout.CENTER);
+      
+      m_textAreaPanel.add(m_textAndEntryPanel, BorderLayout.CENTER);
+      this.add(m_textAreaPanel, BorderLayout.CENTER);
+      
+      m_useMechanicsLog = false;
+
+      validate();
     }
     
     public void toggleMechanicsWindow()
     {
-        //Rebuild ChatPanel
-        if (!m_useMechanicsLog) 
-        {
-            m_chatSplitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
-            m_chatSplitPane.setContinuousLayout(true);
-            m_chatSplitPane.setResizeWeight(1.0);
-            m_chatSplitPane.setBorder(null);        
-            m_chatSplitPane.add(m_mechanicsLog.getComponentToAdd(), JSplitPane.RIGHT);
-            m_chatSplitPane.add(m_chatLog.getComponentToAdd(),JSplitPane.LEFT);
-            m_textAndEntryPanel.add(m_chatSplitPane, BorderLayout.CENTER);
-            m_useMechanicsLog = true;
-            
-            m_mechanicsLog.addText("Mechanics Output window has been Enabled.");
-        } 
-        else 
-        {        
-            m_textAndEntryPanel.remove(m_chatSplitPane);
-            m_textAndEntryPanel.validate();
-
-            m_textAndEntryPanel.add(m_chatLog.getComponentToAdd(), BorderLayout.CENTER);
-            m_useMechanicsLog = false;
-            
-            logMessage("Mechanics Output window has been Disabled.");
-        }
-        
-        m_textAreaPanel.add(m_textAndEntryPanel, BorderLayout.CENTER);
-        this.add(m_textAreaPanel, BorderLayout.CENTER);
-        
-        validate();
+    	setUseMechanicsLog(!m_useMechanicsLog);
     }
     
     /**
