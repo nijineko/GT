@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.tools;
+package com.galactanet.gametable.ui.tools;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
