@@ -754,6 +754,28 @@ public class UtilityFunctions
         return image;
     }
 
+    /** **********************************************************************************************
+     * 
+     * @param image
+     * @param color
+     * @return
+     */
+    public static BufferedImage makeColorTransparent(final BufferedImage image, final Color color) {        
+        BufferedImage dimg = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = dimg.createGraphics();
+        g.setComposite(AlphaComposite.Src);
+        g.drawImage(image, null, 0, 0);
+        g.dispose();
+        for(int i = 0; i < dimg.getHeight(); i++) {
+            for(int j = 0; j < dimg.getWidth(); j++) {
+                if(dimg.getRGB(j, i) == color.getRGB()) {
+                dimg.setRGB(j, i, 0x8F1C1C);
+                }
+            }
+        }
+        return dimg;
+    }
+    
     public static void msgBox(final Component parent, final String msg)
     {
         msgBox(parent, msg, "Error!");

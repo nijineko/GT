@@ -15,7 +15,6 @@ import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.galactanet.gametable.data.PacketManager;
 import com.galactanet.gametable.util.Log;
 
 

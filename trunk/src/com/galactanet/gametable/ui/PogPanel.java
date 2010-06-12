@@ -67,11 +67,12 @@ public class PogPanel extends JPanel
             }
 
             final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            tree.collapsePath(new TreePath(model.getPathToRoot(node)));
             for (int i = 0, size = node.getChildCount(); i < size; ++i)
             {
                 collapseAll(tree, node.getChildAt(i));
             }
+            if(node != (TreeNode)model.getRoot())
+            tree.collapsePath(new TreePath(model.getPathToRoot(node)));
         }
 
         public void expandAll(final JTree tree)

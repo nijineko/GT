@@ -28,10 +28,9 @@ import org.xml.sax.SAXException;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.Grouping.ActionType;
 import com.galactanet.gametable.data.PogType.Type;
-import com.galactanet.gametable.data.net.Connection;
-import com.galactanet.gametable.data.net.NetworkThread;
-import com.galactanet.gametable.data.net.Packet;
+import com.galactanet.gametable.data.net.*;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
@@ -303,6 +302,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private final Preferences       m_preferences            = new Preferences();
 
     private final JCheckBox         m_showNamesCheckbox      = new JCheckBox(lang.SHOW_POG_NAMES);
+    private final JCheckBox         m_randomRotate           = new JCheckBox(lang.RANDOM_ROTATE);   //#randomrotate
     private final JCheckBoxMenuItem m_squareGridModeMenuItem = new JCheckBoxMenuItem(lang.MAP_GRID_SQUARE);
     
 
@@ -342,6 +342,8 @@ public class GametableFrame extends JFrame implements ActionListener
     private ChatPanel               m_chatPanel              = null; // Panel for chat
     private ChatLogEntryPane        m_textEntry              = null;
 
+    
+    private Grouping                m_pogGroups                 = new Grouping();   //#grouping
     
     // The status goes at the bottom of the pane
     private final JLabel            m_status                 = new JLabel(" "); // Status Bar
@@ -1051,7 +1053,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
 
         // and in either case, we remove the cards from ourselves.
-        // @revuse This is a very expensive algorithm, it would be better to get to the card to remove directly by index or something like that.
+        // @revise This is an expensive algorithm, it would be better to get to the card to remove directly by index or something like that.
         for (int i = 0; i < m_cards.size(); i++) // for each card we have
         {
             final Card handCard = m_cards.get(i); 
@@ -1616,7 +1618,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getListPlayersMenuItem()
     {
         final JMenuItem item = new JMenuItem(lang.LIST_PLAYERS);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl W"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " W"));
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -1678,13 +1680,13 @@ public class GametableFrame extends JFrame implements ActionListener
         menuBar.add(getEditMenu());
         menuBar.add(getNetworkMenu());
         menuBar.add(getMapMenu());
+        menuBar.add(getGroupingMenu()); //#grouping
         menuBar.add(getDiceMenu());
         menuBar.add(getWindowMenu());
         menuBar.add(getHelpMenu());
 
         return menuBar;
     }
-
 
     /**
      * bulds and returns the "Map" menu
@@ -1714,6 +1716,9 @@ public class GametableFrame extends JFrame implements ActionListener
         menu.add(getLockMenuItem(true));
         menu.add(getLockMenuItem(false));
         menu.addSeparator();
+        menu.add(getRemoveSelectedMenuItem());
+        menu.add(getUnPublishSelectedMenuItem(false));
+        menu.add(getUnPublishSelectedMenuItem(true)); 
         menu.add(getLoadPogMenuItem());
         return menu;
     }
@@ -1937,7 +1942,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getOpenMapMenuItem()
     {
         final JMenuItem item = new JMenuItem(lang.MAP_OPEN);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl pressed O"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
         item.addActionListener(new ActionListener()
         {
             /*
@@ -2048,6 +2053,127 @@ public class GametableFrame extends JFrame implements ActionListener
     {
         return Collections.unmodifiableList(m_players);
     }
+    
+    /** 
+     * #grouping
+     * @return The grouping class for the pog groups
+     */
+    public Grouping getGrouping() {
+        return m_pogGroups;
+    }
+    
+    /** *************************************************************************************
+     * #grouping
+     * @return
+     */
+    private JMenu getGroupingMenu() {
+        final JMenu menu = new JMenu("Grouping");
+        menu.add(getSelectGroupMenuItem());
+        menu.add(getGroupSelectedMenuItem());
+        menu.add(getUngroupSelectedMenuItem());        
+        menu.add(getDeleteGroupMenuItem(0));
+        menu.add(getDeleteGroupMenuItem(1));
+        menu.add(getDeleteGroupMenuItem(2));
+        return menu;
+    }
+
+    /** *************************************************************************************
+     * #grouping
+     * @return
+     */ 
+    private JMenuItem getDeleteGroupMenuItem(final int all) {
+        String g = "Delete Group";
+        if(all == 1) g = "Delete Unused Groups";
+        if(all == 2) g = "Delete All Groups";
+        final JMenuItem item = new JMenuItem(g);
+        item.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                if(getGrouping().size() < 1) {
+                    JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
+                        "No Groups", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                if(all == 1) getGrouping().deleteunused();
+                if(all == 2) getGrouping().deleteall();
+                else {
+                    GroupingDialog gd = new GroupingDialog(false);
+                    gd.setVisible(true);
+                    if (gd.isAccepted()) {
+                        getGrouping().delete(gd.getGroup());                        
+                    }
+                }
+            }
+        });
+        return item;
+    }
+
+    /** *************************************************************************************
+     * #grouping
+     * @return
+     */ 
+    private JMenuItem getGroupSelectedMenuItem() {
+        final JMenuItem item = new JMenuItem("Group Selected");
+        item.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                GroupingDialog gd = new GroupingDialog(true);
+                gd.setVisible(true);
+                if (gd.isAccepted()) {
+                    String g = gd.getGroup();
+                    if((g != null) && (g.length() > 0))
+                    getGrouping().add(g, getGametableCanvas().getActiveMap().m_selectedPogs);
+                }
+            }
+        });
+        return item;
+    }
+
+    /** *************************************************************************************
+     * #grouping
+     * @return
+     */
+    private JMenuItem getSelectGroupMenuItem() {
+        final JMenuItem item = new JMenuItem("Select Group");
+
+        item.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {                
+                if(getGrouping().size() < 1) {
+                    JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
+                        "No Groups", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                GroupingDialog gd = new GroupingDialog(false);
+                gd.setVisible(true);
+                if (gd.isAccepted()) {
+                    List<Pog> pogs = getGrouping().getGroup(gd.getGroup());                        
+                    getGametableCanvas().getActiveMap().addSelectedPogs(pogs);
+                    getGametableCanvas().repaint();
+                }
+            }
+        });
+        return item;
+    }
+
+    /** *************************************************************************************
+     * #grouping
+     * @return
+     */
+    private JMenuItem getUngroupSelectedMenuItem() {
+        final JMenuItem item = new JMenuItem("UnGroup Selected");
+        item.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                Pog pog;
+                GametableMap map = getGametableCanvas().getActiveMap();
+                int size = map.m_selectedPogs.size();
+                if(size > 0) {
+                    for(int i = 0;i < size; ++i) {
+                        pog = map.m_selectedPogs.get(i);
+                        getGrouping().remove(pog);
+                    }
+                }
+            }
+        });
+        return item;
+    }
 
     /**
      * @return The root pog library.
@@ -2088,7 +2214,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getQuitMenuItem()
     {
         final JMenuItem item = new JMenuItem(lang.QUIT);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl Q"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " Q"));
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -2097,6 +2223,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 {
                     pogWindow.dispose();
                 }
+                saveAll();  // TODO confirm before save (check if modified)
                 dispose();
                 System.exit(0);
             }
@@ -2112,7 +2239,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getPogWindowMenuItem()
     {
         final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.POG_WINDOW_DOCK);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl P"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " P"));
         if (!m_pogsTabbedPane.isDocked())
             item.setState(true);
         else
@@ -2171,7 +2298,8 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getChatWindowMenuItem()
     {
         final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.CHAT_WINDOW_DOCK);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl L"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " L"));
+
         if (!m_chatPanel.isDocked())
             item.setState(true);
         else
@@ -2191,7 +2319,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getMechanicsToggle()
     {
         final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.MECHANICS_WINDOW_USE);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl M"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " M"));
         if (m_chatPanel.getUseMechanicsLog())
             item.setState(true);
         else
@@ -2206,6 +2334,26 @@ public class GametableFrame extends JFrame implements ActionListener
         });
 
         return item;
+    }
+    
+    /** 
+     * @return
+     */
+    private final static String   MENU_ACCELERATOR         = getMenuAccelerator();
+    private static String getMenuAccelerator()
+    {
+        switch (Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()) {
+            case Event.CTRL_MASK:
+                return "ctrl";
+            case Event.META_MASK:
+                return "meta";
+            //case Event.ALT_MASK:
+            //    return "alt";
+            case Event.SHIFT_MASK:
+                return "shift";
+            default: // Others?
+                return "ctrl";
+        }
     }
     
     /**
@@ -2245,12 +2393,78 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getRedoMenuItem()
     {
         final JMenuItem item = new JMenuItem(lang.REDO);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl Y"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " Y"));
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
             {
                 getGametableCanvas().redo();
+            }
+        });
+
+        return item;
+    }
+    
+        /** *************************************************************************************
+     * 
+     * @return
+     */
+    private JMenuItem getRemoveSelectedMenuItem() {
+        final JMenuItem item = new JMenuItem("Remove Selected");
+
+        item.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(final ActionEvent e)
+            {
+                Pog pog;
+                GametableMap map = getGametableCanvas().getActiveMap();
+                int size = map.m_selectedPogs.size();
+                if(size > 0) {
+                    final int pogs[] = new int[size];
+                    for(int i = 0;i < size; ++i) {
+                        pog = map.m_selectedPogs.get(i);
+                        pogs[i] = pog.getId();
+                    }
+                    getGametableCanvas().removePogs(pogs,false);
+                }
+            }
+        });
+
+        return item;
+    }
+
+    /** *************************************************************************************
+     * 
+     * @return
+     */
+    private JMenuItem getUnPublishSelectedMenuItem(final boolean copy) {
+        String s = "Un/Publish Selected";
+        if(copy) s = "Copy Selected to Opposite Map";
+        final JMenuItem item = new JMenuItem(s);
+
+        item.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(final ActionEvent e)
+            {
+                Pog pog, npog;
+                GametableMap map = getGametableCanvas().getActiveMap();
+                GametableMap to;
+                if(map == getGametableCanvas().getPublicMap()) to = getGametableCanvas().getPrivateMap();
+                else to = getGametableCanvas().getPublicMap();
+
+                int size = map.m_selectedPogs.size();
+                if(size > 0) {         
+                    // Do this backwards to keep from getting errors as pogs are removed from selection.
+                    for(int i = size-1;i >= 0; --i) {
+                        pog = map.m_selectedPogs.get(i);
+                        to.addPog(pog);
+                        map.removePog(pog, true);                        
+                        if(copy) {
+                            npog = new Pog(pog);
+                            map.addPog(npog);
+                        }                      
+                    }                    
+                }
             }
         });
 
@@ -2281,7 +2495,7 @@ public class GametableFrame extends JFrame implements ActionListener
     public JMenuItem getSaveAsMapMenuItem()
     {
         final JMenuItem item = new JMenuItem(lang.MAP_SAVE_AS);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl shift pressed S"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " shift pressed S"));
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -2339,7 +2553,7 @@ public class GametableFrame extends JFrame implements ActionListener
     public JMenuItem getSaveMapMenuItem()
     {
         final JMenuItem item = new JMenuItem(lang.MAP_SAVE);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl pressed S"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed S"));
         item.addActionListener(new ActionListener()
         {
             /*
@@ -2407,7 +2621,7 @@ public class GametableFrame extends JFrame implements ActionListener
         if (m_togglePrivateMapMenuItem == null)
         {
             final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.MAP_PRIVATE_EDIT);
-            item.setAccelerator(KeyStroke.getKeyStroke("ctrl F"));
+            item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " F"));
             item.addActionListener(new ActionListener()
             {
                 public void actionPerformed(final ActionEvent e)
@@ -2438,7 +2652,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private JMenuItem getUndoMenuItem()
     {
         final JMenuItem item = new JMenuItem(lang.UNDO);
-        item.setAccelerator(KeyStroke.getKeyStroke("ctrl Z"));
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " Z"));
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -2482,6 +2696,23 @@ public class GametableFrame extends JFrame implements ActionListener
         {
             loadStateFromRawFileData(grmFile);
         }
+    }
+    
+    /** *************************************************************************************
+     * 
+     * @param openLink
+     * @param closeLink
+     */
+    public void groupPacketReceived(ActionType action, final String group, final int pog, final int player) 
+    {
+        if(m_netStatus == NETSTATE_HOST) 
+        {
+            send(PacketManager.makeGroupPacket(action, group, pog, player));            
+        }
+        
+        // If Im the one who sent the packet, ignore it. 
+        if(player == getMyPlayerId()) return;
+        getGrouping().packetReceived(action, group, pog);
     }
 
     /**
@@ -2685,7 +2916,10 @@ public class GametableFrame extends JFrame implements ActionListener
                 m_gametableCanvas.repaint();
             }
         });
+        m_toolBar.add(Box.createHorizontalStrut(5));
         m_toolBar.add(m_showNamesCheckbox);
+        m_toolBar.add(Box.createHorizontalStrut(5));
+        m_toolBar.add(m_randomRotate); //#randomrotate
 
         getContentPane().add(m_toolBar, BorderLayout.NORTH);
 
@@ -3139,6 +3373,7 @@ public class GametableFrame extends JFrame implements ActionListener
     /**
      * Loads a Pog from a File onto the current map (private or public)
      */
+     /*
     public void loadPog() {
         final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, ".pog", true);
 
@@ -3160,6 +3395,27 @@ public class GametableFrame extends JFrame implements ActionListener
                 addPogPacketReceived(nPog, !priv);
             } else 
                 send(PacketManager.makeAddPogPacket(nPog));
+        }
+        catch (final IOException ex1) {
+            Log.log(Log.SYS, ex1);
+        }
+    }*/
+    
+    public void loadPog() {
+        final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, ".pog", true);
+
+        if (openFile == null) { // they cancelled out of the open
+            return;
+        } 
+        try {
+            final FileInputStream infile = new FileInputStream(openFile);
+            final DataInputStream dis = new DataInputStream(infile);
+            final Pog nPog = new Pog(dis);
+
+            if (nPog.isUnknown()) { // we need this image
+                PacketManager.requestPogImage(null, nPog);
+            }
+            m_gametableCanvas.addPog(nPog);
         }
         catch (final IOException ex1) {
             Log.log(Log.SYS, ex1);
@@ -3186,6 +3442,7 @@ public class GametableFrame extends JFrame implements ActionListener
             applyWindowInfo();
             addMacro("d20", "d20", null);
             m_showNamesCheckbox.setSelected(false);
+            m_randomRotate.setSelected(false); //#randomrotate
             m_actingFileMacros = new File("macros.xml");
             try
             {
@@ -3480,7 +3737,7 @@ public class GametableFrame extends JFrame implements ActionListener
         m_nextPlayerId++;
 
         // tell everyone about the new guy
-        postSystemMessage(player.getPlayerName() + lang.PLAYER_JOINED);
+        postSystemMessage(player.getPlayerName() + " " + lang.PLAYER_JOINED);
         addPlayer(player);
 
         sendCastInfo();
@@ -3562,6 +3819,16 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
+    public void pogTypePacketReceived(final int id, final int type)
+    {
+        getGametableCanvas().doSetPogType(id, type);
+
+        if (m_netStatus == NETSTATE_HOST)
+        {
+            m_networkThread.send(PacketManager.makePogTypePacket(id, type));
+        }
+    }
+    
     public void pointPacketReceived(final int plrIdx, final int x, final int y, final boolean bPointing)
     {
         // we're not interested in point packets of our own hand
@@ -3757,7 +4024,7 @@ public class GametableFrame extends JFrame implements ActionListener
         // tell everyone that you drew some cards
         if (cards.length == 1)
         {
-            postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.DECK_DRAW_PLAYER + " " + cards[0].getDeckName() + lang.DECK);
+            postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.DECK_DRAW_PLAYER + " " + cards[0].getDeckName() + " " + lang.DECK);
         }
         else
         {
@@ -4196,6 +4463,14 @@ public class GametableFrame extends JFrame implements ActionListener
         return m_showNamesCheckbox.isSelected();
     }
 
+    /** *************************************************************************************
+     * #randomrotate
+     * @return
+     */
+    public boolean shouldRotatePogs() {
+        return m_randomRotate.isSelected();        
+    }
+    
     public void showDeckUsage()
     {
         m_chatPanel.logSystemMessage("/deck usage: ");

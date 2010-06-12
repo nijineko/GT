@@ -75,13 +75,14 @@ public class SetPogAttributeDialog extends JDialog
         if (applyButton == null)
         {
             applyButton = new JButton();
-            applyButton.setText("Add another");
+            applyButton.setText("Add Another");
             applyButton.setSelected(false);
             applyButton.addActionListener(new java.awt.event.ActionListener()
             {
                 public void actionPerformed(final java.awt.event.ActionEvent e)
                 {
                     applyAttrib();
+                    nameTextField.grabFocus();
                 }
             });
         }

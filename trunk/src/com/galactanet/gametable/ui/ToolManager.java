@@ -74,6 +74,10 @@ public class ToolManager
                 throw new IllegalArgumentException("Unable to create Tool info object.", e);
             }
 
+            if(qkname == null) {
+              quickKey = null;                
+            } else {
+
             String quickKeyName = qkname.toUpperCase();
             String keyName = quickKeyName;
             if (!quickKeyName.startsWith("VK_"))
@@ -96,6 +100,7 @@ public class ToolManager
                 Log.log(Log.SYS, e);
             }
             quickKey = quickKeyName;
+            }
         }
 
         /* package */
@@ -390,10 +395,13 @@ public class ToolManager
             try
             {
                 // Initialize the tool info from the properties for this ID.
-                final String className = props.getProperty(prefix + PROPERTY_CLASS);
-                final String iconName = props.getProperty(prefix + PROPERTY_ICON);
-                final String quickKeyName = props.getProperty(prefix + PROPERTY_QUICK_KEY);
-                final Info info = new Info(toolId, name, className, iconName, quickKeyName);
+                String className = props.getProperty(prefix + PROPERTY_CLASS);
+                
+                className = className.replace("com.galactanet.gametable.tools", "com.galactanet.gametable.ui.tools");	// @revise this whole tool.properties scheme 
+                
+                String iconName = props.getProperty(prefix + PROPERTY_ICON);
+                String quickKeyName = props.getProperty(prefix + PROPERTY_QUICK_KEY);
+                Info info = new Info(toolId, name, className, iconName, quickKeyName);
 
                 // Load cursors for this ID.
                 int cursorId = 0;

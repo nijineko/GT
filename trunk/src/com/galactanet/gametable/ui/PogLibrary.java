@@ -138,6 +138,11 @@ public class PogLibrary
         parent = mommy;
         libraryType = type;
         location = new File(directory).getCanonicalFile();
+        if(!location.exists()) {
+            if(!location.mkdir()) {
+                throw new IOException("Failed to find and create directory " + directory);
+            }            
+        }
         if (!location.canRead() || !location.isDirectory())
         {
             throw new IOException("cannot read from " + directory);

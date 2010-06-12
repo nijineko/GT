@@ -250,8 +250,8 @@ public class ChatLogPane extends JEditorPane
     private int         m_id = 0;
 
     protected List<String>      privMsgLogs      = new ArrayList<String>();
-    // private int         playerA          = 0;
-    private int         playerB          = 0;
+    // private int         playerA          = 0; // never used locally
+    // private int         playerB          = 0; // never used locally
     
     // --- Constructors ----------------------------------------------------------------------------------------------
 
@@ -271,6 +271,7 @@ public class ChatLogPane extends JEditorPane
 
         m_id = id;
 
+        /*
         // For setting up private messages
         if (privMsg)
         {
@@ -283,6 +284,7 @@ public class ChatLogPane extends JEditorPane
                 return;
             }
         }
+        */
         // clear all default keystrokes
         final InputMap map = new InputMap();
         final InputMap oldMap = getInputMap(WHEN_FOCUSED);
@@ -572,8 +574,10 @@ public class ChatLogPane extends JEditorPane
         repaint();
     }
 
+    /*
     public void setPlayerB(final int test)
     {
         playerB = test;
     }
+    */
 }

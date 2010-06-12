@@ -157,6 +157,7 @@ public class Language
     public String DECK_SHUFFLE_INVALID;
     public String DECK_THERE_ARE;
     public String DECK_YOU_HAVE;
+    public String RANDOM_ROTATE;
 
     /**
      * Constructor.
@@ -505,6 +506,8 @@ public class Language
             DECK_THERE_ARE = value;
         } else if (name.equals("DECK_YOU_HAVE")){
             DECK_YOU_HAVE = value;
+        } else if (name.equals("RANDOM_ROTATE")){
+            RANDOM_ROTATE = value;
         }
     }
 }

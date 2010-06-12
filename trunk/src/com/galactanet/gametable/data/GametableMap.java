@@ -9,6 +9,7 @@ import java.awt.Point;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
@@ -43,6 +44,10 @@ public class GametableMap
 
     // pogs on the map
     protected List<Pog>          m_pogs          = new ArrayList<Pog>();
+    
+    // pogs on the map that are currently selected #grouping
+    public List<Pog>          m_selectedPogs  = new ArrayList<Pog>();
+
 
     private int             m_redoIndex     = -1;
 
@@ -86,6 +91,42 @@ public class GametableMap
     public void addOrderedPog(final Pog pog) {
         m_orderedPogs.add(pog);
     }
+    
+    /** **********************************************************************************************
+     * #grouping
+     * @param pog
+     */
+    public void addSelectedPog(final Pog pog) {
+        m_selectedPogs.add(pog);
+        pog.setSelected();
+    }
+    
+    /** **********************************************************************************************
+     * #grouping
+     * @param pogs
+     */
+    public void addSelectedPogs(final List<Pog> pogs) 
+    {
+        final int size = pogs.size();
+        
+        System.out.println("addSelectedPogs: size = " + size);
+        
+        for (Pog pog : pogs)
+        {
+            System.out.println("Pog = " + pog.getId());
+            addSelectedPog(pog);
+        }
+    }
+    
+    /** **********************************************************************************************
+     * #grouping
+     * @param pog
+     */
+    public void removeSelectedPog(final Pog pog) {
+        m_selectedPogs.remove(pog);
+        pog.unsetSelected();
+    }
+
 
     private void adoptState(final MapState state)
     {
@@ -166,6 +207,19 @@ public class GametableMap
     {
         m_pogs.clear();
         m_orderedPogs.clear();
+    }
+
+    /** **********************************************************************************************
+     * #grouping
+     */
+    public void clearSelectedPogs() {
+        final int size = m_selectedPogs.size();
+        Pog p;
+        for(int i = 0; i < size; ++i) {
+            p = m_selectedPogs.get(i);
+            p.unsetSelected();
+        }
+        m_selectedPogs.clear();
     }
 
     /** ***************** UNDO MANAGEMENT********************* */
@@ -504,8 +558,13 @@ public class GametableMap
         m_orderedPogs.remove(pog);
     }
 
-    public void removePog(final Pog pog)
+    public void removePog(final Pog pog) {
+        removePog(pog,false);
+    }
+    
+    public void removePog(final Pog pog, final boolean selected)
     {
+        if(selected) removeSelectedPog(pog);
         m_pogs.remove(pog);
         m_orderedPogs.remove(pog);
     }

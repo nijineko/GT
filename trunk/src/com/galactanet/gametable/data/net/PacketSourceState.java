@@ -7,7 +7,7 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.net;
 
 /**
  * 
