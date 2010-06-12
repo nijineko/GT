@@ -158,6 +158,7 @@ VERSION                     = Version
  */
 SHOW_POG_NAMES              = Show pog names
 TOOLBAR_FAIL                = Failure initializing tools.
+RANDOM_ROTATE				= Randomly Rotate Pogs on Drop
 
 
 /**

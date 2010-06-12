@@ -203,7 +203,7 @@ public class PointerTool extends NullTool
         m_grabbedPog = m_canvas.getActiveMap().getPogAt(m_mousePosition);
         if (m_grabbedPog != null)
         {
-            m_ghostPog = new Pog(m_grabbedPog);
+            m_ghostPog = new Pog(m_grabbedPog, false);
             m_grabOffset = new Point(m_grabbedPog.getX() - m_mousePosition.x, m_grabbedPog.getY() - m_mousePosition.y);
             setSnapping(modifierMask);
         }
@@ -231,7 +231,8 @@ public class PointerTool extends NullTool
             {
                 if (!m_grabbedPog.isLocked())
                 {
-                    m_grabbedPog.setPosition(m_ghostPog.getPosition());
+                    // Dont need this, it is done in move pog, and why move it if we are removing it?
+                    //m_grabbedPog.setPosition(m_ghostPog.getPosition());
                     if (!m_canvas.isPointVisible(m_mousePosition))
                     {
                         // they removed this pog
@@ -348,6 +349,31 @@ public class PointerTool extends NullTool
                 }
             });
             menu.add(item);
+            item = new JMenuItem(m_menuPog.isSelected() ? "Unselect" : "Select");
+            item.addActionListener(new ActionListener()
+            {
+                public void actionPerformed(final ActionEvent e)
+                {  
+                    if (m_canvas.isPublicMap()) m_from = m_canvas.getPublicMap();
+                    else m_from = m_canvas.getPrivateMap();                            
+                    
+                    if(m_menuPog.isSelected()) m_from.removeSelectedPog(m_menuPog);
+                    else m_from.addSelectedPog(m_menuPog);                                     
+                }
+            });
+            menu.add(item);
+            
+            if(m_menuPog.isGrouped()) {
+                item = new JMenuItem("UnGroup");
+                item.addActionListener(new ActionListener()
+                {
+                    public void actionPerformed(final ActionEvent e)
+                    {  
+                        GametableFrame.getGametableFrame().getGrouping().remove(m_menuPog);
+                    }
+                });
+                menu.add(item);                
+            }
             item = new JMenuItem(m_canvas.isPublicMap() ? "Unpublish" : "Publish");
             item.addActionListener(new ActionListener()
             {
@@ -524,6 +550,24 @@ public class PointerTool extends NullTool
             });
             sizeMenu.add(item);
 
+            item = new JMenuItem("Custom");
+            item.addActionListener(new ActionListener()
+            {
+                public void actionPerformed(final ActionEvent e)
+                {
+                    final String ns = (String)JOptionPane.showInputDialog(GametableFrame.getGametableFrame(),
+                        "New Size in Squares", 
+                        "Pog Size", 
+                        JOptionPane.PLAIN_MESSAGE, null, null, "");
+
+                    if (ns != null) {
+                        final int is = Integer.parseInt(ns);
+                        if(is >= 1) m_canvas.setPogSize(m_menuPog.getId(), is);
+                    }
+                }
+            });
+            sizeMenu.add(item);
+        
             item = new JMenuItem("0.5 squares");
             item.addActionListener(new ActionListener()
              {
@@ -724,6 +768,29 @@ public class PointerTool extends NullTool
               flipMenu.add(item);
 
               menu.add(flipMenu);
+              
+              item = new JMenuItem("Change Image");        
+              item.addActionListener(new ActionListener()
+              {
+                  public void actionPerformed(final ActionEvent e)
+                  {
+                      int size = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().m_selectedPogs.size();
+                      if(size > 1) {
+                          JOptionPane.showMessageDialog(GametableFrame.getGametableFrame(), "You must only have 1 Pog selected.", 
+                              "Image Selection", JOptionPane.INFORMATION_MESSAGE);
+                          return;                    
+                      } else if(size == 0) {
+                          JOptionPane.showMessageDialog(GametableFrame.getGametableFrame(), "No Pogs Selected.", 
+                              "Image Selection", JOptionPane.INFORMATION_MESSAGE);
+                          return;
+                      }
+                      Pog pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().m_selectedPogs.get(0);                
+                      GametableFrame.getGametableFrame().getGametableCanvas().setPogType(m_menuPog, pog);
+                      GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().clearSelectedPogs();
+                     
+                  }
+              });
+              menu.add(item);
               
               // --------------------------------
               if(layer == Type.UNDERLAY) {

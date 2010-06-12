@@ -29,6 +29,8 @@ import javax.swing.text.JTextComponent;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.net.PacketManager;
+import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.tools.NullTool;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -752,6 +754,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         final Pog toRemove = getActiveMap().getPogByID(id);
         if (toRemove != null)
         {
+            m_gametableFrame.getGrouping().remove(toRemove, false); //#grouping
             getActiveMap().removePog(toRemove);
         }
         m_gametableFrame.refreshActivePogList();
@@ -917,7 +920,23 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         snapPogToGrid(pog);
         repaint();
     }
+    
+    /**
+     * TODO #grouping?
+     */
+    public void doSetPogType(final int id, final int type)
+    {
+        final Pog pog = getActiveMap().getPogByID(id);
+        final Pog tpog = getActiveMap().getPogByID(type);
+        if ((pog == null) || (tpog == null))
+        {
+            return;
+        }
 
+        pog.setPogType(tpog.getPogType());        
+        repaint();
+    }
+    
     public void doUndo(final int stateID)
     {
         // the active map should be the public map
@@ -1028,6 +1047,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return m_gametableFrame.getToolManager().getToolInfo(m_activeToolId).getTool();
     }
 
+    /** 
+     * 
+     * @return
+     */
+    public int getActiveToolId() {
+        return m_activeToolId;
+    }   
+    
     public GridMode getGridMode()
     {
         return m_gridMode;
@@ -1526,8 +1553,56 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
         repaint();
     }
+    
+    /** **********************************************************************************************
+     * 
+     * @param id
+     * @param newX
+     * @param newY
+     */    
+    public void movePog(final int id, final int newX, final int newY) {
+             
+        final Pog toMove = getActiveMap().getPogByID(id);
+        int diffx = newX - toMove.getX();
+        int diffy = newY - toMove.getY();
+        
+        GametableMap map = getActiveMap();
+        if(toMove.isSelected()) {            
+            Pog pog;
+            int nx,ny,tx,ty;            
+            for(int i = 0; i < map.m_selectedPogs.size(); ++i) {
+               pog = map.m_selectedPogs.get(i);
+               if(pog.getId() != id) {
+                   tx = pog.getX();
+                   ty = pog.getY();
+                   nx = tx + diffx;
+                   ny = ty + diffy;
+                   netmovePog(pog.getId(), nx, ny);
+               }
+            }
+        } else if(toMove.isGrouped()) {        
+            List<Pog> pogs = GametableFrame.getGametableFrame().getGrouping().getGroup(toMove.getGroup());
+            Pog npog;
+            int nx,ny,tx,ty;
+            
+            for (Pog pog : pogs)
+            {
+                npog = map.getPogByID(pog.getId());
+                if((npog != null) && (npog != toMove)){
+                    if(pog.getId() != id) {
+                        tx = pog.getX();
+                        ty = pog.getY();
+                        nx = tx + diffx;
+                        ny = ty + diffy;
+                        netmovePog(pog.getId(), nx, ny);
+                    }
+                }
+            }
+        }               
+        netmovePog(id,newX,newY);
+    }
 
-    public void movePog(final int id, final int newX, final int newY)
+    public void netmovePog(final int id, final int newX, final int newY)
     {
         if (isPublicMap())
         {
@@ -1875,6 +1950,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             // only add the pog if it's in the viewport
             if (isPointVisible(getPogDragMousePosition()))
             {
+                //#randomrotate
+                if(GametableFrame.getGametableFrame().shouldRotatePogs()) {
+                    int fh = 0;
+                    int fv = UtilityFunctions.getRandom(2);
+                    if(fv > 0) fh = -1;                    
+                    int a = UtilityFunctions.getRandom(24) * 15;
+                    pog.setAngleFlip(a, fh, fv);                    
+                }
                 // add this pog to the list
                 addPog(pog);
             }
@@ -2184,6 +2267,21 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             doSetPogSize(id, size);
         }
     }
+
+    /**
+     * #grouping?
+     */
+    public void setPogType(final Pog pog, final Pog type) {        
+        if (isPublicMap()) {
+            m_gametableFrame.send(PacketManager.makePogTypePacket(pog.getId(),type.getId()));
+            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED) {
+                doSetPogType(pog.getId(),type.getId());
+            }
+        } else {
+            doSetPogType(pog.getId(),type.getId());
+        }
+    }
+    
 
     /*
      * This function will set the scroll for all maps, keeping their relative offsets preserved. The x,y values sent in

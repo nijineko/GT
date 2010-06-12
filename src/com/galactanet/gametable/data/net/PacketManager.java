@@ -3,15 +3,16 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.net;
 
 import java.awt.Rectangle;
 import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.Grouping.ActionType;
 import com.galactanet.gametable.data.PogType.Type;
-import com.galactanet.gametable.data.net.Connection;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
 import com.galactanet.gametable.util.Log;
@@ -145,6 +146,10 @@ public class PacketManager
     public static final int PACKET_MECHANICS          = 104;
     public static final int PACKET_PRIVMECH           = 105;
     
+    public static final int PACKET_GROUP              = 107;
+    public static final int PACKET_POG_TYPE           = 108;
+
+    
     // --- Static Members --------------------------------------------------------------------------------------------
 
     // Player is typing
@@ -180,6 +185,7 @@ public class PacketManager
         }
     }
 
+    //@revise this makes me feel that packet types might want to be classes instead...
     public static String getPacketName(final int type)
     {
         switch (type)
@@ -252,6 +258,10 @@ public class PacketManager
                 return "PACKET_DECK_DISCARD_CARDS";
             case PACKET_BGCOL:
                 return "PACKET_BGCOL";
+            case PACKET_GROUP:
+              return "PACKET_GROUP";
+            case PACKET_POG_TYPE:
+              return "PACKET_POG_TYPE";    
             default:
                 return "PACKET_UNKNOWN";
         }
@@ -519,6 +529,96 @@ public class PacketManager
     }
 
     /* *********************** PRIVATE TEXT PACKET *************************** */
+    
+    /** *******************************************************************************************
+     * #grouping 
+     * @revise these make... packets are more clues that packet types should be moved to classes 
+     * @param openLink
+     * @param closeLink
+     * @return
+     */
+    public static byte[] makeGroupPacket(ActionType action, final String group, final int pog, final int player) {
+        try
+        {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final DataOutputStream dos = new DataOutputStream(baos);
+            dos.writeInt(PACKET_GROUP);
+            dos.writeInt(action.ordinal());
+            if(group == null) dos.writeUTF("");
+            else dos.writeUTF(group);           
+            dos.writeInt(pog);
+            dos.writeInt(player);
+            return baos.toByteArray();
+        }
+        catch (final IOException ex)
+        {
+            Log.log(Log.SYS, ex);
+            return null;
+        }
+        
+    }
+    
+    public static byte[] makePogTypePacket(final int id, final int type) {
+      try
+      {
+          final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          final DataOutputStream dos = new DataOutputStream(baos);
+
+          dos.writeInt(PACKET_POG_TYPE);
+          dos.writeInt(id);
+          dos.writeInt(type);
+
+          return baos.toByteArray();
+      }
+      catch (final IOException ex)
+      {
+          Log.log(Log.SYS, ex);
+          return null;
+      }
+  }
+
+    /** *************************************************************************************
+     * 
+     * @param dis
+     */    
+    public static void readGroupPacket(final DataInputStream dis) {
+        try
+        {
+            final int actionOrd = dis.readInt();
+            ActionType action = ActionType.fromOrdinal(actionOrd);
+            
+            final String group = dis.readUTF();             
+            final int pog = dis.readInt();             
+            
+            final int player = dis.readInt();
+            GametableFrame.getGametableFrame().groupPacketReceived(action, group, pog, player);
+        }
+        catch (final IOException ex)
+        {
+            Log.log(Log.SYS, ex);
+        }
+    }
+    
+    public static void readPogTypePacket(final DataInputStream dis)
+    {
+        try
+        {
+            final int id = dis.readInt();
+            final int type = dis.readInt();
+
+            // tell the model
+            GametableFrame.getGametableFrame().pogTypePacketReceived(id, type);
+        }
+        catch (final IOException ex)
+        {
+            Log.log(Log.SYS, ex);
+        }
+    }
+
+
+
+    
+
 
     public static byte[] makeLinesPacket(final LineSegment[] lines, final int authorPlayerID, final int stateID)
     {
@@ -1767,6 +1867,14 @@ public class PacketManager
                     readClearDeckPacket(dis);
                 }
                 break;
+                
+                case PACKET_GROUP:
+                  readGroupPacket(dis);
+                  break;
+              case PACKET_POG_TYPE:
+                  readPogTypePacket(dis);
+                  break;
+
 
                 default:
                 {

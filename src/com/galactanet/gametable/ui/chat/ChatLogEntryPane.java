@@ -24,7 +24,7 @@ import javax.swing.text.*;
 import javax.swing.text.AbstractDocument.LeafElement;
 import javax.swing.text.html.HTMLDocument;
 
-import com.galactanet.gametable.data.PacketManager;
+import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;

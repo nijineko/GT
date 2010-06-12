@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.*;
 
 import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.PogLibrary;
@@ -123,6 +124,11 @@ public class Pog implements Comparable<Pog>
      * Is this pog tinted?
      */
     private boolean            m_bTinted                  = false;
+    
+    private boolean            m_bSelected                = false; // #grouping
+    private String             m_group                  	= null; //#grouping
+
+
 
     /**
      * Lame handle to canvas.
@@ -182,7 +188,12 @@ public class Pog implements Comparable<Pog>
 
     public Pog(final Pog toCopy)
     {
-        init(toCopy);
+        init(toCopy, true);
+    }
+    
+    public Pog(final Pog toCopy, final boolean copy) 
+    {
+      init(toCopy, copy);
     }
 
     public Pog(final PogType type)
@@ -336,7 +347,13 @@ public class Pog implements Comparable<Pog>
 
 //      g.drawImage(m_pogType.rotate(m_pogType.flip(m_pogType.m_image, m_flipH, m_flipV), m_angle), x, y, drawWidth, drawHeight, null);
       //m_pogType.flip(, m_flipH, m_flipV)
-      Image im = m_pogType.rotate(m_pogType.getImage(), m_angle, m_forceGridSnap);       
+        
+//      Image im = m_pogType.rotate(m_pogType.getImage(), m_angle, m_forceGridSnap);
+  
+        // @revise usage of flipH, flipV and angles
+      Image im = m_pogType.rotate(m_pogType.flip(m_pogType.getImage(), m_flipH, m_flipV), 
+          m_angle, m_forceGridSnap);      
+
 
       // Center the image into a square, taking into consideration the height and width
       int mw = 0;
@@ -473,6 +490,34 @@ public class Pog implements Comparable<Pog>
         drawStringToCanvas(gr, bForceTextInBounds, COLOR_BACKGROUND, drawAttributes);
         stopDisplayPogDataChange();
     }
+    
+    /** *****************************************************************************************************************
+     * #grouping
+     * @param gr
+     * @param x
+     * @param y
+     * @param scale
+     */
+    public void drawTinted(final Graphics gr, final int x, final int y, final float scale) {         
+        final int dw = Math.round(getWidth() * scale);
+        final int dh = Math.round(getHeight() * scale);
+        BufferedImage bi = new BufferedImage(dw, dh, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D bg = bi.createGraphics();
+        Color useCol;
+        
+        if(m_bSelected) useCol = Color.CYAN;        
+        else useCol = Color.GREEN;
+        
+        bg.setColor(useCol);
+        bg.fillRect(0, 0, dw, dh);
+        drawScaled(bg,0,0,scale);        
+        bg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));        
+        bg.fillRect(0, 0, dw, dh);
+        bg.dispose();
+        bi = UtilityFunctions.makeColorTransparent(bi,useCol);
+        gr.drawImage(bi,x,y,null);        
+    }
+
 
     public void drawToCanvas(final Graphics g)
     {
@@ -491,6 +536,7 @@ public class Pog implements Comparable<Pog>
             final float scale = (float)GametableCanvas.getSquareSizeForZoom(m_canvas.m_zoom)
             / (float)GametableCanvas.BASE_SQUARE_SIZE;
 
+            /*
             drawScaled(g, drawCoords.x, drawCoords.y, scale * m_scale);
 
             // if we're tinted, draw tinted
@@ -498,6 +544,16 @@ public class Pog implements Comparable<Pog>
             {
                 m_pogType.drawTint(g, drawCoords.x, drawCoords.y, scale * m_scale, Color.GREEN, m_angle, m_forceGridSnap);
             }
+            */
+
+            // @revise - what is tinted, what is selected - should we have clearer color scheme / standard UI artifact for selection? 
+            // if we're tinted, draw tinted
+            if (m_bTinted || m_bSelected) 
+            {
+                drawTinted(g,drawCoords.x, drawCoords.y, scale * m_scale);
+            } 
+            else 
+            	drawScaled(g, drawCoords.x, drawCoords.y, scale * m_scale);
         }
     }
     
@@ -717,7 +773,7 @@ public class Pog implements Comparable<Pog>
         m_layer = type.getType();
     }
 
-    private void init(final Pog orig)
+    private void init(final Pog orig, boolean copygroup)
     {
         m_position = orig.m_position;
         m_pogType = orig.m_pogType;
@@ -728,6 +784,9 @@ public class Pog implements Comparable<Pog>
         m_flipV = orig.m_flipV;
         m_text = orig.m_text;
         m_layer    = orig.m_layer;
+        m_forceGridSnap = orig.m_forceGridSnap;
+
+        if(copygroup) m_group = orig.m_group;
 
         if (orig.m_card == null)
         {
@@ -735,7 +794,7 @@ public class Pog implements Comparable<Pog>
         }
         else
         {
-            m_card = new Card();
+        		m_card = new Card();
             m_card.copy(orig.m_card);
         }
 
@@ -837,7 +896,18 @@ public class Pog implements Comparable<Pog>
                 layer = Type.UNDERLAY;
             else 
                 layer = Type.POG;
+            
+            m_forceGridSnap = false;
         }
+        
+        try {
+          String group = dis.readUTF();
+          if(group.equals("")) group = null;            
+          if(group != null) GametableFrame.getGametableFrame().getGrouping().add(group, this);
+        } catch(IOException exp) {
+          m_group = null;
+        }
+
 
         // special case pseudo-hack check
         // through reasons unclear to me, sometimes a pog will get
@@ -967,6 +1037,16 @@ public class Pog implements Comparable<Pog>
         reinitializeHitMap();
     }
     
+    //#randomrotate
+    public void setAngleFlip(final double angle,final int flipH, final int flipV)
+    {
+        m_flipH = flipH;
+        m_flipV = flipV;
+        m_angle = angle;
+        reinitializeHitMap();
+    }
+
+    
     public void setFlip(final int flipH, final int flipV)
     {
         m_flipH = flipH;
@@ -1051,6 +1131,45 @@ public class Pog implements Comparable<Pog>
         m_text = text;
         displayPogDataChange();
     }
+    
+
+    /** **********************************************************************************************
+     * #grouping
+     * @param b
+     */    
+    public void setSelected(final boolean b) {
+        m_bSelected = b;
+    } 
+    // #grouping
+    public void setSelected() {
+        setSelected(true);
+    }
+    // #grouping
+    public void unsetSelected() {
+        setSelected(false);
+    }
+    // #grouping
+    public boolean isSelected()
+    {
+        return m_bSelected;
+    }
+    // #grouping
+    public boolean isGrouped() {
+        if(m_group != null) return true;
+        return false;
+    }
+    /** **********************************************************************************************
+     * #grouping
+     * @return
+     */
+    public String getGroup() {
+        return m_group;
+    }
+    // #grouping
+    public void setGroup(final String group) {
+        m_group = group;
+    }
+
 
     // --- Private Helpers ---
 
@@ -1178,6 +1297,10 @@ public class Pog implements Comparable<Pog>
         }
         
         dos.writeInt(m_layer.ordinal());
+        
+        dos.writeBoolean(m_forceGridSnap);  //#gridsnap
+        if(m_group == null) dos.writeUTF("");
+        else dos.writeUTF(m_group);
     }
 
 }
