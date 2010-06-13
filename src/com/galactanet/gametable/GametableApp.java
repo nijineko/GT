@@ -37,7 +37,7 @@ public class GametableApp
     /**
      * String to describe gametable's chat version
      */
-    public static final String VERSION        = "Gametable 2.0.RC8";
+    public static final String VERSION        = "Gametable \"3.0\" dev";
     
     public static final String  LANGUAGE = "En";
     
