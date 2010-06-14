@@ -6,6 +6,7 @@
 package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -104,11 +105,13 @@ public class BoxTool extends NullTool
             final LineSegment right = new LineSegment(topRight, bottomRight, drawColor);
             final LineSegment bottom = new LineSegment(bottomLeft, bottomRight, drawColor);
 
-            final LineSegment[] toAdd = new LineSegment[] {
-                top, left, right, bottom
-            };
+            java.util.List<LineSegment> lines = new ArrayList<LineSegment>(4);
+            lines.add(top);
+            lines.add(left);
+            lines.add(right);
+            lines.add(bottom);
 
-            m_canvas.addLineSegments(toAdd);
+            m_canvas.addLineSegments(lines);
         }
         endAction();
     }

@@ -30,6 +30,11 @@ import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.Grouping.ActionType;
 import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.deck.Card;
+import com.galactanet.gametable.data.deck.Deck;
+import com.galactanet.gametable.data.deck.DeckData;
+import com.galactanet.gametable.data.dicemacro.DiceMacro;
+import com.galactanet.gametable.data.dicemacro.DiceMacroSaxHandler;
 import com.galactanet.gametable.data.net.*;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
@@ -767,8 +772,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
             // alert all players that this deck has been created
             sendDeckList();
-            postSystemMessage(getMyPlayer().getPlayerName() + lang.DECK_CREATE_SUCCESS_1 + deckFileName + 
-                lang.DECK_CREATE_SUCCESS_2 + deckName);
+            postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.DECK_CREATE_SUCCESS_1 + " " + deckFileName + " " + lang.DECK_CREATE_SUCCESS_2 + " " + deckName);
 
         }
         else if (command.equals("destroy")) // remove a deck
@@ -1506,19 +1510,6 @@ public class GametableFrame extends JFrame implements ActionListener
     }
 
     /**
-     * creates the "Edit" menu
-     * @return the new menu
-     */
-    private JMenu getEditMenu()
-    {
-        final JMenu menu = new JMenu(lang.EDIT);
-        menu.add(getUndoMenuItem());
-        menu.add(getRedoMenuItem());
-
-        return menu;
-    }
-
-    /**
      * Builds and returns the File Menu
      * @return the file menu just built
      */
@@ -1677,7 +1668,6 @@ public class GametableFrame extends JFrame implements ActionListener
     {
         final JMenuBar menuBar = new JMenuBar();
         menuBar.add(getFileMenu());
-        menuBar.add(getEditMenu());
         menuBar.add(getNetworkMenu());
         menuBar.add(getMapMenu());
         menuBar.add(getGroupingMenu()); //#grouping
@@ -2120,7 +2110,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 if (gd.isAccepted()) {
                     String g = gd.getGroup();
                     if((g != null) && (g.length() > 0))
-                    getGrouping().add(g, getGametableCanvas().getActiveMap().m_selectedPogs);
+                    getGrouping().add(g, getGametableCanvas().getActiveMap().getSelectedPogs());
                 }
             }
         });
@@ -2145,7 +2135,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 gd.setVisible(true);
                 if (gd.isAccepted()) {
                     List<Pog> pogs = getGrouping().getGroup(gd.getGroup());                        
-                    getGametableCanvas().getActiveMap().addSelectedPogs(pogs);
+                    getGametableCanvas().getActiveMap().selectPogs(pogs);
                     getGametableCanvas().repaint();
                 }
             }
@@ -2161,14 +2151,11 @@ public class GametableFrame extends JFrame implements ActionListener
         final JMenuItem item = new JMenuItem("UnGroup Selected");
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                Pog pog;
                 GametableMap map = getGametableCanvas().getActiveMap();
-                int size = map.m_selectedPogs.size();
-                if(size > 0) {
-                    for(int i = 0;i < size; ++i) {
-                        pog = map.m_selectedPogs.get(i);
-                        getGrouping().remove(pog);
-                    }
+                Grouping group = getGrouping();
+                for (Pog pog : map.getSelectedPogs())
+                {
+                    group.remove(pog);
                 }
             }
         });
@@ -2386,24 +2373,6 @@ public class GametableFrame extends JFrame implements ActionListener
         return item;
     }
 
-    /**
-     * builds and returns the "Redo" menu item
-     * @return a menu item
-     */
-    private JMenuItem getRedoMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(lang.REDO);
-        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " Y"));
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(final ActionEvent e)
-            {
-                getGametableCanvas().redo();
-            }
-        });
-
-        return item;
-    }
     
         /** *************************************************************************************
      * 
@@ -2416,17 +2385,8 @@ public class GametableFrame extends JFrame implements ActionListener
         {
             public void actionPerformed(final ActionEvent e)
             {
-                Pog pog;
                 GametableMap map = getGametableCanvas().getActiveMap();
-                int size = map.m_selectedPogs.size();
-                if(size > 0) {
-                    final int pogs[] = new int[size];
-                    for(int i = 0;i < size; ++i) {
-                        pog = map.m_selectedPogs.get(i);
-                        pogs[i] = pog.getId();
-                    }
-                    getGametableCanvas().removePogs(pogs,false);
-                }
+                getGametableCanvas().removePogs(map.getSelectedPogs(), false);
             }
         });
 
@@ -2446,25 +2406,22 @@ public class GametableFrame extends JFrame implements ActionListener
         {
             public void actionPerformed(final ActionEvent e)
             {
-                Pog pog, npog;
+                Pog npog;
                 GametableMap map = getGametableCanvas().getActiveMap();
                 GametableMap to;
                 if(map == getGametableCanvas().getPublicMap()) to = getGametableCanvas().getPrivateMap();
                 else to = getGametableCanvas().getPublicMap();
 
-                int size = map.m_selectedPogs.size();
-                if(size > 0) {         
-                    // Do this backwards to keep from getting errors as pogs are removed from selection.
-                    for(int i = size-1;i >= 0; --i) {
-                        pog = map.m_selectedPogs.get(i);
-                        to.addPog(pog);
-                        map.removePog(pog, true);                        
-                        if(copy) {
-                            npog = new Pog(pog);
-                            map.addPog(npog);
-                        }                      
-                    }                    
-                }
+                for (Pog pog : map.getSelectedPogs())
+                {
+                  to.addPog(pog);
+                  map.removePog(pog, true);                        
+                  if(copy) 
+                  {
+                      npog = new Pog(pog);
+                      map.addPog(npog);
+                  }
+                }                
             }
         });
 
@@ -2646,25 +2603,6 @@ public class GametableFrame extends JFrame implements ActionListener
     }
 
     /**
-     * gets and returns the "Undo" menu item
-     * @return the menu item
-     */
-    private JMenuItem getUndoMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(lang.UNDO);
-        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " Z"));
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(final ActionEvent e)
-            {
-                getGametableCanvas().undo();
-            }
-        });
-
-        return item;
-    }
-
-    /**
      * handles a "grid mode" packet
      * @param gridMode grid mode
      */
@@ -2742,7 +2680,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
         if (!force)
         {
-            // get relevant infor from the user
+            // get relevant info from the user
             if (!runHostDialog())
             {
                 return;
@@ -2767,7 +2705,7 @@ public class GametableFrame extends JFrame implements ActionListener
         final String message = "Hosting on port: " + m_port;
         m_chatPanel.logSystemMessage(message);
 
-        m_chatPanel.logMechanics("<a href=\"http://gametable.galactanet.com/echoip.php\">" + lang.IP_CHECK + "</a> (" + lang.IP_CHECK2 + ")");
+        m_chatPanel.logMechanics("<a href=\"http://www.whatismyip.com\">" + lang.IP_CHECK + "</a> (" + lang.IP_CHECK2 + ")");
 
         Log.log(Log.NET, message);
 
@@ -2775,9 +2713,6 @@ public class GametableFrame extends JFrame implements ActionListener
         m_joinMenuItem.setEnabled(false); // disable the join menu item
         m_disconnectMenuItem.setEnabled(true); // enable the disconnect menu item
         setTitle(GametableApp.VERSION + " - " + me.getCharacterName());
-
-        // when you host, all the undo stacks clear
-        getGametableCanvas().clearUndoStacks();
 
         // also, all decks clear
         m_decks.clear();
@@ -3278,7 +3213,7 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param authorID author
      * @param state
      */
-    public void linesPacketReceived(final LineSegment[] lines, final int authorID, final int state)
+    public void linesPacketReceived(List<LineSegment> lines, final int authorID, final int state)
     {
         int stateId = state;
         if (m_netStatus == NETSTATE_HOST)
@@ -3649,10 +3584,6 @@ public class GametableFrame extends JFrame implements ActionListener
         // highlights. The pogs don't know the difference between
         // inital data and actual player changes.
         PacketSourceState.endHostDump();
-
-        // seed our undo stack with this as the bottom rung
-        getGametableCanvas().getPublicMap().beginUndoableAction();
-        getGametableCanvas().getPublicMap().endUndoableAction(-1, -1);
     }
 
     // makes a card pog out of the sent in card
@@ -3742,17 +3673,10 @@ public class GametableFrame extends JFrame implements ActionListener
 
         sendCastInfo();
 
-        // all the undo stacks clear
-        getGametableCanvas().clearUndoStacks();
-
         // tell the new guy the entire state of the game
         // lines
-        final LineSegment[] lines = new LineSegment[getGametableCanvas().getPublicMap().getNumLines()];
-        for (int i = 0; i < getGametableCanvas().getPublicMap().getNumLines(); i++)
-        {
-            lines[i] = getGametableCanvas().getPublicMap().getLineAt(i);
-        }
-        send(PacketManager.makeLinesPacket(lines, -1, -1), player);
+
+        send(PacketManager.makeLinesPacket(getGametableCanvas().getPublicMap().getLines(), -1, -1), player);
 
         // pogs
         for (int i = 0; i < getGametableCanvas().getPublicMap().getNumPogs(); i++)
@@ -4042,19 +3966,6 @@ public class GametableFrame extends JFrame implements ActionListener
         {
             m_networkThread.send(PacketManager.makeRecenterPacket(x, y, zoom));
         }
-    }
-
-    public void redoPacketReceived(final int stateID)
-    {
-        getGametableCanvas().doRedo(stateID);
-
-        if (m_netStatus == NETSTATE_HOST)
-        {
-            // if we're the host, send it to the clients
-            send(PacketManager.makeRedoPacket(stateID));
-        }
-
-        repaint();
     }
 
     /**
@@ -4355,12 +4266,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
         try
         {
-            final LineSegment[] lines = new LineSegment[mapToSave.getNumLines()];
-            for (int i = 0; i < mapToSave.getNumLines(); i++)
-            {
-                lines[i] = mapToSave.getLineAt(i);
-            }
-            final byte[] linesPacket = PacketManager.makeLinesPacket(lines, -1, -1);
+            final byte[] linesPacket = PacketManager.makeLinesPacket(getGametableCanvas().getPublicMap().getLines(), -1, -1);
             dos.writeInt(linesPacket.length);
             dos.write(linesPacket);
 
@@ -4627,19 +4533,6 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void undoPacketReceived(final int stateID)
-    {
-        getGametableCanvas().doUndo(stateID);
-
-        if (m_netStatus == NETSTATE_HOST)
-        {
-            // if we're the host, send it to the clients
-            send(PacketManager.makeUndoPacket(stateID));
-        }
-
-        repaint();
-    }
-
     public void updateCast(final Player[] players, final int ourIdx)
     {
         // you should only get this if you're a joiner
@@ -4653,9 +4546,6 @@ public class GametableFrame extends JFrame implements ActionListener
         }
 
         m_myPlayerIndex = ourIdx;
-
-        // any time the cast changes, all the undo stacks clear
-        getGametableCanvas().clearUndoStacks();
     }
 
     public void updateGridModeMenu()

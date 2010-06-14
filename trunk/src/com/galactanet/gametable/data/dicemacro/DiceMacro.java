@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.dicemacro;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;

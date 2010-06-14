@@ -1,6 +1,6 @@
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.deck;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

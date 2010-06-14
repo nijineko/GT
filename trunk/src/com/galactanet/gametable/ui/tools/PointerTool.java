@@ -357,8 +357,8 @@ public class PointerTool extends NullTool
                     if (m_canvas.isPublicMap()) m_from = m_canvas.getPublicMap();
                     else m_from = m_canvas.getPrivateMap();                            
                     
-                    if(m_menuPog.isSelected()) m_from.removeSelectedPog(m_menuPog);
-                    else m_from.addSelectedPog(m_menuPog);                                     
+                    if(m_menuPog.isSelected()) m_from.unselectPog(m_menuPog);
+                    else m_from.selectPog(m_menuPog);                                     
                 }
             });
             menu.add(item);
@@ -774,7 +774,9 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                      int size = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().m_selectedPogs.size();
+                  	List<Pog> pogs = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getSelectedPogs();
+                  	
+                      int size = pogs.size();
                       if(size > 1) {
                           JOptionPane.showMessageDialog(GametableFrame.getGametableFrame(), "You must only have 1 Pog selected.", 
                               "Image Selection", JOptionPane.INFORMATION_MESSAGE);
@@ -784,9 +786,10 @@ public class PointerTool extends NullTool
                               "Image Selection", JOptionPane.INFORMATION_MESSAGE);
                           return;
                       }
-                      Pog pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().m_selectedPogs.get(0);                
+                      
+                      Pog pog = pogs.get(0);                
                       GametableFrame.getGametableFrame().getGametableCanvas().setPogType(m_menuPog, pog);
-                      GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().clearSelectedPogs();
+                      GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().unselectAllPogs();
                      
                   }
               });

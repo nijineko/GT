@@ -100,11 +100,8 @@ public class CircleTool extends NullTool
             // circle, drawing it faster but making it rougher. Uncomment if
             // redrawing takes too long.
             // m_penAsset.smooth();
-            final LineSegment[] lines = m_penAsset.getLineSegments();
-            if (lines != null)
-            {
-                m_canvas.addLineSegments(lines);
-            }
+            java.util.List<LineSegment> lines = m_penAsset.getLineSegments();
+            m_canvas.addLineSegments(lines);
         }
         endAction();
     }

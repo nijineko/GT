@@ -10,9 +10,13 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
-import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.Pog;
+import com.galactanet.gametable.data.PogType;
 import com.galactanet.gametable.data.Grouping.ActionType;
 import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.deck.Card;
+import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
 import com.galactanet.gametable.util.Log;
@@ -116,9 +120,6 @@ public class PacketManager
     // recentering packet
     public static final int PACKET_RECENTER           = 10;
 
-    // a redo packet
-    public static final int PACKET_REDO               = 18;
-
     // join rejected
     public static final int PACKET_REJECT             = 11;
 
@@ -154,9 +155,6 @@ public class PacketManager
 
     // Player is typing
     public static final int PACKET_TYPING             = 29;
-
-    // an undo packet
-    public static final int PACKET_UNDO               = 17;
 
     // --- Static Methods --------------------------------------------------------------------------------------------
 
@@ -236,10 +234,6 @@ public class PacketManager
                 return "PACKET_LOGIN_COMPLETE";
             case PACKET_PING:
                 return "PACKET_PING";
-            case PACKET_UNDO:
-                return "PACKET_UNDO";
-            case PACKET_REDO:
-                return "PACKET_REDO";
             case PACKET_POG_SIZE:
                 return "PACKET_POG_SIZE";
             case PACKET_PRIVATE_TEXT:
@@ -620,7 +614,7 @@ public class PacketManager
     
 
 
-    public static byte[] makeLinesPacket(final LineSegment[] lines, final int authorPlayerID, final int stateID)
+    public static byte[] makeLinesPacket(List<LineSegment> lines, final int authorPlayerID, final int stateID)
     {
         try
         {
@@ -630,12 +624,36 @@ public class PacketManager
             dos.writeInt(PACKET_LINES); // type
             dos.writeInt(authorPlayerID);
             dos.writeInt(stateID);
-            dos.writeInt(lines.length);
-            for (int i = 0; i < lines.length; i++)
+            dos.writeInt(lines.size());
+            
+            for (LineSegment line : lines)
             {
-                lines[i].writeToPacket(dos);
+                line.writeToPacket(dos);
             }
 
+            return baos.toByteArray();
+        }
+        catch (final IOException ex)
+        {
+            Log.log(Log.SYS, ex);
+            return null;
+        }
+    }
+    
+    public static byte[] makeLinesPacket(LineSegment line, final int authorPlayerID, final int stateID)
+    {
+        try
+        {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final DataOutputStream dos = new DataOutputStream(baos);
+
+            dos.writeInt(PACKET_LINES); // type
+            dos.writeInt(authorPlayerID);
+            dos.writeInt(stateID);
+            dos.writeInt(1);
+            
+            line.writeToPacket(dos);
+            
             return baos.toByteArray();
         }
         catch (final IOException ex)
@@ -1075,25 +1093,6 @@ public class PacketManager
         }
     }
 
-    public static byte[] makeRedoPacket(final int stateID)
-    {
-        try
-        {
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final DataOutputStream dos = new DataOutputStream(baos);
-
-            dos.writeInt(PACKET_REDO); // type
-            dos.writeInt(stateID); // state ID
-
-            return baos.toByteArray();
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-            return null;
-        }
-    }
-
     public static byte[] makeRejectPacket(final int reason)
     {
         try
@@ -1131,6 +1130,33 @@ public class PacketManager
             for (int i = 0; i < ids.length; i++)
             {
                 dos.writeInt(ids[i]);
+            }
+
+            return baos.toByteArray();
+        }
+        catch (final IOException ex)
+        {
+            Log.log(Log.SYS, ex);
+            return null;
+        }
+    }
+    
+    public static byte[] makeRemovePogsPacket(List<Pog> pogs)
+    {
+        try
+        {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final DataOutputStream dos = new DataOutputStream(baos);
+
+            dos.writeInt(PACKET_REMOVEPOGS); // type
+
+            // the number of pogs to be removed is first
+            dos.writeInt(pogs.size());
+
+            // then the IDs of the pogs.
+            for (Pog pog : pogs)
+            {
+                dos.writeInt(pog.getId());
             }
 
             return baos.toByteArray();
@@ -1276,27 +1302,6 @@ public class PacketManager
             dos.writeInt(PACKET_TYPING); // type
             dos.writeUTF(playerName);
             dos.writeBoolean(typing);
-
-            return baos.toByteArray();
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-            return null;
-        }
-    }
-
-    /* *********************** RECENTER PACKET *********************************** */
-
-    public static byte[] makeUndoPacket(final int stateID)
-    {
-        try
-        {
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final DataOutputStream dos = new DataOutputStream(baos);
-
-            dos.writeInt(PACKET_UNDO); // type
-            dos.writeInt(stateID); // state ID
 
             return baos.toByteArray();
         }
@@ -1555,10 +1560,12 @@ public class PacketManager
             final int authorID = dis.readInt();
             final int stateID = dis.readInt();
             final int numLines = dis.readInt();
-            final LineSegment[] lines = new LineSegment[numLines];
+            
+            List<LineSegment> lines = new ArrayList<LineSegment>(numLines);
+            
             for (int i = 0; i < numLines; i++)
             {
-                lines[i] = new LineSegment(dis);
+            	lines.add(new LineSegment(dis));
             }
 
             // tell the model
@@ -1805,18 +1812,6 @@ public class PacketManager
                 case PACKET_PING:
                 {
                     readPingPacket(dis);
-                }
-                break;
-
-                case PACKET_UNDO:
-                {
-                    readUndoPacket(dis);
-                }
-                break;
-
-                case PACKET_REDO:
-                {
-                    readRedoPacket(dis);
                 }
                 break;
 
@@ -2254,22 +2249,6 @@ public class PacketManager
         }
     }
 
-    public static void readRedoPacket(final DataInputStream dis)
-    {
-        try
-        {
-            final int stateID = dis.readInt();
-
-            // tell the model
-            final GametableFrame gtFrame = GametableFrame.getGametableFrame();
-            gtFrame.redoPacketReceived(stateID);
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-        }
-    }
-
     public static void readRejectPacket(final DataInputStream dis)
     {
 
@@ -2399,22 +2378,6 @@ public class PacketManager
     }
 
     /* *********************** POG_SIZE PACKET *********************************** */
-
-    public static void readUndoPacket(final DataInputStream dis)
-    {
-        try
-        {
-            final int stateID = dis.readInt();
-
-            // tell the model
-            final GametableFrame gtFrame = GametableFrame.getGametableFrame();
-            gtFrame.undoPacketReceived(stateID);
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-        }
-    }
 
     public static void requestPogImage(final Connection conn, final Pog pog)
     {
