@@ -83,9 +83,7 @@ public class LineTool extends NullTool
         {
             final LineSegment ls = new LineSegment(m_mouseAnchor, m_mouseFloat,
                 GametableFrame.getGametableFrame().m_drawColor);
-            m_canvas.addLineSegments(new LineSegment[] {
-                ls
-            });
+            m_canvas.addLineSegment(ls);
         }
 
         endAction();

@@ -157,16 +157,8 @@ public class PublishTool extends NullTool
                 }
             }
 
-            // now we have the list of lines to move over. Make them into
-            // a LineSegment[]
-            final LineSegment[] toAdd = new LineSegment[lineList.size()];
-            for (int i = 0; i < toAdd.length; i++)
-            {
-                toAdd[i] = lineList.get(i);
-            }
-
             m_canvas.setActiveMap(m_to);
-            m_canvas.addLineSegments(toAdd);
+            m_canvas.addLineSegments(lineList);
             m_canvas.setActiveMap(m_from);
 
             boolean bDeleteFromPrivate = false;

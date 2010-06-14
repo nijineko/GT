@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.*;
 
 import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -952,6 +953,12 @@ public class Pog implements Comparable<Pog>
         return m_bTinted;
     }
 
+    /**
+     * Verifies if pog is an underlay
+     * @revise this is imprecise - pogs are no longer just pog or underlay - they can be from various layer.  Underlay is an improper term.
+     * @return
+     * @deprecated
+     */
     public boolean isUnderlay()
     {
         return m_layer != Type.POG;
@@ -965,6 +972,10 @@ public class Pog implements Comparable<Pog>
     // --- Drawing ---
 
     /** ************************ CARD POG STUFF ****************************** */
+    
+    /**
+     * @revise this should not be in Pog class (considering Deck / Card functionality as a plug-in)
+     */
     public void makeCardPog(final Card card)
     {
         // note the card info. We copy it, so we aren't affected
@@ -976,17 +987,21 @@ public class Pog implements Comparable<Pog>
          * the card and it's irritating. 
          */
         // set the appropriate attributes
-        if ( card.m_cardName.length() > 0 )
+        String cardName = card.getCardName();
+        String cardDesc = card.getCardDesc();
+        String deckName = card.getDeckName();
+        
+        if ( cardName.length() > 0 )
         {
-            m_text = card.m_cardName;
+            m_text = cardName;
         }
-        if ( card.m_cardDesc.length() > 0 )
+        if ( cardDesc.length() > 0 )
         {
-            setAttribute("Desc", card.m_cardDesc);
+            setAttribute("Desc", cardDesc);
         }
-        if ( card.m_deckName.length() > 0 )
+        if ( deckName.length() > 0 )
         {
-            setAttribute("Deck", card.m_deckName);
+            setAttribute("Deck", deckName);
         }
     }
 
@@ -1133,26 +1148,26 @@ public class Pog implements Comparable<Pog>
     }
     
 
-    /** **********************************************************************************************
-     * #grouping
-     * @param b
-     */    
-    public void setSelected(final boolean b) {
-        m_bSelected = b;
+    /**
+     * Set the pog's selection status.  Only GametableMap should call this method, as it maintains its own representation of what is selected
+     * Calling the pog's "setSelected" method will have no direct effect upon the map.
+     *     
+     * @param selected true to select, false to unselect.
+     */
+    protected void setSelected(final boolean selected) 
+    {
+        m_bSelected = selected;
     } 
-    // #grouping
-    public void setSelected() {
-        setSelected(true);
-    }
-    // #grouping
-    public void unsetSelected() {
-        setSelected(false);
-    }
-    // #grouping
+
+    /**
+     * Returns the selectino state of the pog as last stored by its GameTableMap
+     * @return true if selected
+     */
     public boolean isSelected()
     {
         return m_bSelected;
     }
+    
     // #grouping
     public boolean isGrouped() {
         if(m_group != null) return true;

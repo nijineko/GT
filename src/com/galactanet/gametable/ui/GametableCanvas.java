@@ -29,6 +29,7 @@ import javax.swing.text.JTextComponent;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.tools.NullTool;
@@ -528,8 +529,34 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         m_gametableFrame.refreshActivePogList();
         repaint();
     }
+    
+    public void addLineSegment(LineSegment line)
+    {
+    	if (isPublicMap())
+      {
+          // if we're the host, push it to everyone and add the lines.
+          // if we're a joiner, just push it to the host
+          // stateID is irrelevant if we're a joiner
+          int stateID = -1;
+          if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+          {
+              stateID = m_gametableFrame.getNewStateId();
+          }
+          m_gametableFrame.send(PacketManager.makeLinesPacket(line, m_gametableFrame.getMyPlayerId(), stateID));
 
-    public void addLineSegments(final LineSegment[] lines)
+          // if we're the host or if we're offline, go ahead and add them now
+          if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+          {
+              doAddLineSegment(line, m_gametableFrame.getMyPlayerId(), stateID);
+          }
+      }
+      else
+      {          // state ids are irrelevant on the private layer
+          doAddLineSegment(line, m_gametableFrame.getMyPlayerId(), 0);
+      }
+    }
+
+    public void addLineSegments(List<LineSegment> lines)
     {
         if (isPublicMap())
         {
@@ -600,23 +627,27 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         setPrimaryScroll(getActiveMap(), scrX, scrY);
     }
 
-    public void clearUndoStacks()
+    public void doAddLineSegments(List<LineSegment> lines, final int authorID, final int stateID)
     {
-        // we only clear the public stack. No need to mess with the private one.
-        m_publicMap.clearUndos();
-    }
-
-    public void doAddLineSegments(final LineSegment[] lines, final int authorID, final int stateID)
-    {
-        getActiveMap().beginUndoableAction();
         if (lines != null)
         {
-            for (int i = 0; i < lines.length; i++)
-            {
-                getActiveMap().addLine(lines[i]);
-            }
+        	GametableMap map = getActiveMap();
+        	for (LineSegment line : lines)
+        		map.addLine(line);
+            
         }
-        getActiveMap().endUndoableAction(authorID, stateID);
+        
+        repaint();
+    }
+    
+    public void doAddLineSegment(LineSegment line, final int authorID, final int stateID)
+    {
+        if (line != null)
+        {
+        	GametableMap map = getActiveMap();
+        	map.addLine(line);            
+        }
+        
         repaint();
     }
 
@@ -639,10 +670,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         final Point modelEnd = new Point(r.x + r.width, r.y + r.height);
 
         final ArrayList<LineSegment> survivingLines = new ArrayList<LineSegment>();
-        for (int i = 0; i < getActiveMap().getNumLines(); i++)
+        
+        for (LineSegment ls : getActiveMap().getLines())
         {
-            final LineSegment ls = getActiveMap().getLineAt(i);
-
             if (!bColorSpecific || (ls.getColor().getRGB() == color))
             {
                 // we are the color being erased, or we're in erase all
@@ -666,7 +696,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             }
         }
 
-        getActiveMap().beginUndoableAction();
         // now we have just the survivors
         // replace all the lines with this list
         getActiveMap().clearLines();
@@ -674,7 +703,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             getActiveMap().addLine(survivingLines.get(i));
         }
-        getActiveMap().endUndoableAction(authorID, stateID);
         repaint();
     }
 
@@ -743,12 +771,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
 
-    public void doRedo(final int stateID)
-    {
-        // the active map should be the public map
-        getActiveMap().redo(stateID);
-    }
-
     public void doRemovePog(final int id)
     {
         final Pog toRemove = getActiveMap().getPogByID(id);
@@ -783,6 +805,44 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         for (int i = 0; i < ids.length; i++)
         {
             doRemovePog(ids[i]);
+        }
+
+        if (bDiscardCards)
+        {
+            // now remove the offending cards
+            if (cardsList.size() > 0)
+            {
+                final Card cards[] = new Card[cardsList.size()];
+                for (int i = 0; i < cards.length; i++)
+                {
+                    cards[i] = cardsList.get(i);
+                }
+                m_gametableFrame.discardCards(cards);
+            }
+        }
+    }
+    
+    public void doRemovePogs(List<Pog> pogs, final boolean bDiscardCards)
+    {
+        // make a list of all the pogs that are cards
+        final List<Card> cardsList = new ArrayList<Card>();
+
+        if (bDiscardCards)
+        {
+            for (Pog toRemove : pogs)
+            {
+                if (toRemove.isCardPog())
+                {
+                    final Card card = toRemove.getCard();
+                    cardsList.add(card);
+                }
+            }
+        }
+
+        // remove all the offending pogs
+        for (Pog pog : pogs)
+        {
+            doRemovePog(pog.getId());
         }
 
         if (bDiscardCards)
@@ -935,12 +995,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
         pog.setPogType(tpog.getPogType());        
         repaint();
-    }
-    
-    public void doUndo(final int stateID)
-    {
-        // the active map should be the public map
-        getActiveMap().undo(stateID);
     }
 
     // topLeftX and topLeftY are the coordinates of where the
@@ -1568,10 +1622,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         
         GametableMap map = getActiveMap();
         if(toMove.isSelected()) {            
-            Pog pog;
-            int nx,ny,tx,ty;            
-            for(int i = 0; i < map.m_selectedPogs.size(); ++i) {
-               pog = map.m_selectedPogs.get(i);
+            
+            int nx,ny,tx,ty;
+            for (Pog pog : map.getSelectedPogs())
+            {
                if(pog.getId() != id) {
                    tx = pog.getX();
                    ty = pog.getY();
@@ -1723,9 +1777,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         Rectangle bounds = null;
         
         // lines
-        for (int i = 0; i < map.getNumLines(); i++)
+        for (LineSegment ls : map.getLines())
         {
-            final LineSegment ls = map.getLineAt(i);
             Rectangle r = ls.getBounds(this);
             
             if (bounds == null)
@@ -1810,10 +1863,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
 
         // lines
-        for (int i = 0; i < mapToDraw.getNumLines(); i++)
+        for (LineSegment ls : mapToDraw.getLines())
         {
-            final LineSegment ls = mapToDraw.getLineAt(i);
-
             // LineSegments police themselves, performance wise. If they won't touch the current
             // viewport, they don't draw
             ls.draw(g, this);
@@ -2028,21 +2079,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
 
-    public void redo()
-    {
-        // first, see if we even can redo
-        if (!getActiveMap().canRedo())
-        {
-            // we can't redo.
-            return;
-        }
-
-        // we can redo.
-        getActiveMap().redoNextRecent();
-
-        repaint();
-    }
-
     public void removeCardPogsForCards(final Card discards[])
     {
         // distribute this to each layer
@@ -2087,6 +2123,23 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         else
         {
             doRemovePogs(ids, bDiscardCards);
+        }
+    }
+    
+    public void removePogs(List<Pog> pogs, final boolean bDiscardCards)
+    {
+        if (isPublicMap())
+        {
+            m_gametableFrame.send(PacketManager.makeRemovePogsPacket(pogs));
+
+            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            {
+                doRemovePogs(pogs, bDiscardCards);
+            }
+        }
+        else
+        {
+            doRemovePogs(pogs, bDiscardCards);
         }
     }
 
@@ -2385,21 +2438,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                 scrollMapTo(x, y);
             }
         }
-    }
-
-    public void undo()
-    {
-        // first, see if we even can undo
-        if (!getActiveMap().canUndo())
-        {
-            // we can't undo.
-            return;
-        }
-
-        // we can undo. Undo the most recent action
-        getActiveMap().undoMostRecent();
-
-        repaint();
     }
 
     public void updatePogDropLoc()

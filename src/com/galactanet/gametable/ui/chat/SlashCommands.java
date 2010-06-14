@@ -9,10 +9,10 @@ package com.galactanet.gametable.ui.chat;
 
 import java.util.List;
 
-import com.galactanet.gametable.data.DiceMacro;
 import com.galactanet.gametable.data.GametableMap;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.Pog;
+import com.galactanet.gametable.data.dicemacro.DiceMacro;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.UtilityFunctions;
 

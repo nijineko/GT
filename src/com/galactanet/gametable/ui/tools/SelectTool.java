@@ -83,7 +83,7 @@ public class SelectTool extends NullTool
             m_map = m_canvas.getPrivateMap();
         }
 
-        m_map.clearSelectedPogs();
+        m_map.unselectAllPogs();
         m_canvas.repaint();
         
         m_mouseAnchor = new Point(x, y);
@@ -112,7 +112,7 @@ System.out.println("start");
 System.out.println("lop " + i);                
                 final Pog pog = m_map.getPog(i);
                 if (pog.isTinted() && (!pog.isLocked() || bIgnoreLock)) {
-                    m_map.addSelectedPog(pog);
+                    m_map.selectPog(pog);
                 }
                 
             }

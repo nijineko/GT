@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.galactanet.gametable.ui.GametableCanvas;
@@ -99,13 +100,10 @@ public class PenAsset
 
     public void draw(final Graphics g, final GametableCanvas canvas)
     {
-        final LineSegment[] lines = getLineSegments();
-        if (lines != null)
+        List<LineSegment> lines = getLineSegments();
+        for (LineSegment line : lines)
         {
-            for (int i = 0; i < lines.length; i++)
-            {
-                lines[i].draw(g, canvas);
-            }
+            line.draw(g, canvas);
         }
     }
 
@@ -114,22 +112,24 @@ public class PenAsset
         return m_color;
     }
 
-    public LineSegment[] getLineSegments()
+    public List<LineSegment> getLineSegments()
     {
         if (m_points.size() < 2)
         {
-            return null;
+            return Collections.emptyList();
         }
 
-        final LineSegment[] ret = new LineSegment[m_points.size() - 1];
+        List<LineSegment> lines = new ArrayList<LineSegment>(m_points.size() - 1);
+        
         for (int i = 0; i < m_points.size() - 1; i++)
         {
             final Point start = m_points.get(i);
             final Point end = m_points.get(i + 1);
-            ret[i] = new LineSegment(start, end, m_color);
+            
+            lines.add(new LineSegment(start, end, m_color));
         }
 
-        return ret;
+        return lines;
     }
 
     protected int getNextUsefulPoint(final int startIdx)

@@ -1,4 +1,4 @@
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.deck;
 
 import java.io.File;
 import java.util.ArrayList;

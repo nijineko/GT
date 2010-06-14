@@ -7,6 +7,7 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.util.List;
 
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -74,12 +75,10 @@ public class PenTool extends NullTool
         if (m_penAsset != null)
         {
             m_penAsset.smooth();
-            final LineSegment[] lines = m_penAsset.getLineSegments();
-            if (lines != null)
-            {
-                m_canvas.addLineSegments(lines);
-            }
+            List<LineSegment> lines = m_penAsset.getLineSegments();
+            m_canvas.addLineSegments(lines);            
         }
+        
         endAction();
     }
 
