@@ -13,11 +13,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.util.Collection;
+import java.util.List;
 
 import javax.swing.*;
 
-import com.galactanet.gametable.data.Grouping.Group;
+import com.galactanet.gametable.data.PogGroups;
 import com.galactanet.gametable.util.Log;
 
 /** **********************************************************************************************
@@ -148,9 +148,11 @@ public class GroupingDialog extends JDialog implements FocusListener
         panel.add(b_cancel);        
         outerBox.add(Box.createVerticalStrut(PADDING));
         
-        Collection<Group> groups = GametableFrame.getGametableFrame().getGrouping().getGroups();
-        for (Group group : groups)
-            m_groups.addItem(group.toString());
+        List<String> groupNames = PogGroups.getGroupNames(null);
+        
+        for (String groupName : groupNames)
+            m_groups.addItem(groupName);
+
         
         m_groups.setMinimumSize(new Dimension(10,20));
         setModal(true);

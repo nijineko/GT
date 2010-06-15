@@ -28,7 +28,7 @@ import org.xml.sax.SAXException;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.Grouping.ActionType;
+import com.galactanet.gametable.data.PogGroups.Action;
 import com.galactanet.gametable.data.PogType.Type;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
@@ -346,9 +346,6 @@ public class GametableFrame extends JFrame implements ActionListener
     private final GametableCanvas   m_gametableCanvas        = new GametableCanvas(); // This is the map
     private ChatPanel               m_chatPanel              = null; // Panel for chat
     private ChatLogEntryPane        m_textEntry              = null;
-
-    
-    private Grouping                m_pogGroups                 = new Grouping();   //#grouping
     
     // The status goes at the bottom of the pane
     private final JLabel            m_status                 = new JLabel(" "); // Status Bar
@@ -2038,14 +2035,6 @@ public class GametableFrame extends JFrame implements ActionListener
         return Collections.unmodifiableList(m_players);
     }
     
-    /** 
-     * #grouping
-     * @return The grouping class for the pog groups
-     */
-    public Grouping getGrouping() {
-        return m_pogGroups;
-    }
-    
     /** *************************************************************************************
      * #grouping
      * @return
@@ -2072,18 +2061,18 @@ public class GametableFrame extends JFrame implements ActionListener
         final JMenuItem item = new JMenuItem(g);
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                if(getGrouping().size() < 1) {
+                if(PogGroups.getGroupCount() < 1) {
                     JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
                         "No Groups", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
-                if(all == 1) getGrouping().deleteunused();
-                if(all == 2) getGrouping().deleteall();
+                if(all == 1) PogGroups.deleteEmpryGroups();
+                if(all == 2) PogGroups.deleteAllGroups();
                 else {
                     GroupingDialog gd = new GroupingDialog(false);
                     gd.setVisible(true);
                     if (gd.isAccepted()) {
-                        getGrouping().delete(gd.getGroup());                        
+                        PogGroups.deleteGroup(gd.getGroup());                        
                     }
                 }
             }
@@ -2104,7 +2093,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 if (gd.isAccepted()) {
                     String g = gd.getGroup();
                     if((g != null) && (g.length() > 0))
-                    getGrouping().add(g, getGametableCanvas().getActiveMap().getSelectedPogs());
+                    PogGroups.addPogsToGroup(g, getGametableCanvas().getActiveMap().getSelectedPogs());
                 }
             }
         });
@@ -2120,7 +2109,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {                
-                if(getGrouping().size() < 1) {
+                if(PogGroups.getGroupCount() < 1) {
                     JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
                         "No Groups", JOptionPane.INFORMATION_MESSAGE);
                     return;
@@ -2128,7 +2117,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 GroupingDialog gd = new GroupingDialog(false);
                 gd.setVisible(true);
                 if (gd.isAccepted()) {
-                    List<Pog> pogs = getGrouping().getGroup(gd.getGroup());                        
+                    List<Pog> pogs = PogGroups.getGroupPogs(gd.getGroup());                        
                     getGametableCanvas().getActiveMap().selectPogs(pogs);
                     getGametableCanvas().repaint();
                 }
@@ -2146,10 +2135,10 @@ public class GametableFrame extends JFrame implements ActionListener
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 GametableMap map = getGametableCanvas().getActiveMap();
-                Grouping group = getGrouping();
+                
                 for (Pog pog : map.getSelectedPogs())
                 {
-                    group.remove(pog);
+                    PogGroups.removePogFromGroup(pog);	
                 }
             }
         });
@@ -2635,7 +2624,7 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param openLink
      * @param closeLink
      */
-    public void groupPacketReceived(ActionType action, final String group, final int pog, final int player) 
+    public void groupPacketReceived(Action action, final String group, final int pog, final int player) 
     {
         if(m_netStatus == NETSTATE_HOST) 
         {
@@ -2644,7 +2633,7 @@ public class GametableFrame extends JFrame implements ActionListener
         
         // If Im the one who sent the packet, ignore it. 
         if(player == getMyPlayerId()) return;
-        getGrouping().packetReceived(action, group, pog);
+        PogGroups.packetReceived(action, group, pog);
     }
 
     /**

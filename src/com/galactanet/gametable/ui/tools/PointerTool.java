@@ -14,10 +14,7 @@ import java.util.*;
 
 import javax.swing.*;
 
-import com.galactanet.gametable.data.GametableMap;
-import com.galactanet.gametable.data.GridMode;
-import com.galactanet.gametable.data.Pog;
-import com.galactanet.gametable.data.PreferenceDescriptor;
+import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.PogType.Type;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -369,7 +366,7 @@ public class PointerTool extends NullTool
                 {
                     public void actionPerformed(final ActionEvent e)
                     {  
-                        GametableFrame.getGametableFrame().getGrouping().remove(m_menuPog);
+                        PogGroups.removePogFromGroup(m_menuPog);
                     }
                 });
                 menu.add(item);                

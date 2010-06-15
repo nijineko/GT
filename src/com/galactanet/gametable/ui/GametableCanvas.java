@@ -778,7 +778,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         final Pog toRemove = getActiveMap().getPogByID(id);
         if (toRemove != null)
         {
-            m_gametableFrame.getGrouping().remove(toRemove, false); //#grouping
+            PogGroups.removePogFromGroup(toRemove); //#grouping @revise automatic removal from group should be centralized in DATA
             getActiveMap().removePog(toRemove);
         }
         m_gametableFrame.refreshActivePogList();
@@ -1642,7 +1642,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                }
             }
         } else if(toMove.isGrouped()) {        
-            List<Pog> pogs = GametableFrame.getGametableFrame().getGrouping().getGroup(toMove.getGroup());
+            List<Pog> pogs = PogGroups.getGroupPogs(toMove.getGroup());
             Pog npog;
             int nx,ny,tx,ty;
             

@@ -13,7 +13,7 @@ import java.util.Map.Entry;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.Pog;
 import com.galactanet.gametable.data.PogType;
-import com.galactanet.gametable.data.Grouping.ActionType;
+import com.galactanet.gametable.data.PogGroups.Action;
 import com.galactanet.gametable.data.PogType.Type;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
@@ -531,7 +531,7 @@ public class PacketManager
      * @param closeLink
      * @return
      */
-    public static byte[] makeGroupPacket(ActionType action, final String group, final int pog, final int player) {
+    public static byte[] makeGroupPacket(Action action, final String group, final int pog, final int player) {
         try
         {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -579,7 +579,7 @@ public class PacketManager
         try
         {
             final int actionOrd = dis.readInt();
-            ActionType action = ActionType.fromOrdinal(actionOrd);
+            Action action = Action.fromOrdinal(actionOrd);
             
             final String group = dis.readUTF();             
             final int pog = dis.readInt();             
