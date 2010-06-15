@@ -166,7 +166,7 @@ public class SlashCommands
             final String value = pog.getAttribute(name);
             if ((value != null) && (value.length() > 0))
             {
-                String pogText = pog.getText();
+                String pogText = pog.getName();
                 if ((pogText == null) || (pogText.length() == 0))
                 {
                     pogText = "&lt;unknown&gt;";
@@ -319,7 +319,7 @@ public class SlashCommands
         }
 
         final String name = UtilityFunctions.stitchTogetherWords(words, 1);
-        final Pog pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getPogNamed(name);
+        final Pog pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getPogByName(name);
         if (pog == null)
         {
             logAlertMessage("Unable to find pog named \"" + name + "\".");

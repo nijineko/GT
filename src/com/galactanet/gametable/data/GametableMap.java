@@ -30,55 +30,62 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * 
  * @author sephalon
  * 
- * #GT-AUDIT GametableMap
+ *         #GT-AUDIT GametableMap
  * 
  * @revise listeners and triggers for pogs, selection, lines
  */
 public class GametableMap
 {
 	/**
-	 * Whether this is the public of private version of the map
-	 */
-	private final boolean				m_publicMap;
-
-	/**
 	 * Lines drawn on the map @revise should lines be an external graphical object?
 	 */
 	private final List<LineSegment>	m_lines;
-	
+
 	/**
-	 * Unmodifiable version of m_lines 
+	 * Unmodifiable version of m_lines
 	 */
 	private final List<LineSegment>	m_linesUnmodifiable;
 
 	/**
-	 * A copy of the pog list, kept in order, used by ActivePogsPanel. Excludes underlay pogs.
-	 * The order is simply the one chosen by the user to show on ActivePogsPanel.
+	 * A copy of the pog list, kept in order, used by ActivePogsPanel. Excludes underlay pogs. The order is simply the one
+	 * chosen by the user to show on ActivePogsPanel.
 	 * 
-	 * @revise this is redundant data.  If ActivePogsPanel requires such a list for its display purposes, it should not be stored in the map.
+	 * @revise this is redundant data. If ActivePogsPanel requires such a list for its display purposes, it should not be
+	 *         stored in the map.
 	 */
-	private SortedSet<Pog>		m_orderedPogs		= new TreeSet<Pog>();
+	private SortedSet<Pog>					m_orderedPogs	= new TreeSet<Pog>();
 
 	/**
 	 * List of pogs or all types to display on the map
+	 * 
 	 * @revise for layers
 	 */
-	private List<Pog>					m_pogs					= new ArrayList<Pog>();
+	private final List<Pog>					m_pogs;
 
 	/**
-	 * Lists the currently selected pogs
+	 * Unmodifiable list of pogs
 	 */
-	private final List<Pog>						m_selectedPogs;
-	
+	private final List<Pog>					m_pogsUnmodifiable;
+
 	/**
-	 * Unmodifiable version of the selected pogs to be returned to callers
+	 * Whether this is the public of private version of the map
 	 */
-	private final List<Pog>						m_selectedPogsUnmodifiable;
+	private final boolean						m_publicMap;
 
 	/**
 	 * Current scroll coordinates, relative to scroll origin
 	 */
-	private Point	m_scrollPos = new Point();
+	private Point										m_scrollPos		= new Point();
+
+	/**
+	 * Lists the currently selected pogs
+	 */
+	private final List<Pog>					m_selectedPogs;
+
+	/**
+	 * Unmodifiable version of the selected pogs to be returned to callers
+	 */
+	private final List<Pog>					m_selectedPogsUnmodifiable;
 
 	// @revise #{@link javax.swing.undo.UndoableEdit}
 
@@ -92,93 +99,50 @@ public class GametableMap
 		m_publicMap = publicMap;
 		m_selectedPogs = new ArrayList<Pog>();
 		m_selectedPogsUnmodifiable = Collections.unmodifiableList(m_selectedPogs);
-		
+
 		m_lines = new ArrayList<LineSegment>();
 		m_linesUnmodifiable = Collections.unmodifiableList(m_lines);
+
+		m_pogs = new ArrayList<Pog>();
+		m_pogsUnmodifiable = Collections.unmodifiableList(m_pogs);
 	}
 
 	/**
 	 * Adds a line segment to the map
+	 * 
 	 * @param ls line segment to add
 	 */
-	public void addLine(LineSegment ls)
+	public void addLineSegment(LineSegment ls)
 	{
 		m_lines.add(ls);
-		// @revise whichever process is building an undo stack should combine consecutive line segments from the same user 
-	}
-
-	/**
-	 * Adds a pog to the map
-	 * @param pog
-	 */
-	public void addPog(Pog pog)
-	{
-		m_pogs.add(pog);
-		
-		if (!pog.isUnderlay())
-		{
-			m_orderedPogs.add(pog);
-		}
+		// @revise whichever process is building an undo stack should combine consecutive line segments from the same user
 	}
 
 	/**
 	 * Adds a pog to the ordered list used by the ActivePogs panel @revise this should not be here.
+	 * 
 	 * @deprecated
 	 * @param pog
 	 */
+	@Deprecated
 	public void addOrderedPog(final Pog pog)
 	{
 		m_orderedPogs.add(pog);
 	}
 
 	/**
-	 * Adds a pog to the selected pog list
-	 * @param pog Pog to add to selection
+	 * Adds a pog to the map
+	 * 
+	 * @param pog
 	 */
-	public void selectPog(Pog pog)
+	public void addPog(Pog pog)
 	{
-		m_selectedPogs.add(pog);
-		pog.setSelected(true);
-		// @revise trigger listeners 
-	}
+		m_pogs.add(pog);
 
-	/**
-	 * Add multiple pogs to the selection
-	 * @param pogs List of pogs to add to the selection
-	 */
-	public void selectPogs(final List<Pog> pogs)
-	{
-		m_selectedPogs.addAll(pogs);
-		
-		for (Pog pog : pogs)
-			pog.setSelected(true);
-		
-		// @revise trigger listeners
-	}
-
-	/**
-	 * Remove a pog from the selection
-	 * @param pog Pog to remove
-	 */
-	public void unselectPog(final Pog pog)
-	{
-		m_selectedPogs.remove(pog);
-		pog.setSelected(false);
-		
-		// @revise trigger listeners
-	}
-	
-	/**
-	 * Remove all pogs from selection 
-	 */
-	public void unselectAllPogs()
-	{
-		for (Pog pog : m_selectedPogs)
-			pog.setSelected(false);
-
-		m_selectedPogs.clear();
-		
-		// @revise trigger listeners
+		if (!pog.isUnderlay())
+		{
+			m_orderedPogs.add(pog);
+		}
 	}
 
 	/**
@@ -199,36 +163,34 @@ public class GametableMap
 		m_orderedPogs.clear();
 		// @revise trigger listeners
 	}
-	
+
 	/**
 	 * Get unmodifiable list of lines contained within GameTableMap
+	 * 
 	 * @return list of LineSegment (never null)
 	 */
-	public List<LineSegment> getLines() 
+	public List<LineSegment> getLines()
 	{
 		return m_linesUnmodifiable;
 	}
 
-	
-	
-	
-	
-	
-	public int getNumPogs()
-	{
-		return m_pogs.size();
-	}
-
+	/**
+	 * Returns a list of pogs in some order
+	 * 
+	 * @revise should be within the UI that handles these things - nothing to do with map data
+	 * @return
+	 */
 	public SortedSet<Pog> getOrderedPogs()
 	{
 		return Collections.unmodifiableSortedSet(m_orderedPogs);
 	}
 
-	public Pog getPog(final int idx)
-	{
-		return m_pogs.get(idx);
-	}
-
+	/**
+	 * Get Pog matching given position on the map
+	 * 
+	 * @param modelPosition Coordinates to test for
+	 * @return Matching Pog or none
+	 */
 	public Pog getPogAt(final Point modelPosition)
 	{
 		if (modelPosition == null)
@@ -241,10 +203,8 @@ public class GametableMap
 		Pog overlayHit = null;
 		Pog underlayHit = null;
 
-		for (int i = 0; i < getNumPogs(); i++)
+		for (Pog pog : m_pogs)
 		{
-			final Pog pog = getPog(i);
-
 			if (pog.testHit(modelPosition))
 			{
 				// they clicked this pog
@@ -253,12 +213,15 @@ public class GametableMap
 				case UNDERLAY:
 					underlayHit = pog;
 					break;
+
 				case OVERLAY:
 					overlayHit = pog;
 					break;
+
 				case ENVIRONMENT:
 					envHit = pog;
 					break;
+
 				case POG:
 					pogHit = pog;
 					break;
@@ -266,89 +229,112 @@ public class GametableMap
 			}
 		}
 
-		// pogs take priority over underlays
+		// Pogs is top layer
 		if (pogHit != null)
-		{
 			return pogHit;
-		}
 
+		// Environment is 2nd layer
 		if (envHit != null)
 			return envHit;
+
+		// Overlay is 3rd layer
 		if (overlayHit != null)
 			return overlayHit;
 
+		// Underlay is fourth layer
 		return underlayHit;
 	}
 
+	/**
+	 * Get Pog by PogID
+	 * 
+	 * @param id ID of the pog we are looking for
+	 * @return Matching Pog or null
+	 */
 	public Pog getPogByID(final int id)
 	{
-		for (int i = 0, size = getNumPogs(); i < size; ++i)
+		for (Pog pog : m_pogs)
 		{
-			final Pog pog = getPog(i);
 			if (pog.getId() == id)
-			{
 				return pog;
-			}
 		}
 
 		return null;
 	}
 
-	public Pog getPogNamed(final String pogName)
+	/**
+	 * Get pog by name
+	 * 
+	 * @param pogName name of the pog we are looking for
+	 * @return Pog or null
+	 */
+	public Pog getPogByName(final String pogName)
 	{
-		final List<Pog> pogs = getPogsNamed(pogName);
-		if (pogs.isEmpty())
-		{
-			return null;
-		}
-
-		return pogs.get(0);
+		return getPogsByName(pogName, null);
 	}
 
+	/**
+	 * Get list of pogs
+	 * 
+	 * @return unmodifiable list of pogs
+	 */
 	public List<Pog> getPogs()
 	{
-		return Collections.unmodifiableList(m_pogs); // @comment {themaze75} The returned unmodifiableList remains in sync
-																									// with the original list - we can retain only one instance here
-																									// instead of creating a new one each call
+		return m_pogsUnmodifiable;
 	}
 
-	public List<Pog> getPogsNamed(final String pogName)
+	/**
+	 * Find pogs matching a given name
+	 * 
+	 * @param pogName Name of the pog we are looking for
+	 * @return List of matching pogs (never null)
+	 */
+	public List<Pog> getPogsByName(String pogName)
 	{
-		final String normalizedName = UtilityFunctions.normalizeName(pogName);
-		final List<Pog> retVal = new ArrayList<Pog>();
-		for (int i = 0, size = getNumPogs(); i < size; ++i)
-		{
-			final Pog pog = getPog(i);
-			if (UtilityFunctions.normalizeName(pog.getText()).equals(normalizedName))
-			{
-				retVal.add(pog);
-			}
-		}
+		List<Pog> retVal = new ArrayList<Pog>();
+		getPogsByName(pogName, retVal);
 
 		return retVal;
 	}
 
+	/**
+	 * Gets the X coordinate of the scroll position
+	 * 
+	 * @revise move to VIEW
+	 * @return
+	 */
 	public int getScrollX()
 	{
 		return m_scrollPos.x;
 	}
 
+	/**
+	 * Gets the Y coordinate of the scroll position
+	 * 
+	 * @revise move to VIEW
+	 * @return
+	 */
 	public int getScrollY()
 	{
 		return m_scrollPos.y;
 	}
-	
+
 	/**
 	 * Gets selected pogs list
-	 * @return The list of currently selected pogs (unmodifiable).  Never null.
+	 * 
+	 * @revise move to VIEW?
+	 * @return The list of currently selected pogs (unmodifiable). Never null.
+	 * 
 	 */
 	public List<Pog> getSelectedPogs()
 	{
 		return m_selectedPogsUnmodifiable;
 	}
-	
+
 	/**
 	 * Checks if this is a private or public map
+	 * 
+	 * @revise Relevant?
 	 * @return
 	 */
 	public boolean isPublicMap()
@@ -356,17 +342,23 @@ public class GametableMap
 		return m_publicMap;
 	}
 
+	/**
+	 * Remove pogs linked to cards
+	 * 
+	 * @revise move to Card Module
+	 * @param discards
+	 */
 	public void removeCardPogsForCards(final Card discards[])
 	{
 		final List<Pog> removeList = new ArrayList<Pog>();
 
-		for (int i = 0; i < m_pogs.size(); i++)
+		for (Pog pog : m_pogs)
 		{
-			final Pog pog = m_pogs.get(i);
 			if (pog.isCardPog())
 			{
 				final Card pogCard = pog.getCard();
-				// this is a card pog. Is it oue of the discards?
+
+				// this is a card pog. Is it out of the discards?
 				for (int j = 0; j < discards.length; j++)
 				{
 					if (pogCard.equals(discards[j]))
@@ -379,38 +371,64 @@ public class GametableMap
 		}
 
 		// remove any offending pogs
-		if (removeList.size() > 0)
-		{
-			for (int i = 0; i < removeList.size(); i++)
-			{
-				removePog(removeList.get(i));
-			}
-		}
+		removePogs(removeList);
 	}
 
-	public void removeLine(final LineSegment ls)
+	/**
+	 * Remove line segment from map
+	 * 
+	 * @param ls line segment to remove
+	 */
+	public void removeLineSegment(final LineSegment ls)
 	{
 		m_lines.remove(ls);
 	}
 
+	/**
+	 * Remove ordered pog
+	 * 
+	 * @revise move to ActivePogPanel
+	 * @param pog
+	 */
 	public void removeOrderedPog(final Pog pog)
 	{
 		m_orderedPogs.remove(pog);
 	}
 
+	/**
+	 * Remove a given pog from the map
+	 * 
+	 * @param pog pog to remove
+	 */
 	public void removePog(final Pog pog)
 	{
-		removePog(pog, false);
-	}
-
-	public void removePog(final Pog pog, final boolean selected)
-	{
-		if (selected)
+		if (pog.isSelected())
 			unselectPog(pog);
+
 		m_pogs.remove(pog);
 		m_orderedPogs.remove(pog);
+
+		// @revise trigger listeners
 	}
 
+	/**
+	 * Remove multiple pogs from the map
+	 * 
+	 * @param pogs list of pogs to remove
+	 */
+	public void removePogs(List<Pog> pogs)
+	{
+		for (Pog pog : pogs)
+			removePog(pog);
+
+		// @revise trigger listeners
+	}
+
+	/**
+	 * TODO @revise I don't get this.
+	 * 
+	 * @param changes
+	 */
 	public void reorderPogs(final Map<Integer, Long> changes)
 	{
 		if (changes == null)
@@ -424,21 +442,115 @@ public class GametableMap
 		}
 	}
 
-	public void setScroll(final int x, final int y)
+	/**
+	 * Adds a pog to the selected pog list
+	 * 
+	 * @param pog Pog to add to selection
+	 */
+	public void selectPog(Pog pog)
+	{
+		m_selectedPogs.add(pog);
+		pog.setSelected(true);
+		// @revise trigger listeners
+	}
+
+	/**
+	 * Add multiple pogs to the selection
+	 * 
+	 * @param pogs List of pogs to add to the selection
+	 */
+	public void selectPogs(final List<Pog> pogs)
+	{
+		m_selectedPogs.addAll(pogs);
+
+		for (Pog pog : pogs)
+			pog.setSelected(true);
+
+		// @revise trigger listeners
+	}
+
+	/**
+	 * Set the scroll position
+	 * 
+	 * @revise move to VIEW
+	 * @param x x coordinates of the scroll position
+	 * @param y y coordinates of the scroll position
+	 */
+	public void setScrollPosition(final int x, final int y)
 	{
 		m_scrollPos.setLocation(x, y);
 	}
 
-	public void setSortOrder(final int id, final long order)
+	/**
+	 * Set the sort order for a given pog
+	 * 
+	 * @param pogID pog ID to look for
+	 * @param sortOrder sort order number
+	 * @revise move to ActivePogPanel
+	 */
+	public void setSortOrder(int pogID, long sortOrder)
 	{
-		final Pog pog = getPogByID(id);
+		final Pog pog = getPogByID(pogID);
 		if (pog == null)
-		{
 			return;
+
+		// @revise won't the OrderedSet resort itself when iterating through the list?
+		m_orderedPogs.remove(pog);
+		pog.setSortOrder(sortOrder);
+		m_orderedPogs.add(pog);
+	}
+
+	/**
+	 * Remove all pogs from selection
+	 */
+	public void unselectAllPogs()
+	{
+		for (Pog pog : m_selectedPogs)
+			pog.setSelected(false);
+
+		m_selectedPogs.clear();
+
+		// @revise trigger listeners
+	}
+
+	/**
+	 * Remove a pog from the selection
+	 * 
+	 * @param pog Pog to remove
+	 */
+	public void unselectPog(final Pog pog)
+	{
+		m_selectedPogs.remove(pog);
+		pog.setSelected(false);
+
+		// @revise trigger listeners
+	}
+
+	/**
+	 * Find pogs matching a given name
+	 * 
+	 * @param pogName Name of the pog we are looking for
+	 * @param pogList if non-null, will be populated with all matching pogs
+	 * @return If pogList is null, will return first matching Pog
+	 */
+	private Pog getPogsByName(String pogName, List<Pog> pogList)
+	{
+		if (pogName == null || pogName.equals(""))
+			return null;
+
+		final String normalizedName = UtilityFunctions.normalizeName(pogName);
+
+		for (Pog pog : m_pogs)
+		{
+			if (pog.getNormalizedName().equals(normalizedName))
+			{
+				if (pogList != null)
+					pogList.add(pog);
+				else
+					return pog;
+			}
 		}
 
-		m_orderedPogs.remove(pog);
-		pog.setSortOrder(order);
-		m_orderedPogs.add(pog);
+		return null;
 	}
 }

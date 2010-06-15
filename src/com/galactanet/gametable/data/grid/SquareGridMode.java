@@ -3,12 +3,13 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.grid;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 
+import com.galactanet.gametable.data.GridMode;
 import com.galactanet.gametable.ui.GametableCanvas;
 
 
@@ -25,8 +26,11 @@ public class SquareGridMode extends GridMode
     {
     }
 
-    // draws the lines to the canvas. Assumes there is a properly offset graphics object passed in
-    public void drawLines(final Graphics g, final int topLeftX, final int topLeftY, final int width, final int height)
+    /*
+    * @see com.galactanet.gametable.data.GridMode#drawLines(java.awt.Graphics2D, int, int, int, int)
+    */
+    @Override
+    public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)    
     {
         if (m_canvas.m_zoom == 4)
         {
@@ -85,15 +89,17 @@ public class SquareGridMode extends GridMode
         }
     }
 
-    public void init(final GametableCanvas canvas)
+    @Override
+		public void init(final GametableCanvas canvas)
     {
         super.init(canvas);
     }
 
-    public Point snapPointEx(final Point modelPointIn, final boolean bSnapForPog, final int pogSize)
+    @Override
+		public Point getSnappedPixelCoordinates(final Point modelPointIn, final boolean bSnapForPog, final int pogSize)
     {
-        int x = getGridSnap(modelPointIn.x);
-        int y = getGridSnap(modelPointIn.y);
+        int x = getSnappedPixelCoordinates(modelPointIn.x);
+        int y = getSnappedPixelCoordinates(modelPointIn.y);
         // Use old behavior when we're dealing with a pog.
         if( bSnapForPog )
         {
@@ -109,11 +115,13 @@ public class SquareGridMode extends GridMode
         candidates[3] = new Point( x-foo, y+foo ); // Nearby center
         candidates[4] = new Point( x+foo, y+foo ); // Nearby center
         closest = getClosestPoint(modelPointIn, candidates);
+        
         if (closest == null)
         {
             System.out.println("Error snapping to point");
             return new Point(x, y);
         }
+
         return closest;
     }
 

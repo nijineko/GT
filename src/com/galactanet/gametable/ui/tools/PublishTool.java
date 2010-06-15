@@ -62,10 +62,9 @@ public class PublishTool extends NullTool
     // turns off all the tinting for the pogs
     public void clearTints()
     {
-        for (int i = 0; i < m_from.getNumPogs(); i++)
-        {
-            m_from.getPog(i).setTinted(false);
-        }
+    	// @revise move to MODEL?
+    	for (Pog pog : m_from.getPogs())
+    		pog.setTinted(false);
     }
 
     public void endAction()
@@ -121,9 +120,8 @@ public class PublishTool extends NullTool
             // GametableFrame frame = GametableFrame.g_gameTableFrame;
 
             // first off, copy all the pogs/underlays over to the public layer
-            for (int i = 0; i < m_from.getNumPogs(); i++)
+        	for (Pog pog : m_from.getPogs())
             {
-                final Pog pog = m_from.getPog(i);
                 if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
                     // this pog gets copied
@@ -173,14 +171,12 @@ public class PublishTool extends NullTool
             if (bDeleteFromPrivate)
             {
                 // remove the pogs that we moved
-                for (int i = 0; i < m_from.getNumPogs(); i++)
+            	
+            	for (Pog pog : m_from.getPogs().toArray(new Pog[0]))	// converting list to array to avoid concurrent modifications
                 {
-                    final Pog pog = m_from.getPog(i);
                     if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
-                        m_canvas.removePog(pog.getId(), false);
-                        //i--; // causing me an infinite loop for some reason.
-                        if (!((m_canvas.getNetStatus() == 2) && m_canvas.isPublicMap())) { i--; }
+                        m_canvas.removePog(pog.getId(), false);	// this would cause concurrent modifications if we used the returned list directly 
                     }
                 }
 
@@ -235,10 +231,8 @@ public class PublishTool extends NullTool
     {
         final Rectangle selRect = createRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (int i = 0; i < m_from.getNumPogs(); i++)
+        for (Pog pog : m_from.getPogs())
         {
-            final Pog pog = m_from.getPog(i);
-
             final int size = pog.getFaceSize() * GametableCanvas.BASE_SQUARE_SIZE;
             final Point tl = new Point(pog.getPosition());
             final Point br = new Point(pog.getPosition());

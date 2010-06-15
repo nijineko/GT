@@ -50,10 +50,9 @@ public class SelectTool extends NullTool
     // turns off all the tinting for the pogs
     public void clearTints()
     {
-        for (int i = 0; i < m_map.getNumPogs(); i++)
-        {
-            m_map.getPog(i).setTinted(false);
-        }
+    	// @revise move to MODEL ?
+    	for (Pog pog : m_map.getPogs())
+    		pog.setTinted(false);       
     }
 
     public void endAction()
@@ -106,17 +105,12 @@ public class SelectTool extends NullTool
 
             // first off, copy all the pogs/underlays over to the public layer
             
-System.out.println("start");            
-            for (int i = 0; i < m_map.getNumPogs(); i++)
+            for (Pog pog : m_map.getPogs())
             {
-System.out.println("lop " + i);                
-                final Pog pog = m_map.getPog(i);
                 if (pog.isTinted() && (!pog.isLocked() || bIgnoreLock)) {
                     m_map.selectPog(pog);
-                }
-                
+                }                
             }
-System.out.println("end");            
         }
         endAction();
     }
@@ -158,10 +152,8 @@ System.out.println("end");
     {
         final Rectangle selRect = createRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (int i = 0; i < m_map.getNumPogs(); i++)
+        for (Pog pog : m_map.getPogs())
         {
-            final Pog pog = m_map.getPog(i);
-
             final int size = pog.getFaceSize() * GametableCanvas.BASE_SQUARE_SIZE;
             final Point tl = new Point(pog.getPosition());
             final Point br = new Point(pog.getPosition());

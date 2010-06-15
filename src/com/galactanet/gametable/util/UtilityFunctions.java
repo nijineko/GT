@@ -786,6 +786,12 @@ public class UtilityFunctions
         JOptionPane.showMessageDialog(parent, msg, title, JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /**
+     * Normalize an internal name.
+     * Removes white space, moves to lower case, removes illegal characters 
+     * @param name Name to normalize
+     * @return normalized name
+     */
     public static String normalizeName(final String name)
     {
         final String in = name.trim().toLowerCase();

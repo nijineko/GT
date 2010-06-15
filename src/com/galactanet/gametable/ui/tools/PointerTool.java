@@ -413,7 +413,7 @@ public class PointerTool extends NullTool
                 public void actionPerformed(final ActionEvent e)
                 {
                     final String s = (String)JOptionPane.showInputDialog(GametableFrame.getGametableFrame(),
-                        "Enter new name for this Pog:", "Set Pog Name", JOptionPane.PLAIN_MESSAGE, null, null, m_menuPog.getText());
+                        "Enter new name for this Pog:", "Set Pog Name", JOptionPane.PLAIN_MESSAGE, null, null, m_menuPog.getName());
 
                     if (s != null)
                     {

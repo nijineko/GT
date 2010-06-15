@@ -30,6 +30,8 @@ import javax.swing.text.JTextComponent;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.PogType.Type;
 import com.galactanet.gametable.data.deck.Card;
+import com.galactanet.gametable.data.grid.HexGridMode;
+import com.galactanet.gametable.data.grid.SquareGridMode;
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.tools.NullTool;
@@ -633,7 +635,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
         	GametableMap map = getActiveMap();
         	for (LineSegment line : lines)
-        		map.addLine(line);
+        		map.addLineSegment(line);
             
         }
         
@@ -645,7 +647,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         if (line != null)
         {
         	GametableMap map = getActiveMap();
-        	map.addLine(line);            
+        	map.addLineSegment(line);            
         }
         
         repaint();
@@ -701,7 +703,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         getActiveMap().clearLines();
         for (int i = 0; i < survivingLines.size(); i++)
         {
-            getActiveMap().addLine(survivingLines.get(i));
+            getActiveMap().addLineSegment(survivingLines.get(i));
         }
         repaint();
     }
@@ -921,7 +923,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
         if (s != null)
         {
-            pog.setText(s);
+            pog.setName(s);
         }
 
         if (toDelete != null)
@@ -1467,7 +1469,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return modelToDraw(new Point(modelX, modelY));
     }
 
-    // conversion from model to view coordinates
+    /**
+     * Convert coordinates from map coordinates to Graphics device coordinates
+     * @param modelPoint
+     * @return
+     */
+    
     public Point modelToDraw(final Point modelPoint)
     {
         final double squaresX = (double)modelPoint.x / (double)BASE_SQUARE_SIZE;
@@ -1677,8 +1684,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         GametableMap mapToReplace;
         if (isPublicMap()) mapToReplace = m_publicMap;
         else mapToReplace = m_privateMap;
-        for (int i = 0; i < mapToReplace.getNumPogs(); i++) {
-            final Pog pog = mapToReplace.getPog(i);
+        
+        for (Pog pog : mapToReplace.getPogs())
+        {
             if(pog.getPogType() == toReplace) {
                 pog.setPogType(replaceWith);
             }
@@ -1758,11 +1766,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         int sx = mapToExport.getScrollX();
         int sy = mapToExport.getScrollY();
         
-        mapToExport.setScroll(mapBounds.x, mapBounds.y);
+        mapToExport.setScrollPosition(mapBounds.x, mapBounds.y);
         
         paintComponent(g, mapBounds.width, mapBounds.height);
         
-        mapToExport.setScroll(sx, sy);
+        mapToExport.setScrollPosition(sx, sy);
    
         ImageIO.write(image, "jpg", outputFile);
     }
@@ -1788,9 +1796,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     
         // pogs
-        for (int i = 0; i < map.getNumPogs(); i++)
+        for (Pog pog : map.getPogs())
         {
-            final Pog pog = map.getPog(i);
             Rectangle r = pog.getBounds(this);
             
             if (bounds == null)
@@ -1807,6 +1814,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void paintMap(final Graphics g, final GametableMap mapToDraw, int width, int height)
     {
+    	Graphics2D g2 = (Graphics2D)g;
+    	
         g.translate(-mapToDraw.getScrollX(), -mapToDraw.getScrollY());
 
         // we don't draw the matte if we're on the private map)
@@ -1816,9 +1825,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
 
         // draw all the underlays here
-        for (int i = 0; i < mapToDraw.getNumPogs(); i++)
+        for (Pog pog : mapToDraw.getPogs())
         {
-            final Pog pog = mapToDraw.getPog(i);
             if (pog.isUnderlay())
             {
                 pog.drawToCanvas(g);
@@ -1846,9 +1854,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
         
         // Overlays
-        for (int i = 0; i < mapToDraw.getNumPogs(); i++)
+        for (Pog pog : mapToDraw.getPogs())
         {
-            final Pog pog = mapToDraw.getPog(i);
             if (pog.getLayer() == Type.OVERLAY)
             {
                 pog.drawToCanvas(g);
@@ -1859,7 +1866,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         // we don't draw the grid if we're on the private map)
         if (mapToDraw != m_privateMap)
         {
-            m_gridMode.drawLines(g, mapToDraw.getScrollX(), mapToDraw.getScrollY(), width, height);
+            m_gridMode.drawLines(g2, mapToDraw.getScrollX(), mapToDraw.getScrollY(), width, height);
         }
 
         // lines
@@ -1871,9 +1878,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
         
         // env
-        for (int i = 0; i < mapToDraw.getNumPogs(); i++)
+        for (Pog pog : mapToDraw.getPogs())
         {
-            final Pog pog = mapToDraw.getPog(i);
             if (pog.getLayer() == Type.ENVIRONMENT)
             {
                 pog.drawToCanvas(g);
@@ -1882,9 +1888,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 
         // pogs
-        for (int i = 0; i < mapToDraw.getNumPogs(); i++)
+        for (Pog pog : mapToDraw.getPogs())
         {
-            final Pog pog = mapToDraw.getPog(i);
             if (pog.getLayer() == Type.POG)
             {
                 pog.drawToCanvas(g);
@@ -1947,9 +1952,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             if (m_bShiftKeyDown || m_gametableFrame.shouldShowNames())
             {
                 // this shift key is down. Show all pog data
-                for (int i = 0; i < mapToDraw.getNumPogs(); i++)
-                {
-                    final Pog pog = mapToDraw.getPog(i);
+            	for (Pog pog : mapToDraw.getPogs())
+            	{            		
                     if (pog != mouseOverPog)
                     {
                         pog.drawTextToCanvas(g, false, false);
@@ -1964,9 +1968,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
 
         // most prevalent of the pog text is any recently changed pog text
-        for (int i = 0; i < mapToDraw.getNumPogs(); i++)
+        for (Pog pog : mapToDraw.getPogs())
         {
-            final Pog pog = mapToDraw.getPog(i);
             if (pog != mouseOverPog)
             {
                 pog.drawChangedTextToCanvas(g);
@@ -2342,8 +2345,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public void setPrimaryScroll(final GametableMap mapToSet, final int x, final int y)
     {
-        m_publicMap.setScroll(x, y);
-        m_privateMap.setScroll(x, y);
+        m_publicMap.setScrollPosition(x, y);
+        m_privateMap.setScrollPosition(x, y);
         /*
          * int dx = x - mapToSet.getScrollX(); int dy = y - mapToSet.getScrollY(); m_publicMap.setScroll(dx +
          * mapToSet.getScrollX(), dy + mapToSet.getScrollY()); m_privateMap.setScroll(dx + mapToSet.getScrollX(), dy +
@@ -2406,7 +2409,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public Point snapPoint(final Point modelPoint)
     {
-        return m_gridMode.snapPoint(modelPoint);
+        return m_gridMode.getSnappedPixelCoordinates(modelPoint);
     }
 
     // --- Drawing ---
@@ -2414,7 +2417,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public Point snapViewPoint(final Point viewPoint)
     {
         final Point modelPoint = viewToModel(viewPoint);
-        final Point modelSnap = m_gridMode.snapPoint(modelPoint);
+        final Point modelSnap = m_gridMode.getSnappedPixelCoordinates(modelPoint);
         final Point viewSnap = modelToView(modelSnap);
         return viewSnap;
     }
