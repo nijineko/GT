@@ -61,7 +61,7 @@ public class ActivePogsPanel extends JPanel
             {
                 return attribute + ": ";
             }
-            return pog.getText();
+            return pog.getName();
         }
 
         /**

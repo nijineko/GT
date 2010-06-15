@@ -142,6 +142,7 @@ public class Pog implements Comparable<Pog>
 
     /**
      * The unique id of this pog.
+     * @revise do we want to make this type safe?
      */
     private int                m_id                       = 0;
 
@@ -166,14 +167,19 @@ public class Pog implements Comparable<Pog>
     private float              m_scale                    = 1f;
 
     /**
-     * The sort order for this pog.
+     * The sort order for this pog.  Pogs are sorted according to this number.
      */
     private long               m_sortOrder                = 0;
 
     /**
      * The primary label for the Pog.
      */
-    private String             m_text                     = "";
+    private String             m_name                     = "";
+    
+    /**
+     * The normalized name for the pog
+     */
+    private String 							m_nameNormalized					= "";
 
     /**
      * Hit map for this pog.
@@ -231,6 +237,8 @@ public class Pog implements Comparable<Pog>
 
     private void displayPogDataChange()
     {
+    	//@revise trigger listeners instead
+    	
         // we don't do this if the game is receiving inital data.
         if (PacketSourceState.isHostDumping())
         {
@@ -417,14 +425,14 @@ public class Pog implements Comparable<Pog>
     private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor,
         boolean drawAttributes)
     {
-        if (m_text == null)
+        if (m_name == null)
         {
-            m_text = "";
+            m_name = "";
         }
         final Graphics2D g = (Graphics2D)gr.create();
         g.setFont(FONT_TEXT);
         final FontMetrics metrics = g.getFontMetrics();
-        final Rectangle stringBounds = metrics.getStringBounds(m_text, g).getBounds();
+        final Rectangle stringBounds = metrics.getStringBounds(m_name, g).getBounds();
 
         final int totalWidth = stringBounds.width + 6;
         final int totalHeight = stringBounds.height + 1;
@@ -461,7 +469,7 @@ public class Pog implements Comparable<Pog>
             }
         }
 
-        if (m_text.length() > 0)
+        if (m_name.length() > 0)
         {
             g.setColor(backgroundColor);
             g.fill(backgroundRect);
@@ -471,7 +479,7 @@ public class Pog implements Comparable<Pog>
                 + metrics.getAscent();
 
             g.setColor(Color.BLACK);
-            g.drawString(m_text, stringX, stringY);
+            g.drawString(m_name, stringX, stringY);
 
             g.drawRect(backgroundRect.x, backgroundRect.y, backgroundRect.width - 1, backgroundRect.height - 1);
         }
@@ -640,6 +648,10 @@ public class Pog implements Comparable<Pog>
         return m_card;
     }
 
+    /**
+     * Get face size of the pog, in map coordinates (ex: squares)
+     * @return Size of a face
+     */
     public int getFaceSize()
     {
         if (m_scale == 1f)
@@ -718,10 +730,23 @@ public class Pog implements Comparable<Pog>
     {
         return m_sortOrder;
     }
-
-    public String getText()
+    
+    /**
+     * Return the pog's normalized name
+     * @return normalized name
+     */
+    public String getNormalizedName()
     {
-        return m_text;
+    	return m_nameNormalized;
+    }
+
+    /**
+     * Return the pog's display name
+     * @return display name
+     */
+    public String getName()
+    {
+        return m_name;
     }
 
     public int getWidth()
@@ -783,7 +808,9 @@ public class Pog implements Comparable<Pog>
         m_angle = orig.m_angle;
         m_flipH = orig.m_flipH;
         m_flipV = orig.m_flipV;
-        m_text = orig.m_text;
+
+        setName(orig.m_name, true);
+        
         m_layer    = orig.m_layer;
         m_forceGridSnap = orig.m_forceGridSnap;
 
@@ -820,7 +847,7 @@ public class Pog implements Comparable<Pog>
         final int size = dis.readInt();
         m_id = dis.readInt();
         m_sortOrder = dis.readLong();
-        m_text = dis.readUTF();
+        setName(dis.readUTF(), true);
         // boolean underlay =
         
         boolean underlay = dis.readBoolean();
@@ -993,7 +1020,7 @@ public class Pog implements Comparable<Pog>
         
         if ( cardName.length() > 0 )
         {
-            m_text = cardName;
+            setName(cardName, true);
         }
         if ( cardDesc.length() > 0 )
         {
@@ -1140,11 +1167,19 @@ public class Pog implements Comparable<Pog>
     {
         m_sortOrder = order;
     }
-
-    public void setText(final String text)
+    
+    public void setName(String name)
     {
-        m_text = text;
-        displayPogDataChange();
+    	setName(name, false);
+    }
+
+    public void setName(String name, boolean silent)
+    {
+        m_name = name;
+        m_nameNormalized = UtilityFunctions.normalizeName(m_name);
+        
+        if (!silent)
+        	displayPogDataChange();
     }
     
 
@@ -1284,7 +1319,7 @@ public class Pog implements Comparable<Pog>
         dos.writeInt(getPogType().getFaceSize());
         dos.writeInt(m_id);
         dos.writeLong(m_sortOrder);
-        dos.writeUTF(m_text);
+        dos.writeUTF(m_name);
         dos.writeBoolean(isUnderlay());
         dos.writeFloat(m_scale);
         dos.writeDouble(m_angle);

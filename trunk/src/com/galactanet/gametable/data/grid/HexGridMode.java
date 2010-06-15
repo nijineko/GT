@@ -3,12 +3,13 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.grid;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
 
+import com.galactanet.gametable.data.GridMode;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -30,8 +31,11 @@ public class HexGridMode extends GridMode
     {
     }
 
-    // draws the lines to the canvas. Assumes there is a properly offset graphics object passed in
-    public void drawLines(final Graphics g, final int topLeftX, final int topLeftY, final int width, final int height)
+    /*
+    * @see com.galactanet.gametable.data.GridMode#drawLines(java.awt.Graphics2D, int, int, int, int)
+    */
+    @Override
+    public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)
     {
         if (m_canvas.m_zoom == 4)
         {
@@ -122,12 +126,14 @@ public class HexGridMode extends GridMode
 
     // overrides. We don't have the same scale in x as we do in y
     // the y is still 1.0, so we don't override it. But the X is a different story
-    public double getDistanceMultplierX()
+    @Override
+		public double getDistanceMultplierX()
     {
         return 0.866;
     }
 
-    public void init(final GametableCanvas canvas)
+    @Override
+		public void init(final GametableCanvas canvas)
     {
         super.init(canvas);
 
@@ -181,7 +187,8 @@ public class HexGridMode extends GridMode
         return dist;
     }
 
-    public Point snapPointEx(final Point modelPointIn, final boolean bSnapForPog, final int pogSize)
+    @Override
+		public Point getSnappedPixelCoordinates(final Point modelPointIn, final boolean bSnapForPog, final int pogSize)
     {
         final Point modelPoint = new Point(modelPointIn);
         if (bSnapForPog)
@@ -196,7 +203,7 @@ public class HexGridMode extends GridMode
         // plus the center. How annoying is that, eh?
 
         // start with the grid snap location for the x coordinate
-        int x = getGridSnap(modelPoint.x);
+        int x = getSnappedPixelCoordinates(modelPoint.x);
 
         // from that, get the grid location.
         final int gridX = x / GametableCanvas.BASE_SQUARE_SIZE;
@@ -209,7 +216,7 @@ public class HexGridMode extends GridMode
         }
 
         // now work out which "grid" (hex, really) the y value is in
-        int y = getGridSnap(modelPoint.y - offsetY);
+        int y = getSnappedPixelCoordinates(modelPoint.y - offsetY);
 
         // add back the offset
         y += offsetY;

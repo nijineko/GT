@@ -1230,19 +1230,13 @@ public class GametableFrame extends JFrame implements ActionListener
 
     /**
      * erases all pogs, also clearing the array of active pogs
+     * @revise move to MODEL.
      */
     public void eraseAllPogs()
     {
         // make an int array of all the IDs
-        final int removeArray[] = new int[getGametableCanvas().getActiveMap().getNumPogs()];
-
-        for (int i = 0; i < getGametableCanvas().getActiveMap().getNumPogs(); i++)
-        {
-            final Pog pog = getGametableCanvas().getActiveMap().getPog(i);
-            removeArray[i] = pog.getId();
-        }
-
-        getGametableCanvas().removePogs(removeArray, true);
+    	List<Pog> pogs = getGametableCanvas().getActiveMap().getPogs();
+      getGametableCanvas().removePogs(pogs, true);
     }
 
     /**
@@ -2415,7 +2409,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 for (Pog pog : map.getSelectedPogs())
                 {
                   to.addPog(pog);
-                  map.removePog(pog, true);                        
+                  map.removePog(pog);
                   if(copy) 
                   {
                       npog = new Pog(pog);
@@ -3164,7 +3158,7 @@ public class GametableFrame extends JFrame implements ActionListener
             m_myPlayerIndex = 0;
 
             // reset game data
-            getGametableCanvas().getPublicMap().setScroll(0, 0);
+            getGametableCanvas().getPublicMap().setScrollPosition(0, 0);
             getGametableCanvas().getPublicMap().clearPogs();
             getGametableCanvas().getPublicMap().clearLines();
             // PacketManager.g_imagelessPogs.clear();
@@ -3552,11 +3546,12 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    private void lockMap(final GametableMap mapToLock, final boolean lock) {
-        for (int i = 0; i < mapToLock.getNumPogs(); i++) {
-            final Pog pog = mapToLock.getPog(i);
-            pog.setLocked(lock);
-        }
+    private void lockMap(final GametableMap mapToLock, final boolean lock) 
+    {
+    	for (Pog pog : mapToLock.getPogs())
+    	{       
+    		pog.setLocked(lock);
+      }
     }
 
     private void doLockMap(final boolean lock)
@@ -3679,9 +3674,8 @@ public class GametableFrame extends JFrame implements ActionListener
         send(PacketManager.makeLinesPacket(getGametableCanvas().getPublicMap().getLines(), -1, -1), player);
 
         // pogs
-        for (int i = 0; i < getGametableCanvas().getPublicMap().getNumPogs(); i++)
+        for (Pog pog : getGametableCanvas().getPublicMap().getPogs())
         {
-            final Pog pog = getGametableCanvas().getPublicMap().getPog(i);
             send(PacketManager.makeAddPogPacket(pog), player);
         }
 
@@ -4271,9 +4265,8 @@ public class GametableFrame extends JFrame implements ActionListener
             dos.write(linesPacket);
 
             // pogs
-            for (int i = 0; i < mapToSave.getNumPogs(); i++)
+            for (Pog pog : mapToSave.getPogs())
             {
-                final Pog pog = mapToSave.getPog(i);
                 final byte[] pogsPacket = PacketManager.makeAddPogPacket(pog);
                 dos.writeInt(pogsPacket.length);
                 dos.write(pogsPacket);

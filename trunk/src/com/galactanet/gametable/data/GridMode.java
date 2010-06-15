@@ -1,115 +1,164 @@
 /*
- * GridMode.java: GameTable is in the Public Domain.
+ * GridMode.java
+ * 
+ * @created 2005-12-19
+ * 
+ * Copyright (C) 1999-2010 Open Source Game Table Project
+ * 
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-
-
 package com.galactanet.gametable.data;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 
 import com.galactanet.gametable.ui.GametableCanvas;
 
-
-
 /**
  * @author sephalon
  * 
- * #GT-AUDIT GridMode
+ * @audited by themaze75
  */
 public class GridMode
 {
-    protected GametableCanvas m_canvas;
+	/**
+	 * Canvas using this grid mode
+	 */
+	protected GametableCanvas	m_canvas;
 
-    public GridMode()
-    {
-    }
+	/**
+	 * Draws the lines to the canvas. Assumes there is a properly offset graphics object passed in
+	 * 
+	 * @param g graphics device to draw to
+	 * @param topLeftX x Coordinate of the region we need to draw lines in
+	 * @param topLeftY y Coordinate of the region we need to draw lines in
+	 * @param width Width of the region we need to draw lines in
+	 * @param height Height of the region we need to draw lines in
+	 */
+	public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)
+	{
+		// default behavior is to not draw anything
+	}
 
-    // draws the lines to the canvas. Assumes there is a properly offset graphics object passed in
-    public void drawLines(final Graphics g, final int topLeftX, final int topLeftY, final int width, final int height)
-    {
-        // default behavior is to not draw anything
-    }
+	/**
+	 * Get the distance, in squares, between two set of map coordinates.
+	 * 
+	 * Base implementation does basic hypotenuse trig.
+	 * 
+	 * @param x1 x Coordinate of point 1
+	 * @param y1 y Coordinate of point 1
+	 * @param x2 x Coordinate of point 2
+	 * @param y2 y Coordinate of point 2
+	 * @return Calculated distance, based on modifier
+	 */
+	public double getDistance(final int x1, final int y1, final int x2, final int y2)
+	{
+		// Calculate distance deltas
+		int dx = x2 - x1;
+		int dy = y2 - y1;
 
-    public double getDistance(final int x1, final int y1, final int x2, final int y2)
-    {
-        final int dx = x2 - x1;
-        final int dy = y2 - y1;
+		return Math.sqrt(Math.pow(dx * getDistanceMultplierX(), 2) * Math.pow(dy * getDistanceMultplierY(), 2));
+	}
 
-        double dxSquared = dx * dx;
-        double dySquared = dy * dy;
+	/**
+	 * Get multiplier for x coordinates when calculating distance. Some grids might not have the same scale in the x
+	 * direction as they do in the y
+	 * 
+	 * @return Multiplier
+	 */
+	public double getDistanceMultplierX()
+	{
+		return 1.0d;
+	}
 
-        final double multX = m_canvas.getGridMode().getDistanceMultplierX();
-        final double multY = m_canvas.getGridMode().getDistanceMultplierY();
+	/**
+	 * Get multiplier for y coordinates when calculating distance. Some grids might not have the same scale in the x
+	 * direction as they do in the y
+	 * 
+	 * @return Multiplier
+	 */
+	public double getDistanceMultplierY()
+	{
+		return 1.0d;
+	}
 
-        // we've squared the dx and dy already, so we need to apply the multX and multY squared
-        dxSquared = dxSquared * multX * multX;
-        dySquared = dySquared * multY * multY;
+	/**
+	 * Initialize the grid mode
+	 * 
+	 * @param canvas GameTableCanvas to link to the grid mode
+	 */
+	public void init(GametableCanvas canvas)
+	{
+		m_canvas = canvas;
+	}
 
-        final double dist = Math.sqrt(dxSquared + dySquared);
+	/**
+	 * Updates a pog's position and place it on its proper 'snapped' position on the grid.
+	 *  
+	 * @param pog Pog to reposition
+	 * 
+	 */
+	public void snapPogToGrid(final Pog pog)
+	{
+		Point snappedPoint = getSnappedPixelCoordinates(pog.getPosition(), true, GametableCanvas.BASE_SQUARE_SIZE * pog.getFaceSize());
 
-        return dist;
-    }
 
-    // some grids might not have the same scale in the x direction as they do in the y
-    public double getDistanceMultplierX()
-    {
-        return 1.0;
-    }
+		pog.setPosition(snappedPoint.x, snappedPoint.y);
+	}
 
-    public double getDistanceMultplierY()
-    {
-        return 1.0;
-    }
+	/**
+	 * Snaps a given set of pixel coordinates to the grid.
+	 * 
+	 * @param pixelCoordinates Set of pixel coordinates to snap to grid
+	 * 
+	 * @return new set of pixel coordinates, snapped to grid
+	 */
+	public Point getSnappedPixelCoordinates(final Point pixelCoordinates)
+	{
+		return getSnappedPixelCoordinates(pixelCoordinates, false, 0);
+	}
 
-    // gets the grid for this element to snap to
-    protected int getGridSnap(final int i)
-    {
-        if (i < 0)
-        {
-            return ((i - GametableCanvas.BASE_SQUARE_SIZE / 2) / GametableCanvas.BASE_SQUARE_SIZE)
-                * GametableCanvas.BASE_SQUARE_SIZE;
-        }
-        return ((i + GametableCanvas.BASE_SQUARE_SIZE / 2) / GametableCanvas.BASE_SQUARE_SIZE)
-            * GametableCanvas.BASE_SQUARE_SIZE;
-    }
+	/**
+	 * Snaps a given set of pixel coordinates to the grid.
+	 *   
+	 * @param pixelCoordinates Set of pixel coordinates to snap to grid
+	 * 
+	 * @param bSnapForPog If true, will return snap locations where a pog of the sent in size could snap to. Note this is
+	 *          not the same as ANY snap points, cause you don't want your pogs snapping to the vertex of a hex.
+	 *          
+	 * @param pogSize Pog's size in pixels. Ignored if bSnapForPog is false.
+	 * 
+	 * @return new set of pixel coordinates, snapped to grid
+	 */
+	public Point getSnappedPixelCoordinates(final Point pixelCoordinates, final boolean bSnapForPog, final int pogSize)
+	{
+		// default behavior is to not snap at all.
+		return new Point(pixelCoordinates);
+	}
 
-    public void init(final GametableCanvas canvas)
-    {
-        m_canvas = canvas;
-    }
+	/**
+	 * Snaps a given set of pixel coordinates to the grid.
+	 *   
+	 * @param pixelCoordinate A pixel coordinate to snap to grid. Either X or Y - the model assumes the scale is the same either way.
+	 * 
+	 * @return New pixel coordinate, snapped to grid.
+	 */
+	protected int getSnappedPixelCoordinates(final int pixelCoordinate)
+	{
+		// NB : The second division is made as integer, actually rounding the pixel coordinates to map coordinates.  
+		// The following multiplication converts back to pixels after rounding. 
+		
+		if (pixelCoordinate < 0)
+			return ((pixelCoordinate - GametableCanvas.BASE_SQUARE_SIZE / 2) / GametableCanvas.BASE_SQUARE_SIZE) * GametableCanvas.BASE_SQUARE_SIZE;
 
-    public void snapPogToGrid(final Pog pog)
-    {
-        // int squareSize = GametableCanvas.BASE_SQUARE_SIZE * pog.getFaceSize();
-        final Point snappedPoint = snapPointEx(new Point(pog.getX(), pog.getY()), true,
-            GametableCanvas.BASE_SQUARE_SIZE * pog.getFaceSize());
-
-        /*
-         * if (pog.getWidth() < squareSize) { snappedPoint.x += (squareSize - pog.getWidth()) / 2; }
-         * 
-         * if (pog.getHeight() < squareSize) { snappedPoint.y += (squareSize - pog.getHeight()) / 2; }
-         */
-        pog.setPosition(snappedPoint.x, snappedPoint.y);
-    }
-
-    /** ******************** HELPER FUNCTIONS AND REDIRECTS ********************* */
-    // returns where this point will snap to
-    public Point snapPoint(final Point modelPoint)
-    {
-        return snapPointEx(modelPoint, false, 0);
-    }
-
-    /** ******************** FUNCTIONS TO OVERRIDE ********************* */
-    // if bSnapForPog is true, it will return snap locations where a pog of
-    // the sent in size could snap to. Note this is not the same as ANY
-    // snap points, cause you don't want your pogs snapping to the
-    // vertex of a hex.
-    // pogSize is ignored if bSnapForPog is false. And it's expected to be the
-    // pog's size in model coordinate pixels.
-    public Point snapPointEx(final Point modelPointIn, final boolean bSnapForPog, final int pogSize)
-    {
-        // default behavior is to not snap at all.
-        return new Point(modelPointIn);
-    }
+		return ((pixelCoordinate + GametableCanvas.BASE_SQUARE_SIZE / 2) / GametableCanvas.BASE_SQUARE_SIZE) * GametableCanvas.BASE_SQUARE_SIZE;
+	}
 }
