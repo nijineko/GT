@@ -931,7 +931,7 @@ public class Pog implements Comparable<Pog>
         try {
           String group = dis.readUTF();
           if(group.equals("")) group = null;            
-          if(group != null) GametableFrame.getGametableFrame().getGrouping().add(group, this);
+          if(group != null) PogGroups.addPogToGroup(group, this);
         } catch(IOException exp) {
           m_group = null;
         }
@@ -1215,9 +1215,16 @@ public class Pog implements Comparable<Pog>
     public String getGroup() {
         return m_group;
     }
-    // #grouping
-    public void setGroup(final String group) {
-        m_group = group;
+ 
+   /**
+    * Set the pog's group name.  Should only by called by PogGroups
+    * #tag:grouping
+    * 
+    * @param groupName
+    */
+    protected void setGroup(final String groupName) 
+    {
+        m_group = groupName;
     }
 
 
