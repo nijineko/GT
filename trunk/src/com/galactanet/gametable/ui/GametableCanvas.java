@@ -1631,7 +1631,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         if(toMove.isSelected()) {            
             
             int nx,ny,tx,ty;
-            for (Pog pog : map.getSelectedPogs())
+            for (Pog pog : map.getSelectedPogs().toArray(new Pog[0]))	// converte to array to prevent concurrent modification issues
             {
                if(pog.getId() != id) {
                    tx = pog.getX();
