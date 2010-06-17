@@ -3,12 +3,12 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.ui;
 
 import java.awt.Graphics;
 import java.util.List;
 
-import com.galactanet.gametable.ui.GametableCanvas;
+import com.galactanet.gametable.data.PreferenceDescriptor;
 
 
 
@@ -18,8 +18,9 @@ import com.galactanet.gametable.ui.GametableCanvas;
  * @author iffy
  * 
  * #GT-AUDIT Tool
+ * @revise UI core
  */
-public interface Tool
+public interface ToolIF
 {
     int MODIFIER_ALT   = 0x02;
     int MODIFIER_CTRL  = 0x01;

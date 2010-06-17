@@ -10,8 +10,8 @@ import java.util.Collections;
 import java.util.List;
 
 import com.galactanet.gametable.data.PreferenceDescriptor;
-import com.galactanet.gametable.data.Tool;
 import com.galactanet.gametable.ui.GametableCanvas;
+import com.galactanet.gametable.ui.ToolIF;
 
 
 
@@ -22,7 +22,7 @@ import com.galactanet.gametable.ui.GametableCanvas;
  * 
  * #GT-AUDIT NullTool
  */
-public class NullTool implements Tool
+public class NullTool implements ToolIF
 {
     /**
      * Constructor.

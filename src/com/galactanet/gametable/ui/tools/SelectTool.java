@@ -3,7 +3,7 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
-import com.galactanet.gametable.data.GametableMap;
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.Pog;
 import com.galactanet.gametable.ui.GametableCanvas;
 
@@ -28,7 +28,7 @@ public class SelectTool extends NullTool
     private Point           m_mouseAnchor;
     private Point           m_mouseFloat;
 
-    private GametableMap    m_map;
+    private GameTableMap    m_map;
 
     /**
      * Default Constructor.

@@ -34,7 +34,7 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * 
  * @revise listeners and triggers for pogs, selection, lines
  */
-public class GametableMap
+public class GameTableMap
 {
 	/**
 	 * Lines drawn on the map @revise should lines be an external graphical object?
@@ -94,7 +94,7 @@ public class GametableMap
 	 * 
 	 * @param publicMap true for public map (shared with other users). false for private map.
 	 */
-	public GametableMap(boolean publicMap)
+	public GameTableMap(boolean publicMap)
 	{
 		m_publicMap = publicMap;
 		m_selectedPogs = new ArrayList<Pog>();

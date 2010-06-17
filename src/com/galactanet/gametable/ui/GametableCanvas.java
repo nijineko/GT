@@ -63,7 +63,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     /**
      * A singleton instance of the NULL tool.
      */
-    private static final Tool  NULL_TOOL              = new NullTool();
+    private static final ToolIF  NULL_TOOL              = new NullTool();
 
     /**
      * This is the color used to overlay on top of the public layer when the user is on the private layer. It's white
@@ -79,11 +79,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     private Image              m_mapBackground;
 
     // this is the map (or layer) that all players share
-    private final GametableMap m_publicMap            = new GametableMap(true);
+    private final GameTableMap m_publicMap            = new GameTableMap(true);
     // this is the map (or layer) that is private to a specific player
-    private final GametableMap m_privateMap           = new GametableMap(false);
+    private final GameTableMap m_privateMap           = new GameTableMap(false);
     // this points to whichever map is presently active
-    private GametableMap       m_activeMap;
+    private GameTableMap       m_activeMap;
 
     private int                m_activeToolId         = -1;
 
@@ -429,7 +429,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GametableMap map = getActiveMap();
+                final GameTableMap map = getActiveMap();
                 final Point p = drawToModel(map.getScrollX(), map.getScrollY()
                     - Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
                 smoothScrollTo(p.x, p.y);
@@ -458,7 +458,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GametableMap map = getActiveMap();
+                final GameTableMap map = getActiveMap();
                 final Point p = drawToModel(map.getScrollX(), map.getScrollY()
                     + Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
                 smoothScrollTo(p.x, p.y);
@@ -487,7 +487,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GametableMap map = getActiveMap();
+                final GameTableMap map = getActiveMap();
                 final Point p = drawToModel(map.getScrollX() - Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), map
                     .getScrollY());
                 smoothScrollTo(p.x, p.y);
@@ -516,7 +516,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GametableMap map = getActiveMap();
+                final GameTableMap map = getActiveMap();
                 final Point p = drawToModel(map.getScrollX() + Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), map
                     .getScrollY());
                 smoothScrollTo(p.x, p.y);
@@ -633,7 +633,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
         if (lines != null)
         {
-        	GametableMap map = getActiveMap();
+        	GameTableMap map = getActiveMap();
         	for (LineSegment line : lines)
         		map.addLineSegment(line);
             
@@ -646,7 +646,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
         if (line != null)
         {
-        	GametableMap map = getActiveMap();
+        	GameTableMap map = getActiveMap();
         	map.addLineSegment(line);            
         }
         
@@ -655,7 +655,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void doAddPog(final Pog toAdd, final boolean bPublicLayerPog)
     {
-        GametableMap map = m_privateMap;
+        GameTableMap map = m_privateMap;
         if (bPublicLayerPog)
         {
             map = m_publicMap;
@@ -1075,7 +1075,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
 
-    public GametableMap getActiveMap()
+    public GameTableMap getActiveMap()
     {
         // if we're processing a packet, we want it to go to the
         // public layer, even if they're presently on the private layer.
@@ -1094,7 +1094,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return m_activeMap;
     }
 
-    public Tool getActiveTool()
+    public ToolIF getActiveTool()
     {
         if (m_activeToolId < 0)
         {
@@ -1163,7 +1163,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public int getModifierFlags()
     {
-        return ((m_bControlKeyDown ? Tool.MODIFIER_CTRL : 0) | (m_bSpaceKeyDown ? Tool.MODIFIER_SPACE : 0) | (m_bShiftKeyDown ? Tool.MODIFIER_SHIFT : 0) | (m_bShiftKeyDown ? Tool.MODIFIER_ALT : 0));
+        return ((m_bControlKeyDown ? ToolIF.MODIFIER_CTRL : 0) | (m_bSpaceKeyDown ? ToolIF.MODIFIER_SPACE : 0) | (m_bShiftKeyDown ? ToolIF.MODIFIER_SHIFT : 0) | (m_bShiftKeyDown ? ToolIF.MODIFIER_ALT : 0));
     }
 
     private Point getPogDragMousePosition()
@@ -1272,12 +1272,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return ret;
     }
 
-    public GametableMap getPrivateMap()
+    public GameTableMap getPrivateMap()
     {
         return m_privateMap;
     }
 
-    public GametableMap getPublicMap()
+    public GameTableMap getPublicMap()
     {
         return m_publicMap;
     }
@@ -1627,7 +1627,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         int diffx = newX - toMove.getX();
         int diffy = newY - toMove.getY();
         
-        GametableMap map = getActiveMap();
+        GameTableMap map = getActiveMap();
         if(toMove.isSelected()) {            
             
             int nx,ny,tx,ty;
@@ -1681,7 +1681,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     }
     
     public void replacePogs(final PogType toReplace, final PogType replaceWith) {
-        GametableMap mapToReplace;
+        GameTableMap mapToReplace;
         if (isPublicMap()) mapToReplace = m_publicMap;
         else mapToReplace = m_privateMap;
         
@@ -1750,7 +1750,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      * @param outputFile file where to save the result
      * @throws IOException if file saving causes an error
      */
-    public void exportMap(GametableMap mapToExport, File outputFile) throws IOException
+    public void exportMap(GameTableMap mapToExport, File outputFile) throws IOException
     {
         if (mapToExport == null)
             mapToExport = getActiveMap();
@@ -1780,7 +1780,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      * @param map map to calculate
      * @return coordinates of the space used by the map
      */
-    public Rectangle getMapBounds(final GametableMap map)
+    public Rectangle getMapBounds(final GameTableMap map)
     {
         Rectangle bounds = null;
         
@@ -1812,7 +1812,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return bounds;
     }
 
-    public void paintMap(final Graphics g, final GametableMap mapToDraw, int width, int height)
+    public void paintMap(final Graphics g, final GameTableMap mapToDraw, int width, int height)
     {
     	Graphics2D g2 = (Graphics2D)g;
     	
@@ -2229,19 +2229,19 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         smoothScrollTo(pogModel.x, pogModel.y);
     }
 
-    public void setActiveMap(final GametableMap map)
+    public void setActiveMap(final GameTableMap map)
     {
         m_activeMap = map;
     }
 
     public void setActiveTool(final int index)
     {
-        final Tool oldTool = getActiveTool();
+        final ToolIF oldTool = getActiveTool();
         oldTool.deactivate();
 
         m_activeToolId = index;
 
-        final Tool tool = getActiveTool();
+        final ToolIF tool = getActiveTool();
         tool.activate(this);
         setToolCursor(0);
         m_gametableFrame.setToolSelected(m_activeToolId);
@@ -2343,7 +2343,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      * This function will set the scroll for all maps, keeping their relative offsets preserved. The x,y values sent in
      * will become the scroll values for the desired map. All others maps will preserve offsets from that.
      */
-    public void setPrimaryScroll(final GametableMap mapToSet, final int x, final int y)
+    public void setPrimaryScroll(final GameTableMap mapToSet, final int x, final int y)
     {
         m_publicMap.setScrollPosition(x, y);
         m_privateMap.setScrollPosition(x, y);
@@ -2394,7 +2394,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void smoothScrollTo(final int modelX, final int modelY)
     {
-        final GametableMap map = getActiveMap();
+        final GameTableMap map = getActiveMap();
         m_startScroll = drawToModel(map.getScrollX(), map.getScrollY());
         m_deltaScroll = new Point(modelX - m_startScroll.x, modelY - m_startScroll.y);
         m_scrollTime = 0;

@@ -105,8 +105,8 @@ public class PointerTool extends NullTool
     }
 
     private GametableCanvas m_canvas;
-    private GametableMap    m_from;
-    private GametableMap    m_to;
+    private GameTableMap    m_from;
+    private GameTableMap    m_to;
     private boolean         m_clicked = true;
     private Pog             m_ghostPog;
     private Pog             m_grabbedPog;

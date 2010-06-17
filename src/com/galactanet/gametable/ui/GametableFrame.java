@@ -2134,7 +2134,7 @@ public class GametableFrame extends JFrame implements ActionListener
         final JMenuItem item = new JMenuItem("UnGroup Selected");
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                GametableMap map = getGametableCanvas().getActiveMap();
+                GameTableMap map = getGametableCanvas().getActiveMap();
                 
                 for (Pog pog : map.getSelectedPogs())
                 {
@@ -2368,7 +2368,7 @@ public class GametableFrame extends JFrame implements ActionListener
         {
             public void actionPerformed(final ActionEvent e)
             {
-                GametableMap map = getGametableCanvas().getActiveMap();
+                GameTableMap map = getGametableCanvas().getActiveMap();
                 getGametableCanvas().removePogs(map.getSelectedPogs(), false);
             }
         });
@@ -2390,8 +2390,8 @@ public class GametableFrame extends JFrame implements ActionListener
             public void actionPerformed(final ActionEvent e)
             {
                 Pog npog;
-                GametableMap map = getGametableCanvas().getActiveMap();
-                GametableMap to;
+                GameTableMap map = getGametableCanvas().getActiveMap();
+                GameTableMap to;
                 if(map == getGametableCanvas().getPublicMap()) to = getGametableCanvas().getPrivateMap();
                 else to = getGametableCanvas().getPublicMap();
 
@@ -3535,7 +3535,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    private void lockMap(final GametableMap mapToLock, final boolean lock) 
+    private void lockMap(final GameTableMap mapToLock, final boolean lock) 
     {
     	for (Pog pog : mapToLock.getPogs())
     	{       
@@ -3545,7 +3545,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
     private void doLockMap(final boolean lock)
     {
-        final GametableMap mapToLock = m_gametableCanvas.getActiveMap();
+        final GameTableMap mapToLock = m_gametableCanvas.getActiveMap();
         boolean priv = true;
         if(mapToLock == getGametableCanvas().getPublicMap()) priv = false;
 
@@ -4240,7 +4240,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void saveState(final GametableMap mapToSave, final File file)
+    public void saveState(final GameTableMap mapToSave, final File file)
     {
         // save out all our data. The best way to do this is with packets, cause they're
         // already designed to pass data around.

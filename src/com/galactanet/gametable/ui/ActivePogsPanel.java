@@ -16,7 +16,7 @@ import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.*;
 
-import com.galactanet.gametable.data.GametableMap;
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.Pog;
 import com.galactanet.gametable.data.PogType;
 import com.galactanet.gametable.util.Log;
@@ -481,7 +481,7 @@ public class ActivePogsPanel extends JPanel
          */
         private static final long serialVersionUID = -2217746931413629754L;
 
-        public RootNode(final GametableMap map)
+        public RootNode(final GameTableMap map)
         {
             super(map, true);
             for (Pog pog : getMap().getOrderedPogs())
@@ -504,9 +504,9 @@ public class ActivePogsPanel extends JPanel
             return null;
         }
 
-        public GametableMap getMap()
+        public GameTableMap getMap()
         {
-            return (GametableMap)getUserObject();
+            return (GameTableMap)getUserObject();
         }
     }
 
@@ -572,7 +572,7 @@ public class ActivePogsPanel extends JPanel
     /**
      * A map of GametableMaps to BranchTrackers for thier pog lists.
      */
-    private final Map<GametableMap, BranchTracker>                       trackers            = new HashMap<GametableMap, BranchTracker>();
+    private final Map<GameTableMap, BranchTracker>                       trackers            = new HashMap<GameTableMap, BranchTracker>();
 
     // --- Constructors ----------------------------------------------------------------------------------------------
 
@@ -610,7 +610,7 @@ public class ActivePogsPanel extends JPanel
 
     // --- Accessor methods ---
 
-    private GametableMap getMap()
+    private GameTableMap getMap()
     {
         final DefaultTreeModel model = (DefaultTreeModel)getPogTree().getModel();
         final RootNode root = (RootNode)model.getRoot();
@@ -821,7 +821,7 @@ public class ActivePogsPanel extends JPanel
         return getTrackerFor(getMap());
     }
 
-    private BranchTracker getTrackerFor(final GametableMap map)
+    private BranchTracker getTrackerFor(final GameTableMap map)
     {
         BranchTracker tracker = trackers.get(map);
         if (tracker == null)
@@ -920,7 +920,7 @@ public class ActivePogsPanel extends JPanel
     public void refresh()
     {
         removeTrackers();
-        final GametableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap();
+        final GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap();
         pogTree.setModel(new DefaultTreeModel(new RootNode(map)));
         final BranchTracker tracker = getTrackerFor(map);
         pogTree.addTreeExpansionListener(tracker);
