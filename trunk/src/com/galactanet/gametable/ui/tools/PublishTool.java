@@ -5,7 +5,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.galactanet.gametable.data.GametableMap;
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.Pog;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.LineSegment;
@@ -32,7 +32,7 @@ public class PublishTool extends NullTool
     }
 
     private GametableCanvas m_canvas;
-    private GametableMap    m_from;
+    private GameTableMap    m_from;
     private Point           m_mouseAnchor;
     private Point           m_mouseFloat;
     
@@ -40,7 +40,7 @@ public class PublishTool extends NullTool
 
     // private boolean m_bEraseColor;
 
-    private GametableMap    m_to;
+    private GameTableMap    m_to;
 
     /**
      * Default Constructor.

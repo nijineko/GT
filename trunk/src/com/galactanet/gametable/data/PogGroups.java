@@ -312,7 +312,7 @@ public class PogGroups
 	 */
 	public static void packetReceived(Action action, final String groupName, final int pogID)
 	{
-		GametableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
+		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
 		final Pog pog = map.getPogByID(pogID);
 
 		switch (action)

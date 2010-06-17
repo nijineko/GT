@@ -9,7 +9,7 @@ package com.galactanet.gametable.ui.chat;
 
 import java.util.List;
 
-import com.galactanet.gametable.data.GametableMap;
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.Pog;
 import com.galactanet.gametable.data.dicemacro.DiceMacro;
@@ -155,7 +155,7 @@ public class SlashCommands
         }
 
         final String name = UtilityFunctions.stitchTogetherWords(words, 1);
-        final GametableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap();
+        final GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap();
         final List<Pog> pogs = map.getPogs();
         final StringBuffer buffer = new StringBuffer();
         buffer.append("<b><u>Pogs with \'" + name + "\' attribute</u></b><br>");

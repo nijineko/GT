@@ -17,7 +17,6 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 
-import com.galactanet.gametable.data.Tool;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -44,7 +43,7 @@ public class ToolManager
         private int        id;
         private String     name;
         private String     quickKey;
-        private Tool       tool;
+        private ToolIF       tool;
 
         /**
          * Constructor.
@@ -64,7 +63,7 @@ public class ToolManager
                 name = n;
 
                 // Instantiate the tool given the name.
-                tool = (Tool)Class.forName(className).newInstance();
+                tool = (ToolIF)Class.forName(className).newInstance();
 
                 icon = UtilityFunctions.getImage(iconName);
 
@@ -166,7 +165,7 @@ public class ToolManager
         /**
          * @return Returns the tool instance.
          */
-        public Tool getTool()
+        public ToolIF getTool()
         {
             return tool;
         }
@@ -291,7 +290,7 @@ public class ToolManager
     }
 
     // shortcut function to get the active tool
-    public Tool getActiveTool()
+    public ToolIF getActiveTool()
     {
         return GametableFrame.getGametableFrame().getGametableCanvas().getActiveTool();
     }
