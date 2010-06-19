@@ -106,7 +106,7 @@ public class GridMode
 	 * @param pog Pog to reposition
 	 * 
 	 */
-	public void snapPogToGrid(final Pog pog)
+	public void snapPogToGrid(final MapElementInstance pog)
 	{
 		Point snappedPoint = getSnappedPixelCoordinates(pog.getPosition(), true, GametableCanvas.BASE_SQUARE_SIZE * pog.getFaceSize());
 

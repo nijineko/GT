@@ -17,8 +17,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 
+import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
-import com.galactanet.gametable.util.UtilityFunctions;
 
 
 
@@ -65,7 +65,7 @@ public class ToolManager
                 // Instantiate the tool given the name.
                 tool = (ToolIF)Class.forName(className).newInstance();
 
-                icon = UtilityFunctions.getImage(iconName);
+                icon = Images.getImage(iconName);
 
             }
             catch (final Exception e)
@@ -238,9 +238,9 @@ public class ToolManager
                 final String hotSpotYStr = spec.substring(start);
 
                 // Create the cursor based on the parsed data.
-                final Image target = UtilityFunctions.createDrawableImage(32, 32);
+                final Image target = Images.createBufferedImage(32, 32);
                 {
-                    final Image image = UtilityFunctions.getImage(imageName);
+                    final Image image = Images.getImage(imageName);
                     final Graphics g = target.getGraphics();
                     g.drawImage(image, 0, 0, null);
                     g.dispose();

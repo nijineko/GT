@@ -72,12 +72,12 @@ public class PogGroups
 		/**
 		 * List of pogs contained within the group
 		 */
-		private List<Pog>	m_pogs	= new ArrayList<Pog>();
+		private List<MapElementInstance>	m_pogs	= new ArrayList<MapElementInstance>();
 		
 		/**
 		 * Unmodifiable m_pogs
 		 */
-		private List<Pog>	m_pogsUnmodifiable	= null;
+		private List<MapElementInstance>	m_pogsUnmodifiable	= null;
 
 		/**
 		 * Constructor
@@ -92,7 +92,7 @@ public class PogGroups
 		 * Add a pog to this group
 		 * @param pog Pog to add
 		 */
-		public void addPog(final Pog pog)
+		public void addPog(final MapElementInstance pog)
 		{
 			if (pog == null)
 				return;
@@ -106,7 +106,7 @@ public class PogGroups
 		 */
 		public void removeAllPogs()
 		{
-			for (Pog pog : m_pogs)
+			for (MapElementInstance pog : m_pogs)
 				pog.setGroup(null);	// clear the pog's group name
 			
 			m_pogs.clear();
@@ -125,7 +125,7 @@ public class PogGroups
 		 * Return unmodifiable? list of pogs for this group
 		 * @return List of pogs (never null)
 		 */
-		public List<Pog> getPogs()
+		public List<MapElementInstance> getPogs()
 		{
 			if (m_pogsUnmodifiable == null)
 				m_pogsUnmodifiable = Collections.unmodifiableList(m_pogs);
@@ -137,7 +137,7 @@ public class PogGroups
 		 * Remove pog from this list
 		 * @param pog Pog to remove
 		 */
-		public void removePog(final Pog pog)
+		public void removePog(final MapElementInstance pog)
 		{
 			m_pogs.remove(pog);
 			pog.setGroup(null); // Clear the pog's group name
@@ -186,10 +186,10 @@ public class PogGroups
 	 * @param pogs List of pogs to add
 	 * @param groupName name of group to add to
 	 */
-	public static void addPogsToGroup(final String groupName, List<Pog> pogs)
+	public static void addPogsToGroup(final String groupName, List<MapElementInstance> pogs)
 	{
 		// TODO merge this in one, more efficient method (a.k.a. one server call)
-		for (Pog pog : pogs)
+		for (MapElementInstance pog : pogs)
 		{
 			addPogToGroup(groupName, pog);
 		}
@@ -201,7 +201,7 @@ public class PogGroups
 	 * @param groupName Name of group to add to
 	 * @param pog Pog instance to add to group
 	 */
-	public static void addPogToGroup(final String groupName, final Pog pog)
+	public static void addPogToGroup(final String groupName, final MapElementInstance pog)
 	{
 		if (pog == null)
 			return;
@@ -294,7 +294,7 @@ public class PogGroups
 	 * @param groupName Name of the group to look for
 	 * @return List of pogs (never null)
 	 */
-	public static List<Pog> getGroupPogs(final String groupName)
+	public static List<MapElementInstance> getGroupPogs(final String groupName)
 	{
 		Group g = getGroup(groupName, false);
 		if (g == null)
@@ -310,10 +310,10 @@ public class PogGroups
 	 * @param groupName Name of affected group
 	 * @param pogID Pog unique ID
 	 */
-	public static void packetReceived(Action action, final String groupName, final int pogID)
+	public static void packetReceived(Action action, final String groupName, final MapElementInstanceID pogID)
 	{
 		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
-		final Pog pog = map.getPogByID(pogID);
+		final MapElementInstance pog = map.getPogByID(pogID);
 
 		switch (action)
 		{
@@ -340,7 +340,7 @@ public class PogGroups
 	 * 
 	 * @param pog Pog to remove
 	 */
-	public static void removePogFromGroup(final Pog pog)
+	public static void removePogFromGroup(final MapElementInstance pog)
 	{
 		removePogFromGroup(pog, true);
 	}
@@ -396,7 +396,7 @@ public class PogGroups
 	 * @param pog Pog to remove
 	 * @param send true to send action to server
 	 */
-	private static void removePogFromGroup(final Pog pog, final boolean send)
+	private static void removePogFromGroup(final MapElementInstance pog, final boolean send)
 	{
 		if (pog == null)
 			return;
@@ -447,7 +447,7 @@ public class PogGroups
 	 */
 	private static void send(Action action, final String groupName)
 	{
-		send(action, groupName, 0);
+		send(action, groupName, null);
 	}
 
 	/**
@@ -457,7 +457,7 @@ public class PogGroups
 	 * @param groupName Name of the affected group
 	 * @param pogID Unique PogID, if the action is related to a pog.
 	 */
-	private static void send(Action action, final String groupName, final int pogID)
+	private static void send(Action action, final String groupName, final MapElementInstanceID pogID)
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();
 		GametableCanvas canvas = frame.getGametableCanvas();

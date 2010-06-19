@@ -28,6 +28,7 @@ import javax.swing.text.html.HTMLDocument;
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.handler.gtuser.Handler;
+import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -505,7 +506,7 @@ public class ChatLogPane extends JEditorPane
         if ((rolloverText != null) && (rolloverPosition != null))
         {
             final Graphics2D g2 = (Graphics2D)g.create();
-            g2.addRenderingHints(UtilityFunctions.STANDARD_RENDERING_HINTS);
+            g2.addRenderingHints(Images.getRenderingHints());
             g2.setFont(FONT_ROLLOVER);
             final Rectangle rect = g2.getFontMetrics().getStringBounds(rolloverText, g2).getBounds();
 

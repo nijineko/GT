@@ -16,9 +16,12 @@ import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.*;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.Pog;
-import com.galactanet.gametable.data.PogType;
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapElementInstanceID;
+import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -49,7 +52,7 @@ public class ActivePogsPanel extends JPanel
         String                    attribute        = null;
         //boolean                   expanded         = false;
         //boolean                   leaf             = false;
-        Pog                       pog              = null;
+        MapElementInstance                       pog              = null;
 
         public ActivePogTreeCellRenderer()
         {
@@ -76,8 +79,8 @@ public class ActivePogsPanel extends JPanel
 
             if (attribute == null)
             {
-                int w = PogPanel.POG_ICON_SIZE;
-                int h = PogPanel.POG_ICON_SIZE;
+                int w = g_iconSize;
+                int h = g_iconSize;
                 final String label = getLabel();
                 if ((label != null) && (label.length() > 0))
                 {
@@ -161,14 +164,16 @@ public class ActivePogsPanel extends JPanel
                 return;
             }
 
-            final PogType pogType = pog.getPogType();
+            final MapElement pogType = pog.getPogType();
             final Graphics2D g2 = (Graphics2D)g;
-            g2.addRenderingHints(UtilityFunctions.STANDARD_RENDERING_HINTS);
+            g2.addRenderingHints(Images.getRenderingHints());
             g2.setColor(Color.BLACK);
             if (attribute == null)
             {
-                pogType.drawListIcon(g2, SPACE + (PogPanel.POG_ICON_SIZE - pogType.getListIconWidth()) / 2, SPACE
-                    + (PogPanel.POG_ICON_SIZE - pogType.getListIconHeight()) / 2);
+            	g2.drawImage(pogType.getListIcon(),
+            				SPACE + (g_iconSize - pogType.getListIconWidth()) / 2, 
+            				SPACE + (g_iconSize - pogType.getListIconHeight()) / 2,
+            				this);
 
                 final String label = getLabel();
                 if ((label != null) && (label.length() > 0))
@@ -176,8 +181,8 @@ public class ActivePogsPanel extends JPanel
                     g2.setFont(FONT_NODE);
                     final FontMetrics fm = g2.getFontMetrics();
                     final Rectangle stringBounds = fm.getStringBounds(label, g2).getBounds();
-                    final int drawX = SPACE + PogPanel.POG_ICON_SIZE + POG_TEXT_PADDING;
-                    final int drawY = SPACE + (PogPanel.POG_ICON_SIZE - stringBounds.height) / 2 - stringBounds.y;
+                    final int drawX = SPACE + g_iconSize + POG_TEXT_PADDING;
+                    final int drawY = SPACE + (g_iconSize - stringBounds.height) / 2 - stringBounds.y;
                     g2.drawString(label, drawX, drawY);
                 }
             }
@@ -242,7 +247,7 @@ public class ActivePogsPanel extends JPanel
         /**
          * @return Returns the pog for this node.
          */
-        public Pog getPog()
+        public MapElementInstance getPog()
         {
             return getPogNodeParent().getPog();
         }
@@ -271,8 +276,8 @@ public class ActivePogsPanel extends JPanel
     private class BranchTracker implements TreeExpansionListener
     {
         private boolean   allExpanded    = false;
-        private final Set<Pog> collapsedNodes = new HashSet<Pog>();
-        private final Set<Pog> expandedNodes  = new HashSet<Pog>();
+        private final Set<MapElementInstance> collapsedNodes = new HashSet<MapElementInstance>();
+        private final Set<MapElementInstance> expandedNodes  = new HashSet<MapElementInstance>();
 
         public BranchTracker()
         {
@@ -345,7 +350,7 @@ public class ActivePogsPanel extends JPanel
             tree.removeTreeExpansionListener(this);
             try
             {
-                for (Pog pog : expandedNodes)
+                for (MapElementInstance pog : expandedNodes)
                 {
                     final PogNode node = root.findNodeFor(pog);
                     if (node != null)
@@ -359,7 +364,7 @@ public class ActivePogsPanel extends JPanel
                     }
                 }
 
-                for (Pog pog : collapsedNodes)
+                for (MapElementInstance pog : collapsedNodes)
                 {
                     final PogNode node = root.findNodeFor(pog);
                     if (node != null)
@@ -428,7 +433,7 @@ public class ActivePogsPanel extends JPanel
          */
         private static final long serialVersionUID = -5086776295684411196L;
 
-        public PogNode(final Pog pog)
+        public PogNode(final MapElementInstance pog)
         {
             super(pog, true);
             for (String name : getPog().getAttributeNames())
@@ -456,9 +461,9 @@ public class ActivePogsPanel extends JPanel
         /**
          * @return Returns the pog for this node.
          */
-        public Pog getPog()
+        public MapElementInstance getPog()
         {
-            return (Pog)getUserObject();
+            return (MapElementInstance)getUserObject();
         }
 
         /*
@@ -484,13 +489,13 @@ public class ActivePogsPanel extends JPanel
         public RootNode(final GameTableMap map)
         {
             super(map, true);
-            for (Pog pog : getMap().getOrderedPogs())
+            for (MapElementInstance pog : getMap().getOrderedPogs())
             {                
                 add(new PogNode(pog));
             }
         }
 
-        public PogNode findNodeFor(final Pog pog)
+        public PogNode findNodeFor(final MapElementInstance pog)
         {
             for (int i = 0, size = getChildCount(); i < size; ++i)
             {
@@ -573,6 +578,8 @@ public class ActivePogsPanel extends JPanel
      * A map of GametableMaps to BranchTrackers for thier pog lists.
      */
     private final Map<GameTableMap, BranchTracker>                       trackers            = new HashMap<GameTableMap, BranchTracker>();
+    
+    private static int g_iconSize;
 
     // --- Constructors ----------------------------------------------------------------------------------------------
 
@@ -580,8 +587,9 @@ public class ActivePogsPanel extends JPanel
      * Constructor
      */
     public ActivePogsPanel()
-    {
+    {   	
         super(new BorderLayout());
+      	g_iconSize = GametableApp.getIntegerProperty(GametableApp.PROPERTY_ICON_SIZE);        
         add(getScrollPane(), BorderLayout.CENTER);
         add(getToolbar(), BorderLayout.NORTH);
     }
@@ -781,7 +789,7 @@ public class ActivePogsPanel extends JPanel
         toolbar.setRollover(true);
 
         final Insets margin = new Insets(2, 2, 2, 2);
-        final Image collapseImage = UtilityFunctions.getImage("assets/collapse.png");
+        final Image collapseImage = Images.getImage("assets/collapse.png");
         final JButton collapseButton = new JButton("Collapse All", new ImageIcon(collapseImage));
         collapseButton.setFocusable(false);
         collapseButton.setMargin(margin);
@@ -797,7 +805,7 @@ public class ActivePogsPanel extends JPanel
         });
         toolbar.add(collapseButton);
 
-        final Image expandImage = UtilityFunctions.getImage("assets/expand.png");
+        final Image expandImage = Images.getImage("assets/expand.png");
         final JButton expandButton = new JButton("Expand All", new ImageIcon(expandImage));
         expandButton.setMargin(margin);
         expandButton.setFocusable(false);
@@ -946,16 +954,16 @@ public class ActivePogsPanel extends JPanel
                     }
                 }
 
-                final Pog sourcePog = m_grabbedNode.getPog();
-                Pog targetPog = node.getPog();
+                final MapElementInstance sourcePog = m_grabbedNode.getPog();
+                MapElementInstance targetPog = node.getPog();
                 if (!sourcePog.equals(targetPog))
                 {
-                    final List<Pog> pogs = new ArrayList<Pog>(GametableFrame.getGametableFrame().getGametableCanvas()
+                    final List<MapElementInstance> pogs = new ArrayList<MapElementInstance>(GametableFrame.getGametableFrame().getGametableCanvas()
                         .getActiveMap().getOrderedPogs());
                     
                     final int sourceIndex = pogs.indexOf(sourcePog);
                     int targetIndex = pogs.indexOf(targetPog);
-                    final Map<Integer, Long> changes = new HashMap<Integer, Long>();
+                    final Map<MapElementInstanceID, Long> changes = new HashMap<MapElementInstanceID, Long>();
                     if (sourceIndex < targetIndex)
                     {
                         // Moving a pog down in the list
@@ -964,25 +972,25 @@ public class ActivePogsPanel extends JPanel
                             --targetIndex;
                             targetPog = pogs.get(targetIndex);
                         }
-                        changes.put(new Integer(sourcePog.getId()), new Long(targetPog.getSortOrder()));
+                        changes.put(sourcePog.getId(), new Long(targetPog.getSortOrder()));
                         for (int i = sourceIndex + 1; i <= targetIndex; ++i)
                         {
-                            final Pog a = pogs.get(i);
-                            final Pog b = pogs.get(i - 1);
+                            final MapElementInstance a = pogs.get(i);
+                            final MapElementInstance b = pogs.get(i - 1);
 
-                            changes.put(new Integer(a.getId()), new Long(b.getSortOrder()));
+                            changes.put(a.getId(), new Long(b.getSortOrder()));
                         }
                     }
                     else
                     {
                         // Moving a pog up in the list
-                        changes.put(new Integer(sourcePog.getId()), new Long(targetPog.getSortOrder()));
+                        changes.put(sourcePog.getId(), new Long(targetPog.getSortOrder()));
                         for (int i = targetIndex; i < sourceIndex; ++i)
                         {
-                            final Pog a = pogs.get(i);
-                            final Pog b = pogs.get(i + 1);
+                            final MapElementInstance a = pogs.get(i);
+                            final MapElementInstance b = pogs.get(i + 1);
 
-                            changes.put(new Integer(a.getId()), new Long(b.getSortOrder()));
+                            changes.put(a.getId(), new Long(b.getSortOrder()));
                         }
                     }
                     GametableFrame.getGametableFrame().getGametableCanvas().reorderPogs(changes);

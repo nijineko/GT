@@ -28,14 +28,15 @@ import org.xml.sax.SAXException;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.PogGroups.Action;
-import com.galactanet.gametable.data.PogType.Type;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.data.deck.DeckData;
 import com.galactanet.gametable.data.dicemacro.DiceMacro;
 import com.galactanet.gametable.data.dicemacro.DiceMacroSaxHandler;
 import com.galactanet.gametable.data.net.*;
+import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
@@ -523,12 +524,10 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param pog the Pog received
      * @param bPublicLayerPog currently ignored
      */
-    public void addPogPacketReceived(final Pog pog, final boolean bPublicLayerPog)
+    public void addPogPacketReceived(final MapElementInstance pog, final boolean bPublicLayerPog)
     {
-
-        // Check for loaded pog, or copied pog. 
-        if(pog.getId() == -1) pog.assignUniqueId();
-        
+        // Check for loaded pog, or copied pog.
+    	
         // getGametableCanvas().doAddPog(pog, bPublicLayerPog);
         /*
          * Changed by Rizban Changed to publish to active map rather than public map. 
@@ -541,15 +540,9 @@ public class GametableFrame extends JFrame implements ActionListener
             (getGametableCanvas().getActiveMap() == getGametableCanvas().getPublicMap() ? true : false));
 
         // update the next pog id if necessary
-        if (pog.getId() >= Pog.g_nextId)
+        if (pog.getSortOrder() >= MapElementInstance.g_nextSortId)
         {
-            Pog.g_nextId = pog.getId() + 5;
-        }
-
-        // update the next pog id if necessary
-        if (pog.getSortOrder() >= Pog.g_nextSortId)
-        {
-            Pog.g_nextSortId = pog.getSortOrder() + 1;
+            MapElementInstance.g_nextSortId = pog.getSortOrder() + 1;
         }
 
         if (m_netStatus == NETSTATE_HOST)
@@ -582,10 +575,21 @@ public class GametableFrame extends JFrame implements ActionListener
      * Changes The background color of the map. Each color is a png in the jar file
      * @param color
      */
-    public void changeBGPacketRec(final int color, final boolean pog) {
-        m_gametableCanvas.changeBackground(color,pog);
+    public void changeBGPacketRec(final MapElementInstanceID elementID) {
+        m_gametableCanvas.changeBackground(elementID);
         if(m_netStatus == NETSTATE_HOST) {
-            send(PacketManager.makeBGColPacket(color,pog));
+            send(PacketManager.makeBGColPacket(elementID));
+        }
+    }
+    
+    /** *************************************************************************************
+     * Changes The background color of the map. Each color is a png in the jar file
+     * @param color
+     */
+    public void changeBGPacketRec(BackgroundColor color) {
+        m_gametableCanvas.changeBackground(color);
+        if(m_netStatus == NETSTATE_HOST) {
+            send(PacketManager.makeBGColPacket(color));
         }
     }
     
@@ -677,11 +681,10 @@ public class GametableFrame extends JFrame implements ActionListener
      * Makes a Copy of the pog on the Canvas
      * @param pog
      */
-    public void copyPog(final Pog pog) {
-        final Pog nPog = new Pog(pog);
+    public void copyPog(final MapElementInstance pog) {
+        final MapElementInstance nPog = new MapElementInstance(pog);
         final boolean priv = !(getGametableCanvas().isPublicMap());
-        
-        nPog.setId(-1);
+
         if ((m_netStatus == NETSTATE_NONE) || priv)  {
             addPogPacketReceived(nPog, !priv);
         } else {
@@ -753,7 +756,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
             // create the deck stored in an xml file
             final DeckData dd = new DeckData();
-            final File deckFile = new File("decks" + UtilityFunctions.LOCAL_SEPARATOR + deckFileName + ".xml");
+            final File deckFile = new File("decks" + File.separator + deckFileName + ".xml");
             boolean result = dd.init(deckFile);
 
             if (!result)
@@ -1187,7 +1190,7 @@ public class GametableFrame extends JFrame implements ActionListener
             // also, we need to add the desired cards to our own private layer
             for (int i = 0; i < drawnCards.length; i++)
             {
-                final Pog cardPog = makeCardPog(drawnCards[i]);
+                final MapElementInstance cardPog = makeCardPog(drawnCards[i]);
                 if (cardPog != null)
                 {
                     // add this pog card to our own private layer
@@ -1232,7 +1235,7 @@ public class GametableFrame extends JFrame implements ActionListener
     public void eraseAllPogs()
     {
         // make an int array of all the IDs
-    	List<Pog> pogs = getGametableCanvas().getActiveMap().getPogs();
+    	List<MapElementInstance> pogs = getGametableCanvas().getActiveMap().getPogs();
       getGametableCanvas().removePogs(pogs, true);
     }
 
@@ -1682,16 +1685,10 @@ public class GametableFrame extends JFrame implements ActionListener
         menu.add(getTogglePrivateMapMenuItem());
         menu.add(getExportMapMenuItem());
         JMenu cbgitem = new JMenu(lang.MAP_BG_CHANGE);
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_DEFAULT));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_BLACK));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_WHITE));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_GREY));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_DGREY));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_GREEN));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_DGREEN));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_BLUE));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_DBLUE));
-        cbgitem.add(getChangeBGMenuItem(GametableCanvas.BG_BROWN));
+        
+        for (BackgroundColor color : BackgroundColor.values())
+        	cbgitem.add(getChangeBGMenuItem(color));
+        
         menu.add(cbgitem);
         menu.addSeparator();
         menu.add(getLockMenuItem(true));
@@ -2117,7 +2114,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 GroupingDialog gd = new GroupingDialog(false);
                 gd.setVisible(true);
                 if (gd.isAccepted()) {
-                    List<Pog> pogs = PogGroups.getGroupPogs(gd.getGroup());                        
+                    List<MapElementInstance> pogs = PogGroups.getGroupPogs(gd.getGroup());                        
                     getGametableCanvas().getActiveMap().selectPogs(pogs);
                     getGametableCanvas().repaint();
                 }
@@ -2136,7 +2133,7 @@ public class GametableFrame extends JFrame implements ActionListener
             public void actionPerformed(final ActionEvent e) {
                 GameTableMap map = getGametableCanvas().getActiveMap();
                 
-                for (Pog pog : map.getSelectedPogs())
+                for (MapElementInstance pog : map.getSelectedPogs())
                 {
                     PogGroups.removePogFromGroup(pog);	
                 }
@@ -2247,14 +2244,15 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param color
      * @return
      */
-    private JMenuItem getChangeBGMenuItem(final int color) {
-        final String cstr = m_gametableCanvas.getBGColorString(color);
+    private JMenuItem getChangeBGMenuItem(final BackgroundColor color) {
+        final String cstr = color.getText();
+        
         JMenuItem item = new JMenuItem(cstr);
         item.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e)
             {
-                m_gametableCanvas.changeBackgroundCP(color,false);
+                m_gametableCanvas.changeBackgroundCP(color);
             }
         });
 
@@ -2389,19 +2387,19 @@ public class GametableFrame extends JFrame implements ActionListener
         {
             public void actionPerformed(final ActionEvent e)
             {
-                Pog npog;
+                MapElementInstance npog;
                 GameTableMap map = getGametableCanvas().getActiveMap();
                 GameTableMap to;
                 if(map == getGametableCanvas().getPublicMap()) to = getGametableCanvas().getPrivateMap();
                 else to = getGametableCanvas().getPublicMap();
 
-                for (Pog pog : map.getSelectedPogs())
+                for (MapElementInstance pog : map.getSelectedPogs())
                 {
                   to.addPog(pog);
                   map.removePog(pog);
                   if(copy) 
                   {
-                      npog = new Pog(pog);
+                      npog = new MapElementInstance(pog);
                       map.addPog(npog);
                   }
                 }                
@@ -2624,7 +2622,7 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param openLink
      * @param closeLink
      */
-    public void groupPacketReceived(Action action, final String group, final int pog, final int player) 
+    public void groupPacketReceived(Action action, final String group, final MapElementInstanceID pog, final int player) 
     {
         if(m_netStatus == NETSTATE_HOST) 
         {
@@ -3066,7 +3064,7 @@ public class GametableFrame extends JFrame implements ActionListener
             for (int toolId = 0; toolId < numTools; toolId++)
             {
                 final ToolManager.Info info = m_toolManager.getToolInfo(toolId);
-                final Image im = UtilityFunctions.createDrawableImage(buttonSize, buttonSize);
+                final Image im = Images.createBufferedImage(buttonSize, buttonSize);
                 {
                     final Graphics g = im.getGraphics();
                     final Image icon = info.getIcon();
@@ -3328,9 +3326,9 @@ public class GametableFrame extends JFrame implements ActionListener
         try {
             final FileInputStream infile = new FileInputStream(openFile);
             final DataInputStream dis = new DataInputStream(infile);
-            final Pog nPog = new Pog(dis);
+            final MapElementInstance nPog = new MapElementInstance(dis);
 
-            if (nPog.isUnknown()) { // we need this image
+            if (!nPog.getPogType().isLoaded()) { // we need this image
                 PacketManager.requestPogImage(null, nPog);
             }
             m_gametableCanvas.addPog(nPog);
@@ -3517,7 +3515,7 @@ public class GametableFrame extends JFrame implements ActionListener
         loadState(saveFileData);
     }
 
-    public void lockPogPacketReceived(final int id, final boolean newLock)
+    public void lockPogPacketReceived(final MapElementInstanceID id, final boolean newLock)
     {
         getGametableCanvas().doLockPog(id, newLock);
 
@@ -3537,7 +3535,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
     private void lockMap(final GameTableMap mapToLock, final boolean lock) 
     {
-    	for (Pog pog : mapToLock.getPogs())
+    	for (MapElementInstance pog : mapToLock.getPogs())
     	{       
     		pog.setLocked(lock);
       }
@@ -3571,7 +3569,7 @@ public class GametableFrame extends JFrame implements ActionListener
     }
 
     // makes a card pog out of the sent in card
-    public Pog makeCardPog(final Card card)
+    public MapElementInstance makeCardPog(final Card card)
     {
         // there might not be a pog associated with this card
         if (card.getCardFile().length() == 0)
@@ -3579,7 +3577,7 @@ public class GametableFrame extends JFrame implements ActionListener
             return null;
         }
 
-        final PogType newPogType = getPogLibrary().getPog("pogs" + UtilityFunctions.LOCAL_SEPARATOR + card.getCardFile());
+        final MapElement newPogType = getPogLibrary().getPog("pogs" + File.separator + card.getCardFile());
 
         // there could be a problem with the deck definition. It's an easy mistake
         // to make. So rather than freak out, we just return null.
@@ -3588,14 +3586,14 @@ public class GametableFrame extends JFrame implements ActionListener
             return null;
         }
 
-        final Pog newPog = new Pog(newPogType);
+        final MapElementInstance newPog = new MapElementInstance(newPogType);
 
         // make it a card pog
         newPog.makeCardPog(card);
         return newPog;
     }
 
-    public void movePogPacketReceived(final int id, final int newX, final int newY)
+    public void movePogPacketReceived(final MapElementInstanceID id, final int newX, final int newY)
     {
         getGametableCanvas().doMovePog(id, newX, newY);
 
@@ -3663,7 +3661,7 @@ public class GametableFrame extends JFrame implements ActionListener
         send(PacketManager.makeLinesPacket(getGametableCanvas().getPublicMap().getLines(), -1, -1), player);
 
         // pogs
-        for (Pog pog : getGametableCanvas().getPublicMap().getPogs())
+        for (MapElementInstance pog : getGametableCanvas().getPublicMap().getPogs())
         {
             send(PacketManager.makeAddPogPacket(pog), player);
         }
@@ -3683,7 +3681,7 @@ public class GametableFrame extends JFrame implements ActionListener
         sendDeckList();
     }
 
-    public void pogDataPacketReceived(final int id, final String s, final Map<String, String> toAdd, final Set<String> toDelete)
+    public void pogDataPacketReceived(final MapElementInstanceID id, final String s, final Map<String, String> toAdd, final Set<String> toDelete)
     {
         getGametableCanvas().doSetPogData(id, s, toAdd, toDelete);
 
@@ -3698,7 +3696,7 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param id
      * @param size
      */
-    public void pogLayerPacketReceived(final int id, final Type layer)
+    public void pogLayerPacketReceived(final MapElementInstanceID id, final Layer layer)
     {
         getGametableCanvas().doSetPogLayer(id, layer);
         if (m_netStatus == NETSTATE_HOST)
@@ -3707,7 +3705,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void pogReorderPacketReceived(final Map<Integer, Long> changes)
+    public void pogReorderPacketReceived(final Map<MapElementInstanceID, Long> changes)
     {
         getGametableCanvas().doPogReorder(changes);
         if (m_netStatus == NETSTATE_HOST)
@@ -3716,7 +3714,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void pogSizePacketReceived(final int id, final float size)
+    public void pogSizePacketReceived(final MapElementInstanceID id, final float size)
     {
         getGametableCanvas().doSetPogSize(id, size);
 
@@ -3726,7 +3724,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void pogTypePacketReceived(final int id, final int type)
+    public void pogTypePacketReceived(final MapElementInstanceID id, final MapElementInstanceID type)
     {
         getGametableCanvas().doSetPogType(id, type);
 
@@ -4017,7 +4015,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void removePogsPacketReceived(final int ids[])
+    public void removePogsPacketReceived(final MapElementInstanceID ids[])
     {
         getGametableCanvas().doRemovePogs(ids, false);
 
@@ -4052,8 +4050,7 @@ public class GametableFrame extends JFrame implements ActionListener
         // also, we need to send that player the pogs for each of those cards
         for (int i = 0; i < cards.length; i++)
         {
-            final Pog newPog = makeCardPog(cards[i]);
-            newPog.assignUniqueId();
+            final MapElementInstance newPog = makeCardPog(cards[i]);
 
             if (newPog != null)
             {
@@ -4065,7 +4062,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void rotatePogPacketReceived(final int id, final double newAngle)
+    public void rotatePogPacketReceived(final MapElementInstanceID id, final double newAngle)
     {
         getGametableCanvas().doRotatePog(id, newAngle);
 
@@ -4076,7 +4073,7 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
 
-    public void flipPogPacketReceived(final int id, final int flipH, final int flipV)
+    public void flipPogPacketReceived(final MapElementInstanceID id, final boolean flipH, final boolean flipV)
     {
         getGametableCanvas().doFlipPog(id, flipH, flipV);
 
@@ -4166,7 +4163,7 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param pog
      * Saves a Single pog to a File for later loading.
      */
-    public void savePog(final File file, final Pog pog) {
+    public void savePog(final File file, final MapElementInstance pog) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(baos);
         try
@@ -4254,7 +4251,7 @@ public class GametableFrame extends JFrame implements ActionListener
             dos.write(linesPacket);
 
             // pogs
-            for (Pog pog : mapToSave.getPogs())
+            for (MapElementInstance pog : mapToSave.getPogs())
             {
                 final byte[] pogsPacket = PacketManager.makeAddPogPacket(pog);
                 dos.writeInt(pogsPacket.length);
@@ -4266,8 +4263,18 @@ public class GametableFrame extends JFrame implements ActionListener
             dos.writeInt(gridModePacket.length);
             dos.write(gridModePacket);
 
-            // bgstate            
-            final byte bgState[] = PacketManager.makeBGColPacket(m_gametableCanvas.cur_bg_col, m_gametableCanvas.cur_bg_type);
+            // bgstate
+            byte bgState[];
+            if (m_gametableCanvas.m_backgroundTypeMapElement && m_gametableCanvas.cur_bg_pog != null)
+            {
+            	bgState = PacketManager.makeBGColPacket(m_gametableCanvas.cur_bg_pog);
+            }
+            else
+            {
+            	bgState = PacketManager.makeBGColPacket(m_gametableCanvas.cur_bg_col);
+            }
+            
+
             dos.writeInt(bgState.length);
             dos.write(bgState);            
             

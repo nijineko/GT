@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.Pog;
+import com.galactanet.gametable.data.MapElementInstance;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.LineSegment;
 
@@ -63,7 +63,7 @@ public class PublishTool extends NullTool
     public void clearTints()
     {
     	// @revise move to MODEL?
-    	for (Pog pog : m_from.getPogs())
+    	for (MapElementInstance pog : m_from.getPogs())
     		pog.setTinted(false);
     }
 
@@ -120,13 +120,12 @@ public class PublishTool extends NullTool
             // GametableFrame frame = GametableFrame.g_gameTableFrame;
 
             // first off, copy all the pogs/underlays over to the public layer
-        	for (Pog pog : m_from.getPogs())
+        	for (MapElementInstance pog : m_from.getPogs())
             {
                 if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
                     // this pog gets copied
-                    final Pog newPog = new Pog(pog);
-                    newPog.assignUniqueId();
+                    final MapElementInstance newPog = new MapElementInstance(pog);
 
                     m_canvas.setActiveMap(m_to);
                     m_canvas.addPog(newPog);
@@ -172,7 +171,7 @@ public class PublishTool extends NullTool
             {
                 // remove the pogs that we moved
             	
-            	for (Pog pog : m_from.getPogs().toArray(new Pog[0]))	// converting list to array to avoid concurrent modifications
+            	for (MapElementInstance pog : m_from.getPogs().toArray(new MapElementInstance[0]))	// converting list to array to avoid concurrent modifications
                 {
                     if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
@@ -231,7 +230,7 @@ public class PublishTool extends NullTool
     {
         final Rectangle selRect = createRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (Pog pog : m_from.getPogs())
+        for (MapElementInstance pog : m_from.getPogs())
         {
             final int size = pog.getFaceSize() * GametableCanvas.BASE_SQUARE_SIZE;
             final Point tl = new Point(pog.getPosition());
