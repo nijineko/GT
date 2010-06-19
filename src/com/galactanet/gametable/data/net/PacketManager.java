@@ -10,10 +10,7 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementInstance;
-import com.galactanet.gametable.data.MapElementInstanceID;
-import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.PogGroups.Action;
 import com.galactanet.gametable.data.deck.Card;
@@ -757,7 +754,7 @@ public class PacketManager
         }
     }
 
-    public static byte[] makeMovePogPacket(final MapElementInstanceID id, final int newX, final int newY)
+    public static byte[] makeMovePogPacket(final MapElementInstanceID id, MapCoordinates modelPos)
     {
         try
         {
@@ -766,8 +763,8 @@ public class PacketManager
 
             dos.writeInt(PACKET_MOVEPOG); // type
             dos.writeLong(id.numeric());
-            dos.writeInt(newX);
-            dos.writeInt(newY);
+            dos.writeInt(modelPos.x);
+            dos.writeInt(modelPos.y);
 
             return baos.toByteArray();
         }
@@ -1016,7 +1013,7 @@ public class PacketManager
 
     /* *********************** MOVEPOG PACKET *********************************** */
 
-    public static byte[] makePointPacket(final int plrIdx, final int x, final int y, final boolean bPointing)
+    public static byte[] makePointPacket(final int plrIdx, MapCoordinates point, final boolean bPointing)
     {
         try
         {
@@ -1025,8 +1022,8 @@ public class PacketManager
 
             dos.writeInt(PACKET_POINT); // type
             dos.writeInt(plrIdx);
-            dos.writeInt(x);
-            dos.writeInt(y);
+            dos.writeInt(point.x);
+            dos.writeInt(point.y);
             dos.writeBoolean(bPointing);
 
             return baos.toByteArray();
@@ -1105,7 +1102,7 @@ public class PacketManager
         }
     }
 
-    public static byte[] makeRecenterPacket(final int x, final int y, final int zoom)
+    public static byte[] makeRecenterPacket(MapCoordinates center, final int zoom)
     {
         try
         {
@@ -1113,8 +1110,8 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_RECENTER); // type
-            dos.writeInt(x);
-            dos.writeInt(y);
+            dos.writeInt(center.x);
+            dos.writeInt(center.y);
             dos.writeInt(zoom);
 
             return baos.toByteArray();
@@ -1691,12 +1688,11 @@ public class PacketManager
         {
         	long pid = dis.readLong();
           MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
-            final int newX = dis.readInt();
-            final int newY = dis.readInt();
+          MapCoordinates pos = new MapCoordinates(dis.readInt(), dis.readInt());
 
             // tell the model
             final GametableFrame gtFrame = GametableFrame.getGametableFrame();
-            gtFrame.movePogPacketReceived(id, newX, newY);
+            gtFrame.movePogPacketReceived(id, pos);
         }
         catch (final IOException ex)
         {
@@ -2209,13 +2205,14 @@ public class PacketManager
         try
         {
             final int plrIdx = dis.readInt();
-            final int x = dis.readInt();
-            final int y = dis.readInt();
+
+            MapCoordinates point = new MapCoordinates(dis.readInt(), dis.readInt());
+            
             final boolean bPointing = dis.readBoolean();
 
             // tell the model
             final GametableFrame gtFrame = GametableFrame.getGametableFrame();
-            gtFrame.pointPacketReceived(plrIdx, x, y, bPointing);
+            gtFrame.pointPacketReceived(plrIdx, point, bPointing);
         }
         catch (final IOException ex)
         {
@@ -2288,13 +2285,12 @@ public class PacketManager
     {
         try
         {
-            final int x = dis.readInt();
-            final int y = dis.readInt();
+        	MapCoordinates pos = new MapCoordinates(dis.readInt(), dis.readInt());
             final int zoom = dis.readInt();
 
             // tell the model
             final GametableFrame gtFrame = GametableFrame.getGametableFrame();
-            gtFrame.recenterPacketReceived(x, y, zoom);
+            gtFrame.recenterPacketReceived(pos, zoom);
         }
         catch (final IOException ex)
         {

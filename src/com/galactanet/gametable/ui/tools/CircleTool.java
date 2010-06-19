@@ -7,6 +7,7 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
@@ -24,10 +25,10 @@ public class CircleTool extends NullTool
     private GametableCanvas m_canvas;
     private PenAsset        m_penAsset;
     private double          m_rad;
-    private Point           m_mouseAnchor;
-    private Point           m_mouseFloat;
+    private MapCoordinates           m_mouseAnchor;
+    private MapCoordinates           m_mouseFloat;
 
-    private Point           m_mousePosition;
+    private MapCoordinates           m_mousePosition;
 
     /**
      * Default Constructor.
@@ -39,7 +40,8 @@ public class CircleTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#activate(com.galactanet.gametable.GametableCanvas)
      */
-    public void activate(final GametableCanvas canvas)
+    @Override
+		public void activate(final GametableCanvas canvas)
     {
         m_canvas = canvas;
         //m_penAsset = null;
@@ -47,7 +49,8 @@ public class CircleTool extends NullTool
         m_mouseFloat = null;
     }
 
-    public void endAction()
+    @Override
+		public void endAction()
     {
         //m_penAsset = null;
         m_mouseAnchor = null;
@@ -58,7 +61,8 @@ public class CircleTool extends NullTool
     /*
      * @see com.galactanet.gametable.Tool#isBeingUsed()
      */
-    public boolean isBeingUsed()
+    @Override
+		public boolean isBeingUsed()
     {
         return (m_mouseAnchor != null);
     }
@@ -66,9 +70,10 @@ public class CircleTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonPressed(int, int)
      */
-    public void mouseButtonPressed(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
-        m_mousePosition = new Point(x, y);
+        m_mousePosition = modelPos;
         m_mouseAnchor = m_mousePosition;
         if ((modifierMask & MODIFIER_CTRL) == 0)
         {
@@ -80,22 +85,23 @@ public class CircleTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonReleased(int, int)
      */
-    public void mouseButtonReleased(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
         m_penAsset = new PenAsset(GametableFrame.getGametableFrame().m_drawColor);
 
         // Figure the radius of the circle and use a PenAsset as if we had drawn
         // the circle with the PenTool.
         if ((m_mouseAnchor != null) && !m_mouseAnchor.equals(m_mouseFloat))
-        {
-            m_rad = m_mouseAnchor.distance(m_mouseFloat.x, m_mouseFloat.y);
+        {        
+            m_rad = m_mouseAnchor.distance(m_mouseFloat);
             // With this loop, all circles are composed of the same number of segments regardless of size. 
             // Maybe make theta increment dependent on radius?
             for (double theta = 0; theta < 2 * Math.PI; theta += .1)
             {
-                m_penAsset.addPoint((int)(m_mouseAnchor.x + Math.cos(theta) * m_rad), (int)(m_mouseAnchor.y + Math.sin(theta) * m_rad));
+                m_penAsset.addPoint(m_mouseAnchor.delta((int)(Math.cos(theta) * m_rad), (int)(Math.sin(theta) * m_rad)));
             }
-            m_penAsset.addPoint((int)(m_mouseAnchor.x + m_rad), m_mouseAnchor.y);
+            m_penAsset.addPoint(m_mouseAnchor.delta((int)m_rad, 0));
             // The call to smooth() reduces the number of line segments in the
             // circle, drawing it faster but making it rougher. Uncomment if
             // redrawing takes too long.
@@ -109,11 +115,12 @@ public class CircleTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseMoved(int, int)
      */
-    public void mouseMoved(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseMoved(MapCoordinates modelPos, final int modifierMask)
     {
         if (m_mouseAnchor != null)
         {
-            m_mousePosition = new Point(x, y);
+            m_mousePosition = modelPos;
             m_mouseFloat = m_mousePosition;
             if ((modifierMask & MODIFIER_CTRL) == 0)
             {
@@ -126,7 +133,8 @@ public class CircleTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#paint(java.awt.Graphics)
      */
-    public void paint(final Graphics g)
+    @Override
+		public void paint(final Graphics g)
     {
         if (m_mouseAnchor != null)
         {

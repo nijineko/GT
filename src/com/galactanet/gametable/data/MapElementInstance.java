@@ -157,7 +157,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     /**
      * Position of the pog on the map in map coordinates.
      */
-    private Point              m_position                 = new Point(0, 0);
+    private MapCoordinates              m_position                 = MapCoordinates.ORIGIN;
 
     /**
      * Scale for this pog.
@@ -195,7 +195,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
       final int x = dis.readInt();
       final int y = dis.readInt();
-      m_position = new Point(x, y);
+      m_position = new MapCoordinates(x, y);
       final int size = dis.readInt();
       
       long id = dis.readLong();
@@ -600,8 +600,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor,
         boolean drawAttributes, GametableCanvas canvas)
     {
-    		
-
         if (m_name == null)
         {
             m_name = "";
@@ -614,7 +612,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         final int totalWidth = stringBounds.width + 6;
         final int totalHeight = stringBounds.height + 1;
         
-        final int size = GametableCanvas.getSquareSizeForZoom(canvas.m_zoom);
+        final int size = canvas.getSquareSize();
 
         final Point pogDrawCoords = canvas.modelToDraw(getPosition());
         final int viewWidth = getHeightForZoomLevel(size);
@@ -625,28 +623,30 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         backgroundRect.height = totalHeight;
         
         GameTableMap map = canvas.getActiveMap();
+        
+        Point scrollPos = map.getScrollPosition();
 
         if (bForceTextInBounds)
         {
             // force it to be on the view
-            if (backgroundRect.x < map.getScrollX())
+            if (backgroundRect.x < scrollPos.x)
             {
-                backgroundRect.x = map.getScrollX();
+                backgroundRect.x = scrollPos.x;
             }
 
-            if (backgroundRect.y < map.getScrollY())
+            if (backgroundRect.y < scrollPos.y)
             {
-                backgroundRect.y = map.getScrollY();
+                backgroundRect.y = scrollPos.y;
             }
 
-            if (backgroundRect.x + totalWidth > map.getScrollX() + canvas.getWidth())
+            if (backgroundRect.x + totalWidth > scrollPos.x + canvas.getWidth())
             {
-                backgroundRect.x = map.getScrollX() + canvas.getWidth() - totalWidth;
+                backgroundRect.x = scrollPos.x + canvas.getWidth() - totalWidth;
             }
 
-            if (backgroundRect.y + totalHeight > map.getScrollY() + canvas.getHeight())
+            if (backgroundRect.y + totalHeight > scrollPos.y + canvas.getHeight())
             {
-                backgroundRect.y = map.getScrollY() + canvas.getHeight() - totalHeight;
+                backgroundRect.y = scrollPos.y + canvas.getHeight() - totalHeight;
             }
         }
 
@@ -712,7 +712,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     public void drawToCanvas(Graphics g, GametableCanvas canvas)
     {
         // determine the visible area of the gametable canvas
-        final Rectangle visbleCanvas = canvas.getVisibleCanvasRect(canvas.m_zoom);
+        final Rectangle visbleCanvas = canvas.getVisibleCanvasRect(canvas.getZoomLevel());
         // determine the area covered by the pog - replaced with a set value m_bounds
         // final Rectangle pogArea = getBounds(m_canvas);
         
@@ -723,8 +723,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
             // convert our model coordinates to draw coordinates
             final Point drawCoords = canvas.modelToDraw(getPosition());
-            final float scale = (float)GametableCanvas.getSquareSizeForZoom(canvas.m_zoom)
-            / (float)GametableCanvas.BASE_SQUARE_SIZE;
+            final float scale = (float)canvas.getSquareSize() / (float)GameTableMap.getBaseSquareSize();
  
             // @revise - what is tinted, what is selected - should we have clearer color scheme / standard UI artifact for selection? 
             // if we're tinted, draw tinted
@@ -851,7 +850,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
     private int getHeightForZoomLevel(int squareSize)
     {
-        final double ratio = (double)squareSize / (double)GametableCanvas.BASE_SQUARE_SIZE;
+        final double ratio = (double)squareSize / (double)GameTableMap.getBaseSquareSize();
         final int imgSizeY = (int)(ratio * getHeight());
         return imgSizeY;
     }
@@ -874,7 +873,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         return m_pogType;
     }
 
-    public Point getPosition()
+    public MapCoordinates getPosition()
     {
         return m_position;
     }
@@ -1025,7 +1024,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
     }
 
-    private Point modelToPog(final Point modelPoint)
+    private Point modelToPog(MapCoordinates modelPoint)
     {
         // translation for x & y
         int sx = 0;
@@ -1112,9 +1111,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
             
 
-        final float targetDimension = GametableCanvas.BASE_SQUARE_SIZE * faceSize;
+        final float targetDimension = GameTableMap.getBaseSquareSize() * faceSize;
 
-        float maxDimension = GametableCanvas.BASE_SQUARE_SIZE;
+        float maxDimension = GameTableMap.getBaseSquareSize();
         Image image = m_pogType.getImage();
         if (image != null)
         	maxDimension = Math.max(image.getWidth(null), image.getHeight(null));
@@ -1145,17 +1144,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         reinitializeHitMap();
     }
 
-
-    // --- Comparable Implementation ---
-
-    public void setPosition(final int x, final int y)
-    {
-        setPosition(new Point(x, y));
-    }
-
-    // --- Object Implementation ---
-
-    public void setPosition(final Point pos)
+    public void setPosition(final MapCoordinates pos)
     {
         m_position = pos;
     }
@@ -1250,7 +1239,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
      * @param p Point to check for
      * @return true / false
      */
-    public final boolean contains(Point p)
+    public final boolean contains(MapCoordinates p)
     {
     	Point pt = modelToPog(p);
       return contains(pt.x, pt.y);
@@ -1392,7 +1381,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
       if (m_pogType.getImage() == null)
       {
-      	m_elementSize.setSize(GametableCanvas.BASE_SQUARE_SIZE, GametableCanvas.BASE_SQUARE_SIZE);
+      	m_elementSize.setSize(GameTableMap.getBaseSquareSize(), GameTableMap.getBaseSquareSize());
       }
       else
       {      

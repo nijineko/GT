@@ -6,9 +6,12 @@
 package com.galactanet.gametable.ui.tools;
 
 import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.Collections;
 import java.util.List;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.PreferenceDescriptor;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.ToolIF;
@@ -70,21 +73,21 @@ public class NullTool implements ToolIF
     /*
      * @see com.galactanet.gametable.Tool#mouseButtonPressed(int, int)
      */
-    public void mouseButtonPressed(final int x, final int y, final int modifierMask)
+    public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
     }
 
     /*
      * @see com.galactanet.gametable.Tool#mouseButtonReleased(int, int)
      */
-    public void mouseButtonReleased(final int x, final int y, final int modifierMask)
+    public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
     }
 
     /*
      * @see com.galactanet.gametable.Tool#mouseMoved(int, int)
      */
-    public void mouseMoved(final int x, final int y, final int modifierMask)
+    public void mouseMoved(MapCoordinates modelPos, final int modifierMask)
     {
     }
 
@@ -94,5 +97,25 @@ public class NullTool implements ToolIF
     public void paint(final Graphics g)
     {
     }
+
+		static Rectangle createRectangle(final MapCoordinates a, final MapCoordinates b)
+		{
+		    final int x = Math.min(a.x, b.x);
+		    final int y = Math.min(a.y, b.y);
+		    final int width = Math.abs(b.x - a.x) + 1;
+		    final int height = Math.abs(b.y - a.y) + 1;
+		
+		    return new Rectangle(x, y, width, height);
+		}
+
+		static Rectangle createRectangle(final Point a, final Point b)
+		{
+		    final int x = Math.min(a.x, b.x);
+		    final int y = Math.min(a.y, b.y);
+		    final int width = Math.abs(b.x - a.x) + 1;
+		    final int height = Math.abs(b.y - a.y) + 1;
+		
+		    return new Rectangle(x, y, width, height);
+		}
 
 }

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.galactanet.gametable.data.GameTableMap;
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElementInstance;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.LineSegment;
@@ -21,20 +22,10 @@ import com.galactanet.gametable.ui.LineSegment;
  */
 public class PublishTool extends NullTool
 {
-    private static Rectangle createRectangle(final Point a, final Point b)
-    {
-        final int x = Math.min(a.x, b.x);
-        final int y = Math.min(a.y, b.y);
-        final int width = Math.abs(b.x - a.x) + 1;
-        final int height = Math.abs(b.y - a.y) + 1;
-
-        return new Rectangle(x, y, width, height);
-    }
-
     private GametableCanvas m_canvas;
     private GameTableMap    m_from;
-    private Point           m_mouseAnchor;
-    private Point           m_mouseFloat;
+    private MapCoordinates           m_mouseAnchor;
+    private MapCoordinates           m_mouseFloat;
     
     //private int             m_color = (GametableFrame.getGametableFrame().m_drawColor).getRGB();
 
@@ -52,7 +43,8 @@ public class PublishTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#activate(com.galactanet.gametable.GametableCanvas)
      */
-    public void activate(final GametableCanvas canvas)
+    @Override
+		public void activate(final GametableCanvas canvas)
     {
         m_canvas = canvas;
         m_mouseAnchor = null;
@@ -67,7 +59,8 @@ public class PublishTool extends NullTool
     		pog.setTinted(false);
     }
 
-    public void endAction()
+    @Override
+		public void endAction()
     {
         clearTints();
         m_mouseAnchor = null;
@@ -78,7 +71,8 @@ public class PublishTool extends NullTool
     /*
      * @see com.galactanet.gametable.Tool#isBeingUsed()
      */
-    public boolean isBeingUsed()
+    @Override
+		public boolean isBeingUsed()
     {
         return (m_mouseAnchor != null);
     }
@@ -86,7 +80,8 @@ public class PublishTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonPressed(int, int)
      */
-    public void mouseButtonPressed(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
 
         if (m_canvas.isPublicMap())
@@ -106,14 +101,15 @@ public class PublishTool extends NullTool
             m_to = m_canvas.getPublicMap();
         }
 
-        m_mouseAnchor = new Point(x, y);
+        m_mouseAnchor = modelPos;
         m_mouseFloat = m_mouseAnchor;
     }
 
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonReleased(int, int, int)
      */
-    public void mouseButtonReleased(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
         if ((m_mouseAnchor != null) && !m_mouseAnchor.equals(m_mouseFloat))
         {
@@ -196,11 +192,12 @@ public class PublishTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseMoved(int, int)
      */
-    public void mouseMoved(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseMoved(MapCoordinates modelPos, final int modifierMask)
     {
         if (m_mouseAnchor != null)
         {
-            m_mouseFloat = new Point(x, y);
+            m_mouseFloat = modelPos;
             setTints(modifierMask);
             m_canvas.repaint();
         }
@@ -209,7 +206,8 @@ public class PublishTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#paint(java.awt.Graphics)
      */
-    public void paint(final Graphics g)
+    @Override
+		public void paint(final Graphics g)
     {
         if (m_mouseAnchor != null)
         {
@@ -232,12 +230,11 @@ public class PublishTool extends NullTool
 
         for (MapElementInstance pog : m_from.getPogs())
         {
-            final int size = pog.getFaceSize() * GametableCanvas.BASE_SQUARE_SIZE;
-            final Point tl = new Point(pog.getPosition());
-            final Point br = new Point(pog.getPosition());
-            br.x += size;
-            br.y += size;
-            final Rectangle pogRect = createRectangle(tl, br);
+            final int size = pog.getFaceSize() * GameTableMap.getBaseSquareSize();
+            
+            MapCoordinates bottomRight = pog.getPosition().delta(size, size);
+            
+            final Rectangle pogRect = createRectangle(pog.getPosition(), bottomRight);
 
             if (selRect.intersects(pogRect) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
             {

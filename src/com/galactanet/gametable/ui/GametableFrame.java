@@ -2345,8 +2345,8 @@ public class GametableFrame extends JFrame implements ActionListener
                     final int viewCenterY = getGametableCanvas().getHeight() / 2;
 
                     // convert to model coordinates
-                    final Point modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
-                    getGametableCanvas().recenterView(modelCenter.x, modelCenter.y, getGametableCanvas().m_zoom);
+                    final MapCoordinates modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
+                    getGametableCanvas().recenterView(modelCenter, m_gametableCanvas.getZoomLevel());
                     postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.MAP_CENTER_DONE);
                 }
             }
@@ -3354,7 +3354,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 (screenSize.height - m_windowSize.height) / 2);
             m_bMaximized = false;
             getGametableCanvas().setPrimaryScroll(getGametableCanvas().getPublicMap(), 0,0);
-            getGametableCanvas().setZoom(0);
+            getGametableCanvas().setZoomLevel(0);
             applyWindowInfo();
             addMacro("d20", "d20", null);
             m_showNamesCheckbox.setSelected(false);
@@ -3387,7 +3387,7 @@ public class GametableFrame extends JFrame implements ActionListener
             m_password = prefDis.readUTF();
             getGametableCanvas().setPrimaryScroll(getGametableCanvas().getPublicMap(), prefDis.readInt(),
                 prefDis.readInt());
-            getGametableCanvas().setZoom(prefDis.readInt());
+            getGametableCanvas().setZoomLevel(prefDis.readInt());
 
             m_windowSize = new Dimension(prefDis.readInt(), prefDis.readInt());
             m_windowPos = new Point(prefDis.readInt(), prefDis.readInt());
@@ -3593,14 +3593,14 @@ public class GametableFrame extends JFrame implements ActionListener
         return newPog;
     }
 
-    public void movePogPacketReceived(final MapElementInstanceID id, final int newX, final int newY)
+    public void movePogPacketReceived(final MapElementInstanceID id, MapCoordinates newPos)
     {
-        getGametableCanvas().doMovePog(id, newX, newY);
+        getGametableCanvas().doMovePog(id, newPos);
 
         if (m_netStatus == NETSTATE_HOST)
         {
             // if we're the host, send it to the clients
-            send(PacketManager.makeMovePogPacket(id, newX, newY));
+            send(PacketManager.makeMovePogPacket(id, newPos));
         }
     }
 
@@ -3671,8 +3671,8 @@ public class GametableFrame extends JFrame implements ActionListener
         final int viewCenterY = getGametableCanvas().getHeight() / 2;
 
         // convert to model coordinates
-        final Point modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
-        send(PacketManager.makeRecenterPacket(modelCenter.x, modelCenter.y, getGametableCanvas().m_zoom), player);
+        final MapCoordinates modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
+        send(PacketManager.makeRecenterPacket(modelCenter, m_gametableCanvas.getZoomLevel()), player);
 
         // let them know we're done sending them data from the login
         send(PacketManager.makeLoginCompletePacket(), player);
@@ -3734,19 +3734,19 @@ public class GametableFrame extends JFrame implements ActionListener
         }
     }
     
-    public void pointPacketReceived(final int plrIdx, final int x, final int y, final boolean bPointing)
+    public void pointPacketReceived(final int plrIdx, MapCoordinates modelPos, final boolean bPointing)
     {
         // we're not interested in point packets of our own hand
         if (plrIdx != getMyPlayerIndex())
         {
             final Player plr = m_players.get(plrIdx);
-            plr.setPoint(x, y);
+            plr.setPoint(modelPos);
             plr.setPointing(bPointing);
         }
 
         if (m_netStatus == NETSTATE_HOST)
         {
-            send(PacketManager.makePointPacket(plrIdx, x, y, bPointing));
+            send(PacketManager.makePointPacket(plrIdx, modelPos, bPointing));
         }
 
         getGametableCanvas().repaint();
@@ -3939,13 +3939,13 @@ public class GametableFrame extends JFrame implements ActionListener
 
     }
 
-    public void recenterPacketReceived(final int x, final int y, final int zoom)
+    public void recenterPacketReceived(MapCoordinates modelPoint, final int zoom)
     {
-        getGametableCanvas().doRecenterView(x, y, zoom);
+        getGametableCanvas().doRecenterView(modelPoint, zoom);
 
         if (m_netStatus == NETSTATE_HOST)
         {
-            m_networkThread.send(PacketManager.makeRecenterPacket(x, y, zoom));
+            m_networkThread.send(PacketManager.makeRecenterPacket(modelPoint, zoom));
         }
     }
 
@@ -4200,9 +4200,12 @@ public class GametableFrame extends JFrame implements ActionListener
             prefDos.writeUTF(m_ipAddress);
             prefDos.writeInt(m_port);
             prefDos.writeUTF(m_password);
-            prefDos.writeInt(getGametableCanvas().getPublicMap().getScrollX());
-            prefDos.writeInt(getGametableCanvas().getPublicMap().getScrollY());
-            prefDos.writeInt(getGametableCanvas().m_zoom);
+            
+            GameTableMap activeMap = m_gametableCanvas.getPublicMap();
+            Point pos = activeMap.getScrollPosition();
+            prefDos.writeInt(pos.x);
+            prefDos.writeInt(pos.y);
+            prefDos.writeInt(m_gametableCanvas.getZoomLevel());
 
             prefDos.writeInt(m_windowSize.width);
             prefDos.writeInt(m_windowSize.height);

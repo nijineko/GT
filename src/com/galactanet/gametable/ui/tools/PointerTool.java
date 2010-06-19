@@ -113,12 +113,12 @@ public class PointerTool extends NullTool
     private Point           m_grabOffset;
     private MapElementInstance             m_lastPogMousedOver;
     private MapElementInstance             m_menuPog = null;
-    private Point           m_mousePosition;
+    private MapCoordinates           m_mousePosition;
     private boolean         m_snapping;
 
     private Point           m_startMouse;
 
-    private Point           m_startScroll;
+    private MapCoordinates           m_startScroll;
 
     /**
      * Constructor
@@ -130,7 +130,8 @@ public class PointerTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#activate(com.galactanet.gametable.GametableCanvas)
      */
-    public void activate(final GametableCanvas canvas)
+    @Override
+		public void activate(final GametableCanvas canvas)
     {
         m_canvas = canvas;
         m_grabbedPog = null;
@@ -141,7 +142,8 @@ public class PointerTool extends NullTool
         m_startMouse = null;
     }
 
-    public void endAction()
+    @Override
+		public void endAction()
     {
         m_grabbedPog = null;
         m_ghostPog = null;
@@ -155,7 +157,8 @@ public class PointerTool extends NullTool
     /*
      * @see com.galactanet.gametable.Tool#getPreferences()
      */
-    public List<PreferenceDescriptor> getPreferences()
+    @Override
+		public List<PreferenceDescriptor> getPreferences()
     {
         return PREFERENCES;
     }
@@ -185,7 +188,8 @@ public class PointerTool extends NullTool
     /*
      * @see com.galactanet.gametable.Tool#isBeingUsed()
      */
-    public boolean isBeingUsed()
+    @Override
+		public boolean isBeingUsed()
     {
         return (m_grabbedPog != null) || (m_startScroll != null);
     }
@@ -193,10 +197,11 @@ public class PointerTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonPressed(int, int)
      */
-    public void mouseButtonPressed(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
         m_clicked = true;
-        m_mousePosition = new Point(x, y);
+        m_mousePosition = modelPos;
         m_grabbedPog = m_canvas.getActiveMap().getPogAt(m_mousePosition);
         if (m_grabbedPog != null)
         {
@@ -208,7 +213,7 @@ public class PointerTool extends NullTool
         {
             m_startScroll = m_canvas.drawToModel(m_canvas.getPublicMap().getScrollX(), m_canvas.getPublicMap()
                 .getScrollY());
-            m_startMouse = m_canvas.modelToView(x, y);
+            m_startMouse = m_canvas.modelToView(modelPos);
             m_canvas.setToolCursor(2);
         }
     }
@@ -216,13 +221,14 @@ public class PointerTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonReleased(int, int)
      */
-    public void mouseButtonReleased(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
         if (m_grabbedPog != null)
         {
             if (m_clicked)
             {
-                popupContextMenu(x, y, modifierMask);
+                popupContextMenu(modelPos, modifierMask);
             }
             else
             {
@@ -237,7 +243,7 @@ public class PointerTool extends NullTool
                     }
                     else
                     {
-                        m_canvas.movePog(m_grabbedPog.getId(), m_ghostPog.getX(), m_ghostPog.getY());
+                        m_canvas.movePog(m_grabbedPog.getId(), m_ghostPog.getPosition());
                     }
                 }
             }
@@ -248,32 +254,33 @@ public class PointerTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseMoved(int, int)
      */
-    public void mouseMoved(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseMoved(MapCoordinates modelPos, final int modifierMask)
     {
         setSnapping(modifierMask);
-        m_mousePosition = new Point(x, y);
+        m_mousePosition = modelPos;
         if ((m_grabbedPog != null) && !m_grabbedPog.isLocked())
         {
             m_clicked = false;
             if (m_snapping)
             {
                 final Point adjustment = m_ghostPog.getSnapDragAdjustment();
-                m_ghostPog.setPosition(m_mousePosition.x + m_grabOffset.x + adjustment.x, m_mousePosition.y
-                    + m_grabOffset.y + adjustment.y);
+                m_ghostPog.setPosition(
+                		m_mousePosition.delta(m_grabOffset.x + adjustment.x, m_grabOffset.y + adjustment.y));
+                		
                 m_canvas.snapPogToGrid(m_ghostPog);
             }
             else
             {
-                m_ghostPog.setPosition(m_mousePosition.x + m_grabOffset.x, m_mousePosition.y + m_grabOffset.y);
+                m_ghostPog.setPosition(m_mousePosition.delta(m_grabOffset.x, m_grabOffset.y));
             }
             m_canvas.repaint();
         }
         else if (m_startScroll != null)
         {
-            final Point mousePosition = m_canvas.modelToView(x, y);
-            final Point viewDelta = new Point(m_startMouse.x - mousePosition.x, m_startMouse.y - mousePosition.y);
-            final Point modelDelta = m_canvas.drawToModel(viewDelta);
-            m_canvas.scrollMapTo(m_startScroll.x + modelDelta.x, m_startScroll.y + modelDelta.y);
+            final Point mousePosition = m_canvas.modelToView(modelPos);
+            final MapCoordinates modelDelta = m_canvas.drawToModel(m_startMouse.x - mousePosition.x, m_startMouse.y - mousePosition.y);
+            m_canvas.scrollMapTo(m_startScroll.delta(modelDelta));
         }
         else if ((m_grabbedPog != null) && m_grabbedPog.isLocked())
         {
@@ -288,7 +295,8 @@ public class PointerTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#paint(java.awt.Graphics)
      */
-    public void paint(final Graphics g)
+    @Override
+		public void paint(final Graphics g)
     {
         if ((m_ghostPog != null) && m_canvas.isPointVisible(m_mousePosition))
         {
@@ -302,7 +310,7 @@ public class PointerTool extends NullTool
      * @param x X location of mouse.
      * @param y Y location of mouse.
      */
-    private void popupContextMenu(final int x, final int y, final int modifierMask)
+    private void popupContextMenu(MapCoordinates modelPos, final int modifierMask)
     {
         m_menuPog = m_grabbedPog;
         final JPopupMenu menu = new JPopupMenu("Pog");
@@ -809,7 +817,7 @@ public class PointerTool extends NullTool
               }
 
         }
-        final Point mousePosition = m_canvas.modelToView(x, y);
+        final Point mousePosition = m_canvas.modelToView(modelPos);
         menu.show(m_canvas, mousePosition.x, mousePosition.y);
     }
 

@@ -52,9 +52,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public final static int    GRID_MODE_SQUARES      = 1;
     public final static int    GRID_MODE_HEX          = 2;
 
-    // the size of a square at max zoom level (0)
-    public final static int    BASE_SQUARE_SIZE       = 64;
-
     public final static int    NUM_ZOOM_LEVELS        = 5;
 
     private static final float KEYBOARD_SCROLL_FACTOR = 0.5f;
@@ -95,7 +92,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     // misc flags
     private boolean            m_bSpaceKeyDown;
-    private Point              m_deltaScroll;
+    private MapCoordinates              m_deltaScroll;
     // some cursors
     private Cursor             m_emptyCursor;
     // the frame
@@ -106,7 +103,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     HexGridMode                m_hexGridMode          = new HexGridMode();
     GridMode                   m_noGridMode           = new GridMode();
 
-    private Point              m_mouseModelFloat;
+    private MapCoordinates              m_mouseModelFloat;
 
     private boolean            m_newPogIsBeingDragged;
     private MapElementInstance                m_pogMouseOver;
@@ -120,7 +117,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      * true if the current mouse action was initiated with a right-click
      */
     private boolean            m_rightClicking;
-    private Point              m_startScroll;
+    private MapCoordinates		m_startScroll;
     private boolean            m_scrolling;
     private long               m_scrollTime;
     private long               m_scrollTimeTotal;
@@ -128,10 +125,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     /**
      * This is the number of screen pixels that are used per model pixel. It's never less than 1
      */
-    public int                 m_zoom                 = 1;
+    private int                 m_zoom                 = 1;
 
     // the size of a square at the current zoom level
-    public int                 m_squareSize           = getSquareSizeForZoom(m_zoom);
+    private int                 m_squareSize           = 0;
     
     /**
      * Constructor.
@@ -169,6 +166,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         initializeKeys();
 
         m_activeMap = m_publicMap;
+        
+     		updateSquareSize();
     }
 
     /**
@@ -431,9 +430,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                 }
 
                 final GameTableMap map = getActiveMap();
-                final Point p = drawToModel(map.getScrollX(), map.getScrollY()
+                Point pos = map.getScrollPosition();
+                final MapCoordinates p = drawToModel(pos.x, pos.y
                     - Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
-                smoothScrollTo(p.x, p.y);
+                smoothScrollTo(p);
             }
         });
 
@@ -460,9 +460,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                 }
 
                 final GameTableMap map = getActiveMap();
-                final Point p = drawToModel(map.getScrollX(), map.getScrollY()
-                    + Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
-                smoothScrollTo(p.x, p.y);
+                Point pos = map.getScrollPosition();
+                final MapCoordinates p = 
+                	drawToModel(
+                			pos.x, 
+                			pos.y + Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
+                
+                smoothScrollTo(p);
             }
         });
 
@@ -489,9 +493,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                 }
 
                 final GameTableMap map = getActiveMap();
-                final Point p = drawToModel(map.getScrollX() - Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), map
-                    .getScrollY());
-                smoothScrollTo(p.x, p.y);
+                Point pos = map.getScrollPosition();
+                final MapCoordinates p = drawToModel(
+                			pos.x - Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), 
+                			pos.y);
+                
+                smoothScrollTo(p);
             }
         });
 
@@ -518,9 +525,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                 }
 
                 final GameTableMap map = getActiveMap();
-                final Point p = drawToModel(map.getScrollX() + Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), map
-                    .getScrollY());
-                smoothScrollTo(p.x, p.y);
+                Point pos = map.getScrollPosition();
+                final MapCoordinates p = drawToModel(
+                		pos.x + Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), 
+                		pos.y);
+                
+                smoothScrollTo(p);
             }
         });
     }
@@ -610,21 +620,22 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             return;
         }
         // note the model location of the center
-        final Point modelCenter = viewToModel(getWidth() / 2, getHeight() / 2);
+        final MapCoordinates modelCenter = viewToModel(getWidth() / 2, getHeight() / 2);
 
         // do the zoom
-        setZoom(m_zoom + delta);
+        setZoomLevel(m_zoom + delta);
 
         // note the view location of the model center
-        final Point viewCenter = modelToView(modelCenter.x, modelCenter.y);
+        final Point viewCenter = modelToView(modelCenter);
 
         // note the present actual center
         final int presentCenterX = getWidth() / 2;
         final int presentCenterY = getHeight() / 2;
 
         // set up the scroll to enforce the center being where it's supposed to be
-        final int scrX = getActiveMap().getScrollX() - (presentCenterX - viewCenter.x);
-        final int scrY = getActiveMap().getScrollY() - (presentCenterY - viewCenter.y);
+        Point pos = getActiveMap().getScrollPosition();
+        final int scrX = pos.x - (presentCenterX - viewCenter.x);
+        final int scrY = pos.y - (presentCenterY - viewCenter.y);
         setPrimaryScroll(getActiveMap(), scrX, scrY);
     }
 
@@ -722,7 +733,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         getActiveMap().addPog(toLock);
     }
 
-    public void doMovePog(final MapElementInstanceID id, final int newX, final int newY)
+    public void doMovePog(final MapElementInstanceID id, MapCoordinates modelPos)
     {
         final MapElementInstance toMove = getActiveMap().getPogByID(id);
         if (toMove == null)
@@ -730,7 +741,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             return;
         }
 
-        toMove.setPosition(newX, newY);
+        toMove.setPosition(modelPos);
 
         // this pog moves to the end of the array
         getActiveMap().removePog(toMove);
@@ -745,30 +756,30 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         m_gametableFrame.refreshActivePogList();
     }
 
-    public void doRecenterView(final int modelCenterX, final int modelCenterY, final int zoomLevel)
+    public void doRecenterView(MapCoordinates modelCenter, final int zoomLevel)
     {
         // if you recenter for any reason, your tool action is cancelled
         m_gametableFrame.getToolManager().cancelToolAction();
 
         // make the sent in x and y our center, ad the sent in zoom.
         // So start with the zoom
-        setZoom(zoomLevel);
+        setZoomLevel(zoomLevel);
 
-        final Point viewCenter = modelToView(modelCenterX, modelCenterY);
+        final Point viewCenter = modelToView(modelCenter);
 
         // find where the top left would have to be, based on our size
         final int tlX = viewCenter.x - getWidth() / 2;
         final int tlY = viewCenter.y - getHeight() / 2;
 
         // that is our new scroll position
-        final Point newModelPoint = viewToModel(tlX, tlY);
+        final MapCoordinates newModelPoint = viewToModel(tlX, tlY);
         if (PacketSourceState.isHostDumping())
         {
-            scrollMapTo(newModelPoint.x, newModelPoint.y);
+            scrollMapTo(newModelPoint);
         }
         else
         {
-            smoothScrollTo(newModelPoint.x, newModelPoint.y);
+            smoothScrollTo(newModelPoint);
         }
     }
 
@@ -1032,20 +1043,20 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
 
-    public Point drawToModel(final int modelX, final int modelY)
+    public MapCoordinates drawToModel(final int modelX, final int modelY)
     {
         return drawToModel(new Point(modelX, modelY));
     }
 
-    public Point drawToModel(final Point drawPoint)
+    public MapCoordinates drawToModel(final Point drawPoint)
     {
         final double squaresX = (double)(drawPoint.x) / (double)m_squareSize;
         final double squaresY = (double)(drawPoint.y) / (double)m_squareSize;
 
-        final int modelX = (int)(squaresX * BASE_SQUARE_SIZE);
-        final int modelY = (int)(squaresY * BASE_SQUARE_SIZE);
+        final int modelX = (int)(squaresX * GameTableMap.getBaseSquareSize());
+        final int modelY = (int)(squaresY * GameTableMap.getBaseSquareSize());
 
-        return new Point(modelX, modelY);
+        return new MapCoordinates(modelX, modelY);
     }
 
     public void erase(final Rectangle r, final boolean bColorSpecific, final int color)
@@ -1165,7 +1176,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return ((m_bControlKeyDown ? ToolIF.MODIFIER_CTRL : 0) | (m_bSpaceKeyDown ? ToolIF.MODIFIER_SPACE : 0) | (m_bShiftKeyDown ? ToolIF.MODIFIER_SHIFT : 0) | (m_bShiftKeyDown ? ToolIF.MODIFIER_ALT : 0));
     }
 
-    private Point getPogDragMousePosition()
+    private MapCoordinates getPogDragMousePosition()
     {
         final Point screenMousePoint = getPogPanel().getGrabPosition();
         final Point canvasView = UtilityFunctions.getComponentCoordinates(this, screenMousePoint);
@@ -1180,7 +1191,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public Rectangle getVisibleCanvasRect(final int level)
     {
-        final Point topLeft = viewToModel(0, 0);
+        final MapCoordinates topLeft = viewToModel(0, 0);
 
         int canvasW = 0;
         int canvasH = 0;
@@ -1232,43 +1243,55 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return visbleCanvas;        
     }
 
-    public static int getSquareSizeForZoom(final int level)
+    /**
+     * Get actual square size based on current zoom level
+     * @return Size of a square, in pixels
+     */
+    public int getSquareSize()
     {
-        int ret = BASE_SQUARE_SIZE;
-        switch (level)
+    	return m_squareSize;
+    }
+    
+    /**
+     * Recalculate m_squareSize
+     */
+    private void updateSquareSize()
+    {    	
+        int ret = GameTableMap.getBaseSquareSize();
+        switch (m_zoom)
         {
             case 0:
             {
-                ret = BASE_SQUARE_SIZE;
+                ret = GameTableMap.getBaseSquareSize();
             }
             break;
 
             case 1:
             {
-                ret = (BASE_SQUARE_SIZE / 4) * 3;
+                ret = (GameTableMap.getBaseSquareSize() / 4) * 3;
             }
             break;
 
             case 2:
             {
-                ret = BASE_SQUARE_SIZE / 2;
+                ret = GameTableMap.getBaseSquareSize() / 2;
             }
             break;
 
             case 3:
             {
-                ret = BASE_SQUARE_SIZE / 4;
+                ret = GameTableMap.getBaseSquareSize() / 4;
             }
             break;
 
             case 4:
             {
-                ret = BASE_SQUARE_SIZE / 8;
+                ret = GameTableMap.getBaseSquareSize() / 8;
             }
             break;
         }
 
-        return ret;
+        m_squareSize = ret;
     }
 
     public GameTableMap getPrivateMap()
@@ -1445,10 +1468,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return me.isPointing();
     }
 
-    public boolean isPointVisible(final Point modelPoint)
+    public boolean isPointVisible(final MapCoordinates modelPoint)
     {
-        final Point portalTL = viewToModel(0, 0);
-        final Point portalBR = viewToModel(getWidth(), getHeight());
+        final MapCoordinates portalTL = viewToModel(0, 0);
+        final MapCoordinates portalBR = viewToModel(getWidth(), getHeight());
         if (modelPoint.x > portalBR.x)
         {
             return false;
@@ -1508,21 +1531,16 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
 
-    public Point modelToDraw(final int modelX, final int modelY)
-    {
-        return modelToDraw(new Point(modelX, modelY));
-    }
-
     /**
      * Convert coordinates from map coordinates to Graphics device coordinates
      * @param modelPoint
      * @return
      */
     
-    public Point modelToDraw(final Point modelPoint)
+    public Point modelToDraw(final MapCoordinates modelPoint)
     {
-        final double squaresX = (double)modelPoint.x / (double)BASE_SQUARE_SIZE;
-        final double squaresY = (double)modelPoint.y / (double)BASE_SQUARE_SIZE;
+        final double squaresX = (double)modelPoint.x / (double)GameTableMap.getBaseSquareSize();
+        final double squaresY = (double)modelPoint.y / (double)GameTableMap.getBaseSquareSize();
 
         final int viewX = (int)Math.round(squaresX * m_squareSize);
         final int viewY = (int)Math.round(squaresY * m_squareSize);
@@ -1535,24 +1553,21 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public double modelToSquares(final double m)
     {
-        return (m_gametableFrame.grid_multiplier * m / BASE_SQUARE_SIZE);
+        return (m_gametableFrame.grid_multiplier * m / GameTableMap.getBaseSquareSize());
     }
 
-    public Point modelToView(final int modelX, final int modelY)
+    public Point modelToView(final MapCoordinates modelPoint)
     {
-        return modelToView(new Point(modelX, modelY));
-    }
-
-    public Point modelToView(final Point modelPoint)
-    {
-        final double squaresX = (double)modelPoint.x / (double)BASE_SQUARE_SIZE;
-        final double squaresY = (double)modelPoint.y / (double)BASE_SQUARE_SIZE;
+        final double squaresX = (double)modelPoint.x / (double)GameTableMap.getBaseSquareSize();
+        final double squaresY = (double)modelPoint.y / (double)GameTableMap.getBaseSquareSize();
 
         int viewX = (int)Math.round(squaresX * m_squareSize);
         int viewY = (int)Math.round(squaresY * m_squareSize);
 
-        viewX -= getActiveMap().getScrollX();
-        viewY -= getActiveMap().getScrollY();
+        Point pos = getActiveMap().getScrollPosition();
+        
+        viewX -= pos.x;
+        viewY -= pos.y;
 
         return new Point(viewX, viewY);
     }
@@ -1588,7 +1603,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             return;
         }
-        m_gametableFrame.getToolManager().mouseMoved(m_mouseModelFloat.x, m_mouseModelFloat.y, getModifierFlags());
+        m_gametableFrame.getToolManager().mouseMoved(m_mouseModelFloat, getModifierFlags());
         final MapElementInstance prevPog = m_pogMouseOver;
         if (prevPog != m_pogMouseOver)
         {
@@ -1611,16 +1626,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             m_rightClicking = true;
             m_previousToolId = m_activeToolId;
             setActiveTool(1); // HACK -- To hand tool
-            m_gametableFrame.getToolManager().mouseButtonPressed(m_mouseModelFloat.x, m_mouseModelFloat.y,
-                getModifierFlags());
+            m_gametableFrame.getToolManager().mouseButtonPressed(m_mouseModelFloat, getModifierFlags());
         }
         else
         {
             m_rightClicking = false;
             if (e.getButton() == MouseEvent.BUTTON1)
             {
-                m_gametableFrame.getToolManager().mouseButtonPressed(m_mouseModelFloat.x, m_mouseModelFloat.y,
-                    getModifierFlags());
+                m_gametableFrame.getToolManager().mouseButtonPressed(m_mouseModelFloat, getModifierFlags());
             }
         }
 
@@ -1633,7 +1646,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             return;
         }
-        m_gametableFrame.getToolManager().mouseButtonReleased(m_mouseModelFloat.x, m_mouseModelFloat.y,
+        m_gametableFrame.getToolManager().mouseButtonReleased(m_mouseModelFloat,
             getModifierFlags());
 
         if (m_rightClicking)
@@ -1665,62 +1678,55 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      * @param newX
      * @param newY
      */    
-    public void movePog(final MapElementInstanceID id, final int newX, final int newY) {
+    public void movePog(final MapElementInstanceID id, MapCoordinates modelPos) {
              
         final MapElementInstance toMove = getActiveMap().getPogByID(id);
-        int diffx = newX - toMove.getX();
-        int diffy = newY - toMove.getY();
+        int diffx = modelPos.x - toMove.getX();
+        int diffy = modelPos.y - toMove.getY();
         
         GameTableMap map = getActiveMap();
         if(toMove.isSelected()) {            
             
-            int nx,ny,tx,ty;
-            for (MapElementInstance pog : map.getSelectedPogs().toArray(new MapElementInstance[0]))	// converte to array to prevent concurrent modification issues
+            for (MapElementInstance pog : map.getSelectedPogs().toArray(new MapElementInstance[0]))	// converted to array to prevent concurrent modification issues
             {
                if(pog.getId() != id) {
-                   tx = pog.getX();
-                   ty = pog.getY();
-                   nx = tx + diffx;
-                   ny = ty + diffy;
-                   netmovePog(pog.getId(), nx, ny);
+              	 MapCoordinates newPos = pog.getPosition().delta(diffx, diffy);
+                   netmovePog(pog.getId(), newPos);
                }
             }
         } else if(toMove.isGrouped()) {        
             List<MapElementInstance> pogs = PogGroups.getGroupPogs(toMove.getGroup());
             MapElementInstance npog;
-            int nx,ny,tx,ty;
             
             for (MapElementInstance pog : pogs)
             {
                 npog = map.getPogByID(pog.getId());
                 if((npog != null) && (npog != toMove)){
                     if(pog.getId() != id) {
-                        tx = pog.getX();
-                        ty = pog.getY();
-                        nx = tx + diffx;
-                        ny = ty + diffy;
-                        netmovePog(pog.getId(), nx, ny);
+                    	MapCoordinates newPos = pog.getPosition().delta(diffx, diffy);                        
+                        netmovePog(pog.getId(), newPos);
                     }
                 }
             }
-        }               
-        netmovePog(id,newX,newY);
+        }        
+        
+        netmovePog(id, modelPos);
     }
 
-    public void netmovePog(final MapElementInstanceID id, final int newX, final int newY)
+    public void netmovePog(final MapElementInstanceID id, MapCoordinates modelPos)
     {
         if (isPublicMap())
         {
-            m_gametableFrame.send(PacketManager.makeMovePogPacket(id, newX, newY));
+            m_gametableFrame.send(PacketManager.makeMovePogPacket(id, modelPos));
 
             if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
             {
-                doMovePog(id, newX, newY);
+                doMovePog(id, modelPos);
             }
         }
         else
         {
-            doMovePog(id, newX, newY);
+            doMovePog(id, modelPos);
         }
     }
     
@@ -1801,20 +1807,19 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         
         Rectangle mapBounds = getMapBounds(mapToExport);
 
-        int squareSize = GametableCanvas.getSquareSizeForZoom(m_zoom);
+        int squareSize = getSquareSize();
         mapBounds.grow(squareSize, squareSize);
         
         BufferedImage image = new BufferedImage(mapBounds.width, mapBounds.height, BufferedImage.TYPE_INT_RGB);        
         Graphics g = image.getGraphics();
         
-        int sx = mapToExport.getScrollX();
-        int sy = mapToExport.getScrollY();
+        Point scrollPos = mapToExport.getScrollPosition();
         
         mapToExport.setScrollPosition(mapBounds.x, mapBounds.y);
         
         paintComponent(g, mapBounds.width, mapBounds.height);
         
-        mapToExport.setScrollPosition(sx, sy);
+        mapToExport.setScrollPosition(scrollPos);
    
         ImageIO.write(image, "jpg", outputFile);
     }
@@ -1860,12 +1865,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
     	Graphics2D g2 = (Graphics2D)g;
     	
-        g.translate(-mapToDraw.getScrollX(), -mapToDraw.getScrollY());
+    	Point scrollPos = mapToDraw.getScrollPosition();
+    	
+        g.translate(-scrollPos.x, -scrollPos.y);
 
         // we don't draw the matte if we're on the private map)
         if (mapToDraw != m_privateMap)
         {
-            drawMatte(g, mapToDraw.getScrollX(), mapToDraw.getScrollY(), width, height);
+            drawMatte(g, scrollPos.x, scrollPos.y, width, height);
         }
 
         // draw all the underlays here
@@ -1885,7 +1892,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             // there could be a pog drag in progress
             if (m_newPogIsBeingDragged)
             {
-								Point mousePos = getPogDragMousePosition();
+            	MapCoordinates mousePos = getPogDragMousePosition();
                 if (isPointVisible(mousePos))
                 {
                     final MapElementInstance pog = getPogPanel().getGrabbedPog();
@@ -1911,7 +1918,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         // we don't draw the grid if we're on the private map)
         if (mapToDraw != m_privateMap)
         {
-            m_gridMode.drawLines(g2, mapToDraw.getScrollX(), mapToDraw.getScrollY(), width, height);
+            m_gridMode.drawLines(g2, scrollPos.x, scrollPos.y, width, height);
         }
 
         // lines
@@ -1968,7 +1975,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             if (plr.isPointing())
             {
                 // draw this player's point cursor
-                final Point pointingAt = modelToDraw(plr.getPoint().x, plr.getPoint().y);
+                final Point pointingAt = modelToDraw(plr.getPoint());
 
                 // 5px offset to align with mouse pointer
                 final int drawX = pointingAt.x;
@@ -2026,7 +2033,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             getActiveTool().paint(g);
         }
 
-        g.translate(mapToDraw.getScrollX(), mapToDraw.getScrollY());
+        g.translate(scrollPos.x, scrollPos.y);
     }
 
     // called by the pogs area when a pog is being dragged
@@ -2069,11 +2076,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public boolean pogInViewport(final MapElementInstance pog)
     {
         // only add the pog if they dropped it in the visible area
-        final int width = pog.getFaceSize() * BASE_SQUARE_SIZE;
+        final int width = pog.getFaceSize() * GameTableMap.getBaseSquareSize();
 
         // get the model coords of the viewable area
-        final Point portalTL = viewToModel(0, 0);
-        final Point portalBR = viewToModel(getWidth(), getHeight());
+        final MapCoordinates portalTL = viewToModel(0, 0);
+        final MapCoordinates portalBR = viewToModel(getWidth(), getHeight());
 
         if (pog.getX() > portalBR.x)
         {
@@ -2094,14 +2101,18 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return true;
     }
 
-    private void pointAt(final Point pointLocation)
+    /**
+     * Sets the pointer location for a given player in map coordinates
+     * @param pointLocation
+     */
+    private void pointAt(final MapCoordinates pointLocation)
     {
         final Player me = m_gametableFrame.getMyPlayer();
 
         if (pointLocation == null)
         {
             me.setPointing(false);
-            m_gametableFrame.send(PacketManager.makePointPacket(m_gametableFrame.getMyPlayerIndex(), 0, 0, false));
+            m_gametableFrame.send(PacketManager.makePointPacket(m_gametableFrame.getMyPlayerIndex(), MapCoordinates.ORIGIN, false));
             repaint();
             return;
         }
@@ -2109,21 +2120,20 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         me.setPointing(true);
         me.setPoint(pointLocation);
 
-        m_gametableFrame.send(PacketManager.makePointPacket(m_gametableFrame.getMyPlayerIndex(), me.getPoint().x, me
-            .getPoint().y, true));
+        m_gametableFrame.send(PacketManager.makePointPacket(m_gametableFrame.getMyPlayerIndex(), me.getPoint(), true));
 
         setToolCursor(-1);
 
         repaint();
     }
 
-    public void recenterView(final int modelCenterX, final int modelCenterY, final int zoomLevel)
+    public void recenterView(MapCoordinates modelCenter, final int zoomLevel)
     {
-        m_gametableFrame.send(PacketManager.makeRecenterPacket(modelCenterX, modelCenterY, zoomLevel));
+        m_gametableFrame.send(PacketManager.makeRecenterPacket(modelCenter, zoomLevel));
 
         if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
         {
-            doRecenterView(modelCenterX, modelCenterY, zoomLevel);
+            doRecenterView(modelCenter, zoomLevel);
         }
     }
 
@@ -2255,21 +2265,21 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             doFlipPog(id, flipH, flipV);
         }
     }
-    public void scrollMapTo(final int modelX, final int modelY)
+    public void scrollMapTo(MapCoordinates modelPoint)
     {
-        final Point target = modelToDraw(modelX, modelY);
+        final Point target = modelToDraw(modelPoint);
         setPrimaryScroll(getActiveMap(), target.x, target.y);
         repaint();
     }
 
     public void scrollToPog(final MapElementInstance pog)
     {
-        Point pogModel = new Point(pog.getX() + (pog.getWidth() / 2), pog.getY() + (pog.getHeight() / 2));
+    		MapCoordinates pogModel = new MapCoordinates(pog.getX() + (pog.getWidth() / 2), pog.getY() + (pog.getHeight() / 2));
         final Point pogView = modelToView(pogModel);
         pogView.x -= (getWidth() / 2);
         pogView.y -= (getHeight() / 2);
         pogModel = viewToModel(pogView);
-        smoothScrollTo(pogModel.x, pogModel.y);
+        smoothScrollTo(pogModel);
     }
 
     public void setActiveMap(final GameTableMap map)
@@ -2413,8 +2423,22 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             setCursor(m_gametableFrame.getToolManager().getToolInfo(m_activeToolId).getCursor(index));
         }
     }
+    
+    /**
+     * Get current zoom level
+     * TODO type safe zoom level
+     * @return
+     */
+    public int getZoomLevel()
+    {
+    	return m_zoom;
+    }
 
-    public void setZoom(final int zl)
+    /**
+     * Set current zoom level
+     * @param zl
+     */
+    public void setZoomLevel(final int zl)
     {
         int zoomLevel = zl;
         if (zoomLevel < 0)
@@ -2430,16 +2454,16 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         if (m_zoom != zoomLevel)
         {
             m_zoom = zoomLevel;
-            m_squareSize = getSquareSizeForZoom(m_zoom);
+            updateSquareSize();
             repaint();
         }
     }
 
-    public void smoothScrollTo(final int modelX, final int modelY)
+    public void smoothScrollTo(MapCoordinates pos)
     {
         final GameTableMap map = getActiveMap();
-        m_startScroll = drawToModel(map.getScrollX(), map.getScrollY());
-        m_deltaScroll = new Point(modelX - m_startScroll.x, modelY - m_startScroll.y);
+        m_startScroll = drawToModel(map.getScrollPosition());
+        m_deltaScroll = new MapCoordinates(pos.x - m_startScroll.x, pos.y - m_startScroll.y);
         m_scrollTime = 0;
         m_scrollTimeTotal = KEYBOARD_SCROLL_TIME;
         m_scrolling = true;
@@ -2450,7 +2474,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         m_gridMode.snapPogToGrid(pog);
     }
 
-    public Point snapPoint(final Point modelPoint)
+    public MapCoordinates snapPoint(final MapCoordinates modelPoint)
     {
         return m_gridMode.getSnappedPixelCoordinates(modelPoint);
     }
@@ -2459,8 +2483,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public Point snapViewPoint(final Point viewPoint)
     {
-        final Point modelPoint = viewToModel(viewPoint);
-        final Point modelSnap = m_gridMode.getSnappedPixelCoordinates(modelPoint);
+        final MapCoordinates modelPoint = viewToModel(viewPoint);
+        final MapCoordinates modelSnap = m_gridMode.getSnappedPixelCoordinates(modelPoint);
         final Point viewSnap = modelToView(modelSnap);
         return viewSnap;
     }
@@ -2473,15 +2497,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             float pos = m_scrollTime / (float)m_scrollTimeTotal;
             if (pos >= 1f)
             {
-                scrollMapTo(m_startScroll.x + m_deltaScroll.x, m_startScroll.y + m_deltaScroll.y);
+                scrollMapTo(m_startScroll.delta(m_deltaScroll));
                 m_scrolling = false;
             }
             else
             {
                 pos = (float)(Math.sin((pos * Math.PI) - (Math.PI / 2)) + 1) / 2;
-                final int x = m_startScroll.x + Math.round(m_deltaScroll.x * pos);
-                final int y = m_startScroll.y + Math.round(m_deltaScroll.y * pos);
-                scrollMapTo(x, y);
+                
+                MapCoordinates point = m_startScroll.delta(Math.round(m_deltaScroll.x * pos), Math.round(m_deltaScroll.y * pos)); 
+                scrollMapTo(point);
             }
         }
     }
@@ -2496,7 +2520,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         final Point canvasView = UtilityFunctions.getComponentCoordinates(this, screenMousePoint);
 
         // now convert to model coordinates
-        final Point canvasModel = viewToModel(canvasView);
+        final MapCoordinates canvasModel = viewToModel(canvasView);
         final MapElementInstance grabbedPog = panel.getGrabbedPog();
 
         // now, snap to grid if they don't have the control key down
@@ -2506,29 +2530,31 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 //            final Point adjustment = grabbedPog.getSnapDragAdjustment();
 //            grabbedPog.setPosition(canvasModel.x - pogGrabOffset.x + adjustment.x, canvasModel.y - pogGrabOffset.y
 //                + adjustment.y);
-            grabbedPog.setPosition(canvasModel.x - pogGrabOffset.x, canvasModel.y - pogGrabOffset.y);
+            grabbedPog.setPosition(new MapCoordinates(canvasModel.x - pogGrabOffset.x, canvasModel.y - pogGrabOffset.y));
             snapPogToGrid(grabbedPog);
         }
         else
         {
-            grabbedPog.setPosition(canvasModel.x - pogGrabOffset.x, canvasModel.y - pogGrabOffset.y);
+            grabbedPog.setPosition(new MapCoordinates(canvasModel.x - pogGrabOffset.x, canvasModel.y - pogGrabOffset.y));
         }
     }
 
-    public Point viewToModel(final int viewX, final int viewY)
+    public MapCoordinates viewToModel(final int viewX, final int viewY)
     {
-        return viewToModel(new Point(viewX, viewY));
+    	Point scrollPos = getActiveMap().getScrollPosition();
+    	final double squaresX = (double)(viewX + scrollPos.x) / (double)m_squareSize;
+      final double squaresY = (double)(viewY + scrollPos.y) / (double)m_squareSize;
+
+      final int modelX = (int)(squaresX * GameTableMap.getBaseSquareSize());
+      final int modelY = (int)(squaresY * GameTableMap.getBaseSquareSize());
+
+      return new MapCoordinates(modelX, modelY);
+        
     }
 
-    public Point viewToModel(final Point viewPoint)
+    public MapCoordinates viewToModel(final Point viewPoint)
     {
-        final double squaresX = (double)(viewPoint.x + getActiveMap().getScrollX()) / (double)m_squareSize;
-        final double squaresY = (double)(viewPoint.y + getActiveMap().getScrollY()) / (double)m_squareSize;
-
-        final int modelX = (int)(squaresX * BASE_SQUARE_SIZE);
-        final int modelY = (int)(squaresY * BASE_SQUARE_SIZE);
-
-        return new Point(modelX, modelY);
+    	return viewToModel(viewPoint.x, viewPoint.y);
     }
 
     public static void drawDottedRect(final Graphics g, final int ix, final int iy, final int iWidth, final int iHeight)

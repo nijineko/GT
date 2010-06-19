@@ -7,6 +7,7 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.Point;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 
 
@@ -22,7 +23,7 @@ public class HandTool extends NullTool
 {
     private GametableCanvas m_canvas;
     private Point           m_startMouse;
-    private Point           m_startScroll;
+    private MapCoordinates           m_startScroll;
 
     /**
      * Constructor;
@@ -34,14 +35,16 @@ public class HandTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#activate(com.galactanet.gametable.GametableCanvas)
      */
-    public void activate(final GametableCanvas canvas)
+    @Override
+		public void activate(final GametableCanvas canvas)
     {
         m_canvas = canvas;
         m_startScroll = null;
         m_startMouse = null;
     }
 
-    public void endAction()
+    @Override
+		public void endAction()
     {
         m_startScroll = null;
         m_startMouse = null;
@@ -51,7 +54,8 @@ public class HandTool extends NullTool
     /*
      * @see com.galactanet.gametable.Tool#isBeingUsed()
      */
-    public boolean isBeingUsed()
+    @Override
+		public boolean isBeingUsed()
     {
         return (m_startScroll != null);
     }
@@ -59,18 +63,20 @@ public class HandTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonPressed(int, int)
      */
-    public void mouseButtonPressed(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
         m_startScroll = m_canvas
             .drawToModel(m_canvas.getPublicMap().getScrollX(), m_canvas.getPublicMap().getScrollY());
-        m_startMouse = m_canvas.modelToView(x, y);
+        m_startMouse = m_canvas.modelToView(modelPos);
         m_canvas.setToolCursor(1);
     }
 
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonReleased(int, int)
      */
-    public void mouseButtonReleased(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
         endAction();
     }
@@ -78,14 +84,14 @@ public class HandTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseMoved(int, int)
      */
-    public void mouseMoved(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseMoved(MapCoordinates modelPos, final int modifierMask)
     {
         if (m_startScroll != null)
         {
-            final Point mousePosition = m_canvas.modelToView(x, y);
-            final Point viewDelta = new Point(m_startMouse.x - mousePosition.x, m_startMouse.y - mousePosition.y);
-            final Point modelDelta = m_canvas.drawToModel(viewDelta);
-            m_canvas.scrollMapTo(m_startScroll.x + modelDelta.x, m_startScroll.y + modelDelta.y);
+            final Point mousePosition = m_canvas.modelToView(modelPos);
+            final MapCoordinates modelDelta = m_canvas.drawToModel(m_startMouse.x - mousePosition.x, m_startMouse.y - mousePosition.y);
+            m_canvas.scrollMapTo(m_startScroll.delta(modelDelta));
         }
     }
 

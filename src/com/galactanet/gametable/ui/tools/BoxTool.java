@@ -8,6 +8,7 @@ package com.galactanet.gametable.ui.tools;
 import java.awt.*;
 import java.util.ArrayList;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
@@ -24,21 +25,11 @@ import com.galactanet.gametable.util.Images;
  */
 public class BoxTool extends NullTool
 {
-    private static Rectangle createRectangle(final Point a, final Point b)
-    {
-        final int x = Math.min(a.x, b.x);
-        final int y = Math.min(a.y, b.y);
-        final int width = Math.abs(b.x - a.x) + 1;
-        final int height = Math.abs(b.y - a.y) + 1;
-
-        return new Rectangle(x, y, width, height);
-    }
-
     private GametableCanvas m_canvas;
-    private Point           m_mouseAnchor;
-    private Point           m_mouseFloat;
+    private MapCoordinates           m_mouseAnchor;
+    private MapCoordinates            m_mouseFloat;
 
-    private Point           m_mousePosition;
+    private MapCoordinates            m_mousePosition;
 
     /**
      * Default Constructor.
@@ -50,14 +41,16 @@ public class BoxTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#activate(com.galactanet.gametable.GametableCanvas)
      */
-    public void activate(final GametableCanvas canvas)
+    @Override
+		public void activate(final GametableCanvas canvas)
     {
         m_canvas = canvas;
         m_mouseAnchor = null;
         m_mouseFloat = null;
     }
 
-    public void endAction()
+    @Override
+		public void endAction()
     {
         m_mouseAnchor = null;
         m_mouseFloat = null;
@@ -67,7 +60,8 @@ public class BoxTool extends NullTool
     /*
      * @see com.galactanet.gametable.Tool#isBeingUsed()
      */
-    public boolean isBeingUsed()
+    @Override
+		public boolean isBeingUsed()
     {
         return (m_mouseAnchor != null);
     }
@@ -75,9 +69,10 @@ public class BoxTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonPressed(int, int)
      */
-    public void mouseButtonPressed(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
-        m_mousePosition = new Point(x, y);
+        m_mousePosition = modelPos;
         m_mouseAnchor = m_mousePosition;
         if ((modifierMask & MODIFIER_CTRL) == 0)
         {
@@ -89,16 +84,17 @@ public class BoxTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonReleased(int, int)
      */
-    public void mouseButtonReleased(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
         if ((m_mouseAnchor != null) && !m_mouseAnchor.equals(m_mouseFloat))
         {
             // we're going to add 4 lines
             final Color drawColor = GametableFrame.getGametableFrame().m_drawColor;
-            final Point topLeft = new Point(m_mouseAnchor);
-            final Point bottomRight = new Point(m_mouseFloat);
-            final Point topRight = new Point(bottomRight.x, topLeft.y);
-            final Point bottomLeft = new Point(topLeft.x, bottomRight.y);
+            final MapCoordinates topLeft = m_mouseAnchor;
+            final MapCoordinates bottomRight = m_mouseFloat;
+            final MapCoordinates topRight = new MapCoordinates(bottomRight.x, topLeft.y);
+            final MapCoordinates bottomLeft = new MapCoordinates(topLeft.x, bottomRight.y);
 
             final LineSegment top = new LineSegment(topLeft, topRight, drawColor);
             final LineSegment left = new LineSegment(topLeft, bottomLeft, drawColor);
@@ -119,11 +115,12 @@ public class BoxTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseMoved(int, int)
      */
-    public void mouseMoved(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseMoved(MapCoordinates modelPos, final int modifierMask)
     {
         if (m_mouseAnchor != null)
         {
-            m_mousePosition = new Point(x, y);
+            m_mousePosition = modelPos;
             m_mouseFloat = m_mousePosition;
             if ((modifierMask & MODIFIER_CTRL) == 0)
             {
@@ -139,7 +136,8 @@ public class BoxTool extends NullTool
     /*
      * Modified from original to have separate distance indicators for each dimension.
      */
-    public void paint(final Graphics g)
+    @Override
+		public void paint(final Graphics g)
     {
         if (m_mouseAnchor != null)
         {
