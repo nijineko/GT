@@ -9,8 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import com.galactanet.gametable.data.PogType;
-import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -39,19 +39,7 @@ public class PogLibrary
      */
     private static String getNameFromDirectory(final File file)
     {
-        final String temp = file.getAbsolutePath();
-        int start = temp.lastIndexOf(UtilityFunctions.LOCAL_SEPARATOR) + 1;
-        if (start == temp.length())
-        {
-            start = temp.lastIndexOf(UtilityFunctions.LOCAL_SEPARATOR, start - 1) + 1;
-        }
-
-        int end = temp.indexOf(UtilityFunctions.LOCAL_SEPARATOR, start);
-        if (end < 0)
-        {
-            end = temp.length();
-        }
-        return new String(temp.substring(start, end));
+    	return file.getName();
     }
 
     /**
@@ -59,14 +47,14 @@ public class PogLibrary
      * 
      * @param toSort List of Pogs to sort.
      */
-    private static void sortPogsByLabel(final List<PogType> toSort)
+    private static void sortPogsByLabel(final List<MapElement> toSort)
     {
-        Collections.sort(toSort, new Comparator<PogType>()        
+        Collections.sort(toSort, new Comparator<MapElement>()        
         {            
             @Override            
-            public int compare(PogType pa, PogType pb)
+            public int compare(MapElement pa, MapElement pb)
             {
-                return pa.getNormalizedLabel().compareTo(pb.getNormalizedLabel());
+                return pa.getNormalizedDisplayLabel().compareTo(pb.getNormalizedDisplayLabel());
             }
         });
     }
@@ -89,17 +77,22 @@ public class PogLibrary
     /**
      * Whether this is a pog or underlay library.
      */
-    private Type        libraryType       = PogType.Type.POG;
+    private Layer        libraryType       = MapElement.Layer.POG;
 
     /**
      * The filesystem path to this set of pogs.
      */
-    private File       location          = null;
+    private final File       m_libraryPath;
+    
+    /**
+     * Used to build relative path stringd
+     */
+    private final String m_rootPathName;
 
     /**
      * The short name of this library. Unique within the parent library.
      */
-    private String     name              = null;
+    private String     m_libraryName              = null;
 
     // --- Constructors ----------------------------------------------------------------------------------------------
 
@@ -111,7 +104,7 @@ public class PogLibrary
     /**
      * The list of pogs in this library.
      */
-    private final List<PogType> pogs              = new ArrayList<PogType>();
+    private final List<MapElement> pogs              = new ArrayList<MapElement>();
 
     // --- Methods ---------------------------------------------------------------------------------------------------
 
@@ -122,34 +115,44 @@ public class PogLibrary
      */
     public PogLibrary() throws IOException
     {
-        location = new File(".").getCanonicalFile();
-        name = getNameFromDirectory(location);
-        addLibrary("pogs", Type.POG);
-        addLibrary("environment", Type.ENVIRONMENT);
-        addLibrary("overlays", Type.OVERLAY);
-        addLibrary("underlays", Type.UNDERLAY);
+        m_libraryPath = new File(".").getCanonicalFile();
+        m_rootPathName = getRoot().m_libraryPath.getAbsolutePath() + File.separator;
+        
+        m_libraryName = getNameFromDirectory(m_libraryPath);
+        
+        addLibrary("pogs", Layer.POG);
+        addLibrary("environment", Layer.ENVIRONMENT);
+        addLibrary("overlays", Layer.OVERLAY);
+        addLibrary("underlays", Layer.UNDERLAY);
     }
 
     /**
      * Child PogLibrary Constructor.
      */
-    public PogLibrary(final PogLibrary mommy, final String directory, final Type type) throws IOException
+    public PogLibrary(final PogLibrary mommy, final String directory, final Layer type) throws IOException
     {
         parent = mommy;
         libraryType = type;
-        location = new File(directory).getCanonicalFile();
-        if(!location.exists()) {
-            if(!location.mkdir()) {
+        m_libraryPath = new File(directory).getCanonicalFile();
+        m_rootPathName = getRoot().m_libraryPath.getAbsolutePath() + File.separator;
+        
+        if(!m_libraryPath.exists()) {
+            if(!m_libraryPath.mkdir()) {
                 throw new IOException("Failed to find and create directory " + directory);
             }            
         }
-        if (!location.canRead() || !location.isDirectory())
+        if (!m_libraryPath.canRead() || !m_libraryPath.isDirectory())
         {
             throw new IOException("cannot read from " + directory);
         }
-        name = getNameFromDirectory(location);
+        m_libraryName = getNameFromDirectory(m_libraryPath);
 
         acquirePogs();
+    }
+    
+    private String makeRelativePath(File file)
+    {
+    	return file.getAbsolutePath().replace(m_rootPathName, "");
     }
 
     /**
@@ -157,7 +160,7 @@ public class PogLibrary
      */
     public boolean acquirePogs()
     {
-        if (!location.exists())
+        if (!m_libraryPath.exists())
         {
             return false;
         }
@@ -167,20 +170,18 @@ public class PogLibrary
         // We don't want to scour the root library for pogs
         if (getParent() != null)
         {
-            final String[] files = location.list();
+            final File[] files = m_libraryPath.listFiles();
 
-            final File rootLocation = getRoot().getLocation();
-            final String path = UtilityFunctions.getRelativePath(rootLocation, location)
-                + UtilityFunctions.LOCAL_SEPARATOR;
-
-            for (int i = 0, size = files.length; i < size; ++i)
+            for (File file : files)
             {
-                final String filename = path + files[i];
-                final File file = new File(filename);
+            	if (file.getName().startsWith("."))
+            		continue;	// skip files starting with a period (.svn, etc.)
+            	
+                final String filename = makeRelativePath(file);
 
                 if (file.isFile() && file.canRead())
                 {
-                    if (addPog(filename, 1, libraryType, true) != null)
+                    if (addPog(file, 1, libraryType, true) != null)
                     {
                         retVal = true;
                     }
@@ -198,8 +199,8 @@ public class PogLibrary
         final int numPogs = pogs.size();
         for (int i = 0; i < numPogs; ++i)
         {
-            final PogType pog = pogs.get(i);
-            if (pog.isUnknown())
+            final MapElement pog = pogs.get(i);
+            if (pog.isLoaded())
             {
                 pog.load();
             }
@@ -225,7 +226,7 @@ public class PogLibrary
      * @param type
      * @return
      */
-    private PogLibrary addLibrary(final String libName, final Type type)
+    private PogLibrary addLibrary(final String libName, final Layer type)
     {
         try
         {
@@ -250,29 +251,31 @@ public class PogLibrary
         }
     }
 
-    private PogType addPog(final String pogName, final int facing, final Type type)
+    private MapElement addPog(File pogFile, final int facing, final Layer type)
     {
-        return addPog(pogName, facing, type, false);
+        return addPog(pogFile, facing, type, false);
     }
 
-    private PogType addPog(final String pogName, final int facing, final Type type, boolean ignoreOnFail)
+    private MapElement addPog(File pogFile, final int facing, final Layer type, boolean ignoreOnFail)
     {
         try
         {
-            final File f = new File(pogName).getAbsoluteFile();
-            if (acquiredPogs.contains(f))
+            
+            if (acquiredPogs.contains(pogFile))
             {
                 return null;
             }
 
-            final PogType pog = new PogType(pogName, facing, type);
-            if (!ignoreOnFail || !pog.isUnknown())
+            String filePath = makeRelativePath(pogFile);
+            
+            final MapElement pog = new MapElement(filePath, facing, type);
+            if (!ignoreOnFail || !pog.isLoaded())
             {
                 // Log.log(Log.SYS, new Exception(this + " added: " + pog));
                 pogs.add(pog);
                 sortPogsByLabel(pogs);
             }
-            acquiredPogs.add(f);
+            acquiredPogs.add(pogFile);
             return pog;
         }
         catch (final Exception ex)
@@ -291,7 +294,7 @@ public class PogLibrary
      * @param face What we think the face size of the pog is at this point.
      * @return Placeholder PogType
      */
-    public PogType createPlaceholder(final String filename, final int face)
+    public MapElement createPlaceholder(final String filename, final int face)
     {
         // Log.log(Log.SYS, this + ".createPlaceholder(" + filename + ", " + face + ")");
         final File f = new File(filename);
@@ -331,7 +334,7 @@ public class PogLibrary
             return child.createPlaceholder(filename, face);
         }
 
-        return addPog(filename, face, libraryType);
+        return addPog(f, face, libraryType);
     }
 
     private PogLibrary findDeepestChild(final File p)
@@ -344,10 +347,8 @@ public class PogLibrary
             return this;
         }
 
-        final int size = children.size();
-        for (int i = 0; i < size; ++i)
+        for (PogLibrary child : children)
         {
-            final PogLibrary child = children.get(i);
             final PogLibrary lib = child.findDeepestChild(path);
             if (lib != null)
             {
@@ -366,7 +367,7 @@ public class PogLibrary
     /**
      * @return Returns the pogs in this library.
      */
-    public List<PogType> getAllPogs()
+    public List<MapElement> getAllPogs()
     {
         final int size = children.size();
         if (size < 1)
@@ -374,7 +375,7 @@ public class PogLibrary
             return getPogs();
         }
 
-        final List<PogType> accum = new ArrayList<PogType>(pogs);   //@revise this copies the array on each call.  can we can maintain a syncrhonized unmodifiable list instead?
+        final List<MapElement> accum = new ArrayList<MapElement>(pogs);   //@revise this copies the array on each call.  can we can maintain a syncrhonized unmodifiable list instead?
         for (PogLibrary child : children)
         {
             accum.addAll(child.getAllPogs());
@@ -397,8 +398,8 @@ public class PogLibrary
             return child;
         }
 
-        final File childPath = UtilityFunctions.getCanonicalFile(new File(location.getPath()
-            + UtilityFunctions.LOCAL_SEPARATOR + libraryName));
+        final File childPath = UtilityFunctions.getCanonicalFile(new File(m_libraryPath.getPath()
+            + File.separator + libraryName));
 
         return getChildExact(childPath.getPath());
     }
@@ -430,7 +431,7 @@ public class PogLibrary
      */
     public List<PogLibrary> getChildren()
     {
-        return Collections.unmodifiableList(children);  // @revise consider synchronized unmodifiable lists instead of creating copies on every call.
+        return Collections.unmodifiableList(children);  // @revise keep that instance - it remains synchronized. 
     }
 
     // --- Object Implementation ---
@@ -440,7 +441,7 @@ public class PogLibrary
      */
     public File getLocation()
     {
-        return location;
+        return m_libraryPath;
     }
 
     // --- Private Methods ---
@@ -450,7 +451,7 @@ public class PogLibrary
      */
     public String getName()
     {
-        return name;
+        return m_libraryName;
     }
 
     /**
@@ -468,11 +469,11 @@ public class PogLibrary
     {
         try
         {
-            return location.getCanonicalPath();
+            return m_libraryPath.getCanonicalPath();
         }
         catch (final IOException ioe)
         {
-            return location.getAbsolutePath();
+            return m_libraryPath.getAbsolutePath();
         }
     }
 
@@ -482,13 +483,13 @@ public class PogLibrary
      * @param pogName name of pog to fetch
      * @return Pog found or null.
      */
-    public PogType getPog(final String pogName)
+    public MapElement getPog(final String pogName)
     {
         int size = pogs.size();
         for (int i = 0; i < size; ++i)
         {
-            final PogType pogType = pogs.get(i);
-            if (pogName.equals(pogType.getFilename()))
+            final MapElement pogType = pogs.get(i);
+            if (pogName.equals(pogType.getImageFilename()))
             {
                 return pogType;
             }
@@ -498,7 +499,7 @@ public class PogLibrary
         for (int i = 0; i < size; ++i)
         {
             final PogLibrary child = children.get(i);
-            final PogType pog = child.getPog(pogName);
+            final MapElement pog = child.getPog(pogName);
             if (pog != null)
             {
                 return pog;
@@ -511,7 +512,7 @@ public class PogLibrary
     /**
      * @return Returns the pogs in this library.
      */
-    public List<PogType> getPogs()
+    public List<MapElement> getPogs()
     {
         return Collections.unmodifiableList(pogs);
     }
@@ -529,7 +530,7 @@ public class PogLibrary
         return parent.getRoot();
     }
     
-    public void removePog(final PogType pt) {
+    public void removePog(final MapElement pt) {
         pogs.remove(pt);       
     }
 

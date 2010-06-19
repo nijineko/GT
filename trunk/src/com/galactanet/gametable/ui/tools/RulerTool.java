@@ -9,7 +9,7 @@ import java.awt.*;
 
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.util.UtilityFunctions;
+import com.galactanet.gametable.util.Images;
 
 
 
@@ -107,8 +107,7 @@ public class RulerTool extends NullTool
         {
             final Graphics2D g2 = (Graphics2D)g.create();
 
-            g2.addRenderingHints(UtilityFunctions.STANDARD_RENDERING_HINTS);
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.addRenderingHints(Images.getRenderingHints());
 
             final double dist = m_canvas.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
                 m_mouseAnchor.y);

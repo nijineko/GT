@@ -15,7 +15,7 @@ import java.util.*;
 import javax.swing.*;
 
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.SetPogAttributeDialog;
@@ -108,11 +108,11 @@ public class PointerTool extends NullTool
     private GameTableMap    m_from;
     private GameTableMap    m_to;
     private boolean         m_clicked = true;
-    private Pog             m_ghostPog;
-    private Pog             m_grabbedPog;
+    private MapElementInstance             m_ghostPog;
+    private MapElementInstance             m_grabbedPog;
     private Point           m_grabOffset;
-    private Pog             m_lastPogMousedOver;
-    private Pog             m_menuPog = null;
+    private MapElementInstance             m_lastPogMousedOver;
+    private MapElementInstance             m_menuPog = null;
     private Point           m_mousePosition;
     private boolean         m_snapping;
 
@@ -164,7 +164,7 @@ public class PointerTool extends NullTool
     {
         if (GametableFrame.getGametableFrame().getPreferences().getBooleanValue(PREF_DRAG))
         {
-            final Pog pog = m_canvas.getActiveMap().getPogAt(m_mousePosition);
+            final MapElementInstance pog = m_canvas.getActiveMap().getPogAt(m_mousePosition);
             if (pog != null)
             {
                 m_canvas.setToolCursor(0);
@@ -200,7 +200,7 @@ public class PointerTool extends NullTool
         m_grabbedPog = m_canvas.getActiveMap().getPogAt(m_mousePosition);
         if (m_grabbedPog != null)
         {
-            m_ghostPog = new Pog(m_grabbedPog, false);
+            m_ghostPog = new MapElementInstance(m_grabbedPog, false);
             m_grabOffset = new Point(m_grabbedPog.getX() - m_mousePosition.x, m_grabbedPog.getY() - m_mousePosition.y);
             setSnapping(modifierMask);
         }
@@ -292,7 +292,7 @@ public class PointerTool extends NullTool
     {
         if ((m_ghostPog != null) && m_canvas.isPointVisible(m_mousePosition))
         {
-            m_ghostPog.drawGhostlyToCanvas(g);
+            m_ghostPog.drawGhostlyToCanvas(g, m_canvas);
         }
     }
 
@@ -376,7 +376,7 @@ public class PointerTool extends NullTool
             {
                 public void actionPerformed(final ActionEvent e)
                 {
-                    final Pog pog = m_menuPog;
+                    final MapElementInstance pog = m_menuPog;
                     if (m_canvas.isPublicMap())
                     {
                         m_from = m_canvas.getPublicMap();
@@ -389,8 +389,7 @@ public class PointerTool extends NullTool
                     }
 
                     // this pog gets copied
-                    final Pog newPog = new Pog(pog);
-                    newPog.assignUniqueId();
+                    final MapElementInstance newPog = new MapElementInstance(pog);
                     m_canvas.setActiveMap(m_to);
                     m_canvas.addPog(newPog);
                     m_canvas.lockPog(newPog.getId(), pog.isLocked());
@@ -466,7 +465,7 @@ public class PointerTool extends NullTool
                 {
                     public void actionPerformed(final ActionEvent e)
                     {
-                        final Pog pog = m_menuPog;
+                        final MapElementInstance pog = m_menuPog;
                             GametableFrame.getGametableFrame().copyPog(pog);
                       
                     }
@@ -483,7 +482,7 @@ public class PointerTool extends NullTool
                 {
                     public void actionPerformed(final ActionEvent e)
                     {
-                        final Pog pog = m_menuPog;
+                        final MapElementInstance pog = m_menuPog;
                         final File spaf = UtilityFunctions.doFileSaveDialog("Save As", "pog", true);
                         if (spaf != null)
                         {
@@ -495,41 +494,41 @@ public class PointerTool extends NullTool
                 
                 // -------------------------------------
                 // Pog Layers
-                Type layer = m_menuPog.getLayer();
+                Layer layer = m_menuPog.getLayer();
                 JMenu m_item = new JMenu("Change Layer");
                 item = new JMenuItem("Underlay");
                 item.addActionListener(new ActionListener() {
                     public void actionPerformed(final ActionEvent e) {
-                        m_canvas.setPogLayer(m_menuPog.getId(), Type.UNDERLAY);
+                        m_canvas.setPogLayer(m_menuPog.getId(), Layer.UNDERLAY);
                     }
                 });
                 
-                if (layer == Type.UNDERLAY) item.setEnabled(false);
+                if (layer == Layer.UNDERLAY) item.setEnabled(false);
                 
                 m_item.add(item);
                 item = new JMenuItem("Overlay");
                 item.addActionListener(new ActionListener() {
                     public void actionPerformed(final ActionEvent e) {
-                        m_canvas.setPogLayer(m_menuPog.getId(), Type.OVERLAY);
+                        m_canvas.setPogLayer(m_menuPog.getId(), Layer.OVERLAY);
                     }
                 });
-                if(layer == Type.OVERLAY) item.setEnabled(false);
+                if(layer == Layer.OVERLAY) item.setEnabled(false);
                 m_item.add(item);
                 item = new JMenuItem("Environment");
                 item.addActionListener(new ActionListener() {
                     public void actionPerformed(final ActionEvent e) {
-                        m_canvas.setPogLayer(m_menuPog.getId(), Type.ENVIRONMENT);
+                        m_canvas.setPogLayer(m_menuPog.getId(), Layer.ENVIRONMENT);
                     }
                 });
-                if(layer == Type.ENVIRONMENT) item.setEnabled(false);
+                if(layer == Layer.ENVIRONMENT) item.setEnabled(false);
                 m_item.add(item);
                 item = new JMenuItem("Pog");
                 item.addActionListener(new ActionListener() {
                     public void actionPerformed(final ActionEvent e) {
-                        m_canvas.setPogLayer(m_menuPog.getId(), Type.POG);
+                        m_canvas.setPogLayer(m_menuPog.getId(), Layer.POG);
                     }
                 });
-                if(layer == Type.POG) item.setEnabled(false);
+                if(layer == Layer.POG) item.setEnabled(false);
                 m_item.add(item);
                 menu.add(m_item);                    
                 
@@ -739,7 +738,7 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                      m_canvas.flipPog(m_menuPog.getId(), 0, 0);
+                      m_canvas.flipPog(m_menuPog.getId(), false, false);
                   }
               });
               flipMenu.add(item);
@@ -749,7 +748,7 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                      m_canvas.flipPog(m_menuPog.getId(), (m_menuPog.getFlipH() == 0 ? 1 : m_menuPog.getFlipH()), (m_menuPog.getFlipV() == 0 ? -1 : -(m_menuPog.getFlipV())));
+                      m_canvas.flipPog(m_menuPog.getId(), m_menuPog.getFlipH(), !m_menuPog.getFlipV());
                   }
               });
               flipMenu.add(item);
@@ -759,7 +758,7 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                      m_canvas.flipPog(m_menuPog.getId(), (m_menuPog.getFlipH() == 0 ? -1 : -(m_menuPog.getFlipH())), (m_menuPog.getFlipV() == 0 ? 1 : m_menuPog.getFlipV()));
+                      m_canvas.flipPog(m_menuPog.getId(), !m_menuPog.getFlipH(), m_menuPog.getFlipV());
                   }
               });
               flipMenu.add(item);
@@ -771,7 +770,7 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                  	List<Pog> pogs = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getSelectedPogs();
+                  	List<MapElementInstance> pogs = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getSelectedPogs();
                   	
                       int size = pogs.size();
                       if(size > 1) {
@@ -784,7 +783,7 @@ public class PointerTool extends NullTool
                           return;
                       }
                       
-                      Pog pog = pogs.get(0);                
+                      MapElementInstance pog = pogs.get(0);                
                       GametableFrame.getGametableFrame().getGametableCanvas().setPogType(m_menuPog, pog);
                       GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().unselectAllPogs();
                      
@@ -793,7 +792,7 @@ public class PointerTool extends NullTool
               menu.add(item);
               
               // --------------------------------
-              if(layer == Type.UNDERLAY) {
+              if(layer == Layer.UNDERLAY) {
                   menu.addSeparator();
                   item = new JMenuItem("Set as Background");
                   item.addActionListener(new ActionListener()
@@ -803,7 +802,7 @@ public class PointerTool extends NullTool
                           final int result = UtilityFunctions.yesNoDialog(GametableFrame.getGametableFrame(),
                               "Are you sure you wish to change the background to this pog's Image?", "Change Background?");
                           if (result == UtilityFunctions.YES)
-                              m_canvas.changeBackgroundCP(m_menuPog.getId(), true);                        
+                              m_canvas.changeBackgroundCP(m_menuPog.getId());                        
                       }
                   });
                   menu.add(item);

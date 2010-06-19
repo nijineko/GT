@@ -11,7 +11,7 @@ import java.awt.Point;
 
 import com.galactanet.gametable.data.GridMode;
 import com.galactanet.gametable.ui.GametableCanvas;
-import com.galactanet.gametable.util.UtilityFunctions;
+import com.galactanet.gametable.util.Images;
 
 
 
@@ -138,10 +138,10 @@ public class HexGridMode extends GridMode
         super.init(canvas);
 
         // init the hex images
-        m_hexImages[0] = UtilityFunctions.getImage("assets/hexes_64.png");
-        m_hexImages[1] = UtilityFunctions.getImage("assets/hexes_48.png");
-        m_hexImages[2] = UtilityFunctions.getImage("assets/hexes_32.png");
-        m_hexImages[3] = UtilityFunctions.getImage("assets/hexes_16.png");
+        m_hexImages[0] = Images.getImage("assets/hexes_64.png");
+        m_hexImages[1] = Images.getImage("assets/hexes_48.png");
+        m_hexImages[2] = Images.getImage("assets/hexes_32.png");
+        m_hexImages[3] = Images.getImage("assets/hexes_16.png");
         m_hexImages[4] = null; // no lines are drawn at this zoom level. So there's no hex image
         // for it.
 

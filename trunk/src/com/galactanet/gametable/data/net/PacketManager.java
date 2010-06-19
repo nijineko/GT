@@ -10,15 +10,17 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapElementInstanceID;
 import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.data.Pog;
-import com.galactanet.gametable.data.PogType;
+import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.PogGroups.Action;
-import com.galactanet.gametable.data.PogType.Type;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
+import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -263,14 +265,14 @@ public class PacketManager
 
     /* *********************** ADDPOG PACKET *********************************** */
     // calls for the pog to be added to the public layer
-    public static byte[] makeAddPogPacket(final Pog pog)
+    public static byte[] makeAddPogPacket(final MapElementInstance pog)
     {
         return makeAddPogPacket(pog, true);
     }
 
     /* *********************** CAST PACKET *********************************** */
 
-    public static byte[] makeAddPogPacket(final Pog pog, final boolean bPublicLayerPog)
+    public static byte[] makeAddPogPacket(final MapElementInstance pog, final boolean bPublicLayerPog)
     {
         try
         {
@@ -295,15 +297,16 @@ public class PacketManager
      * @param color
      * @return
      */
-    public static byte[] makeBGColPacket(final int color, final boolean pog) {
+    public static byte[] makeBGColPacket(BackgroundColor color) {
         try
         {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final DataOutputStream dos = new DataOutputStream(baos);
 
-            dos.writeInt(PACKET_BGCOL); // type            
-            dos.writeInt(color);
-            dos.writeBoolean(pog);
+            dos.writeInt(PACKET_BGCOL); // type
+            dos.writeBoolean(false);	// type:color
+            dos.writeInt(color.ordinal());
+
             
             return baos.toByteArray();
         }
@@ -314,17 +317,37 @@ public class PacketManager
         } 
     }
     
+    public static byte[] makeBGColPacket(MapElementInstanceID elementID) {
+      try
+      {
+          final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          final DataOutputStream dos = new DataOutputStream(baos);
+
+          dos.writeInt(PACKET_BGCOL); // type
+          dos.writeBoolean(true);	// type:pog ID
+          dos.writeLong(elementID.numeric());
+          
+          
+          return baos.toByteArray();
+      }
+      catch (final IOException ex)
+      {
+          Log.log(Log.SYS, ex);
+          return null;
+      } 
+  }
+    
     // This is for future use........
-    public static byte[] makeBGColPacket(final Pog pog) {
+    protected static byte[] makeBGColPacket(final MapElementInstance pog) {
         try
         {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final DataOutputStream dos = new DataOutputStream(baos);
 
-            dos.writeInt(PACKET_BGCOL); // type            
-            dos.writeInt(-1);
-            dos.writeBoolean(true);            
-            dos.writeUTF(pog.getPogType().getFilename());
+            dos.writeInt(PACKET_BGCOL); // type
+            dos.writeBoolean(true); // type:pog
+            dos.writeInt(-1);                        
+            dos.writeUTF(pog.getPogType().getImageFilename());
             
             return baos.toByteArray();
         }
@@ -531,7 +554,7 @@ public class PacketManager
      * @param closeLink
      * @return
      */
-    public static byte[] makeGroupPacket(Action action, final String group, final int pog, final int player) {
+    public static byte[] makeGroupPacket(Action action, final String group, final MapElementInstanceID pogID, final int player) {
         try
         {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -540,7 +563,12 @@ public class PacketManager
             dos.writeInt(action.ordinal());
             if(group == null) dos.writeUTF("");
             else dos.writeUTF(group);           
-            dos.writeInt(pog);
+            
+            if (pogID == null)
+            	dos.writeLong(0);
+           	else
+           		dos.writeLong(pogID.numeric());
+            
             dos.writeInt(player);
             return baos.toByteArray();
         }
@@ -552,15 +580,15 @@ public class PacketManager
         
     }
     
-    public static byte[] makePogTypePacket(final int id, final int type) {
+    public static byte[] makePogTypePacket(final MapElementInstanceID id, final MapElementInstanceID type) {
       try
       {
           final ByteArrayOutputStream baos = new ByteArrayOutputStream();
           final DataOutputStream dos = new DataOutputStream(baos);
 
           dos.writeInt(PACKET_POG_TYPE);
-          dos.writeInt(id);
-          dos.writeInt(type);
+          dos.writeLong(id.numeric());
+          dos.writeLong(type.numeric());
 
           return baos.toByteArray();
       }
@@ -581,8 +609,10 @@ public class PacketManager
             final int actionOrd = dis.readInt();
             Action action = Action.fromOrdinal(actionOrd);
             
-            final String group = dis.readUTF();             
-            final int pog = dis.readInt();             
+            final String group = dis.readUTF();
+            
+            long pogID = dis.readLong();
+            MapElementInstanceID pog = MapElementInstanceID.fromNumeric(pogID);
             
             final int player = dis.readInt();
             GametableFrame.getGametableFrame().groupPacketReceived(action, group, pog, player);
@@ -597,9 +627,12 @@ public class PacketManager
     {
         try
         {
-            final int id = dis.readInt();
-            final int type = dis.readInt();
-
+        	long pid = dis.readLong();
+          MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
+          
+          pid = dis.readLong();
+          MapElementInstanceID type = MapElementInstanceID.fromNumeric(pid);
+          
             // tell the model
             GametableFrame.getGametableFrame().pogTypePacketReceived(id, type);
         }
@@ -683,7 +716,7 @@ public class PacketManager
         }
     }
 
-    public static byte[] makeLockPogPacket(final int id, final boolean newLocked)
+    public static byte[] makeLockPogPacket(final MapElementInstanceID id, final boolean newLocked)
     {
         try
         {
@@ -691,7 +724,7 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_LOCKPOG); // type
-            dos.writeInt(id);
+            dos.writeLong(id.numeric());
             dos.writeBoolean(newLocked);
 
             return baos.toByteArray();
@@ -724,7 +757,7 @@ public class PacketManager
         }
     }
 
-    public static byte[] makeMovePogPacket(final int id, final int newX, final int newY)
+    public static byte[] makeMovePogPacket(final MapElementInstanceID id, final int newX, final int newY)
     {
         try
         {
@@ -732,7 +765,7 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_MOVEPOG); // type
-            dos.writeInt(id);
+            dos.writeLong(id.numeric());
             dos.writeInt(newX);
             dos.writeInt(newY);
 
@@ -847,12 +880,12 @@ public class PacketManager
         }
     }
 
-    public static byte[] makePogDataPacket(final int id, final String s)
+    public static byte[] makePogDataPacket(final MapElementInstanceID id, final String s)
     {
         return makePogDataPacket(id, s, null, null);
     }
 
-    public static byte[] makePogDataPacket(final int id, final String s, final Map<String, String> toAdd, final Set<String> toDelete) 
+    public static byte[] makePogDataPacket(final MapElementInstanceID id, final String s, final Map<String, String> toAdd, final Set<String> toDelete) 
     {
         try
         {
@@ -860,7 +893,7 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_POGDATA);
-            dos.writeInt(id);
+            dos.writeLong(id.numeric());
             if (s != null)
             {
                 dos.writeBoolean(true);
@@ -915,7 +948,7 @@ public class PacketManager
      * @param layer
      * @return
      */
-    public static byte[] makePogLayerPacket(final int id, final Type layer)
+    public static byte[] makePogLayerPacket(final MapElementInstanceID id, final Layer layer)
     {
         try
         {
@@ -923,7 +956,7 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_POGLAYER);
-            dos.writeInt(id);
+            dos.writeLong(id.numeric());
             dos.writeInt(layer.ordinal());
 
             return baos.toByteArray();
@@ -937,7 +970,7 @@ public class PacketManager
     
     /* *********************** REMOVEPOG PACKET *********************************** */
 
-    public static byte[] makePogReorderPacket(final Map<Integer, Long> changes)
+    public static byte[] makePogReorderPacket(final Map<MapElementInstanceID, Long> changes)
     {
         try
         {
@@ -946,9 +979,9 @@ public class PacketManager
 
             dos.writeInt(PACKET_POG_REORDER);
             dos.writeInt(changes.size());
-            for (Entry<Integer, Long> entry : changes.entrySet())
+            for (Entry<MapElementInstanceID, Long> entry : changes.entrySet())
             {
-                dos.writeInt(entry.getKey());
+                dos.writeLong(entry.getKey().numeric());
                 dos.writeLong(entry.getValue());
             }
 
@@ -961,7 +994,7 @@ public class PacketManager
         }
     }
 
-    public static byte[] makePogSizePacket(final int id, final float size)
+    public static byte[] makePogSizePacket(final MapElementInstanceID id, final float size)
     {
         try
         {
@@ -969,7 +1002,7 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_POG_SIZE);
-            dos.writeInt(id);
+            dos.writeLong(id.numeric());
             dos.writeFloat(size);
 
             return baos.toByteArray();
@@ -1114,7 +1147,7 @@ public class PacketManager
 
     /* *********************** POINT PACKET *********************************** */
 
-    public static byte[] makeRemovePogsPacket(final int ids[])
+    public static byte[] makeRemovePogsPacket(final MapElementInstanceID ids[])
     {
         try
         {
@@ -1127,9 +1160,9 @@ public class PacketManager
             dos.writeInt(ids.length);
 
             // then the IDs of the pogs.
-            for (int i = 0; i < ids.length; i++)
+            for (MapElementInstanceID id : ids)
             {
-                dos.writeInt(ids[i]);
+                dos.writeLong(id.numeric());
             }
 
             return baos.toByteArray();
@@ -1141,7 +1174,7 @@ public class PacketManager
         }
     }
     
-    public static byte[] makeRemovePogsPacket(List<Pog> pogs)
+    public static byte[] makeRemovePogsPacket(List<MapElementInstance> pogs)
     {
         try
         {
@@ -1154,9 +1187,9 @@ public class PacketManager
             dos.writeInt(pogs.size());
 
             // then the IDs of the pogs.
-            for (Pog pog : pogs)
+            for (MapElementInstance pog : pogs)
             {
-                dos.writeInt(pog.getId());
+                dos.writeLong(pog.getId().numeric());
             }
 
             return baos.toByteArray();
@@ -1192,7 +1225,7 @@ public class PacketManager
     /* *********************** POGDATA PACKET *********************************** */
 
     /* *********************** ROTATEPOG PACKET ********************************* */
-    public static byte[] makeRotatePogPacket(final int id, final double newAngle)
+    public static byte[] makeRotatePogPacket(final MapElementInstanceID id, final double newAngle)
     {
         try
         {
@@ -1200,7 +1233,7 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_ROTATEPOG); // type
-            dos.writeInt(id);
+            dos.writeLong(id.numeric());
             dos.writeDouble(newAngle);
 
             return baos.toByteArray();
@@ -1212,7 +1245,7 @@ public class PacketManager
         }
     }
 
-    public static byte[] makeForceSnapPogPacket(final int id, final boolean forceGridSnap)
+    public static byte[] makeForceSnapPogPacket(final MapElementInstanceID id, final boolean forceGridSnap)
     {
         try
         {
@@ -1220,7 +1253,7 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_FORCEGRIDSNAP); // type
-            dos.writeInt(id);
+            dos.writeLong(id.numeric());
             dos.writeBoolean(forceGridSnap);
 
             return baos.toByteArray();
@@ -1233,7 +1266,7 @@ public class PacketManager
     }
 
     /* *********************** FLIPPOG PACKET ********************************* */
-    public static byte[] makeFlipPogPacket(final int id, final int left, final int right)
+    public static byte[] makeFlipPogPacket(final MapElementInstanceID id, final boolean left, final boolean right)
     {
         try
         {
@@ -1241,9 +1274,9 @@ public class PacketManager
             final DataOutputStream dos = new DataOutputStream(baos);
 
             dos.writeInt(PACKET_FLIPPOG); // type
-            dos.writeInt(id);
-            dos.writeInt(left);
-            dos.writeInt(right);
+            dos.writeLong(id.numeric());
+            dos.writeBoolean(left);
+            dos.writeBoolean(right);
 
             return baos.toByteArray();
         }
@@ -1319,15 +1352,15 @@ public class PacketManager
             final boolean bPublicLayerPog = dis.readBoolean(); // layer. true = public. false = private
             //System.out.println(bPublicLayerPog);
             
-            final Pog pog = new Pog(dis);
-            if (pog.m_bStillborn)
+            final MapElementInstance pog = new MapElementInstance(dis);
+            if (pog.isCorrupted())
             {
                 // for one reason or another, this pog is corrupt and should
                 // be ignored
                 return;
             }
 
-            if (pog.isUnknown())
+            if (!pog.getPogType().isLoaded())
             {
                 // we need this image
                 requestPogImage(conn, pog);
@@ -1350,10 +1383,22 @@ public class PacketManager
     public static void readBGColPacket(final DataInputStream dis)
     {
         try
-        {           
-            final int col = dis.readInt();
-            final boolean pog = dis.readBoolean();
-            GametableFrame.getGametableFrame().changeBGPacketRec(col,pog);
+        {   
+            final boolean pogMode = dis.readBoolean();
+            
+            if (pogMode)
+            {
+            	long pogID = dis.readLong();
+            	MapElementInstanceID id = MapElementInstanceID.fromNumeric(pogID);
+            	GametableFrame.getGametableFrame().changeBGPacketRec(id);
+            }
+            else
+            {
+            	int colorID = dis.readInt();
+            	BackgroundColor color = BackgroundColor.fromOrdinal(colorID);
+            	
+            	GametableFrame.getGametableFrame().changeBGPacketRec(color);
+            }
         }
         catch (final IOException ex)
         {
@@ -1600,7 +1645,8 @@ public class PacketManager
     {
         try
         {
-            final int id = dis.readInt();
+        	long pid = dis.readLong();
+          MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
             final boolean newLocked = dis.readBoolean();
 
             // tell the model
@@ -1643,7 +1689,8 @@ public class PacketManager
     {
         try
         {
-            final int id = dis.readInt();
+        	long pid = dis.readLong();
+          MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
             final int newX = dis.readInt();
             final int newY = dis.readInt();
 
@@ -1959,11 +2006,11 @@ public class PacketManager
                 final String temp = filename.toLowerCase();
                 if (temp.contains("underlay"))
                 {
-                    target = new File("underlays" + UtilityFunctions.LOCAL_SEPARATOR + target.getName());
+                    target = new File("underlays" + File.separator + target.getName());
                 }
                 else if (temp.contains("pog"))
                 {
-                    target = new File("pogs" + UtilityFunctions.LOCAL_SEPARATOR + target.getName());
+                    target = new File("pogs" + File.separator + target.getName());
                 }
                 else
                 {
@@ -1985,7 +2032,7 @@ public class PacketManager
             os.flush();
             os.close();
 
-            final PogType pogType = GametableFrame.getGametableFrame().getPogLibrary().getPog(filename);
+            final MapElement pogType = GametableFrame.getGametableFrame().getPogLibrary().getPog(filename);
             pogType.load();
 
             // tell the pog panels to check for the new image
@@ -2064,7 +2111,8 @@ public class PacketManager
     {
         try
         {
-            final int id = dis.readInt();
+        	long pid = dis.readLong();
+          MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
             String name = null;
             if (dis.readBoolean())
             {
@@ -2101,8 +2149,9 @@ public class PacketManager
      */
     public static void readPogLayer(final DataInputStream dis) {
         try {
-            final int id = dis.readInt();
-            final Type layer = Type.fromOrdinal(dis.readInt());
+        	long pid = dis.readLong();
+          MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
+            final Layer layer = Layer.fromOrdinal(dis.readInt());
             GametableFrame.getGametableFrame().pogLayerPacketReceived(id, layer);
             
         } catch (final IOException ex) {
@@ -2116,11 +2165,14 @@ public class PacketManager
         try
         {
             final int numChanges = dis.readInt();
-            final Map<Integer, Long> changes = new HashMap<Integer, Long>();
+            final Map<MapElementInstanceID, Long> changes = new HashMap<MapElementInstanceID, Long>();
             for (int i = 0; i < numChanges; ++i)
             {
+            	long pid = dis.readLong();
+              MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
+              
                 // id, order
-                changes.put(dis.readInt(), dis.readLong());
+                changes.put(id, dis.readLong());
             }
 
             // tell the model
@@ -2138,7 +2190,8 @@ public class PacketManager
     {
         try
         {
-            final int id = dis.readInt();
+        	long pid = dis.readLong();
+          MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
             final float size = dis.readFloat();
 
             // tell the model
@@ -2271,12 +2324,15 @@ public class PacketManager
         try
         {
             // the number of pogs to be removed is first
-            final int ids[] = new int[dis.readInt()];
+            final MapElementInstanceID[] ids = new MapElementInstanceID[dis.readInt()];
 
             // then the IDs of the pogs.
             for (int i = 0; i < ids.length; i++)
             {
-                ids[i] = dis.readInt();
+            	long pid = dis.readLong();
+              MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
+              
+                ids[i] = id;
             }
 
             // tell the model
@@ -2312,7 +2368,9 @@ public class PacketManager
     {
         try
         {
-            final int id = dis.readInt();
+            long pid = dis.readLong();
+            MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
+            
             final double newAngle = dis.readDouble();
 
             // tell the model
@@ -2329,9 +2387,11 @@ public class PacketManager
     {
         try
         {
-            final int id = dis.readInt();
-            final int flipH = dis.readInt();
-            final int flipV = dis.readInt();
+            final int pid = dis.readInt();            
+            MapElementInstanceID id = MapElementInstanceID.fromNumeric(pid);
+            
+            final boolean flipH = dis.readBoolean();
+            final boolean flipV = dis.readBoolean();
 
             // tell the model
             final GametableFrame gtFrame = GametableFrame.getGametableFrame();
@@ -2379,9 +2439,9 @@ public class PacketManager
 
     /* *********************** POG_SIZE PACKET *********************************** */
 
-    public static void requestPogImage(final Connection conn, final Pog pog)
+    public static void requestPogImage(final Connection conn, final MapElementInstance pog)
     {
-        final String desiredFile = pog.getFilename();
+        final String desiredFile = pog.getPogType().getImageFilename();
 
         if (g_requestedFiles.contains(desiredFile))
         {

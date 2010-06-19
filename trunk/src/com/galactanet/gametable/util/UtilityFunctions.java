@@ -7,23 +7,17 @@ package com.galactanet.gametable.util;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.PixelGrabber;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
-import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.handler.gtuser.Handler;
 
 
@@ -39,12 +33,7 @@ public class UtilityFunctions
 {
     public final static int            CANCEL                   = -1;
 
-    /**
-     * Simple image cache.
-     */
-    private static Map<String, Image>                 g_imageCache             = new HashMap<String, Image>();
     static private String              lastDir                  = null;
-    public static final char           LOCAL_SEPARATOR          = File.separatorChar;
 
     public final static int            NO                       = 0;
 
@@ -56,8 +45,6 @@ public class UtilityFunctions
                                                                 };
 
     private static final Random        RANDOM                   = getRandomInstance();
-
-    public static final RenderingHints STANDARD_RENDERING_HINTS = getRenderingHints();
 
     // constants
     public static final char           UNIVERSAL_SEPARATOR      = '/';
@@ -91,12 +78,6 @@ public class UtilityFunctions
     public static Point convertCoordinates(final Component source, final Component destination, final Point sourcePoint)
     {
         return getComponentCoordinates(destination, getScreenCoordinates(source, sourcePoint));
-    }
-
-    public static Image createDrawableImage(final int width, final int height)
-    {
-        return GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration()
-            .createCompatibleImage(width, height, Transparency.TRANSLUCENT);
     }
 
     public static File doFileOpenDialog(final String title, final String extension, final boolean filterFiles)
@@ -199,27 +180,6 @@ public class UtilityFunctions
     }
 
     /**
-     * Gets an image, caching it if possible.
-     * 
-     * @param name Name of image to get.
-     * @return Image retrieved, or null.
-     */
-    public static Image getCachedImage(final String name)
-    {
-        Image image = g_imageCache.get(name);
-        if (image == null)
-        {
-            image = getImage(name);
-            if (image == null)
-            {
-                return null;
-            }
-            g_imageCache.put(name, image);
-        }
-        return image;
-    }
-
-    /**
      * Gets the canonical/absolute file of the given file.
      * 
      * @param file File to canonicalize.
@@ -247,55 +207,6 @@ public class UtilityFunctions
         final Point screenPos = getScreenPosition(component);
         return new Point(screenPoint.x - screenPos.x, screenPoint.y - screenPos.y);
     }  
-
-    public static Image getImage(final String name)
-    {
-        Image img = getImageFromJar(name);
-        if (img == null)
-        {
-            // couldn't find it in the jar. Try the local directory
-            img = loadAndWait(GametableFrame.getGametableFrame().getGametableCanvas(), name);
-        }
-
-        return img;
-    }
-
-    private static Image getImageFromJar(final String name)
-    {
-        final URL imageUrl = GametableFrame.getGametableFrame().getGametableCanvas().getClass().getResource("/" + name);
-        if (imageUrl == null)
-        {
-            return null;
-        }
-
-        Image image = null;
-        try
-        {
-            image = Toolkit.getDefaultToolkit().createImage(imageUrl);
-            if (image == null)
-            {
-                return null;
-            }
-
-            final MediaTracker tracker = new MediaTracker(GametableFrame.getGametableFrame().getGametableCanvas());
-            tracker.addImage(image, 0);
-            tracker.waitForAll();
-        }
-        catch (final Exception e)
-        {
-            Log.log(Log.SYS, e);
-            return null;
-        }
-
-        if ((image.getWidth(null) < 1) || (image.getHeight(null) < 1))
-        {
-            // Log.log(Log.SYS, "JAR invalid file? " + name + " " + image.getWidth(null) + " x " +
-            // image.getHeight(null));
-            return null;
-        }
-
-        return image;
-    }
 
     public static String getLine(final DataInputStream in)
     {
@@ -355,7 +266,7 @@ public class UtilityFunctions
             final char c = path.charAt(i);
             if ((c == '/') || (c == '\\'))
             {
-                buffer.append(LOCAL_SEPARATOR);
+                buffer.append(File.separator);
             }
             else
             {
@@ -366,6 +277,11 @@ public class UtilityFunctions
         return buffer.toString();
     }
 
+    /**
+     * Get a random integer between 0 and max -1
+     * @param max maximum value (exclduded)
+     * @return integer
+     */
     public static int getRandom(final int max)
     {
         return RANDOM.nextInt(max);
@@ -401,67 +317,13 @@ public class UtilityFunctions
     public static String getRelativePath(final File parent, final File child)
     {
         String parentPath = getLocalPath(getCanonicalFile(parent).getPath());
-        if (parentPath.charAt(parentPath.length() - 1) != LOCAL_SEPARATOR)
+        if (parentPath.charAt(parentPath.length() - 1) != File.separatorChar)
         {
-            parentPath = parentPath + LOCAL_SEPARATOR;
+            parentPath = parentPath + File.separator;
         }
         final String childPath = getLocalPath(getCanonicalFile(child).getPath());
 
         return new String(childPath.substring(parentPath.length()));
-    }
-
-    /**
-     * @return The standard set of rendering hits for the app.
-     */
-    private static RenderingHints getRenderingHints()
-    {
-        final RenderingHints retVal = new RenderingHints(null);
-
-        retVal.put(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
-        retVal.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        retVal.put(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED);
-        retVal.put(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE);
-        retVal.put(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
-        retVal.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        retVal.put(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-        retVal.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-        return retVal;
-    }
-
-    public static Image getScaledInstance(final Image image, final float scale)
-    {
-        if (image == null)
-        {
-            return null;
-        }
-
-        waitForImage(image);
-
-        final int width = Math.round(image.getWidth(null) * scale);
-        final int height = Math.round(image.getHeight(null) * scale);
-
-        return getScaledInstance(image, width, height);
-    }
-
-    public static Image getScaledInstance(final Image image, final int width, final int height)
-    {
-        if (image == null)
-        {
-            return null;
-        }
-
-        // todo: Option for SMOOTH vs FAST?
-        Image scaledImage;
-        scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-        if (scaledImage == null)
-        {
-            return null;
-        }
-
-        waitForImage(scaledImage);
-
-        return scaledImage;
     }
 
     /**
@@ -492,40 +354,6 @@ public class UtilityFunctions
         return retVal;
     }
  
-    /** *****************************************************************
-     * Returns the Tranparency of the specified Image
-     * @param image
-     * @return int value of the transparency
-     */
-    //public static boolean hasAlpha(final Image image)
-    public static int getTransparency(final Image image)
-    {
-        // If buffered image, the color model is readily available
-        if (image instanceof BufferedImage)
-        {
-            final BufferedImage bimage = (BufferedImage)image;
-            //return bimage.getColorModel().hasAlpha();
-            return bimage.getColorModel().getTransparency();
-        }
-
-        // Use a pixel grabber to retrieve the image's color model;
-        // grabbing a single pixel is usually sufficient
-        final PixelGrabber pg = new PixelGrabber(image, 0, 0, 1, 1, false);
-        try
-        {
-            pg.grabPixels();
-        }
-        catch (final InterruptedException e)
-        {
-        }
-
-        // Get the image's color model
-        final ColorModel cm = pg.getColorModel();
-        //return cm.hasAlpha();
-        return cm.getTransparency();
-    }
-
-
     /**
      * Converts the filename to use UNIVERSAL_SEPERATOR.
      * 
@@ -665,36 +493,6 @@ public class UtilityFunctions
         }
     }
 
-    private static Image loadAndWait(final Component component, final String name)
-    {
-        MediaTracker tracker = new MediaTracker(component);
-        final Image image = loadImage(name, tracker);
-
-        if (image == null)
-        {
-            return null;
-        }
-
-        try
-        {
-            tracker.waitForAll(); // ignore exceptions
-        }
-        catch (final Exception e)
-        {
-            Log.log(Log.SYS, e);
-            return null;
-        }
-
-        if ((image.getWidth(null) < 1) || (image.getHeight(null) < 1))
-        {
-            // Log.log(Log.SYS, "FS invalid file? " + name + " " + image.getWidth(null) + " x " +
-            // image.getHeight(null));
-            return null;
-        }
-
-        tracker = null;
-        return image;
-    }
 
     public static byte[] loadFileToArray(final File file)
     {
@@ -735,24 +533,6 @@ public class UtilityFunctions
         return loadFileToArray(file);
     }
 
-    private static Image loadImage(final String name, final MediaTracker tracker)
-    {
-        Image image = null;
-        try
-        {
-            image = Toolkit.getDefaultToolkit().createImage(name);
-            if (image == null)
-            {
-                return null;
-            }
-            tracker.addImage(image, 0);
-        }
-        catch (final Exception e)
-        {
-            Log.log(Log.SYS, e);
-        }
-        return image;
-    }
 
     /** **********************************************************************************************
      * 
@@ -841,16 +621,6 @@ public class UtilityFunctions
 
     }
 
-    /**
-     * Removes an image from the image cache.
-     * 
-     * @param name Name of the image to remove.
-     */
-    public static void removeCachedImage(final String name)
-    {
-        g_imageCache.remove(name);
-    }
-
     public static String stitchTogetherWords(final String[] words)
     {
         return stitchTogetherWords(words, 0, words.length);
@@ -881,70 +651,6 @@ public class UtilityFunctions
 
         return retVal.toString();
     }
-    
-    /** *******************************************************************
-     * Creates a buffered image of the specified input image
-     * @param image
-     * @return
-     */
-    public static BufferedImage toBufferedImage(final Image image)
-    {
-        if (image instanceof BufferedImage)
-        {
-            return (BufferedImage)image;
-        }
-
-        Image outImage = image;
-
-        // This code ensures that all the pixels in the image are loaded
-        outImage = new ImageIcon(outImage).getImage();
-
-        // Determine if the image has transparent pixels; for this method's
-        // implementation, see e661 Determining If an Image Has Transparent Pixels
-        //final boolean hasAlpha = hasAlpha(outImage);
-        final int transparency = getTransparency(outImage);
-
-        // Create a buffered image with a format that's compatible with the screen
-        BufferedImage bimage = null;
-        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        try
-        {
-            // Determine the type of transparency of the new buffered image
-            /* int transparency = Transparency.OPAQUE;
-             * if (hasAlpha)
-             * {
-             *     transparency = Transparency.BITMASK;
-             * }
-             */
-            
-            // Create the buffered image
-            final GraphicsDevice gs = ge.getDefaultScreenDevice();
-            final GraphicsConfiguration gc = gs.getDefaultConfiguration();
-            bimage = gc.createCompatibleImage(outImage.getWidth(null), outImage.getHeight(null), transparency);
-        }
-        catch (final HeadlessException e)
-        {
-            // The system does not have a screen
-        }
-
-        if (bimage == null)
-        {
-            // Create a buffered image using the default color model
-            int type = BufferedImage.TYPE_INT_RGB;
-            if (transparency != Transparency.OPAQUE) type = BufferedImage.TYPE_INT_ARGB;
-            bimage = new BufferedImage(outImage.getWidth(null), outImage.getHeight(null), type);
-        }
-
-        // Copy image to buffered image
-        final Graphics g = bimage.createGraphics();
-
-        // Paint the image onto the buffered image
-        g.drawImage(outImage, 0, 0, null);
-        g.dispose();
-
-        return bimage;
-    }
-
     /**
      * Decodes the given string using the URL decoding method.
      * 
@@ -995,19 +701,7 @@ public class UtilityFunctions
         }
     }
 
-    private static void waitForImage(final Image image)
-    {
-        final MediaTracker tracker = new MediaTracker(GametableFrame.getGametableFrame());
-        tracker.addImage(image, 0);
-        try
-        {
-            tracker.waitForAll();
-        }
-        catch (final Exception e)
-        {
-            Log.log(Log.SYS, e);
-        }
-    }
+
 
     public static String xmlEncode(final String str)
     {
@@ -1114,4 +808,20 @@ public class UtilityFunctions
     {
         throw new RuntimeException("Do not do this.");
     }
+    
+    /**
+     * Draws the pog onto the given graphics context at the given opacity.
+     * 
+     * @param g Context to draw onto.
+     * @param x X position to draw at.
+     * @param y Y position to draw at.
+     * @param opacity 0 for fully transparent - 1 for fully opaque.
+     */
+    public static void drawTranslucent(Graphics2D g, Image image, final int x, final int y, final float opacity)
+    {
+    	Composite c = g.getComposite();
+      g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+      g.drawImage(image, x, y, null);
+      g.setComposite(c);
+    } 
 }

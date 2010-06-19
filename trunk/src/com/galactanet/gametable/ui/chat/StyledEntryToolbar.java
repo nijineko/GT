@@ -14,7 +14,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
-import com.galactanet.gametable.util.UtilityFunctions;
+import com.galactanet.gametable.util.Images;
 
 
 
@@ -54,7 +54,7 @@ public class StyledEntryToolbar extends JPanel
         setLayout(new FlowLayout(FlowLayout.LEFT, 2, 2));
 
         final Insets margin = new Insets(1, 1, 1, 1);
-        boldButton = new JToggleButton(new ImageIcon(UtilityFunctions.getImage("assets/bold.png")));
+        boldButton = new JToggleButton(new ImageIcon(Images.getImage("assets/bold.png")));
         boldButton.setMargin(margin);
         boldButton.setToolTipText("<html><b>Bolds</b> selected text.");
         boldButton.setFocusable(false);
@@ -70,7 +70,7 @@ public class StyledEntryToolbar extends JPanel
         });
         add(boldButton);
 
-        italicsButton = new JToggleButton(new ImageIcon(UtilityFunctions.getImage("assets/italics.png")));
+        italicsButton = new JToggleButton(new ImageIcon(Images.getImage("assets/italics.png")));
         italicsButton.setMargin(margin);
         italicsButton.setToolTipText("<html><i>Italicizes</i> selected text.");
         italicsButton.setFocusable(false);
@@ -86,7 +86,7 @@ public class StyledEntryToolbar extends JPanel
         });
         add(italicsButton);
 
-        underlineButton = new JToggleButton(new ImageIcon(UtilityFunctions.getImage("assets/underline.png")));
+        underlineButton = new JToggleButton(new ImageIcon(Images.getImage("assets/underline.png")));
         underlineButton.setMargin(margin);
         underlineButton.setToolTipText("<html><u>Underlines</u> selected text.");
         underlineButton.setFocusable(false);

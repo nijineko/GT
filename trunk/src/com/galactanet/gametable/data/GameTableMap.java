@@ -53,19 +53,19 @@ public class GameTableMap
 	 * @revise this is redundant data. If ActivePogsPanel requires such a list for its display purposes, it should not be
 	 *         stored in the map.
 	 */
-	private SortedSet<Pog>					m_orderedPogs	= new TreeSet<Pog>();
+	private SortedSet<MapElementInstance>					m_orderedPogs	= new TreeSet<MapElementInstance>();
 
 	/**
 	 * List of pogs or all types to display on the map
 	 * 
 	 * @revise for layers
 	 */
-	private final List<Pog>					m_pogs;
+	private final List<MapElementInstance>					m_pogs;
 
 	/**
 	 * Unmodifiable list of pogs
 	 */
-	private final List<Pog>					m_pogsUnmodifiable;
+	private final List<MapElementInstance>					m_pogsUnmodifiable;
 
 	/**
 	 * Whether this is the public of private version of the map
@@ -80,12 +80,12 @@ public class GameTableMap
 	/**
 	 * Lists the currently selected pogs
 	 */
-	private final List<Pog>					m_selectedPogs;
+	private final List<MapElementInstance>					m_selectedPogs;
 
 	/**
 	 * Unmodifiable version of the selected pogs to be returned to callers
 	 */
-	private final List<Pog>					m_selectedPogsUnmodifiable;
+	private final List<MapElementInstance>					m_selectedPogsUnmodifiable;
 
 	// @revise #{@link javax.swing.undo.UndoableEdit}
 
@@ -97,13 +97,13 @@ public class GameTableMap
 	public GameTableMap(boolean publicMap)
 	{
 		m_publicMap = publicMap;
-		m_selectedPogs = new ArrayList<Pog>();
+		m_selectedPogs = new ArrayList<MapElementInstance>();
 		m_selectedPogsUnmodifiable = Collections.unmodifiableList(m_selectedPogs);
 
 		m_lines = new ArrayList<LineSegment>();
 		m_linesUnmodifiable = Collections.unmodifiableList(m_lines);
 
-		m_pogs = new ArrayList<Pog>();
+		m_pogs = new ArrayList<MapElementInstance>();
 		m_pogsUnmodifiable = Collections.unmodifiableList(m_pogs);
 	}
 
@@ -125,7 +125,7 @@ public class GameTableMap
 	 * @param pog
 	 */
 	@Deprecated
-	public void addOrderedPog(final Pog pog)
+	public void addOrderedPog(final MapElementInstance pog)
 	{
 		m_orderedPogs.add(pog);
 	}
@@ -135,7 +135,7 @@ public class GameTableMap
 	 * 
 	 * @param pog
 	 */
-	public void addPog(Pog pog)
+	public void addPog(MapElementInstance pog)
 	{
 		m_pogs.add(pog);
 
@@ -180,7 +180,7 @@ public class GameTableMap
 	 * @revise should be within the UI that handles these things - nothing to do with map data
 	 * @return
 	 */
-	public SortedSet<Pog> getOrderedPogs()
+	public SortedSet<MapElementInstance> getOrderedPogs()
 	{
 		return Collections.unmodifiableSortedSet(m_orderedPogs);
 	}
@@ -191,21 +191,21 @@ public class GameTableMap
 	 * @param modelPosition Coordinates to test for
 	 * @return Matching Pog or none
 	 */
-	public Pog getPogAt(final Point modelPosition)
+	public MapElementInstance getPogAt(final Point modelPosition)
 	{
 		if (modelPosition == null)
 		{
 			return null;
 		}
 
-		Pog pogHit = null;
-		Pog envHit = null;
-		Pog overlayHit = null;
-		Pog underlayHit = null;
+		MapElementInstance pogHit = null;
+		MapElementInstance envHit = null;
+		MapElementInstance overlayHit = null;
+		MapElementInstance underlayHit = null;
 
-		for (Pog pog : m_pogs)
+		for (MapElementInstance pog : m_pogs)
 		{
-			if (pog.testHit(modelPosition))
+			if (pog.contains(modelPosition))
 			{
 				// they clicked this pog
 				switch (pog.getLayer())
@@ -251,11 +251,11 @@ public class GameTableMap
 	 * @param id ID of the pog we are looking for
 	 * @return Matching Pog or null
 	 */
-	public Pog getPogByID(final int id)
+	public MapElementInstance getPogByID(final MapElementInstanceID id)
 	{
-		for (Pog pog : m_pogs)
+		for (MapElementInstance pog : m_pogs)
 		{
-			if (pog.getId() == id)
+			if (pog.getId().equals(id))
 				return pog;
 		}
 
@@ -268,7 +268,7 @@ public class GameTableMap
 	 * @param pogName name of the pog we are looking for
 	 * @return Pog or null
 	 */
-	public Pog getPogByName(final String pogName)
+	public MapElementInstance getPogByName(final String pogName)
 	{
 		return getPogsByName(pogName, null);
 	}
@@ -278,7 +278,7 @@ public class GameTableMap
 	 * 
 	 * @return unmodifiable list of pogs
 	 */
-	public List<Pog> getPogs()
+	public List<MapElementInstance> getPogs()
 	{
 		return m_pogsUnmodifiable;
 	}
@@ -289,9 +289,9 @@ public class GameTableMap
 	 * @param pogName Name of the pog we are looking for
 	 * @return List of matching pogs (never null)
 	 */
-	public List<Pog> getPogsByName(String pogName)
+	public List<MapElementInstance> getPogsByName(String pogName)
 	{
-		List<Pog> retVal = new ArrayList<Pog>();
+		List<MapElementInstance> retVal = new ArrayList<MapElementInstance>();
 		getPogsByName(pogName, retVal);
 
 		return retVal;
@@ -326,7 +326,7 @@ public class GameTableMap
 	 * @return The list of currently selected pogs (unmodifiable). Never null.
 	 * 
 	 */
-	public List<Pog> getSelectedPogs()
+	public List<MapElementInstance> getSelectedPogs()
 	{
 		return m_selectedPogsUnmodifiable;
 	}
@@ -350,9 +350,9 @@ public class GameTableMap
 	 */
 	public void removeCardPogsForCards(final Card discards[])
 	{
-		final List<Pog> removeList = new ArrayList<Pog>();
+		final List<MapElementInstance> removeList = new ArrayList<MapElementInstance>();
 
-		for (Pog pog : m_pogs)
+		for (MapElementInstance pog : m_pogs)
 		{
 			if (pog.isCardPog())
 			{
@@ -390,7 +390,7 @@ public class GameTableMap
 	 * @revise move to ActivePogPanel
 	 * @param pog
 	 */
-	public void removeOrderedPog(final Pog pog)
+	public void removeOrderedPog(final MapElementInstance pog)
 	{
 		m_orderedPogs.remove(pog);
 	}
@@ -400,7 +400,7 @@ public class GameTableMap
 	 * 
 	 * @param pog pog to remove
 	 */
-	public void removePog(final Pog pog)
+	public void removePog(final MapElementInstance pog)
 	{
 		if (pog.isSelected())
 			unselectPog(pog);
@@ -416,9 +416,9 @@ public class GameTableMap
 	 * 
 	 * @param pogs list of pogs to remove
 	 */
-	public void removePogs(List<Pog> pogs)
+	public void removePogs(List<MapElementInstance> pogs)
 	{
-		for (Pog pog : pogs)
+		for (MapElementInstance pog : pogs)
 			removePog(pog);
 
 		// @revise trigger listeners
@@ -429,14 +429,14 @@ public class GameTableMap
 	 * 
 	 * @param changes
 	 */
-	public void reorderPogs(final Map<Integer, Long> changes)
+	public void reorderPogs(final Map<MapElementInstanceID, Long> changes)
 	{
 		if (changes == null)
 		{
 			return;
 		}
 
-		for (Entry<Integer, Long> entry : changes.entrySet())
+		for (Entry<MapElementInstanceID, Long> entry : changes.entrySet())
 		{
 			setSortOrder(entry.getKey(), entry.getValue());
 		}
@@ -447,7 +447,7 @@ public class GameTableMap
 	 * 
 	 * @param pog Pog to add to selection
 	 */
-	public void selectPog(Pog pog)
+	public void selectPog(MapElementInstance pog)
 	{
 		m_selectedPogs.add(pog);
 		pog.setSelected(true);
@@ -459,11 +459,11 @@ public class GameTableMap
 	 * 
 	 * @param pogs List of pogs to add to the selection
 	 */
-	public void selectPogs(final List<Pog> pogs)
+	public void selectPogs(final List<MapElementInstance> pogs)
 	{
 		m_selectedPogs.addAll(pogs);
 
-		for (Pog pog : pogs)
+		for (MapElementInstance pog : pogs)
 			pog.setSelected(true);
 
 		// @revise trigger listeners
@@ -488,9 +488,9 @@ public class GameTableMap
 	 * @param sortOrder sort order number
 	 * @revise move to ActivePogPanel
 	 */
-	public void setSortOrder(int pogID, long sortOrder)
+	public void setSortOrder(MapElementInstanceID pogID, long sortOrder)
 	{
-		final Pog pog = getPogByID(pogID);
+		final MapElementInstance pog = getPogByID(pogID);
 		if (pog == null)
 			return;
 
@@ -505,7 +505,7 @@ public class GameTableMap
 	 */
 	public void unselectAllPogs()
 	{
-		for (Pog pog : m_selectedPogs)
+		for (MapElementInstance pog : m_selectedPogs)
 			pog.setSelected(false);
 
 		m_selectedPogs.clear();
@@ -518,7 +518,7 @@ public class GameTableMap
 	 * 
 	 * @param pog Pog to remove
 	 */
-	public void unselectPog(final Pog pog)
+	public void unselectPog(final MapElementInstance pog)
 	{
 		m_selectedPogs.remove(pog);
 		pog.setSelected(false);
@@ -533,14 +533,14 @@ public class GameTableMap
 	 * @param pogList if non-null, will be populated with all matching pogs
 	 * @return If pogList is null, will return first matching Pog
 	 */
-	private Pog getPogsByName(String pogName, List<Pog> pogList)
+	private MapElementInstance getPogsByName(String pogName, List<MapElementInstance> pogList)
 	{
 		if (pogName == null || pogName.equals(""))
 			return null;
 
 		final String normalizedName = UtilityFunctions.normalizeName(pogName);
 
-		for (Pog pog : m_pogs)
+		for (MapElementInstance pog : m_pogs)
 		{
 			if (pog.getNormalizedName().equals(normalizedName))
 			{

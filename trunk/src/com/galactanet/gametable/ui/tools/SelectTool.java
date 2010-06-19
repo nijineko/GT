@@ -4,7 +4,7 @@ package com.galactanet.gametable.ui.tools;
 import java.awt.*;
 
 import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.Pog;
+import com.galactanet.gametable.data.MapElementInstance;
 import com.galactanet.gametable.ui.GametableCanvas;
 
 /**
@@ -51,7 +51,7 @@ public class SelectTool extends NullTool
     public void clearTints()
     {
     	// @revise move to MODEL ?
-    	for (Pog pog : m_map.getPogs())
+    	for (MapElementInstance pog : m_map.getPogs())
     		pog.setTinted(false);       
     }
 
@@ -105,7 +105,7 @@ public class SelectTool extends NullTool
 
             // first off, copy all the pogs/underlays over to the public layer
             
-            for (Pog pog : m_map.getPogs())
+            for (MapElementInstance pog : m_map.getPogs())
             {
                 if (pog.isTinted() && (!pog.isLocked() || bIgnoreLock)) {
                     m_map.selectPog(pog);
@@ -152,7 +152,7 @@ public class SelectTool extends NullTool
     {
         final Rectangle selRect = createRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (Pog pog : m_map.getPogs())
+        for (MapElementInstance pog : m_map.getPogs())
         {
             final int size = pog.getFaceSize() * GametableCanvas.BASE_SQUARE_SIZE;
             final Point tl = new Point(pog.getPosition());

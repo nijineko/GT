@@ -18,6 +18,7 @@ import javax.swing.border.MatteBorder;
 
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.dicemacro.DiceMacro;
+import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 
@@ -235,7 +236,7 @@ public class MacroPanel extends JPanel
             panel.add(nameLabel);
             add(panel);
 
-            final Image deleteImage = UtilityFunctions.getCachedImage("assets/delete.png");
+            final Image deleteImage = Images.getCachedImage("assets/delete.png");
 
             deleteButton = new JButton(new ImageIcon(deleteImage));
             deleteButton.setMargin(new Insets(0, 0, 0, 0));
@@ -243,7 +244,7 @@ public class MacroPanel extends JPanel
             deleteButton.addActionListener(new DeleteMacroActionListener(macro));
             add(deleteButton);
 
-            final Image editImage = UtilityFunctions.getCachedImage("assets/edit.png");
+            final Image editImage = Images.getCachedImage("assets/edit.png");
 
             editButton = new JButton(new ImageIcon(editImage));
             editButton.setMargin(new Insets(0, 0, 0, 0));
@@ -251,7 +252,7 @@ public class MacroPanel extends JPanel
             editButton.addActionListener(new EditMacroActionListener(macro));
             add(editButton);
 
-            final Image rollImage = UtilityFunctions.getCachedImage("assets/roll.png");
+            final Image rollImage = Images.getCachedImage("assets/roll.png");
 
             rollButton = new JButton(new ImageIcon(rollImage));
             rollButton.setMargin(new Insets(0, 0, 0, 0));

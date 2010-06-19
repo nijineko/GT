@@ -14,27 +14,29 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import com.galactanet.gametable.data.PogType.Type;
+import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.PogLibrary;
+import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 
 
 /**
- * Represents an instance of a PogType on the Map.
+ * Represents an instance of a MapElement on the Map.
  * 
  * @author sephalon
  * 
- * #GT-AUDIT Pog
+ * #GT-AUDIT MapElementInstance
  */
-public class Pog implements Comparable<Pog>
+public class MapElementInstance implements Comparable<MapElementInstance>
 {
-    // --- Constants -------------------------------------------------------------------------------------------------
-
+	/**
+	 * TODO @revise Attribute system to be replaced by more flexible properties system
+	 */
     private static class Attribute
     {
         public boolean changed = true;
@@ -83,38 +85,42 @@ public class Pog implements Comparable<Pog>
     // --- Static Members --------------------------------------------------------------------------------------------
 
     /**
-     * Unique global Id for pogs.
-     */
-    public static int          g_nextId                   = 10;
-
-    /**
      * Global min sort id for pogs.
      */
     public static long         g_nextSortId               = 0;
 
     // --- Members ---------------------------------------------------------------------------------------------------
 
-    private Type               m_layer                    = Type.UNDERLAY;
-    private double             m_angle                    = 0.;
+    private Layer              m_layer                    = Layer.UNDERLAY;
+    private double             m_angle                    = 0d;
     private boolean            m_forceGridSnap            = false;
 
 
     /**
-     * The direction which a pog has been flipped.
+     * Whether this element should be displayed as flipped horizontally
      */
-    private int                 m_flipH                   = 0;
-    private int                 m_flipV                   = 0;
+    private boolean	m_flipH                   = false;
+    
+    /**
+     * Whether this element should be displayed as flipped vertically
+     */
+    private boolean	m_flipV                   = false;
+    
     
     /**
      * Name/value pairs of the attributes assigned to this pog.
      */
     private final Map<String, Attribute>          m_attributes               = new TreeMap<String, Attribute>();
+    
+    /**
+     * Size of this element, in pixel
+     */
+    private Dimension m_elementSize = new Dimension(); 
 
-    // a special kind of hack-ish value that will cause a pog
-    // to set itself to not be loaded if the values for it are
-    // too out of whack to be correct. This is to prevent bad saves caused
-    // by other bugs from permanently destroying a map.
-    public boolean             m_bStillborn               = false;
+    /**
+     * Marks whether this element is in a corrupted state and should be bypassed
+     */
+    private boolean             m_corrupted               = false;
 
     /**
      * True if this pog is notifying the world that it's text had changed.
@@ -124,27 +130,19 @@ public class Pog implements Comparable<Pog>
     /**
      * Is this pog tinted?
      */
-    private boolean            m_bTinted                  = false;
+    private boolean            m_bTinted                  = false;	// uh oh...
     
     private boolean            m_bSelected                = false; // #grouping
     private String             m_group                  	= null; //#grouping
-
-
-
-    /**
-     * Lame handle to canvas.
-     */
-    private GametableCanvas    m_canvas;
 
     // null in most cases. If it's not null, it's a
     // card in a deck
     private Card      m_card;
 
     /**
-     * The unique id of this pog.
-     * @revise do we want to make this type safe?
+     * The unique id for this MapElementInstance
      */
-    private int                m_id                       = 0;
+    private final MapElementInstanceID	m_id;
 
     /**
      * Locked state for this pog.
@@ -154,7 +152,7 @@ public class Pog implements Comparable<Pog>
     /**
      * The PogType of this Pog.
      */
-    private PogType            m_pogType;
+    private MapElement            m_pogType;
 
     /**
      * Position of the pog on the map in map coordinates.
@@ -172,7 +170,7 @@ public class Pog implements Comparable<Pog>
     private long               m_sortOrder                = 0;
 
     /**
-     * The primary label for the Pog.
+     * The primary label for the element.
      */
     private String             m_name                     = "";
     
@@ -182,57 +180,222 @@ public class Pog implements Comparable<Pog>
     private String 							m_nameNormalized					= "";
 
     /**
-     * Hit map for this pog.
+     * A bit field representing the surface of the image the cursor responds to
+     * @review move / share with instance (cache in here, stored with scaled image?)
      */
     public BitSet              m_hitMap;
 
     // --- Constructors ----------------------------------------------------------------------------------------------
 
-    public Pog(final DataInputStream dis) throws IOException
+    public MapElementInstance(final DataInputStream dis) throws IOException
     {
-        initFromPacket(dis);
+    	String filename = UtilityFunctions.getLocalPath(dis.readUTF());
+      final PogLibrary lib = GametableFrame.getGametableFrame().getPogLibrary();
+      filename = UtilityFunctions.getRelativePath(lib.getLocation(), new File(filename));
+
+      final int x = dis.readInt();
+      final int y = dis.readInt();
+      m_position = new Point(x, y);
+      final int size = dis.readInt();
+      
+      long id = dis.readLong();
+      m_id = MapElementInstanceID.fromNumeric(id);
+      
+      m_sortOrder = dis.readLong();
+      setName(dis.readUTF(), true);
+      // boolean underlay =
+      
+      boolean underlay = dis.readBoolean();
+
+      try {
+          m_scale = dis.readFloat();
+      }
+      catch(IOException exp)
+      {
+          m_scale = 1f;
+      }
+      
+      try {
+          m_angle = dis.readDouble();
+      }
+      catch(IOException exp)
+      {
+          m_angle = 0.;
+      }
+      try {
+          m_flipH = dis.readBoolean();
+          m_flipV = dis.readBoolean();
+      }
+      catch(IOException exp)
+      {
+          m_flipH = false;
+          m_flipV = false;
+      }
+      
+      try {
+          m_locked = dis.readBoolean();
+      }
+      catch(IOException exp)
+      {
+          m_locked = false;
+      }
+      
+      try {
+       // read in the card info, if any
+          final boolean bCardExists = dis.readBoolean();
+          if (bCardExists)
+          {
+              m_card = new Card();
+              m_card.read(dis);
+          }
+          else
+          {
+              // no card
+              m_card = null;
+          }
+
+          final int numAttributes = dis.readInt();
+          m_attributes.clear();
+          for (int i = 0; i < numAttributes; i++)
+          {
+              final String key = dis.readUTF();
+              final String value = dis.readUTF();
+              setAttribute(key, value);
+          }
+      }
+      catch(IOException exp)
+      {
+          m_card = null;
+      }
+      
+      Layer layer;
+      try {
+          int ord = dis.readInt();
+          layer = Layer.fromOrdinal(ord);
+      }
+      catch(IOException exp) 
+      {
+          if (underlay) 
+              layer = Layer.UNDERLAY;
+          else 
+              layer = Layer.POG;
+          
+          m_forceGridSnap = false;
+      }
+      
+      try {
+        String group = dis.readUTF();
+        if(group.equals("")) group = null;            
+        if(group != null) PogGroups.addPogToGroup(group, this);
+      } catch(IOException exp) {
+        m_group = null;
+      }
+
+
+      // special case pseudo-hack check
+      // through reasons unclear to me, sometimes a pog will get
+      // a size of around 2 billion. A more typical size would
+      // be around 1.
+      if ((size > 100) || (m_scale > 100.0))
+      {
+          m_corrupted = true;
+          return;
+      }
+
+      stopDisplayPogDataChange();
+
+      MapElement type = lib.getPog(filename);
+      if (type == null)
+      {
+          type = lib.createPlaceholder(filename, size);
+      }
+      
+      m_pogType = type;
+      m_layer = type.getLayerType();
+      
+      m_layer = layer; // Saving here as the init updates the layer for newly dropped pogs.
+      reinitializeHitMap();
     }
 
-    public Pog(final Pog toCopy)
+    public MapElementInstance(final MapElementInstance toCopy)
     {
-        init(toCopy, true);
+    	this(toCopy, true);
     }
     
-    public Pog(final Pog toCopy, final boolean copy) 
+    public MapElementInstance(final MapElementInstance orig, final boolean copygroup) 
     {
-      init(toCopy, copy);
+    	m_id = MapElementInstanceID.acquire();
+    	
+      m_position = orig.m_position;
+      m_pogType = orig.m_pogType;
+      m_scale = orig.m_scale;
+      m_angle = orig.m_angle;
+      m_flipH = orig.m_flipH;
+      m_flipV = orig.m_flipV;
+
+      setName(orig.m_name, true);
+      
+      m_layer    = orig.m_layer;
+      m_forceGridSnap = orig.m_forceGridSnap;
+
+      if(copygroup) m_group = orig.m_group;
+
+      if (orig.m_card == null)
+      {
+          m_card = orig.m_card;
+      }
+      else
+      {
+      		m_card = new Card();
+          m_card.copy(orig.m_card);
+      }
+
+      for (Attribute attribute : orig.m_attributes.values())
+      {
+          setAttribute(attribute.name, attribute.value);
+      }
+      
+      stopDisplayPogDataChange();
+      reinitializeHitMap();
     }
 
-    public Pog(final PogType type)
+    public MapElementInstance(final MapElement type)
     {
-        init(GametableFrame.getGametableFrame().getGametableCanvas(), type);
+    	m_id = MapElementInstanceID.acquire();
+    	m_pogType = type;
+      m_layer = type.getLayerType();
     }
 
     // --- Methods ---------------------------------------------------------------------------------------------------
 
-    // --- Initialization ---
-
-    public void assignUniqueId()
-    {
-        m_id = g_nextId++;
-        m_sortOrder = g_nextSortId++;
-    }
 
     /*
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
-    public int compareTo(final Pog pog) // @revise Overall use (abuse?) of final.  Read article : http://www.ibm.com/developerworks/java/library/j-jtp1029.html 
+    public int compareTo(MapElementInstance pog)  
     {
         if (equals(pog))
             return 0;
 
-        long diff = m_sortOrder - pog.getSortOrder();
-        if (diff == 0)
+        long sort1 = getSortOrder();
+        long sort2 = pog.getSortOrder();
+        
+        if (sort1 != sort2)
         {
-            diff = m_id - pog.getId();
+        	if (sort1 < sort2)
+        		return -1;
+        	
+        	return 1;
         }
-
-        return (diff < 0 ? -1 : (diff > 0 ? 1 : 0));
+        
+        String name1 = getName();
+        String name2 = pog.getName();
+        
+        int res = name1.compareTo(name2);
+        if (res != 0)
+        	return res;
+        
+        return getId().compareTo(pog.getId());
     }
 
     private void displayPogDataChange()
@@ -332,60 +495,72 @@ public class Pog implements Comparable<Pog>
         g2.dispose();
     }
 
-    public void drawChangedTextToCanvas(final Graphics g)
+    public void drawChangedTextToCanvas(final Graphics g, GametableCanvas canvas)
     {
         if (!m_bTextChangeNotifying)
         {
             return;
         }
-        drawStringToCanvas(g, true, COLOR_CHANGED_BACKGROUND);
+        drawStringToCanvas(g, true, COLOR_CHANGED_BACKGROUND, canvas);
     }
 
-    public void drawGhostlyToCanvas(final Graphics g)
+    public void drawGhostlyToCanvas(Graphics g, GametableCanvas canvas)
     {
         final Graphics2D g2 = (Graphics2D)g.create();
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-        drawToCanvas(g2);
+        drawToCanvas(g2, canvas);
         g2.dispose();
     }
 
-    public void drawScaled(final Graphics g, final int x, final int y, final float scale)
+    private void drawScaled(final Graphics g, final int x, final int y, final float scale)
     {
-        final int drawWidth = Math.round(m_pogType.getWidth(m_angle, m_forceGridSnap) * scale);
-        final int drawHeight = Math.round(m_pogType.getHeight(m_angle, m_forceGridSnap) * scale);
+        final int drawWidth = Math.round(getWidth() * scale);
+        final int drawHeight = Math.round(getHeight() * scale);
 
 //      g.drawImage(m_pogType.rotate(m_pogType.flip(m_pogType.m_image, m_flipH, m_flipV), m_angle), x, y, drawWidth, drawHeight, null);
       //m_pogType.flip(, m_flipH, m_flipV)
         
 //      Image im = m_pogType.rotate(m_pogType.getImage(), m_angle, m_forceGridSnap);
   
-        // @revise usage of flipH, flipV and angles
-      Image im = m_pogType.rotate(m_pogType.flip(m_pogType.getImage(), m_flipH, m_flipV), 
+        // @revise usage of flipH, flipV and angles  Creating images at every refresh!! TSK TSK TSK!
+        
+      Image im = Images.rotateImage(Images.flipImage(m_pogType.getImage(), m_flipH, m_flipV), 
           m_angle, m_forceGridSnap);      
 
 
       // Center the image into a square, taking into consideration the height and width
       int mw = 0;
       int mh = 0;
-      if(m_angle != 0) {
-          mw = Math.round(drawWidth - (m_pogType.getWidth(0, m_forceGridSnap) * scale));       
-          mh = Math.round(drawHeight - (m_pogType.getWidth(0, m_forceGridSnap) * scale));       
+      if (m_angle != 0) 
+      {
+      	Image image = m_pogType.getImage();
+      	
+      	mw = Math.round(drawWidth - (image.getHeight(null) * scale));       
+      	mw = Math.round(drawHeight - (image.getWidth(null) * scale));
       }
+      
       g.drawImage(im,x-mw/2,y-mh/2,drawWidth,drawHeight,null);
 
     }
 
     private void reinitializeHitMap()
     {
+    	m_hitMap = null;
+    	
+    	updateElementDimension();
+    	
         final Image img = m_pogType.getImage();
-        if (img == null)  {
-            m_hitMap = m_pogType.getHitMap();
+        if (img == null)  
+        {
+        	return;
         }
 
-        final int iw = m_pogType.getWidth(m_angle, m_forceGridSnap);
-        final int ih = m_pogType.getHeight(m_angle, m_forceGridSnap);
-        if(( ih < 0) || ( iw < 0)) {
-            m_hitMap = m_pogType.getHitMap();
+        final int iw = m_elementSize.width;
+        final int ih = m_elementSize.height;
+        
+        if (ih < 0 ||  iw < 0) 
+        {
+           return;
         }
 
 
@@ -396,7 +571,7 @@ public class Pog implements Comparable<Pog>
             g.setColor(new Color(0xff00ff));
             g.fillRect(0, 0, iw, ih);
             
-            g.drawImage(m_pogType.rotate(m_pogType.flip(img, m_flipH, m_flipV), m_angle, m_forceGridSnap)
+            g.drawImage(Images.rotateImage(Images.flipImage(img, m_flipH, m_flipV), m_angle, m_forceGridSnap)
                 , 0,0, iw, ih, null);
 
             g.dispose();
@@ -417,14 +592,16 @@ public class Pog implements Comparable<Pog>
 
     // --- Accessors ---
 
-    private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor)
+    private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor, GametableCanvas canvas)
     {
-        drawStringToCanvas(gr, bForceTextInBounds, backgroundColor, false);
+        drawStringToCanvas(gr, bForceTextInBounds, backgroundColor, false, canvas);
     }
 
     private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor,
-        boolean drawAttributes)
+        boolean drawAttributes, GametableCanvas canvas)
     {
+    		
+
         if (m_name == null)
         {
             m_name = "";
@@ -436,36 +613,40 @@ public class Pog implements Comparable<Pog>
 
         final int totalWidth = stringBounds.width + 6;
         final int totalHeight = stringBounds.height + 1;
+        
+        final int size = GametableCanvas.getSquareSizeForZoom(canvas.m_zoom);
 
-        final Point pogDrawCoords = m_canvas.modelToDraw(getPosition());
-        final int viewWidth = getHeightForZoomLevel();
+        final Point pogDrawCoords = canvas.modelToDraw(getPosition());
+        final int viewWidth = getHeightForZoomLevel(size);
         final Rectangle backgroundRect = new Rectangle();
         backgroundRect.x = pogDrawCoords.x + (viewWidth - totalWidth) / 2;
         backgroundRect.y = pogDrawCoords.y - totalHeight - 4;
         backgroundRect.width = totalWidth;
         backgroundRect.height = totalHeight;
+        
+        GameTableMap map = canvas.getActiveMap();
 
         if (bForceTextInBounds)
         {
             // force it to be on the view
-            if (backgroundRect.x < m_canvas.getActiveMap().getScrollX())
+            if (backgroundRect.x < map.getScrollX())
             {
-                backgroundRect.x = m_canvas.getActiveMap().getScrollX();
+                backgroundRect.x = map.getScrollX();
             }
 
-            if (backgroundRect.y < m_canvas.getActiveMap().getScrollY())
+            if (backgroundRect.y < map.getScrollY())
             {
-                backgroundRect.y = m_canvas.getActiveMap().getScrollY();
+                backgroundRect.y = map.getScrollY();
             }
 
-            if (backgroundRect.x + totalWidth > m_canvas.getActiveMap().getScrollX() + m_canvas.getWidth())
+            if (backgroundRect.x + totalWidth > map.getScrollX() + canvas.getWidth())
             {
-                backgroundRect.x = m_canvas.getActiveMap().getScrollX() + m_canvas.getWidth() - totalWidth;
+                backgroundRect.x = map.getScrollX() + canvas.getWidth() - totalWidth;
             }
 
-            if (backgroundRect.y + totalHeight > m_canvas.getActiveMap().getScrollY() + m_canvas.getHeight())
+            if (backgroundRect.y + totalHeight > map.getScrollY() + canvas.getHeight())
             {
-                backgroundRect.y = m_canvas.getActiveMap().getScrollY() + m_canvas.getHeight() - totalHeight;
+                backgroundRect.y = map.getScrollY() + canvas.getHeight() - totalHeight;
             }
         }
 
@@ -489,14 +670,14 @@ public class Pog implements Comparable<Pog>
         g.dispose();
     }
 
-    public void drawTextToCanvas(final Graphics gr, final boolean bForceTextInBounds)
+    public void drawTextToCanvas(final Graphics gr, final boolean bForceTextInBounds, GametableCanvas canvas)
     {
-        drawTextToCanvas(gr, bForceTextInBounds, false);
+        drawTextToCanvas(gr, bForceTextInBounds, false, canvas);
     }
 
-    public void drawTextToCanvas(final Graphics gr, final boolean bForceTextInBounds, final boolean drawAttributes)
+    public void drawTextToCanvas(final Graphics gr, final boolean bForceTextInBounds, final boolean drawAttributes, GametableCanvas canvas)
     {
-        drawStringToCanvas(gr, bForceTextInBounds, COLOR_BACKGROUND, drawAttributes);
+        drawStringToCanvas(gr, bForceTextInBounds, COLOR_BACKGROUND, drawAttributes, canvas);
         stopDisplayPogDataChange();
     }
     
@@ -507,7 +688,7 @@ public class Pog implements Comparable<Pog>
      * @param y
      * @param scale
      */
-    public void drawTinted(final Graphics gr, final int x, final int y, final float scale) {         
+    private void drawTinted(final Graphics gr, final int x, final int y, final float scale) {         
         final int dw = Math.round(getWidth() * scale);
         final int dh = Math.round(getHeight() * scale);
         BufferedImage bi = new BufferedImage(dw, dh, BufferedImage.TYPE_INT_ARGB);
@@ -528,33 +709,23 @@ public class Pog implements Comparable<Pog>
     }
 
 
-    public void drawToCanvas(final Graphics g)
+    public void drawToCanvas(Graphics g, GametableCanvas canvas)
     {
         // determine the visible area of the gametable canvas
-        final Rectangle visbleCanvas = m_canvas.getVisibleCanvasRect(m_canvas.m_zoom);
+        final Rectangle visbleCanvas = canvas.getVisibleCanvasRect(canvas.m_zoom);
         // determine the area covered by the pog - replaced with a set value m_bounds
         // final Rectangle pogArea = getBounds(m_canvas);
         
-        if (visbleCanvas.intersects(getBounds(m_canvas)))
+        if (visbleCanvas.intersects(getBounds(canvas)))
         {
             // Some portion of the pog's area overlaps the visible canvas area, so
             // we paint the pog to the canvas.  
 
             // convert our model coordinates to draw coordinates
-            final Point drawCoords = m_canvas.modelToDraw(getPosition());
-            final float scale = (float)GametableCanvas.getSquareSizeForZoom(m_canvas.m_zoom)
+            final Point drawCoords = canvas.modelToDraw(getPosition());
+            final float scale = (float)GametableCanvas.getSquareSizeForZoom(canvas.m_zoom)
             / (float)GametableCanvas.BASE_SQUARE_SIZE;
-
-            /*
-            drawScaled(g, drawCoords.x, drawCoords.y, scale * m_scale);
-
-            // if we're tinted, draw tinted
-            if (m_bTinted)
-            {
-                m_pogType.drawTint(g, drawCoords.x, drawCoords.y, scale * m_scale, Color.GREEN, m_angle, m_forceGridSnap);
-            }
-            */
-
+ 
             // @revise - what is tinted, what is selected - should we have clearer color scheme / standard UI artifact for selection? 
             // if we're tinted, draw tinted
             if (m_bTinted || m_bSelected) 
@@ -572,19 +743,11 @@ public class Pog implements Comparable<Pog>
      */
     public Rectangle getBounds(GametableCanvas canvas)
     {
-//        final Point drawCoords = m_canvas.modelToDraw(getPosition());
-//        final float scale = 
-//            m_scale * GametableCanvas.getSquareSizeForZoom(m_canvas.m_zoom) / 
-//            GametableCanvas.BASE_SQUARE_SIZE;
-//        
-//        final int drawWidth = Math.round(m_pogType.getWidth(m_angle) * scale);
-//        final int drawHeight = Math.round(m_pogType.getHeight(m_angle) * scale);
-//        
-//        return new Rectangle(
-//            drawCoords.x, drawCoords.y,
-//            drawWidth, drawHeight);
-        final Rectangle pogArea = new Rectangle(m_position.x, m_position.y, getWidth(), getHeight());
-        return pogArea;
+    	// Make sure hit map is built and dimensions are ok
+    	getHitMap();
+	
+      final Rectangle pogArea = new Rectangle(m_position.x, m_position.y, getWidth(), getHeight());
+      return pogArea;
     }
 
     /*
@@ -593,12 +756,10 @@ public class Pog implements Comparable<Pog>
     public boolean equals(final Object obj)
     {
         if (this == obj)
-        {
             return true;
-        }
 
-        final Pog pog = (Pog)obj;
-        return (pog.getId() == m_id);
+        final MapElementInstance pog = (MapElementInstance)obj;
+        return pog.getId().equals(m_id);
     }
 
     public double getAngle()
@@ -611,12 +772,12 @@ public class Pog implements Comparable<Pog>
         return m_forceGridSnap;
     }
 
-    public int getFlipH()
+    public boolean getFlipH()
     {
         return m_flipH;
     }
 
-    public int getFlipV()
+    public boolean getFlipV()
     {
         return m_flipV;
     }
@@ -658,44 +819,57 @@ public class Pog implements Comparable<Pog>
         {
             return m_pogType.getFaceSize();
         }
+        
+        int size = Math.round(m_pogType.getFaceSize() * m_scale);
+        if (size < 1)
+        	return 1;
+        
+        return size;
+        
+        /*
 
-        return Math.max(Math.round(Math.max(m_pogType.getWidth(m_angle, m_forceGridSnap), m_pogType.getHeight(m_angle, m_forceGridSnap)) * m_scale
-            / GametableCanvas.BASE_SQUARE_SIZE), 1);
-    }
-
-    public String getFilename()
-    {
-        return m_pogType.getFilename();
+        return Math.max(
+        		Math.round(
+        				Math.max(
+        							getWidth(m_angle, m_forceGridSnap), 
+        							getHeight(m_angle, m_forceGridSnap))
+        							* m_scale 
+        							/ GametableCanvas.BASE_SQUARE_SIZE), 
+            1);
+            */
     }
 
     public int getHeight()
     {
         if (m_scale == 1f)
         {
-            return m_pogType.getHeight(m_angle, m_forceGridSnap);
+            return m_elementSize.height;
         }
 
-        return Math.round(m_pogType.getHeight(m_angle, m_forceGridSnap) * m_scale);
+        return Math.round(m_elementSize.height * m_scale);
     }
 
-    public int getHeightForZoomLevel()
+    private int getHeightForZoomLevel(int squareSize)
     {
-        final int size = GametableCanvas.getSquareSizeForZoom(m_canvas.m_zoom);
-        final double ratio = (double)size / (double)GametableCanvas.BASE_SQUARE_SIZE;
+        final double ratio = (double)squareSize / (double)GametableCanvas.BASE_SQUARE_SIZE;
         final int imgSizeY = (int)(ratio * getHeight());
         return imgSizeY;
     }
 
-    public int getId()
+    /**
+     * Get the unique ID of this instance
+     * @return Unique Element ID
+     */
+    public MapElementInstanceID getId()
     {
         return m_id;
     }
     
-    public Type getLayer() {
+    public Layer getLayer() {
         return m_layer;
     }
 
-    public PogType getPogType()
+    public MapElement getPogType()
     {
         return m_pogType;
     }
@@ -753,19 +927,12 @@ public class Pog implements Comparable<Pog>
     {
         if (m_scale == 1f)
         {
-            return m_pogType.getWidth(m_angle, m_forceGridSnap);
+            return m_elementSize.width;
         }
 
-        return Math.round(m_pogType.getWidth(m_angle, m_forceGridSnap) * m_scale);
+        return Math.round(m_elementSize.width * m_scale);
     }
 
-    public int getWidthForZoomLevel()
-    {
-        final int size = GametableCanvas.getSquareSizeForZoom(m_canvas.m_zoom);
-        final double ratio = (double)size / (double)GametableCanvas.BASE_SQUARE_SIZE;
-        final int imgSizeX = (int)(ratio * getWidth());
-        return imgSizeX;
-    }
 
     public int getX()
     {
@@ -789,176 +956,7 @@ public class Pog implements Comparable<Pog>
      */
     public int hashCode()
     {
-        return m_id;
-    }
-
-    private void init(final GametableCanvas canvas, final PogType type)
-    {
-        m_pogType = type;
-        m_canvas = canvas;
-        m_layer = type.getType();
-    }
-
-    private void init(final Pog orig, boolean copygroup)
-    {
-        m_position = orig.m_position;
-        m_pogType = orig.m_pogType;
-        m_canvas = orig.m_canvas;
-        m_scale = orig.m_scale;
-        m_angle = orig.m_angle;
-        m_flipH = orig.m_flipH;
-        m_flipV = orig.m_flipV;
-
-        setName(orig.m_name, true);
-        
-        m_layer    = orig.m_layer;
-        m_forceGridSnap = orig.m_forceGridSnap;
-
-        if(copygroup) m_group = orig.m_group;
-
-        if (orig.m_card == null)
-        {
-            m_card = orig.m_card;
-        }
-        else
-        {
-        		m_card = new Card();
-            m_card.copy(orig.m_card);
-        }
-
-        for (Attribute attribute : orig.m_attributes.values())
-        {
-            setAttribute(attribute.name, attribute.value);
-        }
-        
-        stopDisplayPogDataChange();
-        reinitializeHitMap();
-    }
-
-    private void initFromPacket(final DataInputStream dis) throws IOException
-    {
-        String filename = UtilityFunctions.getLocalPath(dis.readUTF());
-        final PogLibrary lib = GametableFrame.getGametableFrame().getPogLibrary();
-        filename = UtilityFunctions.getRelativePath(lib.getLocation(), new File(filename));
-
-        final int x = dis.readInt();
-        final int y = dis.readInt();
-        m_position = new Point(x, y);
-        final int size = dis.readInt();
-        m_id = dis.readInt();
-        m_sortOrder = dis.readLong();
-        setName(dis.readUTF(), true);
-        // boolean underlay =
-        
-        boolean underlay = dis.readBoolean();
-
-        try {
-            m_scale = dis.readFloat();
-        }
-        catch(IOException exp)
-        {
-            m_scale = 1f;
-        }
-        
-        try {
-            m_angle = dis.readDouble();
-        }
-        catch(IOException exp)
-        {
-            m_angle = 0.;
-        }
-        try {
-            m_flipH = dis.readInt();
-            m_flipV = dis.readInt();
-        }
-        catch(IOException exp)
-        {
-            m_flipH = 0;
-            m_flipV = 0;
-        }
-        
-        try {
-            m_locked = dis.readBoolean();
-        }
-        catch(IOException exp)
-        {
-            m_locked = false;
-        }
-        
-        try {
-         // read in the card info, if any
-            final boolean bCardExists = dis.readBoolean();
-            if (bCardExists)
-            {
-                m_card = new Card();
-                m_card.read(dis);
-            }
-            else
-            {
-                // no card
-                m_card = null;
-            }
-
-            final int numAttributes = dis.readInt();
-            m_attributes.clear();
-            for (int i = 0; i < numAttributes; i++)
-            {
-                final String key = dis.readUTF();
-                final String value = dis.readUTF();
-                setAttribute(key, value);
-            }
-        }
-        catch(IOException exp)
-        {
-            m_card = null;
-        }
-        
-        Type layer;
-        try {
-            int ord = dis.readInt();
-            layer = Type.fromOrdinal(ord);
-        }
-        catch(IOException exp) 
-        {
-            if (underlay) 
-                layer = Type.UNDERLAY;
-            else 
-                layer = Type.POG;
-            
-            m_forceGridSnap = false;
-        }
-        
-        try {
-          String group = dis.readUTF();
-          if(group.equals("")) group = null;            
-          if(group != null) PogGroups.addPogToGroup(group, this);
-        } catch(IOException exp) {
-          m_group = null;
-        }
-
-
-        // special case pseudo-hack check
-        // through reasons unclear to me, sometimes a pog will get
-        // a size of around 2 billion. A more typical size would
-        // be around 1.
-        if ((size > 100) || (m_scale > 100.0))
-        {
-            m_bStillborn = true;
-            return;
-        }
-
-        stopDisplayPogDataChange();
-
-        PogType type = lib.getPog(filename);
-        if (type == null)
-        {
-            type = lib.createPlaceholder(filename, size);
-        }
-        
-        init(GametableFrame.getGametableFrame().getGametableCanvas(), type);
-        
-        m_layer = layer; // Saving here as the init updates the layer for newly dropped pogs.
-        reinitializeHitMap();
+        return m_id.hashCode();
     }
 
     public boolean isCardPog()
@@ -988,12 +986,7 @@ public class Pog implements Comparable<Pog>
      */
     public boolean isUnderlay()
     {
-        return m_layer != Type.POG;
-    }
-
-    public boolean isUnknown()
-    {
-        return m_pogType.isUnknown();
+        return m_layer != Layer.POG;
     }
 
     // --- Drawing ---
@@ -1038,10 +1031,12 @@ public class Pog implements Comparable<Pog>
         int sx = 0;
         int sy = 0;
         if(m_angle != 0) {
-            final int dw = m_pogType.getWidth(m_angle, m_forceGridSnap);
-            final int dh = m_pogType.getHeight(m_angle, m_forceGridSnap);
-            final int iw = m_pogType.getWidth(0, m_forceGridSnap);
-            final int ih = m_pogType.getHeight(0, m_forceGridSnap);
+            final int dw = getWidth();
+            final int dh = getHeight();
+            
+            Image image = m_pogType.getImage();
+            final int iw = image == null ? 0 : image.getWidth(null);
+            final int ih = image == null ? 0 : image.getHeight(null);
             // Point Shift for the drawing
             sx = Math.round((dw - iw)/2 * m_scale);
             sy = Math.round((dh - ih)/2 * m_scale);
@@ -1080,7 +1075,7 @@ public class Pog implements Comparable<Pog>
     }
     
     //#randomrotate
-    public void setAngleFlip(final double angle,final int flipH, final int flipV)
+    public void setAngleFlip(final double angle,final boolean flipH, final boolean flipV)
     {
         m_flipH = flipH;
         m_flipV = flipV;
@@ -1089,7 +1084,7 @@ public class Pog implements Comparable<Pog>
     }
 
     
-    public void setFlip(final int flipH, final int flipV)
+    public void setFlip(final boolean flipH, final boolean flipV)
     {
         m_flipH = flipH;
         m_flipV = flipV;
@@ -1118,7 +1113,12 @@ public class Pog implements Comparable<Pog>
             
 
         final float targetDimension = GametableCanvas.BASE_SQUARE_SIZE * faceSize;
-        final float maxDimension = Math.max(getPogType().getWidth(0, m_forceGridSnap), getPogType().getHeight(0, m_forceGridSnap));
+
+        float maxDimension = GametableCanvas.BASE_SQUARE_SIZE;
+        Image image = m_pogType.getImage();
+        if (image != null)
+        	maxDimension = Math.max(image.getWidth(null), image.getHeight(null));
+
         if (maxDimension == 0)
         {
             throw new ArithmeticException("Zero sized pog dimension: " + this);
@@ -1135,15 +1135,12 @@ public class Pog implements Comparable<Pog>
         m_locked = b;
     }
     
-    public void setId(final int id) {
-        m_id = id;
-    }
     
-    public void setLayer(final Type l) {
+    public void setLayer(final Layer l) {
         m_layer = l;       
     }
     
-    public void setPogType(final PogType pt) {
+    public void setPogType(final MapElement pt) {
         m_pogType = pt;
         reinitializeHitMap();
     }
@@ -1244,24 +1241,30 @@ public class Pog implements Comparable<Pog>
         }
     }
 
-    public boolean testHit(final int modelX, final int modelY)
+    /**
+     * Checks whether this Element "contains" the specified point, where x and y are defined to be relative to the coordinate system of this element
+     * eg: 0, 0 is top left corner.
+     * 
+     * NB : Method is final and calls {@link #contains(int, int)}
+     * 
+     * @param p Point to check for
+     * @return true / false
+     */
+    public final boolean contains(Point p)
     {
-        return testHit(new Point(modelX, modelY));
-    }
-
-    public boolean testHit(final Point modelPoint)
-    {
-        return testHit(modelToPog(modelPoint), m_angle);
+    	Point pt = modelToPog(p);
+      return contains(pt.x, pt.y);
     }
 
     /**
-     * Tests whether a point hits one of this pog's pixels.
+     * Checks whether this Element "contains" the specified point, where x and y are defined to be relative to the coordinate system of this element
+     * eg: 0, 0 is top left corner. 
      * 
-     * @param x X coordinate of point to test relative to upper-left corner of pog.
-     * @param y Y coordinate of point to test relative to upper-left corner of pog.
-     * @return Returns true if the point hits this pog.
+     * @param x X coordinate of point to test 
+     * @param y Y coordinate of point to test 
+     * @return Returns true if the point is contained within this element
      */
-    public boolean testHit(final int x, final int y, final double angle)
+    public boolean contains(int x, int y)
     {
         // if it's not in our rect, then forget it.
         if (x < 0)
@@ -1269,7 +1272,7 @@ public class Pog implements Comparable<Pog>
             return false;
         }
 
-        if (x >= m_pogType.getWidth(angle, m_forceGridSnap))
+        if (x >= getWidth())
         {
             return false;
         }
@@ -1279,34 +1282,20 @@ public class Pog implements Comparable<Pog>
             return false;
         }
 
-        if (y >= m_pogType.getHeight(angle, m_forceGridSnap))
+        if (y >= getHeight())
         {
             return false;
         }
 
-        // if we are unknown, then let's just go with it.
-        if (m_hitMap == null)
-        {
-            m_hitMap = m_pogType.getHitMap();
-        }
-
-        // otherwise, let's see if they hit an actual pixel
-
-        final int idx = x + (y * m_pogType.getWidth(angle, m_forceGridSnap));
+        // Make sure `hit map' has been generated        
+        getHitMap();
+        
+        // Look within the map to see if we are contained
+        
+        final int idx = x + (y * getWidth());
         final boolean value = m_hitMap.get(idx);
 
         return value;
-    }
-
-    /**
-     * Tests whether a point hits one of this pog's pixels.
-     * 
-     * @param p Point to test, relative to upper-left corner of pog.
-     * @return Returns true if the point hits this pog.
-     */
-    public boolean testHit(final Point p, final double angle)
-    {
-        return testHit(p.x, p.y, angle);
     }
 
     /*
@@ -1314,24 +1303,23 @@ public class Pog implements Comparable<Pog>
      */
     public String toString()
     {
-        return "[Pog name: " + getFilename() + " (" + getId() + " - " + getSortOrder() + ") pos: " + getPosition()
-            + " size: " + getFaceSize() + "]";
+        return "[" + getId() + ":" + getName() + " pos: " + getPosition() + " face-size: " + getFaceSize() + "]";
     }
 
     public void writeToPacket(final DataOutputStream dos) throws IOException
     {
-        dos.writeUTF(getFilename());
+        dos.writeUTF(getPogType().getImageFilename());
         dos.writeInt(getX());
         dos.writeInt(getY());
         dos.writeInt(getPogType().getFaceSize());
-        dos.writeInt(m_id);
+        dos.writeLong(m_id.numeric());
         dos.writeLong(m_sortOrder);
         dos.writeUTF(m_name);
         dos.writeBoolean(isUnderlay());
         dos.writeFloat(m_scale);
         dos.writeDouble(m_angle);
-        dos.writeInt(m_flipH);
-        dos.writeInt(m_flipV);
+        dos.writeBoolean(m_flipH);
+        dos.writeBoolean(m_flipV);
         dos.writeBoolean(m_locked);
 
         // write out the card info, if any
@@ -1359,5 +1347,65 @@ public class Pog implements Comparable<Pog>
         if(m_group == null) dos.writeUTF("");
         else dos.writeUTF(m_group);
     }
+    
 
+    /**
+     * Draws the pog onto the given graphics context.
+     * Used for images that are never rotated.
+     * 
+     * @param g Context to draw onto.
+     * @param x X position to draw at.
+     * @param y Y position to draw at.
+     */
+    public void draw(final Graphics g, final int x, final int y)
+    {
+    	    	
+        g.drawImage(m_pogType.getImage(), x, y, null);
+    }
+    /**
+     * Draws the pog onto the given graphics context in "ghostly" form.
+     * 
+     * @param g Context to draw onto.
+     * @param x X position to draw at.
+     * @param y Y position to draw at.
+     */
+    public void drawGhostly(final Graphics g, final int x, final int y)
+    {
+        UtilityFunctions.drawTranslucent((Graphics2D)g, m_pogType.getImage(), x, y, 0.5f);
+    }    
+
+    public BitSet getHitMap()
+    {
+        if (m_hitMap != null)
+            return m_hitMap;
+        
+        reinitializeHitMap();
+        return m_hitMap;
+    }
+    
+    /**
+     * Recalculate the width and height of this ElementInstance based on its current angle 
+     */
+    private void updateElementDimension()
+    {
+    	Image image = m_pogType.getImage();
+
+      if (m_pogType.getImage() == null)
+      {
+      	m_elementSize.setSize(GametableCanvas.BASE_SQUARE_SIZE, GametableCanvas.BASE_SQUARE_SIZE);
+      }
+      else
+      {      
+      	m_elementSize.setSize(image.getWidth(null), image.getHeight(null));
+      	//Images.getRotatedSquareSize(image.getWidth(null), image.getHeight(null), m_angle, m_elementSize);
+      }
+    }
+ 
+    /**
+     * @return true if this element has been marked as corrupted and should be bypassed
+     */
+    public boolean isCorrupted()
+    {
+    	return m_corrupted;
+    }
 }
