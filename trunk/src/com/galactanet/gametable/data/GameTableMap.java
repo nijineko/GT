@@ -75,7 +75,7 @@ public class GameTableMap
 	/**
 	 * Current scroll coordinates, relative to scroll origin
 	 */
-	private Point										m_scrollPos		= new Point();
+	private Point										m_scrollPos		= new Point(0, 0);
 
 	/**
 	 * Lists the currently selected pogs
@@ -86,6 +86,11 @@ public class GameTableMap
 	 * Unmodifiable version of the selected pogs to be returned to callers
 	 */
 	private final List<MapElementInstance>					m_selectedPogsUnmodifiable;
+
+	/**
+	 * Every 'square' is divided into this number of units
+	 */
+	private final static int    BASE_SQUARE_SIZE       = 64;
 
 	// @revise #{@link javax.swing.undo.UndoableEdit}
 
@@ -191,7 +196,7 @@ public class GameTableMap
 	 * @param modelPosition Coordinates to test for
 	 * @return Matching Pog or none
 	 */
-	public MapElementInstance getPogAt(final Point modelPosition)
+	public MapElementInstance getPogAt(MapCoordinates modelPosition)
 	{
 		if (modelPosition == null)
 		{
@@ -303,13 +308,13 @@ public class GameTableMap
 	 * @revise move to VIEW
 	 * @return
 	 */
-	public int getScrollX()
+	public Point getScrollPosition()
 	{
-		return m_scrollPos.x;
+		return m_scrollPos;
 	}
-
+	
 	/**
-	 * Gets the Y coordinate of the scroll position
+	 * Gets the X coordinate of the scroll position
 	 * 
 	 * @revise move to VIEW
 	 * @return
@@ -317,6 +322,17 @@ public class GameTableMap
 	public int getScrollY()
 	{
 		return m_scrollPos.y;
+	}
+	
+	/**
+	 * Gets the X coordinate of the scroll position
+	 * 
+	 * @revise move to VIEW
+	 * @return
+	 */
+	public int getScrollX()
+	{
+		return m_scrollPos.x;
 	}
 
 	/**
@@ -476,7 +492,19 @@ public class GameTableMap
 	 * @param x x coordinates of the scroll position
 	 * @param y y coordinates of the scroll position
 	 */
-	public void setScrollPosition(final int x, final int y)
+	public void setScrollPosition(Point newPos)
+	{
+		m_scrollPos.setLocation(newPos);
+	}
+	
+	/**
+	 * Set the scroll position
+	 * 
+	 * @revise move to VIEW
+	 * @param x x coordinates of the scroll position
+	 * @param y y coordinates of the scroll position
+	 */
+	public void setScrollPosition(int x, int y)
 	{
 		m_scrollPos.setLocation(x, y);
 	}
@@ -553,4 +581,15 @@ public class GameTableMap
 
 		return null;
 	}
+
+	/**
+	 * Returns the number of map units found within a square
+	 * @return Number of map units - NOT DIRECTLY RELATED TO PIXELS
+	 */
+	public final static int getBaseSquareSize()
+	{
+		return GameTableMap.BASE_SQUARE_SIZE;
+	}
+	
+	// TODO Plan to store scroll position from UI when saving 
 }

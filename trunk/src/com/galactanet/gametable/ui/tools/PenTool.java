@@ -9,6 +9,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.List;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
@@ -37,13 +38,15 @@ public class PenTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#activate(com.galactanet.gametable.GametableCanvas)
      */
-    public void activate(final GametableCanvas canvas)
+    @Override
+		public void activate(final GametableCanvas canvas)
     {
         m_canvas = canvas;
         m_penAsset = null;
     }
 
-    public void endAction()
+    @Override
+		public void endAction()
     {
         m_penAsset = null;
         m_canvas.repaint();
@@ -52,7 +55,8 @@ public class PenTool extends NullTool
     /*
      * @see com.galactanet.gametable.Tool#isBeingUsed()
      */
-    public boolean isBeingUsed()
+    @Override
+		public boolean isBeingUsed()
     {
         return (m_penAsset != null);
     }
@@ -60,17 +64,19 @@ public class PenTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonPressed(int, int)
      */
-    public void mouseButtonPressed(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
         // @revise move m_drawColor into some more reasonable access point
         m_penAsset = new PenAsset(GametableFrame.getGametableFrame().m_drawColor);
-        m_penAsset.addPoint(x, y);
+        m_penAsset.addPoint(modelPos);
     }
 
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseButtonReleased(int, int)
      */
-    public void mouseButtonReleased(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
         if (m_penAsset != null)
         {
@@ -85,11 +91,12 @@ public class PenTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#mouseMoved(int, int)
      */
-    public void mouseMoved(final int x, final int y, final int modifierMask)
+    @Override
+		public void mouseMoved(MapCoordinates modelPos, final int modifierMask)
     {
         if (m_penAsset != null)
         {
-            m_penAsset.addPoint(x, y);
+            m_penAsset.addPoint(modelPos);
             m_canvas.repaint();
         }
     }
@@ -97,7 +104,8 @@ public class PenTool extends NullTool
     /*
      * @see com.galactanet.gametable.AbstractTool#paint(java.awt.Graphics)
      */
-    public void paint(final Graphics g)
+    @Override
+		public void paint(final Graphics g)
     {
         if (m_penAsset != null)
         {

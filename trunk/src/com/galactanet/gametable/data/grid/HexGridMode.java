@@ -7,9 +7,10 @@ package com.galactanet.gametable.data.grid;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Point;
 
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GridMode;
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.util.Images;
 
@@ -37,7 +38,7 @@ public class HexGridMode extends GridMode
     @Override
     public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)
     {
-        if (m_canvas.m_zoom == 4)
+        if (m_canvas.getZoomLevel() == 4)
         {
             // we don't draw lines at the furthest zoom level
             return;
@@ -54,8 +55,8 @@ public class HexGridMode extends GridMode
         // mode,
         // we have to make our "tiling square size" twice as wide.
 
-        int tilingSquareX = m_canvas.m_squareSize;
-        final int tilingSquareY = m_canvas.m_squareSize;
+        int tilingSquareX = m_canvas.getSquareSize();
+        final int tilingSquareY = tilingSquareX;	// its a square, so same value
         tilingSquareX *= 2;
 
         int qx = Math.abs(topLeftX) / tilingSquareX;
@@ -76,14 +77,16 @@ public class HexGridMode extends GridMode
         final int linesYOffset = qy * tilingSquareY;
         final int vLines = width / tilingSquareX + 2;
         final int hLines = height / tilingSquareY + 2;
+        
+        int zoomLevel = m_canvas.getZoomLevel();
 
         // draw a hex grid
-        final Image toTile = m_hexImages[m_canvas.m_zoom];
+        final Image toTile = m_hexImages[zoomLevel];
 
         // this offsets the hexes to be "centered" in the square grid that would
         // be there if we were in square mode (Doing things this way means that the
         // x-position treatment of pogs doesn't have to change while in hex mode.
-        final int offsetX = -m_hexImageOffsets[m_canvas.m_zoom] / 2;
+        final int offsetX = -m_hexImageOffsets[zoomLevel] / 2;
 
         // each tiling of hex images is 4 hexes high. so we incrememt by 4
         for (int j = 0; j < hLines; j += 4)
@@ -107,17 +110,18 @@ public class HexGridMode extends GridMode
         }
     }
 
-    private Point getClosestPoint(final Point target, final Point candidates[])
+    private MapCoordinates getClosestPoint(final MapCoordinates target, final MapCoordinates candidates[])
     {
         double minDist = -1.0;
-        Point winner = null;
-        for (int i = 0; i < candidates.length; i++)
+        MapCoordinates winner = null;
+        
+        for (MapCoordinates candidate : candidates)
         {
-            final double distance = pointDistance(target, candidates[i]);
+            double distance = target.distance(candidate);
             if ((minDist == -1.0) || (distance < minDist))
             {
                 minDist = distance;
-                winner = candidates[i];
+                winner = candidate;
             }
         }
 
@@ -179,44 +183,38 @@ public class HexGridMode extends GridMode
         return false;
     }
 
-    private double pointDistance(final Point p1, final Point p2)
-    {
-        final int dx = p1.x - p2.x;
-        final int dy = p1.y - p2.y;
-        final double dist = Math.sqrt(dx * dx + dy * dy);
-        return dist;
-    }
-
     @Override
-		public Point getSnappedPixelCoordinates(final Point modelPointIn, final boolean bSnapForPog, final int pogSize)
+		public MapCoordinates getSnappedMapCoordinates(final MapCoordinates modelPointIn, final boolean bSnapForPog, final int pogSize)
     {
-        final Point modelPoint = new Point(modelPointIn);
+    	MapCoordinates modelPoint = modelPointIn;
+    	
         if (bSnapForPog)
         {
-            // we're snapping for a pog. We've been sent the upper left corner of that
-            // pog. We need to know it's center.
-            modelPoint.x += pogSize / 2;
-            modelPoint.y += pogSize / 2;
+          // we're snapping for a pog. We've been sent the upper left corner of that
+          // pog. We need to know it's center.
+        	modelPoint = modelPoint.delta(pogSize / 2, pogSize / 2);
         }
 
         // in hex mode, we have to snap to any of the vertices of a hex,
         // plus the center. How annoying is that, eh?
 
         // start with the grid snap location for the x coordinate
-        int x = getSnappedPixelCoordinates(modelPoint.x);
+        int x = getSnappedMapCoordinates(modelPoint.x);
+        
+        int baseSquareSize = GameTableMap.getBaseSquareSize();
 
         // from that, get the grid location.
-        final int gridX = x / GametableCanvas.BASE_SQUARE_SIZE;
+        final int gridX = x / baseSquareSize;
 
         // note that items in the odd columns are half a grid square down
         int offsetY = 0;
         if (isOffsetColumn(gridX))
         {
-            offsetY = GametableCanvas.BASE_SQUARE_SIZE / 2;
+            offsetY = baseSquareSize / 2;
         }
 
         // now work out which "grid" (hex, really) the y value is in
-        int y = getSnappedPixelCoordinates(modelPoint.y - offsetY);
+        int y = getSnappedMapCoordinates(modelPoint.y - offsetY);
 
         // add back the offset
         y += offsetY;
@@ -243,7 +241,7 @@ public class HexGridMode extends GridMode
         // --Our upstairs neighbor's hex center
         // -- Our neighbor to the left's hex center
 
-        Point closest = null;
+        MapCoordinates closest = null;
 
         if (bSnapForPog)
         {
@@ -252,13 +250,13 @@ public class HexGridMode extends GridMode
             // now, we need to stick that to either vertices or hex centers, depending
             // on the size of the pog. If it's a size 1 (64 px_ pog, we snap to centers only.
             // if it's size 2, we snap to vertices only. If size 3, back to centers. etc.
-            final int face = pogSize / GametableCanvas.BASE_SQUARE_SIZE;
+            final int face = pogSize / baseSquareSize;
             if (face % 2 == 1)
             {
                 // odd faces snap to centers
-                final Point candidates[] = new Point[3];
+                final MapCoordinates candidates[] = new MapCoordinates[3];
 
-                final Point point1 = new Point(x + GametableCanvas.BASE_SQUARE_SIZE - m_hexImageOffsets[0], y); // Our
+                final MapCoordinates point1 = new MapCoordinates(x + baseSquareSize - m_hexImageOffsets[0], y); // Our
                 // hex's
                 // point
                 // 1,
@@ -269,32 +267,32 @@ public class HexGridMode extends GridMode
                 // the
                 // center
 
-                candidates[0] = new Point(x + (point1.x - x) / 2, y + GametableCanvas.BASE_SQUARE_SIZE / 2); // Our
+                candidates[0] = new MapCoordinates(x + (point1.x - x) / 2, y + baseSquareSize / 2); // Our
                 // hex
                 // center
-                candidates[1] = new Point(candidates[0].x, candidates[0].y - GametableCanvas.BASE_SQUARE_SIZE); // Our
+                candidates[1] = new MapCoordinates(candidates[0].x, candidates[0].y - baseSquareSize); // Our
                 // upstairs
                 // neighbor's
                 // center
-                candidates[2] = new Point(candidates[0].x - GametableCanvas.BASE_SQUARE_SIZE, candidates[0].y
-                    - GametableCanvas.BASE_SQUARE_SIZE / 2); // Our upstairs neighbor's center
+                candidates[2] = new MapCoordinates(candidates[0].x - baseSquareSize, candidates[0].y
+                    - baseSquareSize / 2); // Our upstairs neighbor's center
 
                 closest = getClosestPoint(modelPoint, candidates);
             }
             else
             {
                 // even faces snap to vertices
-                final Point candidates[] = new Point[4];
-                candidates[0] = new Point(x, y); // Our hex's point 0
-                candidates[1] = new Point(x + GametableCanvas.BASE_SQUARE_SIZE - m_hexImageOffsets[0], y); // Our
+                final MapCoordinates candidates[] = new MapCoordinates[4];
+                candidates[0] = new MapCoordinates(x, y); // Our hex's point 0
+                candidates[1] = new MapCoordinates(x + baseSquareSize - m_hexImageOffsets[0], y); // Our
                 // hex's
                 // point
                 // 1
-                candidates[2] = new Point(x - m_hexImageOffsets[0], y + GametableCanvas.BASE_SQUARE_SIZE / 2); // Our
+                candidates[2] = new MapCoordinates(x - m_hexImageOffsets[0], y + baseSquareSize / 2); // Our
                 // hex's
                 // point
                 // 5
-                candidates[3] = new Point(candidates[2].x, candidates[2].y - GametableCanvas.BASE_SQUARE_SIZE); // Our
+                candidates[3] = new MapCoordinates(candidates[2].x, candidates[2].y - baseSquareSize); // Our
                 // upstairs
                 // neighbor's
                 // point
@@ -306,36 +304,35 @@ public class HexGridMode extends GridMode
             if (closest != null)
             {
                 // offset the values for the pog size
-                closest.x -= pogSize / 2;
-                closest.y -= pogSize / 2;
+            	closest = closest.delta(-pogSize / 2, -pogSize / 2);
             }
         }
         else
         {
             // we're snapping to any vertex
-            final Point candidates[] = new Point[7];
-            candidates[0] = new Point(x, y); // Our hex's point 0
-            candidates[1] = new Point(x + GametableCanvas.BASE_SQUARE_SIZE - m_hexImageOffsets[0], y); // Our
+            final MapCoordinates candidates[] = new MapCoordinates[7];
+            candidates[0] = new MapCoordinates(x, y); // Our hex's point 0
+            candidates[1] = new MapCoordinates(x + baseSquareSize - m_hexImageOffsets[0], y); // Our
             // hex's
             // point
             // 1
-            candidates[2] = new Point(x - m_hexImageOffsets[0], y + GametableCanvas.BASE_SQUARE_SIZE / 2); // Our
+            candidates[2] = new MapCoordinates(x - m_hexImageOffsets[0], y + baseSquareSize / 2); // Our
             // hex's
             // point
             // 5
-            candidates[3] = new Point(candidates[2].x, candidates[2].y - GametableCanvas.BASE_SQUARE_SIZE); // Our
+            candidates[3] = new MapCoordinates(candidates[2].x, candidates[2].y - baseSquareSize); // Our
             // upstairs
             // neighbor's
             // point
             // 5
-            candidates[4] = new Point(candidates[0].x + (candidates[1].x - candidates[0].x) / 2, y
-                + GametableCanvas.BASE_SQUARE_SIZE / 2); // Our hex center
-            candidates[5] = new Point(candidates[4].x, candidates[4].y - GametableCanvas.BASE_SQUARE_SIZE); // Our
+            candidates[4] = new MapCoordinates(candidates[0].x + (candidates[1].x - candidates[0].x) / 2, y
+                + baseSquareSize / 2); // Our hex center
+            candidates[5] = new MapCoordinates(candidates[4].x, candidates[4].y - baseSquareSize); // Our
             // upstairs
             // neighbor's
             // center
-            candidates[6] = new Point(candidates[4].x - GametableCanvas.BASE_SQUARE_SIZE, candidates[4].y
-                - GametableCanvas.BASE_SQUARE_SIZE / 2); // Our
+            candidates[6] = new MapCoordinates(candidates[4].x - baseSquareSize, candidates[4].y
+                - baseSquareSize / 2); // Our
             // upstairs
             // neighbor's
             // center
@@ -348,7 +345,7 @@ public class HexGridMode extends GridMode
             // uh... if we're here something went wrong
             // defensive coding, just return that nearest Point 0
             System.out.println("Error snapping to point");
-            return new Point(x, y);
+            return new MapCoordinates(x, y);
         }
         return closest;
     }

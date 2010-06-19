@@ -17,6 +17,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
 
@@ -465,26 +466,26 @@ public class ToolManager
     }
 
     // mouse event functions.
-    public void mouseButtonPressed(final int x, final int y, final int flags)
+    public void mouseButtonPressed(MapCoordinates modelPos, final int flags)
     {
         m_bActionCancelled = false;
-        getActiveTool().mouseButtonPressed(x, y, flags);
+        getActiveTool().mouseButtonPressed(modelPos, flags);
     }
 
-    public void mouseButtonReleased(final int x, final int y, final int flags)
+    public void mouseButtonReleased(MapCoordinates modelPos, final int flags)
     {
         if (m_bActionCancelled)
         {
             // this action has been cancelled.
             return;
         }
-        getActiveTool().mouseButtonReleased(x, y, flags);
+        getActiveTool().mouseButtonReleased(modelPos, flags);
     }
 
-    public void mouseMoved(final int x, final int y, final int flags)
+    public void mouseMoved(MapCoordinates modelPos, final int flags)
     {
         // we call this even if the action has been cancelled.
         // Some tools set their cursor and do other things while no mouse button is down.
-        getActiveTool().mouseMoved(x, y, flags);
+        getActiveTool().mouseMoved(modelPos, flags);
     }
 }

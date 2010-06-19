@@ -8,6 +8,7 @@ package com.galactanet.gametable.ui;
 import java.awt.Graphics;
 import java.util.List;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.PreferenceDescriptor;
 
 
@@ -63,7 +64,7 @@ public interface ToolIF
      * @param y The Y location of the mouse on the map when the button was pressed.
      * @param modifierMask The mask of modifier keys held during this event.
      */
-    void mouseButtonPressed(int x, int y, int modifierMask);
+    void mouseButtonPressed(MapCoordinates modelPos, int modifierMask);
 
     /**
      * Called when the mouse button is released on the map.
@@ -72,7 +73,7 @@ public interface ToolIF
      * @param y The Y location of the mouse on the map when the button was released.
      * @param modifierMask The mask of modifier keys held during this event.
      */
-    void mouseButtonReleased(int x, int y, int modifierMask);
+    void mouseButtonReleased(MapCoordinates modelPos, int modifierMask);
 
     /**
      * Called when the mouse is moved around on the map.
@@ -81,7 +82,7 @@ public interface ToolIF
      * @param y The Y location of the mouse on the map when the button was released.
      * @param modifierMask The mask of modifier keys held during this event.
      */
-    void mouseMoved(int x, int y, int modifierMask);
+    void mouseMoved(MapCoordinates modelPos, int modifierMask);
 
     /**
      * Called after the canvas has been painted.

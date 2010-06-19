@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.LineSegment;
 
@@ -32,7 +33,7 @@ public class PenAsset
 
     GametableCanvas            m_canvas;
     Color                      m_color;
-    List<Point>                       m_points              = new ArrayList<Point>();
+    List<MapCoordinates>                       m_points              = new ArrayList<MapCoordinates>();
 
     public PenAsset()
     {
@@ -43,17 +44,15 @@ public class PenAsset
         init(color);
     }
 
-    public void addPoint(final int modelX, final int modelY)
+    public void addPoint(MapCoordinates toAdd)
     {
-        final Point toAdd = new Point(modelX, modelY);
-
         if (m_points.size() > 0)
         {
             // only add it if it's a reasonable distance from the last one.
-            final Point lastPoint = m_points.get(m_points.size() - 1);
+            final MapCoordinates lastPoint = m_points.get(m_points.size() - 1);
 
-            final int dx = lastPoint.x - modelX;
-            final int dy = lastPoint.y - modelY;
+            final int dx = lastPoint.x - toAdd.x;
+            final int dy = lastPoint.y - toAdd.y;
 
             final int distSq = dx * dx + dy * dy;
             if (distSq < MINIMUM_MOVE_DISTANCE * MINIMUM_MOVE_DISTANCE)
@@ -66,7 +65,7 @@ public class PenAsset
         m_points.add(toAdd);
     }
 
-    private double distanceToLine(final Point lineStart, final Point lineEnd, final Point point)
+    private double distanceToLine(final MapCoordinates lineStart, final MapCoordinates lineEnd, final MapCoordinates point)
     {
         // zero everything. put lineStart at the origin
         final Point vectorB = new Point();
@@ -123,8 +122,8 @@ public class PenAsset
         
         for (int i = 0; i < m_points.size() - 1; i++)
         {
-            final Point start = m_points.get(i);
-            final Point end = m_points.get(i + 1);
+            final MapCoordinates start = m_points.get(i);
+            final MapCoordinates end = m_points.get(i + 1);
             
             lines.add(new LineSegment(start, end, m_color));
         }
@@ -180,11 +179,11 @@ public class PenAsset
 
     protected boolean pointsOutsideDirectLine(final int startIdx, final int endIdx)
     {
-        final Point checkStart = m_points.get(startIdx);
-        final Point checkEnd = m_points.get(endIdx);
+        final MapCoordinates checkStart = m_points.get(startIdx);
+        final MapCoordinates checkEnd = m_points.get(endIdx);
         for (int i = startIdx + 1; i < endIdx; i++)
         {
-            final Point checkMiddle = m_points.get(i);
+            final MapCoordinates checkMiddle = m_points.get(i);
             final double dist = distanceToLine(checkStart, checkEnd, checkMiddle);
             if (dist > WIGGLE_TOLERANCE)
             {
@@ -208,7 +207,7 @@ public class PenAsset
             return;
         }
 
-        final List<Point> newPoints = new ArrayList<Point>(m_points.size());
+        final List<MapCoordinates> newPoints = new ArrayList<MapCoordinates>(m_points.size());
 
         // no matter what, the first point will have to be in there
         newPoints.add(m_points.get(0));

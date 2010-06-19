@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.galactanet.gametable.GametableApp;
-import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -104,7 +103,7 @@ public class MapElement
 
 		if (faceSize > 3)
 		{
-			final int size = faceSize * GametableCanvas.BASE_SQUARE_SIZE;
+			final int size = faceSize * GameTableMap.getBaseSquareSize();
 			image = Images.getScaledInstance(image, size, size);
 		}
 
@@ -231,7 +230,7 @@ public class MapElement
 	public int getImageHeight()
 	{
 		if (m_image == null)
-			return GametableCanvas.BASE_SQUARE_SIZE;
+			return GameTableMap.getBaseSquareSize();
 
 		return m_image.getHeight(null);
 	}
@@ -244,7 +243,7 @@ public class MapElement
 	public int getImageWidth()
 	{
 		if (m_image == null)
-			return GametableCanvas.BASE_SQUARE_SIZE;
+			return GameTableMap.getBaseSquareSize();
 
 		return m_image.getWidth(null);
 	}
@@ -359,7 +358,7 @@ public class MapElement
 			int pixelSize = Math.max(m_image.getWidth(null), m_image.getHeight(null));
 
 			// Convert to map size (squares)
-			m_faceSize = (int) Math.ceil(pixelSize / (float) GametableCanvas.BASE_SQUARE_SIZE);
+			m_faceSize = (int) Math.ceil(pixelSize / (float) GameTableMap.getBaseSquareSize());
 		}
 
 		if (m_faceSize < 1)

@@ -5,8 +5,6 @@
 
 package com.galactanet.gametable.data;
 
-import java.awt.Point;
-
 import com.galactanet.gametable.data.net.Connection;
 
 
@@ -30,9 +28,9 @@ public class Player
 
     private int          m_id;
     private final String m_playerName;
-    private Point        m_point;
+    private MapCoordinates        m_point;
 
-    private Point        m_prevPoint;
+    private MapCoordinates        m_prevPoint;
 
     public Player(final String playerName, final String characterName, final int id)
     {
@@ -70,7 +68,7 @@ public class Player
     /**
      * @param m_pointX The m_pointX to set.
      */
-    public Point getPoint()
+    public MapCoordinates getPoint()
     {
         return m_point;
     }
@@ -78,7 +76,7 @@ public class Player
     /**
      * @return the previous pointed to point.
      */
-    public Point getPrevPoint()
+    public MapCoordinates getPrevPoint()
     {
         return m_prevPoint;
     }
@@ -144,15 +142,7 @@ public class Player
     /**
      * @param m_pointX The m_pointX to set.
      */
-    public void setPoint(final int x, final int y)
-    {
-        setPoint(new Point(x, y));
-    }
-
-    /**
-     * @param m_pointX The m_pointX to set.
-     */
-    public void setPoint(final Point p)
+    public void setPoint(final MapCoordinates p)
     {
         setPrevPoint(getPoint());
         m_point = p;
@@ -169,15 +159,7 @@ public class Player
     /**
      * @param m_prevPointX The m_prevPointX to set.
      */
-    public void setPrevPoint(final int x, final int y)
-    {
-        setPrevPoint(new Point(x, y));
-    }
-
-    /**
-     * @param m_prevPointX The m_prevPointX to set.
-     */
-    public void setPrevPoint(final Point p)
+    public void setPrevPoint(final MapCoordinates p)
     {
         m_prevPoint = p;
     }

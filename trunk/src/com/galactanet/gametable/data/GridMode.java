@@ -18,7 +18,6 @@
 package com.galactanet.gametable.data;
 
 import java.awt.Graphics2D;
-import java.awt.Point;
 
 import com.galactanet.gametable.ui.GametableCanvas;
 
@@ -108,57 +107,58 @@ public class GridMode
 	 */
 	public void snapPogToGrid(final MapElementInstance pog)
 	{
-		Point snappedPoint = getSnappedPixelCoordinates(pog.getPosition(), true, GametableCanvas.BASE_SQUARE_SIZE * pog.getFaceSize());
-
-
-		pog.setPosition(snappedPoint.x, snappedPoint.y);
+		MapCoordinates snappedPoint = getSnappedMapCoordinates(pog.getPosition(), true, GameTableMap.getBaseSquareSize() * pog.getFaceSize());
+		pog.setPosition(snappedPoint);
 	}
 
 	/**
-	 * Snaps a given set of pixel coordinates to the grid.
+	 * Snaps a given set of map coordinates to the grid.
 	 * 
-	 * @param pixelCoordinates Set of pixel coordinates to snap to grid
+	 * @param modelCoordinates Set of map coordinates to snap to grid
 	 * 
-	 * @return new set of pixel coordinates, snapped to grid
+	 * @return new set of map coordinates, snapped to grid
 	 */
-	public Point getSnappedPixelCoordinates(final Point pixelCoordinates)
+	public MapCoordinates getSnappedPixelCoordinates(final MapCoordinates modelCoordinates)
 	{
-		return getSnappedPixelCoordinates(pixelCoordinates, false, 0);
+		return getSnappedMapCoordinates(modelCoordinates, false, 0);
 	}
 
 	/**
-	 * Snaps a given set of pixel coordinates to the grid.
+	 * Snaps a given set of map coordinates to the grid.
 	 *   
-	 * @param pixelCoordinates Set of pixel coordinates to snap to grid
+	 * @param mapCoordinates Set of map coordinates to snap to grid
 	 * 
 	 * @param bSnapForPog If true, will return snap locations where a pog of the sent in size could snap to. Note this is
 	 *          not the same as ANY snap points, cause you don't want your pogs snapping to the vertex of a hex.
 	 *          
 	 * @param pogSize Pog's size in pixels. Ignored if bSnapForPog is false.
 	 * 
-	 * @return new set of pixel coordinates, snapped to grid
+	 * @return new set of map coordinates, snapped to grid
 	 */
-	public Point getSnappedPixelCoordinates(final Point pixelCoordinates, final boolean bSnapForPog, final int pogSize)
+	public MapCoordinates getSnappedMapCoordinates(final MapCoordinates mapCoordinates, final boolean bSnapForPog, final int pogSize)
 	{
+		// @review this does nothing??? 
 		// default behavior is to not snap at all.
-		return new Point(pixelCoordinates);
+		return mapCoordinates;
 	}
 
 	/**
 	 * Snaps a given set of pixel coordinates to the grid.
 	 *   
-	 * @param pixelCoordinate A pixel coordinate to snap to grid. Either X or Y - the model assumes the scale is the same either way.
+	 * @param mapCoordinate A map coordinate to snap to grid. Either X or Y - the model assumes proportional tiles (same width and height).
 	 * 
-	 * @return New pixel coordinate, snapped to grid.
+	 * @return New map coordinate, snapped to grid.
 	 */
-	protected int getSnappedPixelCoordinates(final int pixelCoordinate)
+	protected int getSnappedMapCoordinates(final int mapCoordinate)
 	{
 		// NB : The second division is made as integer, actually rounding the pixel coordinates to map coordinates.  
 		// The following multiplication converts back to pixels after rounding. 
 		
-		if (pixelCoordinate < 0)
-			return ((pixelCoordinate - GametableCanvas.BASE_SQUARE_SIZE / 2) / GametableCanvas.BASE_SQUARE_SIZE) * GametableCanvas.BASE_SQUARE_SIZE;
+		int squareSize = GameTableMap.getBaseSquareSize();
+		
+		if (mapCoordinate < 0)
+			return ((mapCoordinate - squareSize / 2) / squareSize) * squareSize;
 
-		return ((pixelCoordinate + GametableCanvas.BASE_SQUARE_SIZE / 2) / GametableCanvas.BASE_SQUARE_SIZE) * GametableCanvas.BASE_SQUARE_SIZE;
+		return ((mapCoordinate + squareSize / 2) / squareSize) * squareSize;
 	}
 }

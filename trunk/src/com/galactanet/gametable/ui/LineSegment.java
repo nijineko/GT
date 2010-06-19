@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.galactanet.gametable.data.MapCoordinates;
+
 
 
 
@@ -28,8 +30,8 @@ import java.util.List;
 public class LineSegment
 {
     private Color m_color;
-    private Point m_end   = new Point();
-    private Point m_start = new Point();
+    private MapCoordinates m_end   = MapCoordinates.ORIGIN;
+    private MapCoordinates m_start = MapCoordinates.ORIGIN;
 
     public LineSegment(final DataInputStream dis) throws IOException
     {
@@ -38,25 +40,25 @@ public class LineSegment
 
     public LineSegment(final LineSegment in)
     {
-        m_start = new Point(in.m_start);
-        m_end = new Point(in.m_end);
+        m_start = in.m_start;
+        m_end = in.m_end;
         m_color = in.m_color;
     }
 
-    public LineSegment(final Point start, final Point end, final Color color)
+    public LineSegment(final MapCoordinates start, final MapCoordinates end, final Color color)
     {
-        m_start = new Point(start);
-        m_end = new Point(end);
+        m_start = start;
+        m_end = end;
         m_color = color;
     }
 
-    private void addLineSegment(final List<LineSegment> vector, final Point start, final Point end)
+    private void addLineSegment(final List<LineSegment> vector, final MapCoordinates start, final MapCoordinates end)
     {
         final LineSegment ls = new LineSegment(start, end, m_color);
         vector.add(ls);
     }
 
-    protected Point confirmOnRectEdge(final Point p, final Rectangle r)
+    protected MapCoordinates confirmOnRectEdge(final MapCoordinates p, final Rectangle r)
     {
         // garbage in, garbage out
         if (p == null)
@@ -65,7 +67,7 @@ public class LineSegment
         }
 
         // if the point is within the rect than that counts
-        if (r.contains(p))
+        if (r.contains(p.x, p.y))
         {
             return p;
         }
@@ -96,8 +98,8 @@ public class LineSegment
      */
     public Rectangle getBounds(GametableCanvas canvas)
     {
-        final Point drawStart = canvas.modelToDraw(m_start.x, m_start.y);
-        final Point drawEnd = canvas.modelToDraw(m_end.x, m_end.y);
+        final Point drawStart = canvas.modelToDraw(m_start);
+        final Point drawEnd = canvas.modelToDraw(m_end);
         
         return new Rectangle(
             Math.min(drawEnd.x, drawStart.x),
@@ -125,17 +127,17 @@ public class LineSegment
         }
         r.setBounds(x, y, width, height);
 
-        if (r.contains(m_start) && r.contains(m_end))
+        if (r.contains(m_start.x, m_start.y) && r.contains(m_end.x, m_end.y))
         {
             // totally inside. we dead
             return null;
         }
 
         // find the intersections (There are 4 possibles.)
-        Point leftInt = getIntersection(r.x, true);
-        Point rightInt = getIntersection(r.x + r.width, true);
-        Point topInt = getIntersection(r.y, false);
-        Point bottomInt = getIntersection(r.y + r.height, false);
+        MapCoordinates leftInt = getIntersection(r.x, true);
+        MapCoordinates rightInt = getIntersection(r.x + r.width, true);
+        MapCoordinates topInt = getIntersection(r.y, false);
+        MapCoordinates bottomInt = getIntersection(r.y + r.height, false);
 
         leftInt = confirmOnRectEdge(leftInt, r);
         rightInt = confirmOnRectEdge(rightInt, r);
@@ -143,16 +145,16 @@ public class LineSegment
         bottomInt = confirmOnRectEdge(bottomInt, r);
 
         // figure out which of our points is leftmost, rightmost, etc.
-        Point leftMost = m_start;
-        Point rightMost = m_end;
+        MapCoordinates leftMost = m_start;
+        MapCoordinates rightMost = m_end;
         if (m_end.x < m_start.x)
         {
             leftMost = m_end;
             rightMost = m_start;
         }
 
-        Point topMost = m_start;
-        Point bottomMost = m_end;
+        MapCoordinates topMost = m_start;
+        MapCoordinates bottomMost = m_end;
         if (m_end.y < m_start.y)
         {
             topMost = m_end;
@@ -208,8 +210,8 @@ public class LineSegment
          */
 
         // convert to draw coordinates
-        final Point drawStart = canvas.modelToDraw(m_start.x, m_start.y);
-        final Point drawEnd = canvas.modelToDraw(m_end.x, m_end.y);
+        final Point drawStart = canvas.modelToDraw(m_start);
+        final Point drawEnd = canvas.modelToDraw(m_end);
 
         // don't draw if we're not touching the viewport at any point
 
@@ -329,7 +331,7 @@ public class LineSegment
     // a given pure vertical or horizontal. pos is either the x or the y,
     // depending on the boolean sent with it.
     // returns null if there is no intersection
-    public Point getIntersection(final int pos, final boolean bIsVertical)
+    public MapCoordinates getIntersection(final int pos, final boolean bIsVertical)
     {
         if (bIsVertical)
         {
@@ -353,9 +355,7 @@ public class LineSegment
             final double ratio = ((double)(pos - m_start.x)) / (double)(m_end.x - m_start.x);
             final double intersectX = pos;
             final double intersectY = m_start.y + ratio * (m_end.y - m_start.y);
-            final Point ret = new Point();
-            ret.x = (int)intersectX;
-            ret.y = (int)intersectY;
+            final MapCoordinates ret = new MapCoordinates((int)intersectX, (int)intersectY);
             return ret;
         }
 
@@ -379,13 +379,12 @@ public class LineSegment
         final double ratio = ((double)(pos - m_start.y)) / (double)(m_end.y - m_start.y);
         final double intersectY = pos;
         final double intersectX = m_start.x + ratio * (m_end.x - m_start.x);
-        final Point ret = new Point();
-        ret.x = (int)intersectX;
-        ret.y = (int)intersectY;
+        final MapCoordinates ret = new MapCoordinates((int)intersectX, (int)intersectY);
+        
         return ret;
     }
 
-    public LineSegment getPortionInsideRect(final Point start, final Point end)
+    public LineSegment getPortionInsideRect(final MapCoordinates start, final MapCoordinates end)
     {
         final Rectangle r = new Rectangle();
         int x = start.x;
@@ -404,7 +403,7 @@ public class LineSegment
         }
         r.setBounds(x, y, width, height);
 
-        if (r.contains(m_start) && r.contains(m_end))
+        if (r.contains(m_start.x, m_start.y) && r.contains(m_end.x, m_end.y))
         {
             // totally inside. we are unaffected
             // return a copy of ourselves
@@ -412,7 +411,7 @@ public class LineSegment
         }
 
         // find the intersections (There are 4 possibles. one for each side of the rect)
-        final Point intersections[] = new Point[4];
+        final MapCoordinates intersections[] = new MapCoordinates[4];
         intersections[0] = getIntersection(r.x, true);
         intersections[1] = getIntersection(r.x + r.width, true);
         intersections[2] = getIntersection(r.y, false);
@@ -436,8 +435,8 @@ public class LineSegment
         }
 
         // we can have no more than 2 intersections.
-        Point validIntersection1 = null;
-        Point validIntersection2 = null;
+        MapCoordinates validIntersection1 = null;
+        MapCoordinates validIntersection2 = null;
         for (int i = 0; i < 4; i++)
         {
             if (intersections[i] != null)
@@ -462,12 +461,12 @@ public class LineSegment
 
         // if we're here, it means we found exactly 1 intersection. That means our start or end point
         // is inside the rect.
-        if (r.contains(m_start))
+        if (r.contains(m_start.x, m_start.y))
         {
             return new LineSegment(validIntersection1, m_start, m_color);
         }
 
-        if (r.contains(m_end))
+        if (r.contains(m_end.x, m_end.y))
         {
             return new LineSegment(validIntersection1, m_end, m_color);
         }
@@ -479,10 +478,9 @@ public class LineSegment
 
     public void initFromPacket(final DataInputStream dis) throws IOException
     {
-        m_start.x = dis.readInt();
-        m_start.y = dis.readInt();
-        m_end.x = dis.readInt();
-        m_end.y = dis.readInt();
+        m_start = new MapCoordinates(dis.readInt(), dis.readInt());
+        m_end   = new MapCoordinates(dis.readInt(), dis.readInt());
+        
         final int col = dis.readInt();
         m_color = new Color(col);
     }
