@@ -1,5 +1,5 @@
 /*
- * GametableCanvas.java: GameTable is in the Public Domain.
+ * java: GameTable is in the Public Domain.
  */
 
 
@@ -429,8 +429,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GameTableMap map = getActiveMap();
-                Point pos = map.getScrollPosition();
+                Point pos = getScrollPosition();
                 final MapCoordinates p = drawToModel(pos.x, pos.y
                     - Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
                 smoothScrollTo(p);
@@ -459,8 +458,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GameTableMap map = getActiveMap();
-                Point pos = map.getScrollPosition();
+                Point pos = getScrollPosition();
                 final MapCoordinates p = 
                 	drawToModel(
                 			pos.x, 
@@ -492,8 +490,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GameTableMap map = getActiveMap();
-                Point pos = map.getScrollPosition();
+                Point pos = getScrollPosition();
                 final MapCoordinates p = drawToModel(
                 			pos.x - Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), 
                 			pos.y);
@@ -524,8 +521,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     return;
                 }
 
-                final GameTableMap map = getActiveMap();
-                Point pos = map.getScrollPosition();
+                Point pos = getScrollPosition();
                 final MapCoordinates p = drawToModel(
                 		pos.x + Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), 
                 		pos.y);
@@ -633,7 +629,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         final int presentCenterY = getHeight() / 2;
 
         // set up the scroll to enforce the center being where it's supposed to be
-        Point pos = getActiveMap().getScrollPosition();
+        Point pos = getScrollPosition();
         final int scrX = pos.x - (presentCenterX - viewCenter.x);
         final int scrY = pos.y - (presentCenterY - viewCenter.y);
         setPrimaryScroll(getActiveMap(), scrX, scrY);
@@ -1374,6 +1370,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public BackgroundColor cur_bg_col = BackgroundColor.DEFAULT;
     public MapElementInstanceID cur_bg_pog = null; 
     public boolean m_backgroundTypeMapElement = false;
+		/**
+		 * Current scroll coordinates, relative to scroll origin
+		 */
+		private Point										m_scrollPos		= new Point(0, 0);
 
     /** **********************************************************************************************
      * 
@@ -1564,7 +1564,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         int viewX = (int)Math.round(squaresX * m_squareSize);
         int viewY = (int)Math.round(squaresY * m_squareSize);
 
-        Point pos = getActiveMap().getScrollPosition();
+        Point pos = getScrollPosition();
         
         viewX -= pos.x;
         viewY -= pos.y;
@@ -1813,13 +1813,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         BufferedImage image = new BufferedImage(mapBounds.width, mapBounds.height, BufferedImage.TYPE_INT_RGB);        
         Graphics g = image.getGraphics();
         
-        Point scrollPos = mapToExport.getScrollPosition();
+        Point scrollPos = getScrollPosition();
         
-        mapToExport.setScrollPosition(mapBounds.x, mapBounds.y);
+        setScrollPosition(mapBounds.x, mapBounds.y);
         
         paintComponent(g, mapBounds.width, mapBounds.height);
         
-        mapToExport.setScrollPosition(scrollPos);
+        setScrollPosition(scrollPos);
    
         ImageIO.write(image, "jpg", outputFile);
     }
@@ -1865,7 +1865,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
     	Graphics2D g2 = (Graphics2D)g;
     	
-    	Point scrollPos = mapToDraw.getScrollPosition();
+    	Point scrollPos = getScrollPosition();
     	
         g.translate(-scrollPos.x, -scrollPos.y);
 
@@ -2398,8 +2398,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public void setPrimaryScroll(final GameTableMap mapToSet, final int x, final int y)
     {
-        m_publicMap.setScrollPosition(x, y);
-        m_privateMap.setScrollPosition(x, y);
+        setScrollPosition(x, y);
+        setScrollPosition(x, y);
         /*
          * int dx = x - mapToSet.getScrollX(); int dy = y - mapToSet.getScrollY(); m_publicMap.setScroll(dx +
          * mapToSet.getScrollX(), dy + mapToSet.getScrollY()); m_privateMap.setScroll(dx + mapToSet.getScrollX(), dy +
@@ -2461,8 +2461,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void smoothScrollTo(MapCoordinates pos)
     {
-        final GameTableMap map = getActiveMap();
-        m_startScroll = drawToModel(map.getScrollPosition());
+        m_startScroll = drawToModel(getScrollPosition());
         m_deltaScroll = new MapCoordinates(pos.x - m_startScroll.x, pos.y - m_startScroll.y);
         m_scrollTime = 0;
         m_scrollTimeTotal = KEYBOARD_SCROLL_TIME;
@@ -2541,7 +2540,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public MapCoordinates viewToModel(final int viewX, final int viewY)
     {
-    	Point scrollPos = getActiveMap().getScrollPosition();
+    	Point scrollPos = getScrollPosition();
     	final double squaresX = (double)(viewX + scrollPos.x) / (double)m_squareSize;
       final double squaresY = (double)(viewY + scrollPos.y) / (double)m_squareSize;
 
@@ -2557,7 +2556,64 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     	return viewToModel(viewPoint.x, viewPoint.y);
     }
 
-    public static void drawDottedRect(final Graphics g, final int ix, final int iy, final int iWidth, final int iHeight)
+    /**
+		 * Set the scroll position
+		 * 
+		 * @revise move to VIEW
+		 * @param x x coordinates of the scroll position
+		 * @param y y coordinates of the scroll position
+		 */
+		public void setScrollPosition(int x, int y)
+		{
+			m_scrollPos.setLocation(x, y);
+		}
+
+		/**
+		 * Set the scroll position
+		 * 
+		 * @revise move to VIEW
+		 * @param x x coordinates of the scroll position
+		 * @param y y coordinates of the scroll position
+		 */
+		public void setScrollPosition(Point newPos)
+		{
+			m_scrollPos.setLocation(newPos);
+		}
+
+		/**
+		 * Gets the X coordinate of the scroll position
+		 * 
+		 * @revise move to VIEW
+		 * @return
+		 */
+		public int getScrollX()
+		{
+			return m_scrollPos.x;
+		}
+
+		/**
+		 * Gets the X coordinate of the scroll position
+		 * 
+		 * @revise move to VIEW
+		 * @return
+		 */
+		public int getScrollY()
+		{
+			return m_scrollPos.y;
+		}
+
+		/**
+		 * Gets the X coordinate of the scroll position
+		 * 
+		 * @revise move to VIEW
+		 * @return
+		 */
+		public Point getScrollPosition()
+		{
+			return m_scrollPos;
+		}
+
+		public static void drawDottedRect(final Graphics g, final int ix, final int iy, final int iWidth, final int iHeight)
     {
         final Graphics2D g2d = (Graphics2D)g;
         final Stroke oldStroke = g2d.getStroke();

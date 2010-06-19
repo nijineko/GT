@@ -3145,9 +3145,9 @@ public class GametableFrame extends JFrame implements ActionListener
             m_myPlayerIndex = 0;
 
             // reset game data
-            getGametableCanvas().getPublicMap().setScrollPosition(0, 0);
-            getGametableCanvas().getPublicMap().clearPogs();
-            getGametableCanvas().getPublicMap().clearLines();
+            m_gametableCanvas.setScrollPosition(0, 0);
+            m_gametableCanvas.getPublicMap().clearPogs();
+            m_gametableCanvas.getPublicMap().clearLines();
             // PacketManager.g_imagelessPogs.clear();
 
             // send the packet
@@ -4201,8 +4201,7 @@ public class GametableFrame extends JFrame implements ActionListener
             prefDos.writeInt(m_port);
             prefDos.writeUTF(m_password);
             
-            GameTableMap activeMap = m_gametableCanvas.getPublicMap();
-            Point pos = activeMap.getScrollPosition();
+            Point pos = m_gametableCanvas.getScrollPosition();
             prefDos.writeInt(pos.x);
             prefDos.writeInt(pos.y);
             prefDos.writeInt(m_gametableCanvas.getZoomLevel());
