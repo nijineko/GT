@@ -17,7 +17,6 @@
  */
 package com.galactanet.gametable.data;
 
-import java.awt.Point;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -71,11 +70,6 @@ public class GameTableMap
 	 * Whether this is the public of private version of the map
 	 */
 	private final boolean						m_publicMap;
-
-	/**
-	 * Current scroll coordinates, relative to scroll origin
-	 */
-	private Point										m_scrollPos		= new Point(0, 0);
 
 	/**
 	 * Lists the currently selected pogs
@@ -303,39 +297,6 @@ public class GameTableMap
 	}
 
 	/**
-	 * Gets the X coordinate of the scroll position
-	 * 
-	 * @revise move to VIEW
-	 * @return
-	 */
-	public Point getScrollPosition()
-	{
-		return m_scrollPos;
-	}
-	
-	/**
-	 * Gets the X coordinate of the scroll position
-	 * 
-	 * @revise move to VIEW
-	 * @return
-	 */
-	public int getScrollY()
-	{
-		return m_scrollPos.y;
-	}
-	
-	/**
-	 * Gets the X coordinate of the scroll position
-	 * 
-	 * @revise move to VIEW
-	 * @return
-	 */
-	public int getScrollX()
-	{
-		return m_scrollPos.x;
-	}
-
-	/**
 	 * Gets selected pogs list
 	 * 
 	 * @revise move to VIEW?
@@ -483,30 +444,6 @@ public class GameTableMap
 			pog.setSelected(true);
 
 		// @revise trigger listeners
-	}
-
-	/**
-	 * Set the scroll position
-	 * 
-	 * @revise move to VIEW
-	 * @param x x coordinates of the scroll position
-	 * @param y y coordinates of the scroll position
-	 */
-	public void setScrollPosition(Point newPos)
-	{
-		m_scrollPos.setLocation(newPos);
-	}
-	
-	/**
-	 * Set the scroll position
-	 * 
-	 * @revise move to VIEW
-	 * @param x x coordinates of the scroll position
-	 * @param y y coordinates of the scroll position
-	 */
-	public void setScrollPosition(int x, int y)
-	{
-		m_scrollPos.setLocation(x, y);
 	}
 
 	/**

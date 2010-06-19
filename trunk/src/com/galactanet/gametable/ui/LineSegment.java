@@ -217,9 +217,8 @@ public class LineSegment
 
         // get the draw coords of the top-left of the viewable area
         // and of the lower right
-        final Point portalDrawTL = new Point(canvas.getActiveMap().getScrollX(), canvas.getActiveMap().getScrollY());
-        final Point portalDrawBR = new Point(canvas.getActiveMap().getScrollX() + canvas.getWidth(), canvas
-            .getActiveMap().getScrollY()
+        final Point portalDrawTL = new Point(canvas.getScrollPosition());
+        final Point portalDrawBR = new Point(canvas.getScrollX() + canvas.getWidth(), canvas.getScrollY()
             + canvas.getHeight());
         final Rectangle portalRect = new Rectangle((int)portalDrawTL.getX(), (int)portalDrawTL.getY(),
             (int)portalDrawBR.getX() - (int)portalDrawTL.getX(), (int)portalDrawBR.getY() - (int)portalDrawTL.getY());

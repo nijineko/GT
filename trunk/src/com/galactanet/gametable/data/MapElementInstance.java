@@ -150,9 +150,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     private boolean            m_locked                   = false;
 
     /**
-     * The PogType of this Pog.
+     * The parent element from which this element was instantiated
      */
-    private MapElement            m_pogType;
+    private MapElement            m_parentElement;
 
     /**
      * Position of the pog on the map in map coordinates.
@@ -160,7 +160,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     private MapCoordinates              m_position                 = MapCoordinates.ORIGIN;
 
     /**
-     * Scale for this pog.
+     * Scale for this Element.  The scale ratio is automatically configured when the face size of this element is set. 
      */
     private float              m_scale                    = 1f;
 
@@ -310,7 +310,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
           type = lib.createPlaceholder(filename, size);
       }
       
-      m_pogType = type;
+      m_parentElement = type;
       m_layer = type.getLayerType();
       
       m_layer = layer; // Saving here as the init updates the layer for newly dropped pogs.
@@ -327,7 +327,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     	m_id = MapElementInstanceID.acquire();
     	
       m_position = orig.m_position;
-      m_pogType = orig.m_pogType;
+      m_parentElement = orig.m_parentElement;
       m_scale = orig.m_scale;
       m_angle = orig.m_angle;
       m_flipH = orig.m_flipH;
@@ -362,7 +362,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     public MapElementInstance(final MapElement type)
     {
     	m_id = MapElementInstanceID.acquire();
-    	m_pogType = type;
+    	m_parentElement = type;
       m_layer = type.getLayerType();
     }
 
@@ -524,7 +524,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
   
         // @revise usage of flipH, flipV and angles  Creating images at every refresh!! TSK TSK TSK!
         
-      Image im = Images.rotateImage(Images.flipImage(m_pogType.getImage(), m_flipH, m_flipV), 
+      Image im = Images.rotateImage(Images.flipImage(m_parentElement.getImage(), m_flipH, m_flipV), 
           m_angle, m_forceGridSnap);      
 
 
@@ -533,7 +533,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
       int mh = 0;
       if (m_angle != 0) 
       {
-      	Image image = m_pogType.getImage();
+      	Image image = m_parentElement.getImage();
       	
       	mw = Math.round(drawWidth - (image.getHeight(null) * scale));       
       	mw = Math.round(drawHeight - (image.getWidth(null) * scale));
@@ -549,7 +549,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     	
     	updateElementDimension();
     	
-        final Image img = m_pogType.getImage();
+        final Image img = m_parentElement.getImage();
         if (img == null)  
         {
         	return;
@@ -622,9 +622,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         backgroundRect.width = totalWidth;
         backgroundRect.height = totalHeight;
         
-        GameTableMap map = canvas.getActiveMap();
-        
-        Point scrollPos = map.getScrollPosition();
+        Point scrollPos = canvas.getScrollPosition();
 
         if (bForceTextInBounds)
         {
@@ -816,10 +814,10 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     {
         if (m_scale == 1f)
         {
-            return m_pogType.getFaceSize();
+            return m_parentElement.getFaceSize();
         }
         
-        int size = Math.round(m_pogType.getFaceSize() * m_scale);
+        int size = Math.round(m_parentElement.getFaceSize() * m_scale);
         if (size < 1)
         	return 1;
         
@@ -870,7 +868,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
     public MapElement getPogType()
     {
-        return m_pogType;
+        return m_parentElement;
     }
 
     public MapCoordinates getPosition()
@@ -1033,7 +1031,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
             final int dw = getWidth();
             final int dh = getHeight();
             
-            Image image = m_pogType.getImage();
+            Image image = m_parentElement.getImage();
             final int iw = image == null ? 0 : image.getWidth(null);
             final int ih = image == null ? 0 : image.getHeight(null);
             // Point Shift for the drawing
@@ -1097,6 +1095,10 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         displayPogDataChange();
     }
 
+   /**
+    * Set the number of tiles this element should be taking.  The element will be automatically rescaled to fit the specific number of tiles.
+    * @param faceSize Number of tiles.
+    */
     public void setFaceSize(final float faceSize)
     {
         if (faceSize <= 0)
@@ -1114,7 +1116,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         final float targetDimension = GameTableMap.getBaseSquareSize() * faceSize;
 
         float maxDimension = GameTableMap.getBaseSquareSize();
-        Image image = m_pogType.getImage();
+        Image image = m_parentElement.getImage();
         if (image != null)
         	maxDimension = Math.max(image.getWidth(null), image.getHeight(null));
 
@@ -1140,7 +1142,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     }
     
     public void setPogType(final MapElement pt) {
-        m_pogType = pt;
+        m_parentElement = pt;
         reinitializeHitMap();
     }
 
@@ -1349,7 +1351,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     public void draw(final Graphics g, final int x, final int y)
     {
     	    	
-        g.drawImage(m_pogType.getImage(), x, y, null);
+        g.drawImage(m_parentElement.getImage(), x, y, null);
     }
     /**
      * Draws the pog onto the given graphics context in "ghostly" form.
@@ -1360,7 +1362,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
      */
     public void drawGhostly(final Graphics g, final int x, final int y)
     {
-        UtilityFunctions.drawTranslucent((Graphics2D)g, m_pogType.getImage(), x, y, 0.5f);
+        UtilityFunctions.drawTranslucent((Graphics2D)g, m_parentElement.getImage(), x, y, 0.5f);
     }    
 
     public BitSet getHitMap()
@@ -1377,9 +1379,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
      */
     private void updateElementDimension()
     {
-    	Image image = m_pogType.getImage();
+    	Image image = m_parentElement.getImage();
 
-      if (m_pogType.getImage() == null)
+      if (m_parentElement.getImage() == null)
       {
       	m_elementSize.setSize(GameTableMap.getBaseSquareSize(), GameTableMap.getBaseSquareSize());
       }
