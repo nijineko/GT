@@ -1855,7 +1855,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.isUnderlay())
             {
-                pog.drawToCanvas(g, this);
+                pog.getRenderer().drawToCanvas(g, this);
             }
         }
 
@@ -1885,7 +1885,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() == Layer.OVERLAY)
             {
-                pog.drawToCanvas(g, this);
+                pog.getRenderer().drawToCanvas(g, this);
             }
         }       
 
@@ -1909,7 +1909,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() == Layer.ENVIRONMENT)
             {
-                pog.drawToCanvas(g, this);
+                pog.getRenderer().drawToCanvas(g, this);
             }
         }
 
@@ -1919,7 +1919,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() == Layer.POG)
             {
-                pog.drawToCanvas(g, this);
+                pog.getRenderer().drawToCanvas(g, this);
             }
         }
 
@@ -1983,14 +1983,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             	{            		
                     if (pog != mouseOverPog)
                     {
-                        pog.drawInformationOverlayToCanvas(g, false, this);
+                        pog.getRenderer().drawInformationOverlayToCanvas(g, false, this);
                     }
                 }
             }
 
             if (mouseOverPog != null)
             {
-                mouseOverPog.drawInformationOverlayToCanvas(g, true, this);
+                mouseOverPog.getRenderer().drawInformationOverlayToCanvas(g, true, this);
             }
         }
 
@@ -2011,7 +2011,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
       {
           final Graphics2D g2 = (Graphics2D)g.create();
           g2.setComposite(UtilityFunctions.getGhostlyComposite());
-          el.drawToCanvas(g2, this);
+          el.getRenderer().drawToCanvas(g2, this);
           g2.dispose();
       }
 

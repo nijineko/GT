@@ -17,8 +17,8 @@ import java.util.*;
 import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.net.PacketSourceState;
-import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.MapElementRendererIF;
 import com.galactanet.gametable.ui.PogLibrary;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -37,7 +37,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	/**
 	 * TODO @revise Attribute system to be replaced by more flexible properties system
 	 */
-    private static class Attribute
+    protected static class Attribute
     {
         public boolean changed = true;
         public String  name;
@@ -50,47 +50,17 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
     }
 
-    /**
-     * Background color for pog text.
-     */
-    private static final Color COLOR_ATTRIBUTE_BACKGROUND = new Color(64, 255, 64, 192);
-
-    /**
-     * Background color for pog text.
-     */
-    private static final Color COLOR_BACKGROUND           = new Color(255, 255, 64, 192);
-
-    /**
-     * Background color for changed pog text.
-     */
-    protected static final Color COLOR_CHANGED_BACKGROUND   = new Color(238, 156, 0, 192);
-
-    /**
-     * Font to use for displaying attribute names.
-     */
-    private static final Font  FONT_ATTRIBUTE_NAME        = Font.decode("sansserif-bold-12");
-
-    /**
-     * Font to use for displaying attribute names.
-     */
-    private static final Font  FONT_ATTRIBUTE_VALUE       = Font.decode("sansserif-12");
-
-    // --- Types -----------------------------------------------------------------------------------------------------
-
-    /**
-     * Font to use for displaying pog text.
-     */
-    private static final Font  FONT_TEXT                  = Font.decode("sansserif-bold-12");
-
     // --- Static Members --------------------------------------------------------------------------------------------
 
     /**
+     * TODO @revise not here - in the UI that actually cares about sorting
      * Global min sort id for pogs.
      */
     public static long         g_nextSortId               = 0;
 
     // --- Members ---------------------------------------------------------------------------------------------------
 
+    private MapElementInstanceRenderer m_renderer = null;
     private Layer              m_layer                    = Layer.UNDERLAY;
     private double             m_angle                    = 0d;
     private boolean            m_forceGridSnap            = false;
@@ -367,8 +337,17 @@ public class MapElementInstance implements Comparable<MapElementInstance>
       m_layer = type.getLayerType();
     }
 
-    // --- Methods ---------------------------------------------------------------------------------------------------
-
+    /**
+     * Get the renderer for this map element instance
+     * @return renderer instance
+     */
+   public MapElementRendererIF getRenderer()
+   {
+  	 if (m_renderer == null)
+  		 m_renderer = new MapElementInstanceRenderer(this);
+  	 
+  	 return m_renderer;
+   }
 
     /*
      * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -418,114 +397,8 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         m_bTextChangeNotifying = true;
     }
 
-    private void drawAttributes(final Graphics g, final int x, final int y, final boolean onlyChanged)
-    {
-        int numAttributes = 0;
-        if (onlyChanged)
-        {
-            for (Attribute attribute : m_attributes.values())
-            {
-                if (attribute.changed)
-                    numAttributes++;
-            }
-        }
-        else
-        {
-            numAttributes = m_attributes.size();
-        }
-
-        if (numAttributes < 1)
-        {
-            return;
-        }
-
-        final Graphics2D g2 = (Graphics2D)g.create();
-        final FontMetrics nameMetrics = g2.getFontMetrics(FONT_ATTRIBUTE_NAME);
-        final FontMetrics valueMetrics = g2.getFontMetrics(FONT_ATTRIBUTE_VALUE);
-        int height = 0;
-        int width = 0;
-        
-        for (Attribute attribute : m_attributes.values())
-        {
-            if (onlyChanged && !attribute.changed)
-                continue;
-
-            final Rectangle nameBounds = nameMetrics.getStringBounds(attribute.name + ": ", g2).getBounds();
-            final Rectangle valueBounds = valueMetrics.getStringBounds(attribute.value, g2).getBounds();
-            final int attrWidth = nameBounds.width + valueBounds.width;
-            if (attrWidth > width)
-            {
-                width = attrWidth;
-            }
-            final int attrHeight = Math.max(nameBounds.height, valueBounds.height);
-            height += attrHeight;
-        }
-
-        final int PADDING = 3;
-        final int SPACE = PADDING * 2;
-        height += SPACE;
-        width += SPACE;
-
-        int drawX = x - width / 2;
-        int drawY = y;
-        g2.setColor(COLOR_ATTRIBUTE_BACKGROUND);
-        g2.fillRect(drawX, drawY, width, height);
-        g2.setColor(Color.BLACK);
-        g2.drawRect(drawX, drawY, width - 1, height - 1);
-
-        drawX += PADDING;
-        drawY += PADDING;
-        
-        for (Attribute attribute : m_attributes.values())
-        {
-            if (onlyChanged && !attribute.changed)
-                continue;
-
-            final String nameString = attribute.name + ": ";
-            final String valueString = attribute.value;
-            final Rectangle nameBounds = nameMetrics.getStringBounds(nameString, g2).getBounds();
-            final Rectangle valueBounds = valueMetrics.getStringBounds(valueString, g2).getBounds();
-            final int baseline = Math.max(-nameBounds.y, -valueBounds.y);
-            g2.setFont(FONT_ATTRIBUTE_NAME);
-            g2.drawString(nameString, drawX, drawY + baseline);
-            g2.setFont(FONT_ATTRIBUTE_VALUE);
-            g2.drawString(attribute.value, drawX + nameBounds.width, drawY + baseline);
-            drawY += Math.max(nameBounds.height, valueBounds.height);
-        }
-
-        g2.dispose();
-    }
-
-    private void drawScaled(final Graphics g, final int x, final int y, final float scale)
-    {
-        final int drawWidth = Math.round(getWidth() * scale);
-        final int drawHeight = Math.round(getHeight() * scale);
-
-//      g.drawImage(m_pogType.rotate(m_pogType.flip(m_pogType.m_image, m_flipH, m_flipV), m_angle), x, y, drawWidth, drawHeight, null);
-      //m_pogType.flip(, m_flipH, m_flipV)
-        
-//      Image im = m_pogType.rotate(m_pogType.getImage(), m_angle, m_forceGridSnap);
-  
-        // @revise usage of flipH, flipV and angles  Creating images at every refresh!! TSK TSK TSK!
-        
-      Image im = Images.rotateImage(Images.flipImage(m_parentElement.getImage(), m_flipH, m_flipV), 
-          m_angle, m_forceGridSnap);      
 
 
-      // Center the image into a square, taking into consideration the height and width
-      int mw = 0;
-      int mh = 0;
-      if (m_angle != 0) 
-      {
-      	Image image = m_parentElement.getImage();
-      	
-      	mw = Math.round(drawWidth - (image.getHeight(null) * scale));       
-      	mw = Math.round(drawHeight - (image.getWidth(null) * scale));
-      }
-      
-      g.drawImage(im,x-mw/2,y-mh/2,drawWidth,drawHeight,null);
-
-    }
 
     private void reinitializeHitMap()
     {
@@ -555,7 +428,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
             g.setColor(new Color(0xff00ff));
             g.fillRect(0, 0, iw, ih);
             
-            g.drawImage(Images.rotateImage(Images.flipImage(img, m_flipH, m_flipV), m_angle, m_forceGridSnap)
+            g.drawImage(Images.rotateImage(Images.flipImage(img, m_flipH, m_flipV), m_angle)
                 , 0,0, iw, ih, null);
 
             g.dispose();
@@ -574,151 +447,12 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
     }
 
-    private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor,
-        boolean drawAttributes, GametableCanvas canvas)
-    {
-        if (m_name == null)
-        {
-            m_name = "";
-        }
-        final Graphics2D g = (Graphics2D)gr.create();
-        g.setFont(FONT_TEXT);
-        final FontMetrics metrics = g.getFontMetrics();
-        final Rectangle stringBounds = metrics.getStringBounds(m_name, g).getBounds();
-
-        final int totalWidth = stringBounds.width + 6;
-        final int totalHeight = stringBounds.height + 1;
-        
-        final int size = canvas.getSquareSize();
-
-        final Point pogDrawCoords = canvas.modelToDraw(getPosition());
-        final int viewWidth = getHeightForZoomLevel(size);
-        final Rectangle backgroundRect = new Rectangle();
-        backgroundRect.x = pogDrawCoords.x + (viewWidth - totalWidth) / 2;
-        backgroundRect.y = pogDrawCoords.y - totalHeight - 4;
-        backgroundRect.width = totalWidth;
-        backgroundRect.height = totalHeight;
-        
-        Point scrollPos = canvas.getScrollPosition();
-
-        if (bForceTextInBounds)
-        {
-            // force it to be on the view
-            if (backgroundRect.x < scrollPos.x)
-            {
-                backgroundRect.x = scrollPos.x;
-            }
-
-            if (backgroundRect.y < scrollPos.y)
-            {
-                backgroundRect.y = scrollPos.y;
-            }
-
-            if (backgroundRect.x + totalWidth > scrollPos.x + canvas.getWidth())
-            {
-                backgroundRect.x = scrollPos.x + canvas.getWidth() - totalWidth;
-            }
-
-            if (backgroundRect.y + totalHeight > scrollPos.y + canvas.getHeight())
-            {
-                backgroundRect.y = scrollPos.y + canvas.getHeight() - totalHeight;
-            }
-        }
-
-        if (m_name.length() > 0)
-        {
-            g.setColor(backgroundColor);
-            g.fill(backgroundRect);
-
-            final int stringX = backgroundRect.x + (backgroundRect.width - stringBounds.width) / 2;
-            final int stringY = backgroundRect.y + (backgroundRect.height - stringBounds.height) / 2
-                + metrics.getAscent();
-
-            g.setColor(Color.BLACK);
-            g.drawString(m_name, stringX, stringY);
-
-            g.drawRect(backgroundRect.x, backgroundRect.y, backgroundRect.width - 1, backgroundRect.height - 1);
-        }
-
-        drawAttributes(g, backgroundRect.x + (backgroundRect.width / 2), backgroundRect.y + backgroundRect.height,
-            !drawAttributes);
-        g.dispose();
-    }
-
-    /**
-     * TODO @revise move to renderer interface
-     * Draw the information overlay to the canvas.  Information overlay is optional information normally displayed
-     * on mouse over or when user turns on display.
-     *  
-     * @param g graphics device
-     * @param mouseover true if mouse is over the element
-     * @param canvas
-     */
-    public void drawInformationOverlayToCanvas(final Graphics g, final boolean mouseOver, GametableCanvas canvas)
-    {
-        drawStringToCanvas(g, mouseOver, COLOR_BACKGROUND, mouseOver, canvas);
-        stopDisplayPogDataChange();
-    }
+   
     
-    /** *****************************************************************************************************************
-     * #grouping
-     * @param gr
-     * @param x
-     * @param y
-     * @param scale
-     */
-    private void drawTinted(final Graphics gr, final int x, final int y, final float scale) {         
-        final int dw = Math.round(getWidth() * scale);
-        final int dh = Math.round(getHeight() * scale);
-        BufferedImage bi = new BufferedImage(dw, dh, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D bg = bi.createGraphics();
-        Color useCol;
-        
-        if(m_bSelected) useCol = Color.CYAN;        
-        else useCol = Color.GREEN;
-        
-        bg.setColor(useCol);
-        bg.fillRect(0, 0, dw, dh);
-        drawScaled(bg,0,0,scale);        
-        bg.setComposite(UtilityFunctions.getGhostlyComposite());        
-        bg.fillRect(0, 0, dw, dh);
-        bg.dispose();
-        bi = UtilityFunctions.makeColorTransparent(bi,useCol);
-        gr.drawImage(bi,x,y,null);        
-    }
 
 
-    /**
-     * TODO @revise move to renderer interface
-     * @param g
-     * @param canvas
-     */
-    public void drawToCanvas(Graphics g, GametableCanvas canvas)
-    {
-        // determine the visible area of the gametable canvas
-        final MapRectangle visbleCanvas = canvas.getVisibleCanvasRect(canvas.getZoomLevel());
-        // determine the area covered by the pog - replaced with a set value m_bounds
-        // final Rectangle pogArea = getBounds(m_canvas);
-        
-        if (visbleCanvas.intersects(getBounds()))
-        {
-            // Some portion of the pog's area overlaps the visible canvas area, so
-            // we paint the pog to the canvas.  
 
-            // convert our model coordinates to draw coordinates
-            final Point drawCoords = canvas.modelToDraw(getPosition());
-            final float scale = (float)canvas.getSquareSize() / (float)GameTableMap.getBaseSquareSize();
- 
-            // @revise - what is tinted, what is selected - should we have clearer color scheme / standard UI artifact for selection? 
-            // if we're tinted, draw tinted
-            if (m_bTinted || m_bSelected) 
-            {
-                drawTinted(g,drawCoords.x, drawCoords.y, scale * m_scale);
-            } 
-            else 
-            	drawScaled(g, drawCoords.x, drawCoords.y, scale * m_scale);
-        }
-    }
+
     
     /**
      * TODO @revise move to renderer interface?  We're not using canvas...
@@ -777,6 +511,15 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
         return a.value;
     }
+    
+    /**
+     * Get all attributes from this element
+     * @return attributes
+     */
+    public Collection<Attribute> getAttributes()
+    {
+    	return m_attributes.values();
+    }
 
     public Set<String> getAttributeNames()
     {
@@ -820,13 +563,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
 
         return Math.round(m_elementSize.height * m_scale);
-    }
-
-    private int getHeightForZoomLevel(int squareSize)
-    {
-        final double ratio = (double)squareSize / (double)GameTableMap.getBaseSquareSize();
-        final int imgSizeY = (int)(ratio * getHeight());
-        return imgSizeY;
     }
 
     /**
@@ -1103,6 +839,15 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         m_scale = targetDimension / maxDimension;
         reinitializeHitMap();
         return;
+    }
+    
+    /**
+     * Get the scale ratio required to obtain face size
+     * @return scale ratio
+     */
+    public float getFaceSizeScale()
+    {
+    	return m_scale;
     }
 
     // --- Miscellaneous ---

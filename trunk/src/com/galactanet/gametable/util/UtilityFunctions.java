@@ -540,7 +540,8 @@ public class UtilityFunctions
      * @param color
      * @return
      */
-    public static BufferedImage makeColorTransparent(final BufferedImage image, final Color color) {        
+    public static BufferedImage makeColorTransparent(final BufferedImage image, final Color color) 
+    {        
         BufferedImage dimg = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = dimg.createGraphics();
         g.setComposite(AlphaComposite.Src);
