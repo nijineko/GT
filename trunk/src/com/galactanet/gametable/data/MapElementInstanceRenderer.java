@@ -97,13 +97,13 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
   public void drawToCanvas(Graphics g, GametableCanvas canvas)
   {
 		// First check if element is visible
-      final MapRectangle visbleCanvas = canvas.getVisibleCanvasRect(canvas.getZoomLevel());
+      final MapRectangle visbleCanvas = canvas == null ? null : canvas.getVisibleCanvasRect(canvas.getZoomLevel());
       
-      if (visbleCanvas.intersects(m_mapElement.getBounds()))
+      if (canvas == null || visbleCanvas.intersects(m_mapElement.getBounds()))
       {
           // convert our model coordinates to draw coordinates
-          final Point drawCoords = canvas.modelToDraw(m_mapElement.getPosition());
-          final float scale = (float)canvas.getSquareSize() / (float)GameTableMap.getBaseSquareSize();
+          final Point drawCoords = canvas == null ? new Point(0, 0) : canvas.modelToDraw(m_mapElement.getPosition());
+          final float scale = canvas == null ? 1 : (float)canvas.getSquareSize() / (float)GameTableMap.getBaseSquareSize();
 
           // @revise - what is tinted, what is selected - should we have clearer color scheme / standard UI artifact for selection? 
           if (m_mapElement.isTinted() || m_mapElement.isSelected()) 
@@ -171,7 +171,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
       
       // TODO @revise CREATING MULTIPLE BUFFERS HORROR!
       
-      Image im = Images.rotateImage(Images.flipImage(m_mapElement.getPogType().getImage(), m_mapElement.getFlipH(), m_mapElement.getFlipV()), 
+      Image im = Images.rotateImage(Images.flipImage(m_mapElement.getMapElement().getImage(), m_mapElement.getFlipH(), m_mapElement.getFlipV()), 
         m_mapElement.getAngle());      
 
 
@@ -180,7 +180,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
     int mh = 0;
     if (m_mapElement.getAngle() != 0) 
     {
-    	Image image = m_mapElement.getPogType().getImage();
+    	Image image = m_mapElement.getMapElement().getImage();
     	
     	mw = Math.round(drawWidth - (image.getHeight(null) * scale));       
     	mw = Math.round(drawHeight - (image.getWidth(null) * scale));

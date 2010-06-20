@@ -3326,7 +3326,7 @@ public class GametableFrame extends JFrame implements ActionListener
             final DataInputStream dis = new DataInputStream(infile);
             final MapElementInstance nPog = new MapElementInstance(dis);
 
-            if (!nPog.getPogType().isLoaded()) { // we need this image
+            if (!nPog.getMapElement().isLoaded()) { // we need this image
                 PacketManager.requestPogImage(null, nPog);
             }
             m_gametableCanvas.addPog(nPog);

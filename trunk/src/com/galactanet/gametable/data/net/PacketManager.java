@@ -342,7 +342,7 @@ public class PacketManager
             dos.writeInt(PACKET_BGCOL); // type
             dos.writeBoolean(true); // type:pog
             dos.writeInt(-1);                        
-            dos.writeUTF(pog.getPogType().getImageFilename());
+            dos.writeUTF(pog.getMapElement().getImageFilename());
             
             return baos.toByteArray();
         }
@@ -1355,7 +1355,7 @@ public class PacketManager
                 return;
             }
 
-            if (!pog.getPogType().isLoaded())
+            if (!pog.getMapElement().isLoaded())
             {
                 // we need this image
                 requestPogImage(conn, pog);
@@ -2433,7 +2433,7 @@ public class PacketManager
 
     public static void requestPogImage(final Connection conn, final MapElementInstance pog)
     {
-        final String desiredFile = pog.getPogType().getImageFilename();
+        final String desiredFile = pog.getMapElement().getImageFilename();
 
         if (g_requestedFiles.contains(desiredFile))
         {

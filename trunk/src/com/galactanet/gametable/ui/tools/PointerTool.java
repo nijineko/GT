@@ -206,7 +206,7 @@ public class PointerTool extends NullTool
         if (m_grabbedPog != null)
         {
             m_ghostPog = new MapElementInstance(m_grabbedPog, false);
-            m_grabOffset = new Point(m_grabbedPog.getX() - m_mousePosition.x, m_grabbedPog.getY() - m_mousePosition.y);
+            m_grabOffset = new Point(m_grabbedPog.getPosition().x - m_mousePosition.x, m_grabbedPog.getPosition().y - m_mousePosition.y);
             setSnapping(modifierMask);
         }
         else if (GametableFrame.getGametableFrame().getPreferences().getBooleanValue(PREF_DRAG))
@@ -263,7 +263,7 @@ public class PointerTool extends NullTool
             m_clicked = false;
             if (m_snapping)
             {
-                final Point adjustment = m_ghostPog.getSnapDragAdjustment();
+                final Point adjustment = getSnapDragAdjustment(m_ghostPog);
                 m_ghostPog.setPosition(
                 		m_mousePosition.delta(m_grabOffset.x + adjustment.x, m_grabOffset.y + adjustment.y));
                 		
@@ -302,6 +302,28 @@ public class PointerTool extends NullTool
         	m_canvas.drawGhostlyToCanvas(m_ghostPog, g);
         }
     }
+    
+    /**
+     * @return A vector to adjust the drag position when snapping for odd-sized pogs.
+     */
+    private Point getSnapDragAdjustment(MapElementInstance mapElement)
+    {
+        final Point adjustment = new Point();
+        final int width = mapElement.getWidth();
+        final int height = mapElement.getHeight();
+
+        if (width < height)
+        {
+            adjustment.x = -(height - width) / 2;
+        }
+        else if (width > height)
+        {
+            adjustment.y = -(width - height) / 2;
+        }
+
+        return adjustment;
+    }
+
 
     /**
      * Pops up a pog context menu.
@@ -318,23 +340,24 @@ public class PointerTool extends NullTool
             final int xLocation;
             final int yLocation;
             final int pogSize = m_menuPog.getFaceSize();
+            MapCoordinates pogPos = m_menuPog.getPosition();
             final int tempSize = pogSize;
             final int m_gridModeId = m_canvas.getGridModeId();
 
             if (m_gridModeId == 1) //square mode
             {
-                xLocation =  (m_menuPog.getX() / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2);
-                yLocation = ((m_menuPog.getY() / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2)) * -1;
+                xLocation =  (pogPos.x / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2);
+                yLocation = ((pogPos.y / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2)) * -1;
             }
             else if (m_gridModeId == 2) //hex mode - needs work to get it to display appropriate numbers
             {
-                xLocation = m_menuPog.getX();
-                yLocation = m_menuPog.getY() * -1;
+                xLocation = pogPos.x;
+                yLocation = pogPos.y * -1;
             }
             else //no grid
             {
-                xLocation = m_menuPog.getX();
-                yLocation = m_menuPog.getY() * -1;
+                xLocation = pogPos.x;
+                yLocation = pogPos.y * -1;
             }
             
             menu.add(new JMenuItem("X: " + xLocation));

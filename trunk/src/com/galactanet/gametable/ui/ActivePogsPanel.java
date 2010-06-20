@@ -164,7 +164,7 @@ public class ActivePogsPanel extends JPanel
                 return;
             }
 
-            final MapElement pogType = pog.getPogType();
+            final MapElement pogType = pog.getMapElement();
             final Graphics2D g2 = (Graphics2D)g;
             g2.addRenderingHints(Images.getRenderingHints());
             g2.setColor(Color.BLACK);
@@ -705,8 +705,8 @@ public class ActivePogsPanel extends JPanel
                     {
                         final PogNode node = (PogNode)val;
                         final Point screenCoords = UtilityFunctions.getScreenCoordinates(pogTree, m_lastPressPosition);
-                        final Point localCoords = new Point(node.getPog().getPogType().getListIconWidth() / 2, node
-                            .getPog().getPogType().getListIconHeight() / 2);
+                        final Point localCoords = new Point(node.getPog().getMapElement().getListIconWidth() / 2, node
+                            .getPog().getMapElement().getListIconHeight() / 2);
                         grabPog(node, screenCoords, localCoords);
                     }
                 }

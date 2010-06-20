@@ -20,6 +20,7 @@ package com.galactanet.gametable.data;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -137,7 +138,8 @@ public class GameTableMap
 	{
 		m_pogs.add(pog);
 
-		if (!pog.isUnderlay())
+		// Only pogs are ordered
+		if (pog.getLayer() == Layer.POG)
 		{
 			m_orderedPogs.add(pog);
 		}
@@ -368,7 +370,7 @@ public class GameTableMap
 
 		for (MapElementInstance pog : m_pogs)
 		{
-			if (pog.isCardPog())
+			if (pog.isCardElement())
 			{
 				final Card pogCard = pog.getCard();
 

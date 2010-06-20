@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.galactanet.gametable.ui.GametableCanvas;
+import com.galactanet.gametable.ui.MapElementRendererIF;
 
 
 
@@ -28,7 +29,7 @@ import com.galactanet.gametable.ui.GametableCanvas;
  * 
  * #GT-AUDIT LineSegment
  */
-public class LineSegment
+public class LineSegment implements MapElementRendererIF
 {
     private Color m_color;
     private final MapCoordinates m_end;
@@ -208,6 +209,19 @@ public class LineSegment
         return ret;
     }
 
+    /*
+    * @see com.galactanet.gametable.ui.MapElementRendererIF#drawInformationOverlayToCanvas(java.awt.Graphics, boolean, com.galactanet.gametable.ui.GametableCanvas)
+    */
+    @Override
+    public void drawInformationOverlayToCanvas(Graphics g, boolean mouseOver, GametableCanvas canvas)
+    {
+    	// no rendering to do 		
+    }
+    
+    /*
+     * @see com.galactanet.gametable.ui.MapElementRendererIF#drawToCanvas(java.awt.Graphics, com.galactanet.gametable.ui.GametableCanvas)
+     */
+    @Override
     public void drawToCanvas(final Graphics g, final GametableCanvas canvas)
     {
         /*
