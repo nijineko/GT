@@ -98,16 +98,7 @@ public class NullTool implements ToolIF
     {
     }
 
-		static Rectangle createRectangle(final MapCoordinates a, final MapCoordinates b)
-		{
-		    final int x = Math.min(a.x, b.x);
-		    final int y = Math.min(a.y, b.y);
-		    final int width = Math.abs(b.x - a.x) + 1;
-		    final int height = Math.abs(b.y - a.y) + 1;
 		
-		    return new Rectangle(x, y, width, height);
-		}
-
 		static Rectangle createRectangle(final Point a, final Point b)
 		{
 		    final int x = Math.min(a.x, b.x);

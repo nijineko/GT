@@ -8,6 +8,7 @@ import java.util.List;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapRectangle;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.LineSegment;
 
@@ -176,7 +177,7 @@ public class PublishTool extends NullTool
                 }
 
                 // remove the line segments
-                final Rectangle eraseRect = createRectangle(m_mouseAnchor, m_mouseFloat);
+                final MapRectangle eraseRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
                 m_canvas.erase(eraseRect, false, -1);
             }
         }
@@ -226,7 +227,7 @@ public class PublishTool extends NullTool
     // sets all the pogs we're touching to be tinted
     public void setTints(final int modifierMask)
     {
-        final Rectangle selRect = createRectangle(m_mouseAnchor, m_mouseFloat);
+        final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
         for (MapElementInstance pog : m_from.getPogs())
         {
@@ -234,7 +235,7 @@ public class PublishTool extends NullTool
             
             MapCoordinates bottomRight = pog.getPosition().delta(size, size);
             
-            final Rectangle pogRect = createRectangle(pog.getPosition(), bottomRight);
+            final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
             if (selRect.intersects(pogRect) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
             {

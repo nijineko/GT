@@ -5,7 +5,6 @@
 
 package com.galactanet.gametable.data.net;
 
-import java.awt.Rectangle;
 import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -465,7 +464,7 @@ public class PacketManager
         }
     }
 
-    public static byte[] makeErasePacket(final Rectangle r, final boolean bColorSpecific, final int color,
+    public static byte[] makeErasePacket(final MapRectangle r, final boolean bColorSpecific, final int color,
         final int authorPlayerID, final int stateID)
     {
         try
@@ -476,8 +475,8 @@ public class PacketManager
             dos.writeInt(PACKET_ERASE); // type
             dos.writeInt(authorPlayerID);
             dos.writeInt(stateID);
-            dos.writeInt(r.x);
-            dos.writeInt(r.y);
+            dos.writeInt(r.topLeft.x);
+            dos.writeInt(r.topLeft.y);
             dos.writeInt(r.width);
             dos.writeInt(r.height);
             dos.writeBoolean(bColorSpecific);
@@ -1509,11 +1508,9 @@ public class PacketManager
             final int authorID = dis.readInt();
             final int stateID = dis.readInt();
 
-            final Rectangle r = new Rectangle();
-            r.x = dis.readInt();
-            r.y = dis.readInt();
-            r.width = dis.readInt();
-            r.height = dis.readInt();
+            final MapRectangle r = new MapRectangle(
+            		new MapCoordinates(dis.readInt(), dis.readInt()),
+            		dis.readInt(), dis.readInt());
 
             final boolean bColorSpecific = dis.readBoolean();
             final int color = dis.readInt();
