@@ -16,6 +16,7 @@ import javax.swing.*;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElement.Layer;
+import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.SetPogAttributeDialog;
@@ -657,28 +658,6 @@ public class PointerTool extends NullTool
              menu.add(sizeMenu);
 
               final JMenu rotateMenu = new JMenu("Rotation");
-              
-              JCheckBoxMenuItem item2 = new JCheckBoxMenuItem("Force grid snap");
-              if (!m_menuPog.getForceGridSnap()) {
-                  item2.setState(false);
-              } else {
-                  item2.setState(true);
-              }
-              
-              item2.addActionListener(new ActionListener()
-              {
-                  public void actionPerformed(final ActionEvent e)
-                  {
-                      if (!m_menuPog.getForceGridSnap()) {
-                          m_canvas.forceGridSnapPog(m_menuPog.getId(), true);
-                      } else {
-                          m_canvas.forceGridSnapPog(m_menuPog.getId(), false);
-                      }
-                  }
-              });
-              rotateMenu.add(item2);
-              rotateMenu.addSeparator();
-              
               
               item = new JMenuItem("0");
               item.addActionListener(new ActionListener()

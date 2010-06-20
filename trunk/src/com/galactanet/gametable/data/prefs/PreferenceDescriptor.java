@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.prefs;
 
 /**
  * PreferenceDescriptor is a simple object that describes a preference field.

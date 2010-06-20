@@ -884,23 +884,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
         repaint();
     }
-    
-    public void doForceGridSnapPog(final MapElementInstanceID id, final boolean forceGridSnap)
-    {
-        final MapElementInstance toForceSnap = getActiveMap().getPogByID(id);
-        if (toForceSnap == null)
-        {
-            return;
-        }
-
-        toForceSnap.setForceGridSnap(forceGridSnap);
-
-        // this pog moves to the end of the array
-        getActiveMap().removePog(toForceSnap);
-        getActiveMap().addPog(toForceSnap);
-
-        repaint();
-    }
 
     public void doFlipPog(final MapElementInstanceID id, final boolean flipH, final boolean flipV)
     {
@@ -1001,7 +984,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             return;
         }
 
-        pog.setPogType(tpog.getMapElement());        
+        pog.setMapElement(tpog.getMapElement());        
         repaint();
     }
 
@@ -1755,7 +1738,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         for (MapElementInstance pog : mapToReplace.getPogs())
         {
             if(pog.getMapElement() == toReplace) {
-                pog.setPogType(replaceWith);
+                pog.setMapElement(replaceWith);
             }
         }
     }
@@ -1950,7 +1933,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             if (plr.isPointing())
             {
                 // draw this player's point cursor
-                final Point pointingAt = modelToDraw(plr.getPoint());
+                final Point pointingAt = modelToDraw(plr.getPointingLocation());
 
                 // 5px offset to align with mouse pointer
                 final int drawX = pointingAt.x;
@@ -2097,9 +2080,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
 
         me.setPointing(true);
-        me.setPoint(pointLocation);
+        me.setPointingLocation(pointLocation);
 
-        m_gametableFrame.send(PacketManager.makePointPacket(m_gametableFrame.getMyPlayerIndex(), me.getPoint(), true));
+        m_gametableFrame.send(PacketManager.makePointPacket(m_gametableFrame.getMyPlayerIndex(), me.getPointingLocation(), true));
 
         setToolCursor(-1);
 
@@ -2208,23 +2191,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         else
         {
             doRotatePog(id, newAngle);
-        }
-    }
-
-    public void forceGridSnapPog(final MapElementInstanceID id, final boolean forceGridSnap)
-    {
-        if (isPublicMap())
-        {
-            m_gametableFrame.send(PacketManager.makeForceSnapPogPacket(id, forceGridSnap));
-
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
-            {
-                doForceGridSnapPog(id, forceGridSnap);
-            }
-        }
-        else
-        {
-            doForceGridSnapPog(id, forceGridSnap);
         }
     }
     
