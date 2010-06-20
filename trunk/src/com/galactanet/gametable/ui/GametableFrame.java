@@ -340,7 +340,7 @@ public class GametableFrame extends JFrame implements ActionListener
     private final JSplitPane        m_mapPogSplitPane        = new JSplitPane();    // Split between Pog pane and map pane
     private final PogWindow         m_pogsTabbedPane         = new PogWindow();   // The Pog pane is tabbed
     private PogPanel                m_pogPanel               = null;                // one tab is the Pog Panel
-    private ActivePogsPanel         m_activePogsPanel        = null;                // another tab is the Active Pogs Panel
+    protected ActivePogsPanel         m_activePogsPanel        = null;                // another tab is the Active Pogs Panel
     private MacroPanel              m_macroPanel             = null;                // the last tab is the macro panel
 
     private final JSplitPane        m_mapChatSplitPane       = new JSplitPane();    // The map pane is really a split between the map and the chat
@@ -1235,7 +1235,7 @@ public class GametableFrame extends JFrame implements ActionListener
     public void eraseAllPogs()
     {
         // make an int array of all the IDs
-    	List<MapElementInstance> pogs = getGametableCanvas().getActiveMap().getPogs();
+    	List<MapElementInstance> pogs = getGametableCanvas().getActiveMap().getMapElementInstances();
       getGametableCanvas().removePogs(pogs, true);
     }
 
@@ -2090,7 +2090,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 if (gd.isAccepted()) {
                     String g = gd.getGroup();
                     if((g != null) && (g.length() > 0))
-                    PogGroups.addPogsToGroup(g, getGametableCanvas().getActiveMap().getSelectedPogs());
+                    PogGroups.addPogsToGroup(g, getGametableCanvas().getActiveMap().getSelectedMapElementInstances());
                 }
             }
         });
@@ -2115,7 +2115,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 gd.setVisible(true);
                 if (gd.isAccepted()) {
                     List<MapElementInstance> pogs = PogGroups.getGroupPogs(gd.getGroup());                        
-                    getGametableCanvas().getActiveMap().selectPogs(pogs);
+                    getGametableCanvas().getActiveMap().selectMapElementInstances(pogs);
                     getGametableCanvas().repaint();
                 }
             }
@@ -2133,7 +2133,7 @@ public class GametableFrame extends JFrame implements ActionListener
             public void actionPerformed(final ActionEvent e) {
                 GameTableMap map = getGametableCanvas().getActiveMap();
                 
-                for (MapElementInstance pog : map.getSelectedPogs())
+                for (MapElementInstance pog : map.getSelectedMapElementInstances())
                 {
                     PogGroups.removePogFromGroup(pog);	
                 }
@@ -2367,7 +2367,7 @@ public class GametableFrame extends JFrame implements ActionListener
             public void actionPerformed(final ActionEvent e)
             {
                 GameTableMap map = getGametableCanvas().getActiveMap();
-                getGametableCanvas().removePogs(map.getSelectedPogs(), false);
+                getGametableCanvas().removePogs(map.getSelectedMapElementInstances(), false);
             }
         });
 
@@ -2393,14 +2393,14 @@ public class GametableFrame extends JFrame implements ActionListener
                 if(map == getGametableCanvas().getPublicMap()) to = getGametableCanvas().getPrivateMap();
                 else to = getGametableCanvas().getPublicMap();
 
-                for (MapElementInstance pog : map.getSelectedPogs())
+                for (MapElementInstance pog : map.getSelectedMapElementInstances())
                 {
-                  to.addPog(pog);
-                  map.removePog(pog);
+                  to.addMapElementInstance(pog);
+                  map.removeMapElementInstance(pog);
                   if(copy) 
                   {
                       npog = new MapElementInstance(pog);
-                      map.addPog(npog);
+                      map.addMapElementInstance(npog);
                   }
                 }                
             }
@@ -3146,8 +3146,8 @@ public class GametableFrame extends JFrame implements ActionListener
 
             // reset game data
             m_gametableCanvas.setScrollPosition(0, 0);
-            m_gametableCanvas.getPublicMap().clearPogs();
-            m_gametableCanvas.getPublicMap().clearLines();
+            m_gametableCanvas.getPublicMap().clearMapElementInstances();
+            m_gametableCanvas.getPublicMap().clearLineSegments();
             // PacketManager.g_imagelessPogs.clear();
 
             // send the packet
@@ -3535,7 +3535,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
     private void lockMap(final GameTableMap mapToLock, final boolean lock) 
     {
-    	for (MapElementInstance pog : mapToLock.getPogs())
+    	for (MapElementInstance pog : mapToLock.getMapElementInstances())
     	{       
     		pog.setLocked(lock);
       }
@@ -3661,7 +3661,7 @@ public class GametableFrame extends JFrame implements ActionListener
         send(PacketManager.makeLinesPacket(getGametableCanvas().getPublicMap().getLines(), -1, -1), player);
 
         // pogs
-        for (MapElementInstance pog : getGametableCanvas().getPublicMap().getPogs())
+        for (MapElementInstance pog : getGametableCanvas().getPublicMap().getMapElementInstances())
         {
             send(PacketManager.makeAddPogPacket(pog), player);
         }
@@ -3707,7 +3707,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
     public void pogReorderPacketReceived(final Map<MapElementInstanceID, Long> changes)
     {
-        getGametableCanvas().doPogReorder(changes);
+    	m_activePogsPanel.reorderPogs(changes, false);
         if (m_netStatus == NETSTATE_HOST)
         {
             m_networkThread.send(PacketManager.makePogReorderPacket(changes));
@@ -4253,7 +4253,7 @@ public class GametableFrame extends JFrame implements ActionListener
             dos.write(linesPacket);
 
             // pogs
-            for (MapElementInstance pog : mapToSave.getPogs())
+            for (MapElementInstance pog : mapToSave.getMapElementInstances())
             {
                 final byte[] pogsPacket = PacketManager.makeAddPogPacket(pog);
                 dos.writeInt(pogsPacket.length);

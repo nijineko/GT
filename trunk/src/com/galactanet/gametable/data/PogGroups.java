@@ -313,7 +313,7 @@ public class PogGroups
 	public static void packetReceived(Action action, final String groupName, final MapElementInstanceID pogID)
 	{
 		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
-		final MapElementInstance pog = map.getPogByID(pogID);
+		final MapElementInstance pog = map.getMapElementInstance(pogID);
 
 		switch (action)
 		{

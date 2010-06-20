@@ -17,21 +17,21 @@
  */
 package com.galactanet.gametable.data;
 
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
- * This class stores the data related to a gametable map. This includes line, pogs, and underlays
+ * Holds all data pertaining to a map (including MapElementInstance and LineSegment)
  * 
  * @author sephalon
  * 
  *         #GT-AUDIT GametableMap
  * 
- * @revise listeners and triggers for pogs, selection, lines
  */
 public class GameTableMap
 {
@@ -46,25 +46,16 @@ public class GameTableMap
 	private final List<LineSegment>	m_linesUnmodifiable;
 
 	/**
-	 * A copy of the pog list, kept in order, used by ActivePogsPanel. Excludes underlay pogs. The order is simply the one
-	 * chosen by the user to show on ActivePogsPanel.
+	 * List of elements or all types to display on the map
 	 * 
-	 * @revise this is redundant data. If ActivePogsPanel requires such a list for its display purposes, it should not be
-	 *         stored in the map.
+	 * @revise Rebuild more versatile layer architecture
 	 */
-	private SortedSet<MapElementInstance>					m_orderedPogs	= new TreeSet<MapElementInstance>();
+	private final List<MapElementInstance>					m_mapElements;
 
 	/**
-	 * List of pogs or all types to display on the map
-	 * 
-	 * @revise for layers
+	 * Unmodifiable list of elements
 	 */
-	private final List<MapElementInstance>					m_pogs;
-
-	/**
-	 * Unmodifiable list of pogs
-	 */
-	private final List<MapElementInstance>					m_pogsUnmodifiable;
+	private final List<MapElementInstance>					m_mapElementsUnmodifiable;
 
 	/**
 	 * Whether this is the public of private version of the map
@@ -72,21 +63,21 @@ public class GameTableMap
 	private final boolean						m_publicMap;
 
 	/**
-	 * Lists the currently selected pogs
+	 * Lists the currently selected elements
 	 */
-	private final List<MapElementInstance>					m_selectedPogs;
+	private final List<MapElementInstance>					m_selectedElements;
 
 	/**
-	 * Unmodifiable version of the selected pogs to be returned to callers
+	 * Unmodifiable version of the selected elements to be returned to callers
 	 */
-	private final List<MapElementInstance>					m_selectedPogsUnmodifiable;
+	private final List<MapElementInstance>					m_selectedElementsUnmodifiable;
 
 	/**
 	 * Every 'square' is divided into this number of units
 	 */
 	private final static int    BASE_SQUARE_SIZE       = 64;
 
-	// @revise #{@link javax.swing.undo.UndoableEdit}
+	// @revise Build undo buffers using Java's #{@link javax.swing.undo.UndoableEdit}
 
 	/**
 	 * Constructor
@@ -96,14 +87,14 @@ public class GameTableMap
 	public GameTableMap(boolean publicMap)
 	{
 		m_publicMap = publicMap;
-		m_selectedPogs = new ArrayList<MapElementInstance>();
-		m_selectedPogsUnmodifiable = Collections.unmodifiableList(m_selectedPogs);
+		m_selectedElements = new ArrayList<MapElementInstance>();
+		m_selectedElementsUnmodifiable = Collections.unmodifiableList(m_selectedElements);
 
 		m_lines = new ArrayList<LineSegment>();
 		m_linesUnmodifiable = Collections.unmodifiableList(m_lines);
 
-		m_pogs = new ArrayList<MapElementInstance>();
-		m_pogsUnmodifiable = Collections.unmodifiableList(m_pogs);
+		m_mapElements = new ArrayList<MapElementInstance>();
+		m_mapElementsUnmodifiable = Collections.unmodifiableList(m_mapElements);
 	}
 
 	/**
@@ -113,55 +104,41 @@ public class GameTableMap
 	 */
 	public void addLineSegment(LineSegment ls)
 	{
-		m_lines.add(ls);
-		// @revise whichever process is building an undo stack should combine consecutive line segments from the same user
+		m_lines.add(ls);		
+		// @revise trigger listener (add line)
 	}
 
 	/**
-	 * Adds a pog to the ordered list used by the ActivePogs panel @revise this should not be here.
+	 * Adds an element instance to the map
 	 * 
-	 * @deprecated
-	 * @param pog
+	 * @param mapElement Element to add to the map
 	 */
-	@Deprecated
-	public void addOrderedPog(final MapElementInstance pog)
+	public void addMapElementInstance(MapElementInstance mapElement)
 	{
-		m_orderedPogs.add(pog);
-	}
-
-	/**
-	 * Adds a pog to the map
-	 * 
-	 * @param pog
-	 */
-	public void addPog(MapElementInstance pog)
-	{
-		m_pogs.add(pog);
-
-		// Only pogs are ordered
-		if (pog.getLayer() == Layer.POG)
-		{
-			m_orderedPogs.add(pog);
-		}
+		m_mapElements.add(mapElement);
+		
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onMapElementInstanceAdded(this, mapElement);
 	}
 
 	/**
 	 * Remove all lines from the map
 	 */
-	public void clearLines()
+	public void clearLineSegments()
 	{
 		m_lines.clear();
-		// @revise trigger listeners
+		// @revise trigger listeners (clear lines)
 	}
 
 	/**
-	 * Remove all pogs from the map
+	 * Remove all elements from the map
 	 */
-	public void clearPogs()
+	public void clearMapElementInstances()
 	{
-		m_pogs.clear();
-		m_orderedPogs.clear();
-		// @revise trigger listeners
+		m_mapElements.clear();
+		
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onMapElementInstancesCleared(this);
 	}
 
 	/**
@@ -175,23 +152,14 @@ public class GameTableMap
 	}
 
 	/**
-	 * Returns a list of pogs in some order
-	 * 
-	 * @revise should be within the UI that handles these things - nothing to do with map data
-	 * @return
-	 */
-	public SortedSet<MapElementInstance> getOrderedPogs()
-	{
-		return Collections.unmodifiableSortedSet(m_orderedPogs);
-	}
-
-	/**
-	 * Get Pog matching given position on the map
+	 * Get topmost element matching given position on the map
 	 * 
 	 * @param modelPosition Coordinates to test for
-	 * @return Matching Pog or none
+	 * @return Matching element or none
+	 * 
+	 * @revise Add support for disabled and hidden layers
 	 */
-	public MapElementInstance getPogAt(MapCoordinates modelPosition)
+	public MapElementInstance getMapElementInstanceAt(MapCoordinates modelPosition)
 	{
 		if (modelPosition == null)
 		{
@@ -203,27 +171,26 @@ public class GameTableMap
 		MapElementInstance overlayHit = null;
 		MapElementInstance underlayHit = null;
 
-		for (MapElementInstance pog : m_pogs)
+		for (MapElementInstance mapElement : m_mapElements)
 		{
-			if (pog.contains(modelPosition))
+			if (mapElement.contains(modelPosition))
 			{
-				// they clicked this pog
-				switch (pog.getLayer())
+				switch (mapElement.getLayer())
 				{
 				case UNDERLAY:
-					underlayHit = pog;
+					underlayHit = mapElement;
 					break;
 
 				case OVERLAY:
-					overlayHit = pog;
+					overlayHit = mapElement;
 					break;
 
 				case ENVIRONMENT:
-					envHit = pog;
+					envHit = mapElement;
 					break;
 
 				case POG:
-					pogHit = pog;
+					pogHit = mapElement;
 					break;
 				}
 			}
@@ -266,10 +233,10 @@ public class GameTableMap
               bounds.add(r);
       }
   
-      // pogs
-      for (MapElementInstance pog : getPogs())
+      // Map elements
+      for (MapElementInstance mapElement : getMapElementInstances())
       {
-      	MapRectangle r = pog.getBounds();
+      	MapRectangle r = mapElement.getBounds();
           
           if (bounds == null)
               bounds = r;
@@ -284,74 +251,71 @@ public class GameTableMap
   }
 
 	/**
-	 * Get Pog by PogID
+	 * Get map element instance by ID
 	 * 
-	 * @param id ID of the pog we are looking for
-	 * @return Matching Pog or null
+	 * @param id ID of the map element we are looking for
+	 * @return Matching map element or null
 	 */
-	public MapElementInstance getPogByID(final MapElementInstanceID id)
+	public MapElementInstance getMapElementInstance(final MapElementInstanceID id)
 	{
-		for (MapElementInstance pog : m_pogs)
+		for (MapElementInstance mapElement : m_mapElements)
 		{
-			if (pog.getId().equals(id))
-				return pog;
+			if (mapElement.getId().equals(id))
+				return mapElement;
 		}
 
 		return null;
 	}
 
 	/**
-	 * Get pog by name
+	 * Get map element instance by name
 	 * 
-	 * @param pogName name of the pog we are looking for
-	 * @return Pog or null
+	 * @param name name of the instance we are looking for
+	 * @return instance or null
 	 */
-	public MapElementInstance getPogByName(final String pogName)
+	public MapElementInstance getMapElementInstanceByName(final String name)
 	{
-		return getPogsByName(pogName, null);
+		return getMapElementInstancesByName(name, null);
 	}
 
 	/**
-	 * Get list of pogs
+	 * Get list of map element instances
 	 * 
-	 * @return unmodifiable list of pogs
+	 * @return unmodifiable list of instances
 	 */
-	public List<MapElementInstance> getPogs()
+	public List<MapElementInstance> getMapElementInstances()
 	{
-		return m_pogsUnmodifiable;
+		return m_mapElementsUnmodifiable;
 	}
 
 	/**
-	 * Find pogs matching a given name
+	 * Find map element instances matching a given name
 	 * 
-	 * @param pogName Name of the pog we are looking for
-	 * @return List of matching pogs (never null)
+	 * @param name Name of the element instance we are looking for
+	 * @return List of matching elements (never null)
 	 */
-	public List<MapElementInstance> getPogsByName(String pogName)
+	public List<MapElementInstance> getMapElementInstancesByName(String name)
 	{
 		List<MapElementInstance> retVal = new ArrayList<MapElementInstance>();
-		getPogsByName(pogName, retVal);
+		getMapElementInstancesByName(name, retVal);
 
 		return retVal;
 	}
 
 	/**
-	 * Gets selected pogs list
+	 * Gets selected map element instances list
 	 * 
 	 * @revise move to VIEW?
-	 * @return The list of currently selected pogs (unmodifiable). Never null.
+	 * @return The list of currently selected instances (unmodifiable). Never null.
 	 * 
 	 */
-	public List<MapElementInstance> getSelectedPogs()
+	public List<MapElementInstance> getSelectedMapElementInstances()
 	{
-		return m_selectedPogsUnmodifiable;
+		return m_selectedElementsUnmodifiable;
 	}
 
 	/**
-	 * Checks if this is a private or public map
-	 * 
-	 * @revise Relevant?
-	 * @return
+	 * @return True if this is a public map.  False if it is a private map.
 	 */
 	public boolean isPublicMap()
 	{
@@ -368,7 +332,7 @@ public class GameTableMap
 	{
 		final List<MapElementInstance> removeList = new ArrayList<MapElementInstance>();
 
-		for (MapElementInstance pog : m_pogs)
+		for (MapElementInstance pog : m_mapElements)
 		{
 			if (pog.isCardElement())
 			{
@@ -387,7 +351,7 @@ public class GameTableMap
 		}
 
 		// remove any offending pogs
-		removePogs(removeList);
+		removeMapElementInstances(removeList);
 	}
 
 	/**
@@ -398,160 +362,111 @@ public class GameTableMap
 	public void removeLineSegment(final LineSegment ls)
 	{
 		m_lines.remove(ls);
+		// @revise trigger listener (remove line segment)
 	}
 
 	/**
-	 * Remove ordered pog
+	 * Remove a given map element instance from the map
 	 * 
-	 * @revise move to ActivePogPanel
-	 * @param pog
+	 * @param mapElement Map element instance to remove
 	 */
-	public void removeOrderedPog(final MapElementInstance pog)
+	public void removeMapElementInstance(final MapElementInstance mapElement)
 	{
-		m_orderedPogs.remove(pog);
+		if (mapElement.isSelected())
+			unselectMapElementInstance(mapElement);
+
+		m_mapElements.remove(mapElement);
+		
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onMapElementInstanceRemoved(this, mapElement);
 	}
 
 	/**
-	 * Remove a given pog from the map
+	 * Remove multiple element instances from the map
 	 * 
-	 * @param pog pog to remove
+	 * @param instances list of instances to remove
 	 */
-	public void removePog(final MapElementInstance pog)
+	public void removeMapElementInstances(List<MapElementInstance> instances)
 	{
-		if (pog.isSelected())
-			unselectPog(pog);
-
-		m_pogs.remove(pog);
-		m_orderedPogs.remove(pog);
-
-		// @revise trigger listeners
+		for (MapElementInstance instance : instances)
+			removeMapElementInstance(instance);
 	}
 
 	/**
-	 * Remove multiple pogs from the map
+	 * Adds a instance to the selected list
 	 * 
-	 * @param pogs list of pogs to remove
+	 * @param mapElement Instance to add to selection
 	 */
-	public void removePogs(List<MapElementInstance> pogs)
+	public void selectMapElementInstance(MapElementInstance mapElement)
 	{
-		for (MapElementInstance pog : pogs)
-			removePog(pog);
-
-		// @revise trigger listeners
+		m_selectedElements.add(mapElement);
+		mapElement.setSelected(true);
+		// @revise trigger listeners (select pog)
 	}
 
 	/**
-	 * TODO @revise I don't get this.
+	 * Add multiple instances to the selection
 	 * 
-	 * @param changes
+	 * @param mapElements List of instance to add to the selection
 	 */
-	public void reorderPogs(final Map<MapElementInstanceID, Long> changes)
+	public void selectMapElementInstances(final List<MapElementInstance> mapElements)
 	{
-		if (changes == null)
-		{
-			return;
-		}
+		m_selectedElements.addAll(mapElements);
 
-		for (Entry<MapElementInstanceID, Long> entry : changes.entrySet())
-		{
-			setSortOrder(entry.getKey(), entry.getValue());
-		}
+		for (MapElementInstance instance : mapElements)
+			instance.setSelected(true);
+
+		// @revise trigger listeners (select pogs)
 	}
 
 	/**
-	 * Adds a pog to the selected pog list
+	 * Remove all instance from selection
+	 */
+	public void unselectAllMapElementInstances()
+	{
+		for (MapElementInstance instance : m_selectedElements)
+			instance.setSelected(false);
+
+		m_selectedElements.clear();
+
+		// @revise trigger listeners (unselect all)
+	}
+
+	/**
+	 * Remove an instance from the selection
 	 * 
-	 * @param pog Pog to add to selection
+	 * @param mapElement Instance to remove
 	 */
-	public void selectPog(MapElementInstance pog)
+	public void unselectMapElementInstance(final MapElementInstance mapElement)
 	{
-		m_selectedPogs.add(pog);
-		pog.setSelected(true);
-		// @revise trigger listeners
+		m_selectedElements.remove(mapElement);
+		mapElement.setSelected(false);
+
+		// @revise trigger listeners (unselect one)
 	}
 
 	/**
-	 * Add multiple pogs to the selection
+	 * Find instances matching a given name
 	 * 
-	 * @param pogs List of pogs to add to the selection
+	 * @param name Name of the pog we are looking for
+	 * @param mapElements if non-null, will be populated with all matching pogs
+	 * @return If mapElements is null, will return first matching insatnce
 	 */
-	public void selectPogs(final List<MapElementInstance> pogs)
+	private MapElementInstance getMapElementInstancesByName(String name, List<MapElementInstance> mapElements)
 	{
-		m_selectedPogs.addAll(pogs);
-
-		for (MapElementInstance pog : pogs)
-			pog.setSelected(true);
-
-		// @revise trigger listeners
-	}
-
-	/**
-	 * Set the sort order for a given pog
-	 * 
-	 * @param pogID pog ID to look for
-	 * @param sortOrder sort order number
-	 * @revise move to ActivePogPanel
-	 */
-	public void setSortOrder(MapElementInstanceID pogID, long sortOrder)
-	{
-		final MapElementInstance pog = getPogByID(pogID);
-		if (pog == null)
-			return;
-
-		// @revise won't the OrderedSet resort itself when iterating through the list?
-		m_orderedPogs.remove(pog);
-		pog.setSortOrder(sortOrder);
-		m_orderedPogs.add(pog);
-	}
-
-	/**
-	 * Remove all pogs from selection
-	 */
-	public void unselectAllPogs()
-	{
-		for (MapElementInstance pog : m_selectedPogs)
-			pog.setSelected(false);
-
-		m_selectedPogs.clear();
-
-		// @revise trigger listeners
-	}
-
-	/**
-	 * Remove a pog from the selection
-	 * 
-	 * @param pog Pog to remove
-	 */
-	public void unselectPog(final MapElementInstance pog)
-	{
-		m_selectedPogs.remove(pog);
-		pog.setSelected(false);
-
-		// @revise trigger listeners
-	}
-
-	/**
-	 * Find pogs matching a given name
-	 * 
-	 * @param pogName Name of the pog we are looking for
-	 * @param pogList if non-null, will be populated with all matching pogs
-	 * @return If pogList is null, will return first matching Pog
-	 */
-	private MapElementInstance getPogsByName(String pogName, List<MapElementInstance> pogList)
-	{
-		if (pogName == null || pogName.equals(""))
+		if (name == null || name.equals(""))
 			return null;
 
-		final String normalizedName = UtilityFunctions.normalizeName(pogName);
+		final String normalizedName = UtilityFunctions.normalizeName(name);
 
-		for (MapElementInstance pog : m_pogs)
+		for (MapElementInstance instance : m_mapElements)
 		{
-			if (pog.getNormalizedName().equals(normalizedName))
+			if (instance.getNormalizedName().equals(normalizedName))
 			{
-				if (pogList != null)
-					pogList.add(pog);
+				if (mapElements != null)
+					mapElements.add(instance);
 				else
-					return pog;
+					return instance;
 			}
 		}
 
@@ -566,6 +481,29 @@ public class GameTableMap
 	{
 		return GameTableMap.BASE_SQUARE_SIZE;
 	}
+	
+  
+  /**
+   * Adds a GameTableMapListener to this map
+   * @param listener Listener to call when something changes within the map
+   */
+  public void addListener(GameTableMapListenerIF listener)
+  {
+  	m_listeners.remove(listener);
+  	m_listeners.add(listener);
+  }
+  
+  /**
+   * Removes a listener from this map
+   * @param listener Listener to remove
+   * @return True if listener was found and removed
+   */
+  public boolean removeListener(GameTableMapListenerIF listener)
+  {
+  	return m_listeners.remove(listener);
+  }
+  
+  private List<GameTableMapListenerIF> m_listeners = new CopyOnWriteArrayList<GameTableMapListenerIF>();
 	
 	// TODO Plan to store scroll position from UI when saving 
 }

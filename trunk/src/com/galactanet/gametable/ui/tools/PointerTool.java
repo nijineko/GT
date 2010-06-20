@@ -168,7 +168,7 @@ public class PointerTool extends NullTool
     {
         if (GametableFrame.getGametableFrame().getPreferences().getBooleanValue(PREF_DRAG))
         {
-            final MapElementInstance pog = m_canvas.getActiveMap().getPogAt(m_mousePosition);
+            final MapElementInstance pog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
             if (pog != null)
             {
                 m_canvas.setToolCursor(0);
@@ -203,7 +203,7 @@ public class PointerTool extends NullTool
     {
         m_clicked = true;
         m_mousePosition = modelPos;
-        m_grabbedPog = m_canvas.getActiveMap().getPogAt(m_mousePosition);
+        m_grabbedPog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
         if (m_grabbedPog != null)
         {
             m_ghostPog = new MapElementInstance(m_grabbedPog, false);
@@ -385,8 +385,8 @@ public class PointerTool extends NullTool
                     if (m_canvas.isPublicMap()) m_from = m_canvas.getPublicMap();
                     else m_from = m_canvas.getPrivateMap();                            
                     
-                    if(m_menuPog.isSelected()) m_from.unselectPog(m_menuPog);
-                    else m_from.selectPog(m_menuPog);                                     
+                    if(m_menuPog.isSelected()) m_from.unselectMapElementInstance(m_menuPog);
+                    else m_from.selectMapElementInstance(m_menuPog);                                     
                 }
             });
             menu.add(item);
@@ -779,7 +779,7 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                  	List<MapElementInstance> pogs = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getSelectedPogs();
+                  	List<MapElementInstance> pogs = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getSelectedMapElementInstances();
                   	
                       int size = pogs.size();
                       if(size > 1) {
@@ -794,7 +794,7 @@ public class PointerTool extends NullTool
                       
                       MapElementInstance pog = pogs.get(0);                
                       GametableFrame.getGametableFrame().getGametableCanvas().setPogType(m_menuPog, pog);
-                      GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().unselectAllPogs();
+                      GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().unselectAllMapElementInstances();
                      
                   }
               });
