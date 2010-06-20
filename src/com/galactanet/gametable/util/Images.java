@@ -326,11 +326,10 @@ public class Images
 	 * 
 	 * @param srcImage image to rotate - will not be modified
 	 * @param angleDegrees number of degrees to rotate
-	 * @param forceGridSnap If false, what????
 	 * 
 	 * @return New rotated, square image
 	 */
-	public static Image rotateImage(final Image srcImage, final double angleDegrees, final boolean forceGridSnap)
+	public static Image rotateImage(final Image srcImage, final double angleDegrees)
 	{
 		if (angleDegrees == 0)
 		{
