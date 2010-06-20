@@ -991,7 +991,7 @@ public class PogPanel extends JPanel
             final Point offset = getGrabOffset();
             g2.translate(localPos.x - offset.x, localPos.y - offset.y);
             
-            UtilityFunctions.drawTranslucent(g2, m_grabbedPog.getPogType().getImage(), 0, 0, 0.5f);
+            UtilityFunctions.drawTranslucent(g2, m_grabbedPog.getMapElement().getImage(), 0, 0, 0.5f);
 
             g2.dispose();
         }

@@ -34,7 +34,7 @@ public interface MapElementRendererIF
 	/**
 	 * Renders an element onto the canvas
 	 * @param g Graphics device to render into
-	 * @param canvas canvas
+	 * @param canvas Canvas to get scaling information.  If canvas is null, no scaling should be done.
 	 */
   public void drawToCanvas(Graphics g, GametableCanvas canvas);
 

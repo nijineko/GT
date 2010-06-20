@@ -50,19 +50,32 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
     }
 
-    // --- Static Members --------------------------------------------------------------------------------------------
-
     /**
      * TODO @revise not here - in the UI that actually cares about sorting
      * Global min sort id for pogs.
      */
     public static long         g_nextSortId               = 0;
 
-    // --- Members ---------------------------------------------------------------------------------------------------
-
+    /**
+     * Renderer instance
+     * In future versions, we could allow a plug-in to supply its own renderer
+     */
     private MapElementInstanceRenderer m_renderer = null;
+    
+    /**
+     * The layer in which this element is placed
+     */
     private Layer              m_layer                    = Layer.UNDERLAY;
+    
+    /**
+     * The angle, in degrees, at which this element is painted
+     */
     private double             m_angle                    = 0d;
+    
+    /**
+     * Whether this element is set to snap to the grid when moved
+     * @revise this is view information as it pertains to how the editor behaves
+     */
     private boolean            m_forceGridSnap            = false;
 
 
@@ -78,19 +91,19 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     
     
     /**
-     * Name/value pairs of the attributes assigned to this pog.
+     * Name/value pairs of the attributes assigned to this element.
      */
     private final Map<String, Attribute>          m_attributes               = new TreeMap<String, Attribute>();
     
     /**
-     * Size of this element, in pixel
+     * Size of this element, in map units
      */
-    private Dimension m_elementSize = new Dimension(); // @revise abhorrent to model
+    private Dimension m_elementSize = new Dimension();
 
     /**
      * Marks whether this element is in a corrupted state and should be bypassed
      */
-    private boolean             m_corrupted               = false;
+    private boolean   m_corrupted               = false;
 
     /**
      * True if this pog is notifying the world that it's text had changed.
@@ -99,15 +112,26 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     protected boolean            m_bTextChangeNotifying     = false;
 
     /**
-     * Is this pog tinted?
+     * Indicates whether this element should be displayed as tinted
+     * @revise this is view information, as it is the editor that decides whether the element is tinted and it is also the editor which should apply the tinting
      */
-    private boolean            m_bTinted                  = false;	// uh oh...
+    private boolean            m_bTinted                  = false;
     
-    private boolean            m_bSelected                = false; // #grouping
-    private String             m_group                  	= null; //#grouping
+    /**
+     * Indicates whether this element is marked as selected
+     * @revise this is view information, as it is the editor that decides whether the element is selected and it is also the editor which should display selection 
+     */
+    private boolean            m_bSelected                = false;
+    
+    /**
+     * Indicates which group this element is part of
+     * @revise this is view information, as it is the editor that decides grouping and it is only in function of the editor
+     */
+    private String             m_group                  	= null; // #tag:grouping
 
-    // null in most cases. If it's not null, it's a
-    // card in a deck
+    /**
+     * TODO @revise Cards elements should be entirely modular
+     */
     private Card      m_card;
 
     /**
@@ -116,27 +140,31 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     private final MapElementInstanceID	m_id;
 
     /**
-     * Locked state for this pog.
+     * Indicates whether this element is locked and can not be edited
+     * @revise this is view information, as it is the editor that decides locking and modified its behavior by it
      */
     private boolean            m_locked                   = false;
 
     /**
      * The parent element from which this element was instantiated
      */
-    private MapElement            m_parentElement;
+    private MapElement            m_mapElement;
 
     /**
-     * Position of the pog on the map in map coordinates.
+     * Position of the element in map coordinates.
      */
-    private MapCoordinates              m_position                 = MapCoordinates.ORIGIN;
+    private MapCoordinates     m_position                 = MapCoordinates.ORIGIN;
 
     /**
-     * Scale for this Element.  The scale ratio is automatically configured when the face size of this element is set. 
+     * Scale for displaying this element at the proper size.
+     *   
+     * The scale ratio is automatically configured when the face size of this element is set. 
      */
     private float              m_scale                    = 1f;
 
     /**
-     * The sort order for this pog.  Pogs are sorted according to this number.
+     * The sort order for this element, by which it can be sorted
+     * @revise Move this to view into the panel that uses it - it is the sole reason for that information
      */
     private long               m_sortOrder                = 0;
 
@@ -146,7 +174,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     private String             m_name                     = "";
     
     /**
-     * The normalized name for the pog
+     * The normalized name for the element.  Used for internal representation, mainly when saving and loading maps.
      */
     private String 							m_nameNormalized					= "";
 
@@ -156,11 +184,16 @@ public class MapElementInstance implements Comparable<MapElementInstance>
      */
     public BitSet              m_hitMap;
 
-    // --- Constructors ----------------------------------------------------------------------------------------------
-
+    /**
+     * Constructor 
+     * @param dis Data input stream
+     * @throws IOException
+     */
     public MapElementInstance(final DataInputStream dis) throws IOException
     {
     	String filename = UtilityFunctions.getLocalPath(dis.readUTF());
+    	
+    	//TODO @revise PogLibrary should be in model
       final PogLibrary lib = GametableFrame.getGametableFrame().getPogLibrary();
       filename = UtilityFunctions.getRelativePath(lib.getLocation(), new File(filename));
 
@@ -175,8 +208,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
       m_sortOrder = dis.readLong();
       setName(dis.readUTF(), true);
       // boolean underlay =
-      
-      boolean underlay = dis.readBoolean();
 
       try {
           m_scale = dis.readFloat();
@@ -246,11 +277,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
       }
       catch(IOException exp) 
       {
-          if (underlay) 
-              layer = Layer.UNDERLAY;
-          else 
-              layer = Layer.POG;
-          
+          layer = Layer.UNDERLAY;          
           m_forceGridSnap = false;
       }
       
@@ -281,47 +308,56 @@ public class MapElementInstance implements Comparable<MapElementInstance>
           type = lib.createPlaceholder(filename, size);
       }
       
-      m_parentElement = type;
+      m_mapElement = type;
       m_layer = type.getLayerType();
       
       m_layer = layer; // Saving here as the init updates the layer for newly dropped pogs.
       reinitializeHitMap();
     }
 
+    /**
+     * Constructor
+     * @param toCopy element to copy (group will also be copied)
+     */
     public MapElementInstance(final MapElementInstance toCopy)
     {
     	this(toCopy, true);
     }
     
-    public MapElementInstance(final MapElementInstance orig, final boolean copygroup) 
+    /**
+     * Constructor
+     * @param toCopy element to copy
+     * @param copygroup If true, group will also be copied
+     */
+    public MapElementInstance(final MapElementInstance toCopy, final boolean copygroup) 
     {
     	m_id = MapElementInstanceID.acquire();
     	
-      m_position = orig.m_position;
-      m_parentElement = orig.m_parentElement;
-      m_scale = orig.m_scale;
-      m_angle = orig.m_angle;
-      m_flipH = orig.m_flipH;
-      m_flipV = orig.m_flipV;
+      m_position = toCopy.m_position;
+      m_mapElement = toCopy.m_mapElement;
+      m_scale = toCopy.m_scale;
+      m_angle = toCopy.m_angle;
+      m_flipH = toCopy.m_flipH;
+      m_flipV = toCopy.m_flipV;
 
-      setName(orig.m_name, true);
+      setName(toCopy.m_name, true);
       
-      m_layer    = orig.m_layer;
-      m_forceGridSnap = orig.m_forceGridSnap;
+      m_layer    = toCopy.m_layer;
+      m_forceGridSnap = toCopy.m_forceGridSnap;
 
-      if(copygroup) m_group = orig.m_group;
+      if(copygroup) m_group = toCopy.m_group;
 
-      if (orig.m_card == null)
+      if (toCopy.m_card == null)
       {
-          m_card = orig.m_card;
+          m_card = toCopy.m_card;
       }
       else
       {
       		m_card = new Card();
-          m_card.copy(orig.m_card);
+          m_card.copy(toCopy.m_card);
       }
 
-      for (Attribute attribute : orig.m_attributes.values())
+      for (Attribute attribute : toCopy.m_attributes.values())
       {
           setAttribute(attribute.name, attribute.value);
       }
@@ -330,10 +366,15 @@ public class MapElementInstance implements Comparable<MapElementInstance>
       reinitializeHitMap();
     }
 
+    /**
+     * Creates a new instance based on type
+     * TODO @revise Use MapElement as factory - all constructors should be protected
+     * @param type
+     */
     public MapElementInstance(final MapElement type)
     {
     	m_id = MapElementInstanceID.acquire();
-    	m_parentElement = type;
+    	m_mapElement = type;
       m_layer = type.getLayerType();
     }
 
@@ -352,6 +393,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     /*
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
+   @Override
     public int compareTo(MapElementInstance pog)  
     {
         if (equals(pog))
@@ -378,10 +420,12 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         return getId().compareTo(pog.getId());
     }
 
+   /**
+    * Called to turn own display the attributes that have changed
+    * @revise trigger listeners instead - the view should pop the information overlay, not the model
+    */
     private void displayPogDataChange()
     {
-    	//@revise trigger listeners instead - the view should pop the information overlay, not the model
-    	
         // we don't do this if the game is receiving inital data.
         if (PacketSourceState.isHostDumping())
         {
@@ -397,47 +441,48 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         m_bTextChangeNotifying = true;
     }
 
-
-
-
+    /**
+     * Rebuild the hit map
+     */
     private void reinitializeHitMap()
     {
     	m_hitMap = null;
     	
     	updateElementDimension();
     	
-        final Image img = m_parentElement.getImage();
+        final Image img = m_mapElement.getImage();
         if (img == null)  
         {
         	return;
         }
-
-        final int iw = m_elementSize.width;
-        final int ih = m_elementSize.height;
         
-        if (ih < 0 ||  iw < 0) 
+        int width = getWidth();
+        int height = getHeight();
+        
+        if (width <= 0 ||  height < 0) 
         {
            return;
         }
-
-
-        final BufferedImage bufferedImage = new BufferedImage(iw,ih, BufferedImage.TYPE_INT_RGB);
-
-        {
-            final Graphics2D g = bufferedImage.createGraphics();
-            g.setColor(new Color(0xff00ff));
-            g.fillRect(0, 0, iw, ih);
-            
-            g.drawImage(Images.rotateImage(Images.flipImage(img, m_flipH, m_flipV), m_angle)
-                , 0,0, iw, ih, null);
-
-            g.dispose();
-        }
-
-        final DataBuffer buffer = bufferedImage.getData().getDataBuffer();
+  
+        // Create a buffer to receive current element representation
+        BufferedImage bufferedImage = Images.createBufferedImage(width, height);
         
-        final int len = iw * ih;
+	      final Graphics2D g = bufferedImage.createGraphics();
+	      
+	      // Clean the background with a 'marker' color
+	      g.setColor(new Color(0xff00ff));
+	      g.fillRect(0, 0, width, height);
+	      
+	      // render at origin, with no scaling
+	      getRenderer().drawToCanvas(g, null);
+	      
+	      g.dispose();
 
+	      final DataBuffer buffer = bufferedImage.getData().getDataBuffer();
+        
+        final int len = width * height;
+
+        // Traverse the buffer and set all found marker colors as transparent
         m_hitMap = new BitSet(len);
         m_hitMap.clear();
         for (int i = 0; i < len; ++i)
@@ -446,18 +491,10 @@ public class MapElementInstance implements Comparable<MapElementInstance>
             m_hitMap.set(i, (pixel != 0xFF00FF));
         }
     }
-
-   
-    
-
-
-
-
     
     /**
-     * TODO @revise move to renderer interface?  We're not using canvas...
-     * Returns a rectangle identifying the space taken by the Pog
-     * @return 
+     * Returns a rectangle identifying the space taken by the element on the map
+     * @return Rectangle of map coordinates
      */
     public MapRectangle getBounds()
     {
@@ -481,26 +518,44 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         return pog.getId().equals(m_id);
     }
 
+    /**
+     * Get the angle at which this element should be displayed
+     * @return Angle in degrees
+     */
     public double getAngle()
     {
         return m_angle;
     }
     
+    /**
+     * @return True if this element should snap to grid
+     */
     public boolean getForceGridSnap()
     {
         return m_forceGridSnap;
     }
 
+    /**
+     * @return True if this element should be displayed as flipped horizontally
+     */
     public boolean getFlipH()
     {
         return m_flipH;
     }
 
+    /**
+     * @return True if this element should displayed as flipped vertically
+     */
     public boolean getFlipV()
     {
         return m_flipV;
     }
 
+    /**
+     * Gets an attribute value
+     * @param name Name of the attribute to look for 
+     * @return Value or null, if not fould
+     */
     public String getAttribute(final String name)
     {
         final String normalizedName = UtilityFunctions.normalizeName(name);
@@ -521,40 +576,45 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     	return m_attributes.values();
     }
 
+    /**
+     * Get all attribute names from this element
+     * @return List of names
+     */
     public Set<String> getAttributeNames()
     {
-        final Set<String> s = new HashSet<String>();
-        
-        for (Attribute attribute : m_attributes.values())
-        {
-            s.add(attribute.name);
-        }
-        return Collections.unmodifiableSet(s);
+    	return Collections.unmodifiableSet(m_attributes.keySet());
     }
 
+    /**
+     * @return Associated card item
+     */
     public Card getCard()
     {
         return m_card;
     }
 
     /**
-     * Get face size of the pog, in map coordinates (ex: squares)
+     * Get face size of the element, in number of tiles
      * @return Size of a face
      */
     public int getFaceSize()
     {
         if (m_scale == 1f)
         {
-            return m_parentElement.getFaceSize();
+            return m_mapElement.getFaceSize();
         }
         
-        int size = Math.round(m_parentElement.getFaceSize() * m_scale);
+        int size = Math.round(m_mapElement.getFaceSize() * m_scale);
         if (size < 1)
         	return 1;
         
         return size;        
     }
 
+    /**
+     * Get the height of this map element, in map units
+     * @return map units
+     */
     public int getHeight()
     {
         if (m_scale == 1f)
@@ -574,48 +634,44 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         return m_id;
     }
     
-    public Layer getLayer() {
+    /**
+     * Get the layer under which this element should be displayed
+     * @return layer
+     */
+    public Layer getLayer() 
+    {
         return m_layer;
     }
 
-    public MapElement getPogType()
+    /**
+     * Gets the map element from which this instance has been created
+     * @return MapElement
+     */
+    public MapElement getMapElement()
     {
-        return m_parentElement;
+        return m_mapElement;
     }
 
+    /**
+     * Get the position of this element on the map
+     * @return map coordinates
+     */
     public MapCoordinates getPosition()
     {
         return m_position;
     }
 
     /**
-     * @return A vector to adjust the drag position when snapping for odd-sized pogs.
+     * Get number this element should be sorted by
+     * @return sort number
      */
-    public Point getSnapDragAdjustment()
-    {
-        final Point adjustment = new Point();
-        final int width = getWidth();
-        final int height = getHeight();
-
-        if (width < height)
-        {
-            adjustment.x = -(height - width) / 2;
-        }
-        else if (width > height)
-        {
-            adjustment.y = -(width - height) / 2;
-        }
-
-        return adjustment;
-    }
-
     public long getSortOrder()
     {
         return m_sortOrder;
     }
     
     /**
-     * Return the pog's normalized name
+     * Return the element's normalized name.  Used for internal representation, such as when saving to disk.
      * @return normalized name
      */
     public String getNormalizedName()
@@ -624,7 +680,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     }
 
     /**
-     * Return the pog's display name
+     * Return the element's display name
      * @return display name
      */
     public String getName()
@@ -632,29 +688,22 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         return m_name;
     }
 
+    /**
+     * Get the width of this map element, in map units
+     * @return map units
+     */
     public int getWidth()
     {
         if (m_scale == 1f)
-        {
-            return m_elementSize.width;
-        }
+        	return m_elementSize.width;
 
         return Math.round(m_elementSize.width * m_scale);
     }
-
-
-    public int getX()
-    {
-        return getPosition().x;
-    }
-
-    // --- Setters ---
-
-    public int getY()
-    {
-        return getPosition().y;
-    }
-
+    
+    /**
+     * Verifies if this element has any attributes defined
+     * @return True if attributes are defined for this element
+     */
     public boolean hasAttributes()
     {
         return !m_attributes.isEmpty();
@@ -663,12 +712,16 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     /*
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode()
     {
         return m_id.hashCode();
     }
 
-    public boolean isCardPog()
+    /**
+     * @return True if this element is a card
+     */
+    public boolean isCardElement()
     {
         if (m_card == null)
         {
@@ -677,30 +730,21 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         return true;
     }
 
+    /**
+     * @return True if this element is locked and cannot be edited
+     */
     public boolean isLocked()
     {
         return m_locked;
     }
 
+    /**
+     * @return if this element should be tinted
+     */
     public boolean isTinted()
     {
         return m_bTinted;
     }
-
-    /**
-     * Verifies if pog is an underlay
-     * @revise this is imprecise - pogs are no longer just pog or underlay - they can be from various layer.  Underlay is an improper term.
-     * @return
-     * @deprecated
-     */
-    public boolean isUnderlay()
-    {
-        return m_layer != Layer.POG;
-    }
-
-    // --- Drawing ---
-
-    /** ************************ CARD POG STUFF ****************************** */
     
     /**
      * @revise this should not be in Pog class (considering Deck / Card functionality as a plug-in)
@@ -739,6 +783,8 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         // translation for x & y
         int sx = 0;
         int sy = 0;
+        
+        /*
         if(m_angle != 0) {
             final int dw = getWidth();
             final int dh = getHeight();
@@ -750,6 +796,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
             sx = Math.round((dw - iw)/2 * m_scale);
             sy = Math.round((dh - ih)/2 * m_scale);
         }
+        */
        
 //        int x = modelPoint.x - m_position.x;
 //        x = Math.round(x / m_scale);
@@ -757,10 +804,10 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 //        y = Math.round(y / m_scale);
 
         int x = modelPoint.x - (m_position.x - sx);        
-        x = Math.round(x / m_scale);
+//        x = Math.round(x / m_scale);
         
         int y = modelPoint.y - (m_position.y - sy);
-        y = Math.round(y / m_scale);
+//        y = Math.round(y / m_scale);
 
         return new Point(x, y);
     }
@@ -828,7 +875,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         final float targetDimension = GameTableMap.getBaseSquareSize() * faceSize;
 
         float maxDimension = GameTableMap.getBaseSquareSize();
-        Image image = m_parentElement.getImage();
+        Image image = m_mapElement.getImage();
         if (image != null)
         	maxDimension = Math.max(image.getWidth(null), image.getHeight(null));
 
@@ -863,7 +910,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     }
     
     public void setPogType(final MapElement pt) {
-        m_parentElement = pt;
+        m_mapElement = pt;
         reinitializeHitMap();
     }
 
@@ -936,9 +983,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         m_group = groupName;
     }
 
-
-    // --- Private Helpers ---
-
     public void setTinted(final boolean b)
     {
         m_bTinted = b;
@@ -976,7 +1020,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
      * @param y Y coordinate of point to test 
      * @return Returns true if the point is contained within this element
      */
-    public boolean contains(int x, int y)
+    private boolean contains(int x, int y)
     {
         // if it's not in our rect, then forget it.
         if (x < 0)
@@ -1020,14 +1064,13 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
     public void writeToPacket(final DataOutputStream dos) throws IOException
     {
-        dos.writeUTF(getPogType().getImageFilename());
-        dos.writeInt(getX());
-        dos.writeInt(getY());
-        dos.writeInt(getPogType().getFaceSize());
+        dos.writeUTF(getMapElement().getImageFilename());
+        dos.writeInt(m_position.x);
+        dos.writeInt(m_position.y);
+        dos.writeInt(getMapElement().getFaceSize());
         dos.writeLong(m_id.numeric());
         dos.writeLong(m_sortOrder);
         dos.writeUTF(m_name);
-        dos.writeBoolean(isUnderlay());
         dos.writeFloat(m_scale);
         dos.writeDouble(m_angle);
         dos.writeBoolean(m_flipH);
@@ -1074,9 +1117,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
      */
     private void updateElementDimension()
     {
-    	Image image = m_parentElement.getImage();
+    	Image image = m_mapElement.getImage();
 
-      if (m_parentElement.getImage() == null)
+      if (m_mapElement.getImage() == null)
       {
       	m_elementSize.setSize(GameTableMap.getBaseSquareSize(), GameTableMap.getBaseSquareSize());
       }
