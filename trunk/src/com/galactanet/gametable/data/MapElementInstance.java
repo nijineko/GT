@@ -63,7 +63,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     /**
      * Background color for changed pog text.
      */
-    private static final Color COLOR_CHANGED_BACKGROUND   = new Color(238, 156, 0, 192);
+    protected static final Color COLOR_CHANGED_BACKGROUND   = new Color(238, 156, 0, 192);
 
     /**
      * Font to use for displaying attribute names.
@@ -115,7 +115,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     /**
      * Size of this element, in pixel
      */
-    private Dimension m_elementSize = new Dimension(); 
+    private Dimension m_elementSize = new Dimension(); // @revise abhorrent to model
 
     /**
      * Marks whether this element is in a corrupted state and should be bypassed
@@ -124,8 +124,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
     /**
      * True if this pog is notifying the world that it's text had changed.
+     * @deprecated
      */
-    private boolean            m_bTextChangeNotifying     = false;
+    protected boolean            m_bTextChangeNotifying     = false;
 
     /**
      * Is this pog tinted?
@@ -400,7 +401,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
     private void displayPogDataChange()
     {
-    	//@revise trigger listeners instead
+    	//@revise trigger listeners instead - the view should pop the information overlay, not the model
     	
         // we don't do this if the game is receiving inital data.
         if (PacketSourceState.isHostDumping())
@@ -495,34 +496,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         g2.dispose();
     }
 
-    /**
-     * TODO @revise move to renderer interface
-     * @param g
-     * @param canvas
-     */
-    public void drawChangedTextToCanvas(final Graphics g, GametableCanvas canvas)
-    {
-        if (!m_bTextChangeNotifying)
-        {
-            return;
-        }
-        drawStringToCanvas(g, true, COLOR_CHANGED_BACKGROUND, canvas);
-    }
-
-
-	/**
-	 * TODO @revise move to renderer interface?
-	 * @param g
-	 * @param canvas
-	 */
-    public void drawGhostlyToCanvas(Graphics g, GametableCanvas canvas)
-    {
-        final Graphics2D g2 = (Graphics2D)g.create();
-        g2.setComposite(UtilityFunctions.getGhostlyComposite());
-        drawToCanvas(g2, canvas);
-        g2.dispose();
-    }
-
     private void drawScaled(final Graphics g, final int x, final int y, final float scale)
     {
         final int drawWidth = Math.round(getWidth() * scale);
@@ -601,13 +574,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
     }
 
-    // --- Accessors ---
-
-    private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor, GametableCanvas canvas)
-    {
-        drawStringToCanvas(gr, bForceTextInBounds, backgroundColor, false, canvas);
-    }
-
     private void drawStringToCanvas(final Graphics gr, final boolean bForceTextInBounds, final Color backgroundColor,
         boolean drawAttributes, GametableCanvas canvas)
     {
@@ -681,14 +647,16 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
     /**
      * TODO @revise move to renderer interface
-     * @param gr
-     * @param bForceTextInBounds
-     * @param drawAttributes
+     * Draw the information overlay to the canvas.  Information overlay is optional information normally displayed
+     * on mouse over or when user turns on display.
+     *  
+     * @param g graphics device
+     * @param mouseover true if mouse is over the element
      * @param canvas
      */
-    public void drawTextToCanvas(final Graphics gr, final boolean bForceTextInBounds, final boolean drawAttributes, GametableCanvas canvas)
+    public void drawInformationOverlayToCanvas(final Graphics g, final boolean mouseOver, GametableCanvas canvas)
     {
-        drawStringToCanvas(gr, bForceTextInBounds, COLOR_BACKGROUND, drawAttributes, canvas);
+        drawStringToCanvas(g, mouseOver, COLOR_BACKGROUND, mouseOver, canvas);
         stopDisplayPogDataChange();
     }
     
@@ -1346,32 +1314,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         if(m_group == null) dos.writeUTF("");
         else dos.writeUTF(m_group);
     }
-    
-
-    /**
-     * Draws the pog onto the given graphics context.
-     * Used for images that are never rotated.
-     * 
-     * @param g Context to draw onto.
-     * @param x X position to draw at.
-     * @param y Y position to draw at.
-     */
-    public void draw(final Graphics g, final int x, final int y)
-    {
-    	    	
-        g.drawImage(m_parentElement.getImage(), x, y, null);
-    }
-    /**
-     * Draws the pog onto the given graphics context in "ghostly" form.
-     * 
-     * @param g Context to draw onto.
-     * @param x X position to draw at.
-     * @param y Y position to draw at.
-     */
-    public void drawGhostly(final Graphics g, final int x, final int y)
-    {
-        UtilityFunctions.drawTranslucent((Graphics2D)g, m_parentElement.getImage(), x, y, 0.5f);
-    }    
 
     public BitSet getHitMap()
     {

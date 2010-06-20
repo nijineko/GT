@@ -990,7 +990,9 @@ public class PogPanel extends JPanel
             final Point localPos = UtilityFunctions.getComponentCoordinates(this, getGrabPosition());
             final Point offset = getGrabOffset();
             g2.translate(localPos.x - offset.x, localPos.y - offset.y);
-            m_grabbedPog.drawGhostly(g2, 0, 0);
+            
+            UtilityFunctions.drawTranslucent(g2, m_grabbedPog.getPogType().getImage(), 0, 0, 0.5f);
+
             g2.dispose();
         }
         else if ((m_hoverPog != null) && (m_mousePosition != null))

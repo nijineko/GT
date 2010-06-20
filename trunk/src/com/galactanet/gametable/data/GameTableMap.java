@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import com.galactanet.gametable.data.deck.Card;
-import com.galactanet.gametable.ui.LineSegment;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
@@ -257,7 +256,7 @@ public class GameTableMap
       for (LineSegment ls : getLines())
       {
       	
-          MapRectangle r = ls.getModelBounds();
+          MapRectangle r = ls.getBounds();
           
           if (bounds == null)
               bounds = r;

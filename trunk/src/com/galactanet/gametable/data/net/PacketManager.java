@@ -15,7 +15,6 @@ import com.galactanet.gametable.data.PogGroups.Action;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.LineSegment;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
