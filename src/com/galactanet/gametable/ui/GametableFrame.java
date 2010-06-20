@@ -36,6 +36,8 @@ import com.galactanet.gametable.data.deck.DeckData;
 import com.galactanet.gametable.data.dicemacro.DiceMacro;
 import com.galactanet.gametable.data.dicemacro.DiceMacroSaxHandler;
 import com.galactanet.gametable.data.net.*;
+import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
+import com.galactanet.gametable.data.prefs.Preferences;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
@@ -3738,7 +3740,7 @@ public class GametableFrame extends JFrame implements ActionListener
         if (plrIdx != getMyPlayerIndex())
         {
             final Player plr = m_players.get(plrIdx);
-            plr.setPoint(modelPos);
+            plr.setPointingLocation(modelPos);
             plr.setPointing(bPointing);
         }
 

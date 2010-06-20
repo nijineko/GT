@@ -102,23 +102,21 @@ public class PogGroups
 		}
 
 		/**
-		 * Remove all pogs from this group
-		 */
-		public void removeAllPogs()
-		{
-			for (MapElementInstance pog : m_pogs)
-				pog.setGroup(null);	// clear the pog's group name
-			
-			m_pogs.clear();
-		}
-
-		/**
 		 * Get this group's name
 		 * @return Group name
 		 */
 		public String getName()
 		{
 			return m_name;
+		}
+
+		/**
+		 * Get the number of pogs in this group
+		 * @return number of pogs
+		 */
+		public int getPogCount()
+		{
+			return m_pogs.size();
 		}
 
 		/**
@@ -131,6 +129,17 @@ public class PogGroups
 				m_pogsUnmodifiable = Collections.unmodifiableList(m_pogs);
 			
 			return m_pogsUnmodifiable;	// Synchronized unmodifiable list (prevents modification by plugins)
+		}
+
+		/**
+		 * Remove all pogs from this group
+		 */
+		public void removeAllPogs()
+		{
+			for (MapElementInstance pog : m_pogs)
+				pog.setGroup(null);	// clear the pog's group name
+			
+			m_pogs.clear();
 		}
 
 		/**
@@ -150,15 +159,6 @@ public class PogGroups
 		public void setName(final String groupName)
 		{
 			m_name = groupName;
-		}
-
-		/**
-		 * Get the number of pogs in this group
-		 * @return number of pogs
-		 */
-		public int getPogCount()
-		{
-			return m_pogs.size();
 		}
 
 		@Override
@@ -346,6 +346,34 @@ public class PogGroups
 	}
 
 	/**
+	 * Rename a given group
+	 * 
+	 * @param groupName Name of the group to rename
+	 * @param newGroupName New name for the group to rename - the new group name must be unique
+	 * @throws InvalidNameException if newGroupName is already in use
+	 */
+	protected static void renameGroup(final String groupName, final String newGroupName) throws InvalidNameException
+	{
+		if (groupName == null || newGroupName == null)
+			return;
+
+		if (newGroupName.equals(""))
+			return;
+
+		if (groupName.equals(newGroupName))
+			return; // nothign to do
+
+		if (m_groups.get(newGroupName) != null)
+			throw new InvalidNameException(newGroupName + " already in use");
+
+		Group g = m_groups.get(groupName);
+		g.setName(newGroupName);
+
+		m_groups.remove(groupName);
+		m_groups.put(newGroupName, g);
+	}
+
+	/**
 	 * Create a new group (or returns existing one)
 	 * 
 	 * @param groupName Name for new group
@@ -409,34 +437,6 @@ public class PogGroups
 		g.removePog(pog);
 		if (send)
 			send(Action.REMOVE, "", pog.getId());
-	}
-
-	/**
-	 * Rename a given group
-	 * 
-	 * @param groupName Name of the group to rename
-	 * @param newGroupName New name for the group to rename - the new group name must be unique
-	 * @throws InvalidNameException if newGroupName is already in use
-	 */
-	protected static void renameGroup(final String groupName, final String newGroupName) throws InvalidNameException
-	{
-		if (groupName == null || newGroupName == null)
-			return;
-
-		if (newGroupName.equals(""))
-			return;
-
-		if (groupName.equals(newGroupName))
-			return; // nothign to do
-
-		if (m_groups.get(newGroupName) != null)
-			throw new InvalidNameException(newGroupName + " already in use");
-
-		Group g = m_groups.get(groupName);
-		g.setName(newGroupName);
-
-		m_groups.remove(groupName);
-		m_groups.put(newGroupName, g);
 	}
 
 	/**

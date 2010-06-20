@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.data;
+package com.galactanet.gametable.data.prefs;
 
 import java.util.Collections;
 import java.util.HashMap;

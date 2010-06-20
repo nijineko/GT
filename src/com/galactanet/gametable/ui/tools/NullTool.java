@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.data.PreferenceDescriptor;
+import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.ToolIF;
 
