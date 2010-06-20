@@ -533,7 +533,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void addCardPog(final MapElementInstance toAdd)
     {
-        m_privateMap.addPog(toAdd);
+        m_privateMap.addMapElementInstance(toAdd);
         m_gametableFrame.refreshActivePogList();
         repaint();
     }
@@ -666,7 +666,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             map = m_publicMap;
         }
-        map.addPog(toAdd);
+        map.addMapElementInstance(toAdd);
         m_gametableFrame.refreshActivePogList();
         repaint();
     }
@@ -706,7 +706,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
         // now we have just the survivors
         // replace all the lines with this list
-        getActiveMap().clearLines();
+        getActiveMap().clearLineSegments();
         for (int i = 0; i < survivingLines.size(); i++)
         {
             getActiveMap().addLineSegment(survivingLines.get(i));
@@ -716,7 +716,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void doLockPog(final MapElementInstanceID id, final boolean newLock)
     {
-        final MapElementInstance toLock = getActiveMap().getPogByID(id);
+        final MapElementInstance toLock = getActiveMap().getMapElementInstance(id);
         if (toLock == null)
         {
             return;
@@ -725,13 +725,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         toLock.setLocked(newLock);
 
         // this pog moves to the end of the array
-        getActiveMap().removePog(toLock);
-        getActiveMap().addPog(toLock);
+        getActiveMap().removeMapElementInstance(toLock);
+        getActiveMap().addMapElementInstance(toLock);
     }
 
     public void doMovePog(final MapElementInstanceID id, MapCoordinates modelPos)
     {
-        final MapElementInstance toMove = getActiveMap().getPogByID(id);
+        final MapElementInstance toMove = getActiveMap().getMapElementInstance(id);
         if (toMove == null)
         {
             return;
@@ -740,17 +740,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         toMove.setPosition(modelPos);
 
         // this pog moves to the end of the array
-        getActiveMap().removePog(toMove);
-        getActiveMap().addPog(toMove);
+        getActiveMap().removeMapElementInstance(toMove);
+        getActiveMap().addMapElementInstance(toMove);
 
         repaint();
     }
 
-    public void doPogReorder(final Map<MapElementInstanceID, Long> changes)
-    {
-        getActiveMap().reorderPogs(changes);
-        m_gametableFrame.refreshActivePogList();
-    }
 
     public void doRecenterView(MapCoordinates modelCenter, final int zoomLevel)
     {
@@ -781,11 +776,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void doRemovePog(final MapElementInstanceID id)
     {
-        final MapElementInstance toRemove = getActiveMap().getPogByID(id);
+        final MapElementInstance toRemove = getActiveMap().getMapElementInstance(id);
         if (toRemove != null)
         {
             PogGroups.removePogFromGroup(toRemove); //#grouping @revise automatic removal from group should be centralized in DATA
-            getActiveMap().removePog(toRemove);
+            getActiveMap().removeMapElementInstance(toRemove);
         }
         m_gametableFrame.refreshActivePogList();
         repaint();
@@ -800,7 +795,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             for (MapElementInstanceID i: ids)
             {
-                final MapElementInstance toRemove = getActiveMap().getPogByID(i);
+                final MapElementInstance toRemove = getActiveMap().getMapElementInstance(i);
                 if (toRemove.isCardElement())
                 {
                     final Card card = toRemove.getCard();
@@ -870,7 +865,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void doRotatePog(final MapElementInstanceID id, final double newAngle)
     {
-        final MapElementInstance toRotate = getActiveMap().getPogByID(id);
+        final MapElementInstance toRotate = getActiveMap().getMapElementInstance(id);
         if (toRotate == null)
         {
             return;
@@ -879,15 +874,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         toRotate.setAngle(newAngle);
 
         // this pog moves to the end of the array
-        getActiveMap().removePog(toRotate);
-        getActiveMap().addPog(toRotate);
+        getActiveMap().removeMapElementInstance(toRotate);
+        getActiveMap().addMapElementInstance(toRotate);
 
         repaint();
     }
 
     public void doFlipPog(final MapElementInstanceID id, final boolean flipH, final boolean flipV)
     {
-        final MapElementInstance toFlip = getActiveMap().getPogByID(id);
+        final MapElementInstance toFlip = getActiveMap().getMapElementInstance(id);
         if (toFlip == null)
         {
             return;
@@ -896,15 +891,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         toFlip.setFlip(flipH, flipV);
 
         // this pog moves to the end of the array
-        getActiveMap().removePog(toFlip);
-        getActiveMap().addPog(toFlip);
+        getActiveMap().removeMapElementInstance(toFlip);
+        getActiveMap().addMapElementInstance(toFlip);
 
         repaint();
     }
 
     public void doSetPogData(final MapElementInstanceID id, final String s, final Map<String, String> toAdd, final Set<String> toDelete)
     {
-        final MapElementInstance pog = getActiveMap().getPogByID(id);
+        final MapElementInstance pog = getActiveMap().getMapElementInstance(id);
         if (pog == null)
         {
             return;
@@ -942,26 +937,23 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public void doSetPogLayer(final MapElementInstanceID id, final Layer layer)
     {
-        final MapElementInstance pog = getActiveMap().getPogByID(id);
+        final MapElementInstance pog = getActiveMap().getMapElementInstance(id);
         if (pog == null)
         {
             return;
         }
         
-        if (layer == Layer.POG) 
-            getActiveMap().addOrderedPog(pog);
+        pog.setLayer(layer);
         
-        if (pog.getLayer() == Layer.POG) 
-            getActiveMap().removeOrderedPog(pog);
+        GametableFrame.getGametableFrame().m_activePogsPanel.resetOrderPogList();
         
-        pog.setLayer(layer);        
         repaint();
     }
 
 
     public void doSetPogSize(final MapElementInstanceID id, final float size)
     {
-        final MapElementInstance pog = getActiveMap().getPogByID(id);
+        final MapElementInstance pog = getActiveMap().getMapElementInstance(id);
         if (pog == null)
         {
             return;
@@ -977,8 +969,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public void doSetPogType(final MapElementInstanceID id, final MapElementInstanceID type)
     {
-        final MapElementInstance pog = getActiveMap().getPogByID(id);
-        final MapElementInstance tpog = getActiveMap().getPogByID(type);
+        final MapElementInstance pog = getActiveMap().getMapElementInstance(id);
+        final MapElementInstance tpog = getActiveMap().getMapElementInstance(type);
         if ((pog == null) || (tpog == null))
         {
             return;
@@ -1364,7 +1356,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public void changeBackground(final MapElementInstanceID backgroundElementID) 
     {
-    	changeBackground(getActiveMap().getPogByID(backgroundElementID));        
+    	changeBackground(getActiveMap().getMapElementInstance(backgroundElementID));        
     }
     
     /** **********************************************************************************************
@@ -1680,14 +1672,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */    
     public void movePog(final MapElementInstanceID id, MapCoordinates modelPos) {
              
-        final MapElementInstance toMove = getActiveMap().getPogByID(id);
+        final MapElementInstance toMove = getActiveMap().getMapElementInstance(id);
         int diffx = modelPos.x - toMove.getPosition().x;
         int diffy = modelPos.y - toMove.getPosition().y;
         
         GameTableMap map = getActiveMap();
         if(toMove.isSelected()) {            
             
-            for (MapElementInstance pog : map.getSelectedPogs().toArray(new MapElementInstance[0]))	// converted to array to prevent concurrent modification issues
+            for (MapElementInstance pog : map.getSelectedMapElementInstances().toArray(new MapElementInstance[0]))	// converted to array to prevent concurrent modification issues
             {
                if(pog.getId() != id) {
               	 MapCoordinates newPos = pog.getPosition().delta(diffx, diffy);
@@ -1700,7 +1692,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             
             for (MapElementInstance pog : pogs)
             {
-                npog = map.getPogByID(pog.getId());
+                npog = map.getMapElementInstance(pog.getId());
                 if((npog != null) && (npog != toMove)){
                     if(pog.getId() != id) {
                     	MapCoordinates newPos = pog.getPosition().delta(diffx, diffy);                        
@@ -1735,7 +1727,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         if (isPublicMap()) mapToReplace = m_publicMap;
         else mapToReplace = m_privateMap;
         
-        for (MapElementInstance pog : mapToReplace.getPogs())
+        for (MapElementInstance pog : mapToReplace.getMapElementInstances())
         {
             if(pog.getMapElement() == toReplace) {
                 pog.setMapElement(replaceWith);
@@ -1834,7 +1826,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
         
         // draw all the underlays here
-        for (MapElementInstance pog : mapToDraw.getPogs())
+        for (MapElementInstance pog : mapToDraw.getMapElementInstances())
         {
             if (pog.getLayer() != Layer.POG)
             {
@@ -1864,7 +1856,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
         
         // Overlays
-        for (MapElementInstance pog : mapToDraw.getPogs())
+        for (MapElementInstance pog : mapToDraw.getMapElementInstances())
         {
             if (pog.getLayer() == Layer.OVERLAY)
             {
@@ -1888,7 +1880,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
         
         // env
-        for (MapElementInstance pog : mapToDraw.getPogs())
+        for (MapElementInstance pog : mapToDraw.getMapElementInstances())
         {
             if (pog.getLayer() == Layer.ENVIRONMENT)
             {
@@ -1898,7 +1890,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 
         // pogs
-        for (MapElementInstance pog : mapToDraw.getPogs())
+        for (MapElementInstance pog : mapToDraw.getMapElementInstances())
         {
             if (pog.getLayer() == Layer.POG)
             {
@@ -1958,11 +1950,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         MapElementInstance mouseOverPog = null;
         if (m_bMouseOnView || m_gametableFrame.shouldShowNames())
         {
-            mouseOverPog = mapToDraw.getPogAt(m_mouseModelFloat);
+            mouseOverPog = mapToDraw.getMapElementInstanceAt(m_mouseModelFloat);
             if (m_bShiftKeyDown || m_gametableFrame.shouldShowNames())
             {
                 // this shift key is down. Show all pog data
-            	for (MapElementInstance pog : mapToDraw.getPogs())
+            	for (MapElementInstance pog : mapToDraw.getMapElementInstances())
             	{            		
                     if (pog != mouseOverPog)
                     {
@@ -2161,21 +2153,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
 
-    public void reorderPogs(final Map<MapElementInstanceID, Long> changes)
-    {
-        if (isPublicMap())
-        {
-            m_gametableFrame.send(PacketManager.makePogReorderPacket(changes));
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
-            {
-                doPogReorder(changes);
-            }
-        }
-        else
-        {
-            doPogReorder(changes);
-        }
-    }
 
     public void rotatePog(final MapElementInstanceID id, final double newAngle)
     {
@@ -2594,4 +2571,5 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         g.drawLine(x, y, x2, y2);
         g2d.setStroke(oldStroke);
     }
+
 }

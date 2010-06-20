@@ -44,7 +44,7 @@ public class SelectTool extends NullTool
     public void clearTints()
     {
     	// @revise move to MODEL ?
-    	for (MapElementInstance pog : m_map.getPogs())
+    	for (MapElementInstance pog : m_map.getMapElementInstances())
     		pog.setTinted(false);       
     }
 
@@ -78,7 +78,7 @@ public class SelectTool extends NullTool
             m_map = m_canvas.getPrivateMap();
         }
 
-        m_map.unselectAllPogs();
+        m_map.unselectAllMapElementInstances();
         m_canvas.repaint();
         
         m_mouseAnchor = modelPos;
@@ -102,10 +102,10 @@ public class SelectTool extends NullTool
 
             // first off, copy all the pogs/underlays over to the public layer
             
-            for (MapElementInstance pog : m_map.getPogs())
+            for (MapElementInstance pog : m_map.getMapElementInstances())
             {
                 if (pog.isTinted() && (!pog.isLocked() || bIgnoreLock)) {
-                    m_map.selectPog(pog);
+                    m_map.selectMapElementInstance(pog);
                 }                
             }
         }
@@ -151,7 +151,7 @@ public class SelectTool extends NullTool
     {
         final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (MapElementInstance pog : m_map.getPogs())
+        for (MapElementInstance pog : m_map.getMapElementInstances())
         {
         	final int size = pog.getFaceSize() * GameTableMap.getBaseSquareSize();
           

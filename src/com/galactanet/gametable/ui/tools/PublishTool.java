@@ -52,7 +52,7 @@ public class PublishTool extends NullTool
     public void clearTints()
     {
     	// @revise move to MODEL?
-    	for (MapElementInstance pog : m_from.getPogs())
+    	for (MapElementInstance pog : m_from.getMapElementInstances())
     		pog.setTinted(false);
     }
 
@@ -113,7 +113,7 @@ public class PublishTool extends NullTool
             // GametableFrame frame = GametableFrame.g_gameTableFrame;
 
             // first off, copy all the pogs/underlays over to the public layer
-        	for (MapElementInstance pog : m_from.getPogs())
+        	for (MapElementInstance pog : m_from.getMapElementInstances())
             {
                 if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
@@ -164,7 +164,7 @@ public class PublishTool extends NullTool
             {
                 // remove the pogs that we moved
             	
-            	for (MapElementInstance pog : m_from.getPogs().toArray(new MapElementInstance[0]))	// converting list to array to avoid concurrent modifications
+            	for (MapElementInstance pog : m_from.getMapElementInstances().toArray(new MapElementInstance[0]))	// converting list to array to avoid concurrent modifications
                 {
                     if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
@@ -225,7 +225,7 @@ public class PublishTool extends NullTool
     {
         final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (MapElementInstance pog : m_from.getPogs())
+        for (MapElementInstance pog : m_from.getMapElementInstances())
         {
             final int size = pog.getFaceSize() * GameTableMap.getBaseSquareSize();
             
