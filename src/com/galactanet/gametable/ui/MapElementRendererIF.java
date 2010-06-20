@@ -23,7 +23,6 @@
 package com.galactanet.gametable.ui;
 
 import java.awt.Graphics;
-import java.awt.Rectangle;
 
 /**
  * todo: comment
@@ -33,26 +32,21 @@ import java.awt.Rectangle;
 public interface MapElementRendererIF
 {
 	/**
-	 * Should not exist - ghostly is a composite transform that can be set otherwise
-	 * @param g
-	 * @param canvas
+	 * Renders an element onto the canvas
+	 * @param g Graphics device to render into
+	 * @param canvas canvas
 	 */
-	public void drawGhostlyToCanvas(Graphics g, GametableCanvas canvas);
-	
-	/**
-	 * Not sure it should exist.  What does it even mean?
-	 * @param g
-	 * @param canvas
-	 */
-	public void drawChangedTextToCanvas( Graphics g, GametableCanvas canvas);
-	
-  /** 
-   * Returns a rectangle identifying the space taken by the Pog
-   * @return 
-   */
-	public Rectangle getBounds(GametableCanvas canvas);
-	
   public void drawToCanvas(Graphics g, GametableCanvas canvas);
-	
-	 public void drawTextToCanvas(Graphics gr,  boolean bForceTextInBounds,  boolean drawAttributes, GametableCanvas canvas);
+
+  /**
+   * Draw the information overlay to the canvas.  Information overlay is optional information normally displayed
+   * on mouse over or when user turns on display.
+   *  
+   * @param g graphics device
+   * @param mouseover true if mouse is over the element
+   * @param canvas
+   */
+  public void drawInformationOverlayToCanvas(final Graphics g, final boolean mouseOver, GametableCanvas canvas);
+  
+
 }

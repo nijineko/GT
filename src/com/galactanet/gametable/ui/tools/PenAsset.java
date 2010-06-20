@@ -12,9 +12,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
-import com.galactanet.gametable.ui.LineSegment;
 
 
 
@@ -102,7 +102,7 @@ public class PenAsset
         List<LineSegment> lines = getLineSegments();
         for (LineSegment line : lines)
         {
-            line.draw(g, canvas);
+            line.drawToCanvas(g, canvas);
         }
     }
 

@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.ui;
+package com.galactanet.gametable.data;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -15,8 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.data.MapRectangle;
+import com.galactanet.gametable.ui.GametableCanvas;
 
 
 
@@ -104,21 +103,12 @@ public class LineSegment
 
         return null;
     }
-    
+
     /** 
      * Returns a rectangle identifying the space taken by the LineSegment
      * @return 
      */
-    public Rectangle getBounds(GametableCanvas canvas)
-    {
-    	return canvas.modelToDraw(getModelBounds());
-    }
-    
-    /** 
-     * Returns a rectangle identifying the space taken by the LineSegment
-     * @return 
-     */
-    public MapRectangle getModelBounds()
+    public MapRectangle getBounds()
     {
     	return m_bounds;
     }
@@ -218,7 +208,7 @@ public class LineSegment
         return ret;
     }
 
-    public void draw(final Graphics g, final GametableCanvas canvas)
+    public void drawToCanvas(final Graphics g, final GametableCanvas canvas)
     {
         /*
          * Graphics2D g2d = (Graphics2D)g; g2d.setStroke(new BasicStroke(canvas.getLineStrokeWidth()));

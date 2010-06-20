@@ -5,12 +5,8 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.data.MapElementInstance;
-import com.galactanet.gametable.data.MapRectangle;
+import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.ui.GametableCanvas;
-import com.galactanet.gametable.ui.LineSegment;
 
 
 

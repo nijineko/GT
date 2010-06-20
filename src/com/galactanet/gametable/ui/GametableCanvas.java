@@ -1874,7 +1874,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                     
                     if (pog.isUnderlay())
                     {                    	
-                        pog.drawGhostlyToCanvas(g, this);
+                    	drawGhostlyToCanvas(pog, g);
                     }
                 }
             }
@@ -1901,7 +1901,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             // LineSegments police themselves, performance wise. If they won't touch the current
             // viewport, they don't draw
-             ls.draw(g, this);
+             ls.drawToCanvas(g, this);
         }
         
         // env
@@ -1936,7 +1936,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
                     if (!pog.isUnderlay())
                     {
-                        pog.drawGhostlyToCanvas(g, this);
+                    	drawGhostlyToCanvas(pog, g);
                     }
                 }
             }
@@ -1983,23 +1983,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             	{            		
                     if (pog != mouseOverPog)
                     {
-                        pog.drawTextToCanvas(g, false, false, this);
+                        pog.drawInformationOverlayToCanvas(g, false, this);
                     }
                 }
             }
 
             if (mouseOverPog != null)
             {
-                mouseOverPog.drawTextToCanvas(g, true, true, this);
-            }
-        }
-
-        // most prevalent of the pog text is any recently changed pog text
-        for (MapElementInstance pog : mapToDraw.getPogs())
-        {
-            if (pog != mouseOverPog)
-            {
-                pog.drawChangedTextToCanvas(g, this);
+                mouseOverPog.drawInformationOverlayToCanvas(g, true, this);
             }
         }
 
@@ -2010,6 +2001,19 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
         g.translate(scrollPos.x, scrollPos.y);
     }
+    
+
+  	/**
+  	 * @param g
+  	 * @param canvas
+  	 */
+      public void drawGhostlyToCanvas(MapElementInstance el, Graphics g)
+      {
+          final Graphics2D g2 = (Graphics2D)g.create();
+          g2.setComposite(UtilityFunctions.getGhostlyComposite());
+          el.drawToCanvas(g2, this);
+          g2.dispose();
+      }
 
     // called by the pogs area when a pog is being dragged
     public void pogDrag()

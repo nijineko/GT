@@ -7,10 +7,10 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
+import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.LineSegment;
 
 
 

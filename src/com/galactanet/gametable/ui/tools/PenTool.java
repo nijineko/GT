@@ -9,10 +9,10 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.List;
 
+import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.LineSegment;
 
 
 

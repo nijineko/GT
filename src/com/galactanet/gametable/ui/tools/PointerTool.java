@@ -299,7 +299,7 @@ public class PointerTool extends NullTool
     {
         if ((m_ghostPog != null) && m_canvas.isPointVisible(m_mousePosition))
         {
-            m_ghostPog.drawGhostlyToCanvas(g, m_canvas);
+        	m_canvas.drawGhostlyToCanvas(m_ghostPog, g);
         }
     }
 
