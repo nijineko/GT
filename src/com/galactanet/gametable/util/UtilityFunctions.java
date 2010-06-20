@@ -810,6 +810,15 @@ public class UtilityFunctions
     }
     
     /**
+     * Gets the composite object to use to paint ghostly images
+     * @return AlphaComposite
+     */
+    public static Composite getGhostlyComposite()
+    {
+    	return AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
+    }
+    
+    /**
      * Draws the pog onto the given graphics context at the given opacity.
      * 
      * @param g Context to draw onto.

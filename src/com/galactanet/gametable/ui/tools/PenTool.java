@@ -110,7 +110,6 @@ public class PenTool extends NullTool
         if (m_penAsset != null)
         {
             final Graphics2D g2 = (Graphics2D)g.create();
-            // g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
             m_penAsset.draw(g2, m_canvas);
             g2.dispose();
         }

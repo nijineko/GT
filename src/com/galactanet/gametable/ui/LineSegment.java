@@ -16,11 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.galactanet.gametable.data.MapCoordinates;
+import com.galactanet.gametable.data.MapRectangle;
 
 
 
 
 /**
+ * Immutable line segment
  * #GT-COMMENT
  * 
  * @author sephalon
@@ -30,12 +32,19 @@ import com.galactanet.gametable.data.MapCoordinates;
 public class LineSegment
 {
     private Color m_color;
-    private MapCoordinates m_end   = MapCoordinates.ORIGIN;
-    private MapCoordinates m_start = MapCoordinates.ORIGIN;
+    private final MapCoordinates m_end;
+    private final MapCoordinates m_start;
+    private final MapRectangle m_bounds;
 
     public LineSegment(final DataInputStream dis) throws IOException
     {
-        initFromPacket(dis);
+    	m_start = new MapCoordinates(dis.readInt(), dis.readInt());
+      m_end   = new MapCoordinates(dis.readInt(), dis.readInt());
+      
+      final int col = dis.readInt();
+      m_color = new Color(col);
+      
+      m_bounds = new MapRectangle(m_start, m_end);
     }
 
     public LineSegment(final LineSegment in)
@@ -43,6 +52,8 @@ public class LineSegment
         m_start = in.m_start;
         m_end = in.m_end;
         m_color = in.m_color;
+        
+        m_bounds = new MapRectangle(m_start, m_end);
     }
 
     public LineSegment(final MapCoordinates start, final MapCoordinates end, final Color color)
@@ -50,6 +61,8 @@ public class LineSegment
         m_start = start;
         m_end = end;
         m_color = color;
+        
+        m_bounds = new MapRectangle(m_start, m_end);
     }
 
     private void addLineSegment(final List<LineSegment> vector, final MapCoordinates start, final MapCoordinates end)
@@ -98,17 +111,19 @@ public class LineSegment
      */
     public Rectangle getBounds(GametableCanvas canvas)
     {
-        final Point drawStart = canvas.modelToDraw(m_start);
-        final Point drawEnd = canvas.modelToDraw(m_end);
-        
-        return new Rectangle(
-            Math.min(drawEnd.x, drawStart.x),
-            Math.min(drawEnd.y, drawStart.y),
-            Math.abs(drawEnd.x - drawStart.x),
-            Math.abs(drawEnd.y - drawStart.y));
+    	return canvas.modelToDraw(getModelBounds());
+    }
+    
+    /** 
+     * Returns a rectangle identifying the space taken by the LineSegment
+     * @return 
+     */
+    public MapRectangle getModelBounds()
+    {
+    	return m_bounds;
     }
 
-    public LineSegment[] crop(final Point start, final Point end)
+    public LineSegment[] crop(final MapCoordinates start, final MapCoordinates end)
     {
         final Rectangle r = new Rectangle();
         int x = start.x;
@@ -473,15 +488,6 @@ public class LineSegment
         // it should be impossible to get here.
         System.out.println("invalid end to LineSegment.getPortionInsideRect");
         return null; // defensive coding return
-    }
-
-    public void initFromPacket(final DataInputStream dis) throws IOException
-    {
-        m_start = new MapCoordinates(dis.readInt(), dis.readInt());
-        m_end   = new MapCoordinates(dis.readInt(), dis.readInt());
-        
-        final int col = dis.readInt();
-        m_color = new Color(col);
     }
 
     public void writeToPacket(final DataOutputStream dos) throws IOException

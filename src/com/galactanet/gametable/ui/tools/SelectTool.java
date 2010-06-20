@@ -6,6 +6,7 @@ import java.awt.*;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapRectangle;
 import com.galactanet.gametable.ui.GametableCanvas;
 
 /**
@@ -148,7 +149,7 @@ public class SelectTool extends NullTool
     // sets all the pogs we're touching to be tinted
     public void setTints(final boolean bIgnoreLock)
     {
-        final Rectangle selRect = createRectangle(m_mouseAnchor, m_mouseFloat);
+        final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
         for (MapElementInstance pog : m_map.getPogs())
         {
@@ -156,7 +157,7 @@ public class SelectTool extends NullTool
           
           MapCoordinates bottomRight = pog.getPosition().delta(size, size);
           
-          final Rectangle pogRect = createRectangle(pog.getPosition(), bottomRight);
+          final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
             if (selRect.intersects(pogRect) && (!pog.isLocked() || bIgnoreLock))
             {

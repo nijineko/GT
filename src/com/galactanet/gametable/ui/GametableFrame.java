@@ -1215,12 +1215,10 @@ public class GametableFrame extends JFrame implements ActionListener
     public void eraseAllLines()
     {
         // erase with a rect big enough to nail everything
-        final Rectangle toErase = new Rectangle();
-
-        toErase.x = Integer.MIN_VALUE / 2;
-        toErase.y = Integer.MIN_VALUE / 2;
-        toErase.width = Integer.MAX_VALUE;
-        toErase.height = Integer.MAX_VALUE;
+        final MapRectangle toErase = new MapRectangle(
+        		new MapCoordinates(Integer.MIN_VALUE / 2, Integer.MIN_VALUE / 2),
+        		Integer.MAX_VALUE, Integer.MAX_VALUE 
+        		);
 
         // go to town
         getGametableCanvas().erase(toErase, false, 0);
@@ -1247,7 +1245,7 @@ public class GametableFrame extends JFrame implements ActionListener
      * @param authorID who request the erase operation
      * @param state 
      */
-    public void erasePacketReceived(final Rectangle r, final boolean bColorSpecific, final int color,
+    public void erasePacketReceived(final MapRectangle r, final boolean bColorSpecific, final int color,
         final int authorID, final int state)
     {
         int stateId = state;

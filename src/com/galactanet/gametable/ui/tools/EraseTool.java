@@ -8,6 +8,7 @@ package com.galactanet.gametable.ui.tools;
 import java.awt.*;
 
 import com.galactanet.gametable.data.MapCoordinates;
+import com.galactanet.gametable.data.MapRectangle;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 
@@ -92,12 +93,12 @@ public class EraseTool extends NullTool
         {
             if (m_bEraseColor)
             {
-                m_canvas.erase(NullTool.createRectangle(m_mouseAnchor, m_mouseFloat), true,
+                m_canvas.erase(new MapRectangle(m_mouseAnchor, m_mouseFloat), true,
                     GametableFrame.getGametableFrame().m_drawColor.getRGB());
             }
             else
             {
-                m_canvas.erase(NullTool.createRectangle(m_mouseAnchor, m_mouseFloat), false, 0);
+                m_canvas.erase(new MapRectangle(m_mouseAnchor, m_mouseFloat), false, 0);
             }
         }
         endAction();

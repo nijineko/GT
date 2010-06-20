@@ -243,6 +243,44 @@ public class GameTableMap
 		// Underlay is fourth layer
 		return underlayHit;
 	}
+	
+  /**
+   * Calculate the bounds used by the specified map
+   * @param map map to calculate
+   * @return coordinates of the space used by the map
+   */
+  public MapRectangle getBounds()
+  {
+  	MapRectangle bounds = null;
+  	
+      // lines
+      for (LineSegment ls : getLines())
+      {
+      	
+          MapRectangle r = ls.getModelBounds();
+          
+          if (bounds == null)
+              bounds = r;
+          else
+              bounds.add(r);
+      }
+  
+      // pogs
+      for (MapElementInstance pog : getPogs())
+      {
+      	MapRectangle r = pog.getBounds();
+          
+          if (bounds == null)
+              bounds = r;
+          else
+              bounds.add(r);
+      }
+      
+      if (bounds == null)
+          bounds = new MapRectangle(MapCoordinates.ORIGIN, 1, 1);
+      
+      return bounds;
+  }
 
 	/**
 	 * Get Pog by PogID

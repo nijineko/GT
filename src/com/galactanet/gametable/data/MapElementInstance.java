@@ -495,6 +495,11 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         g2.dispose();
     }
 
+    /**
+     * TODO @revise move to renderer interface
+     * @param g
+     * @param canvas
+     */
     public void drawChangedTextToCanvas(final Graphics g, GametableCanvas canvas)
     {
         if (!m_bTextChangeNotifying)
@@ -504,10 +509,16 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         drawStringToCanvas(g, true, COLOR_CHANGED_BACKGROUND, canvas);
     }
 
+
+	/**
+	 * TODO @revise move to renderer interface?
+	 * @param g
+	 * @param canvas
+	 */
     public void drawGhostlyToCanvas(Graphics g, GametableCanvas canvas)
     {
         final Graphics2D g2 = (Graphics2D)g.create();
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+        g2.setComposite(UtilityFunctions.getGhostlyComposite());
         drawToCanvas(g2, canvas);
         g2.dispose();
     }
@@ -668,11 +679,13 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         g.dispose();
     }
 
-    public void drawTextToCanvas(final Graphics gr, final boolean bForceTextInBounds, GametableCanvas canvas)
-    {
-        drawTextToCanvas(gr, bForceTextInBounds, false, canvas);
-    }
-
+    /**
+     * TODO @revise move to renderer interface
+     * @param gr
+     * @param bForceTextInBounds
+     * @param drawAttributes
+     * @param canvas
+     */
     public void drawTextToCanvas(final Graphics gr, final boolean bForceTextInBounds, final boolean drawAttributes, GametableCanvas canvas)
     {
         drawStringToCanvas(gr, bForceTextInBounds, COLOR_BACKGROUND, drawAttributes, canvas);
@@ -699,7 +712,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         bg.setColor(useCol);
         bg.fillRect(0, 0, dw, dh);
         drawScaled(bg,0,0,scale);        
-        bg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));        
+        bg.setComposite(UtilityFunctions.getGhostlyComposite());        
         bg.fillRect(0, 0, dw, dh);
         bg.dispose();
         bi = UtilityFunctions.makeColorTransparent(bi,useCol);
@@ -707,14 +720,19 @@ public class MapElementInstance implements Comparable<MapElementInstance>
     }
 
 
+    /**
+     * TODO @revise move to renderer interface
+     * @param g
+     * @param canvas
+     */
     public void drawToCanvas(Graphics g, GametableCanvas canvas)
     {
         // determine the visible area of the gametable canvas
-        final Rectangle visbleCanvas = canvas.getVisibleCanvasRect(canvas.getZoomLevel());
+        final MapRectangle visbleCanvas = canvas.getVisibleCanvasRect(canvas.getZoomLevel());
         // determine the area covered by the pog - replaced with a set value m_bounds
         // final Rectangle pogArea = getBounds(m_canvas);
         
-        if (visbleCanvas.intersects(getBounds(canvas)))
+        if (visbleCanvas.intersects(getBounds()))
         {
             // Some portion of the pog's area overlaps the visible canvas area, so
             // we paint the pog to the canvas.  
@@ -734,16 +752,18 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         }
     }
     
-    /** 
+    /**
+     * TODO @revise move to renderer interface?  We're not using canvas...
      * Returns a rectangle identifying the space taken by the Pog
      * @return 
      */
-    public Rectangle getBounds(GametableCanvas canvas)
+    public MapRectangle getBounds()
     {
     	// Make sure hit map is built and dimensions are ok
     	getHitMap();
 	
-      final Rectangle pogArea = new Rectangle(m_position.x, m_position.y, getWidth(), getHeight());
+      final MapRectangle pogArea = new MapRectangle(m_position, getWidth(), getHeight());
+      
       return pogArea;
     }
 
@@ -821,19 +841,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
         if (size < 1)
         	return 1;
         
-        return size;
-        
-        /*
-
-        return Math.max(
-        		Math.round(
-        				Math.max(
-        							getWidth(m_angle, m_forceGridSnap), 
-        							getHeight(m_angle, m_forceGridSnap))
-        							* m_scale 
-        							/ GametableCanvas.BASE_SQUARE_SIZE), 
-            1);
-            */
+        return size;        
     }
 
     public int getHeight()

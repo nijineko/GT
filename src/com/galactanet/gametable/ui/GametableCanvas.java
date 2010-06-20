@@ -671,11 +671,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         repaint();
     }
 
-    public void doErase(final Rectangle r, boolean bColorSpecific, final int color, final int authorID,
+    public void doErase(final MapRectangle r, boolean bColorSpecific, final int color, final int authorID,
         final int stateID)
     {
-        final Point modelStart = new Point(r.x, r.y);
-        final Point modelEnd = new Point(r.x + r.width, r.y + r.height);
+        final MapCoordinates modelStart = r.topLeft;
+        final MapCoordinates modelEnd = new MapCoordinates(modelStart.x + r.width, modelStart.y + r.height);
 
         final ArrayList<LineSegment> survivingLines = new ArrayList<LineSegment>();
         
@@ -1055,7 +1055,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return new MapCoordinates(modelX, modelY);
     }
 
-    public void erase(final Rectangle r, final boolean bColorSpecific, final int color)
+    public void erase(final MapRectangle r, final boolean bColorSpecific, final int color)
     {
         if (isPublicMap())
         {
@@ -1185,7 +1185,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return m_gametableFrame.getPogPanel();
     }
 
-    public Rectangle getVisibleCanvasRect(final int level)
+    public MapRectangle getVisibleCanvasRect(final int level)
     {
         final MapCoordinates topLeft = viewToModel(0, 0);
 
@@ -1231,7 +1231,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
 
         //final Point bottomRight = m_canvas.viewToModel(bottomRightX, bottomRightY);
-        final Rectangle visbleCanvas = new Rectangle(topLeft.x, topLeft.y, canvasW, canvasH);
+        final MapRectangle visbleCanvas = new MapRectangle(topLeft, canvasW, canvasH);
         
         //System.out.println(topLeft.x + " " + topLeft.y);
         //System.out.println(bottomRight.x + " " + bottomRight.y);
@@ -1539,13 +1539,30 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     
     public Point modelToDraw(final MapCoordinates modelPoint)
     {
-        final double squaresX = (double)modelPoint.x / (double)GameTableMap.getBaseSquareSize();
-        final double squaresY = (double)modelPoint.y / (double)GameTableMap.getBaseSquareSize();
-
-        final int viewX = (int)Math.round(squaresX * m_squareSize);
-        final int viewY = (int)Math.round(squaresY * m_squareSize);
-
-        return new Point(viewX, viewY);
+        return new Point(modelToDraw(modelPoint.x), modelToDraw(modelPoint.y));
+    }
+    
+    /**
+     * Convert a coordinate from model to pixels
+     * @param c model coordinate to convert
+     * @return pixel coordinate
+     */
+    private int modelToDraw(int c)
+    {
+    	final double squaresX = (double)c / (double)GameTableMap.getBaseSquareSize();
+    	return (int)Math.round(squaresX * m_squareSize);
+    }
+    
+    /**
+     * Convert coordinates from map coordinates to Graphics device coordinates
+     * @param modelPoint
+     * @return
+     */
+    public Rectangle modelToDraw(MapRectangle modelRect)
+    {
+    	Point topLeft = modelToDraw(modelRect.topLeft);
+    	Point bottomRight = new Point(modelToDraw(modelRect.topLeft.x + modelRect.width), modelToDraw(modelRect.topLeft.y + modelRect.height));
+    	return new Rectangle(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
     }
 
     /*
@@ -1782,12 +1799,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             g.setColor(OVERLAY_COLOR); // OVERLAY_COLOR is white with 50% alpha
             g.fillRect(0, 0, width, height);
 
-            /*
-             * Graphics2D g2 = (Graphics2D)g.create();
-             * g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f)); g2.setColor(Color.WHITE);
-             * g2.fillRect(0, 0, getWidth(), getHeight()); g2.dispose();
-             */
-
             // now draw the private layer
             paintMap(g, m_privateMap, width, height);
         }
@@ -1805,7 +1816,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         if (mapToExport == null)
             mapToExport = getActiveMap();
         
-        Rectangle mapBounds = getMapBounds(mapToExport);
+        MapRectangle mapBoundsModel = mapToExport.getBounds();
+        Rectangle mapBounds = modelToDraw(mapBoundsModel);
 
         int squareSize = getSquareSize();
         mapBounds.grow(squareSize, squareSize);
@@ -1823,44 +1835,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
    
         ImageIO.write(image, "jpg", outputFile);
     }
-    
-    /**
-     * Calculate the bounds used by the specified map
-     * @param map map to calculate
-     * @return coordinates of the space used by the map
-     */
-    public Rectangle getMapBounds(final GameTableMap map)
-    {
-        Rectangle bounds = null;
-        
-        // lines
-        for (LineSegment ls : map.getLines())
-        {
-            Rectangle r = ls.getBounds(this);
-            
-            if (bounds == null)
-                bounds = r;
-            else
-                bounds.add(r);
-        }
-    
-        // pogs
-        for (MapElementInstance pog : map.getPogs())
-        {
-            Rectangle r = pog.getBounds(this);
-            
-            if (bounds == null)
-                bounds = r;
-            else
-                bounds.add(r);
-        }
-        
-        if (bounds == null)
-            bounds = new Rectangle(0, 0, 1, 1);
-        
-        return bounds;
-    }
-
+ 
     public void paintMap(final Graphics g, final GameTableMap mapToDraw, int width, int height)
     {
     	Graphics2D g2 = (Graphics2D)g;

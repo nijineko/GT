@@ -9,6 +9,7 @@ import java.awt.*;
 import java.util.ArrayList;
 
 import com.galactanet.gametable.data.MapCoordinates;
+import com.galactanet.gametable.data.MapRectangle;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.LineSegment;
@@ -153,9 +154,8 @@ public class BoxTool extends NullTool
             g2.draw(drawRect);
             g2.dispose();
 
-            final Rectangle modelRect = createRectangle(m_mouseAnchor, m_mouseFloat);
-            --modelRect.width;
-            --modelRect.height;
+            final MapRectangle modelRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
+
             double squaresWidth = m_canvas.modelToSquares(modelRect.width);
             double squaresHeight = m_canvas.modelToSquares(modelRect.height);
 
