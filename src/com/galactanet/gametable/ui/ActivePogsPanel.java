@@ -589,6 +589,9 @@ public class ActivePogsPanel extends JPanel
     public ActivePogsPanel()
     {   	
         super(new BorderLayout());
+        
+      	m_orderedPogs = new TreeSet<MapElementInstance>(new SortOrderComparator());
+      	
       	g_iconSize = GametableApp.getIntegerProperty(GametableApp.PROPERTY_ICON_SIZE);        
         add(getScrollPane(), BorderLayout.CENTER);
         add(getToolbar(), BorderLayout.NORTH);
@@ -1083,25 +1086,25 @@ public class ActivePogsPanel extends JPanel
                             --targetIndex;
                             targetPog = pogs.get(targetIndex);
                         }
-                        changes.put(sourcePog.getId(), new Long(targetPog.getSortOrder()));
+                        changes.put(sourcePog.getId(), getSortId(targetPog));
                         for (int i = sourceIndex + 1; i <= targetIndex; ++i)
                         {
                             final MapElementInstance a = pogs.get(i);
                             final MapElementInstance b = pogs.get(i - 1);
 
-                            changes.put(a.getId(), new Long(b.getSortOrder()));
+                            changes.put(a.getId(), getSortId(b));
                         }
                     }
                     else
                     {
                         // Moving a pog up in the list
-                        changes.put(sourcePog.getId(), new Long(targetPog.getSortOrder()));
+                        changes.put(sourcePog.getId(), getSortId(targetPog));
                         for (int i = targetIndex; i < sourceIndex; ++i)
                         {
                             final MapElementInstance a = pogs.get(i);
                             final MapElementInstance b = pogs.get(i + 1);
 
-                            changes.put(a.getId(), new Long(b.getSortOrder()));
+                            changes.put(a.getId(),getSortId(b));
                         }
                     }
                     
@@ -1125,7 +1128,7 @@ public class ActivePogsPanel extends JPanel
     }
     
   	/**
-  	 * Adds a pog to the ordered list used by the ActivePogs panel @revise this should not be here.
+  	 * Adds a pog to the ordered list used by the ActivePogs panel
   	 * 
   	 * @param pog
   	 */
@@ -1135,6 +1138,7 @@ public class ActivePogsPanel extends JPanel
 				return;
 
   		m_orderedPogs.add(pog);
+  		m_elementSortIDs.put(pog.getId(), g_nextSortID++);
   	}
   	
   	/**
@@ -1146,6 +1150,7 @@ public class ActivePogsPanel extends JPanel
   	public void removeOrderedPog(final MapElementInstance pog)
   	{
   		m_orderedPogs.remove(pog);
+  		m_elementSortIDs.remove(pog.getId());
   	}
   	
   	/**
@@ -1160,16 +1165,75 @@ public class ActivePogsPanel extends JPanel
   		final MapElementInstance pog = map.getMapElementInstance(pogID);
   		if (pog == null)
   			return;
+  		
+  		if (g_nextSortID <= sortOrder)
+  			g_nextSortID = sortOrder + 1;
+  		
+  		m_elementSortIDs.put(pogID, sortOrder);
 
-  		// @revise won't the OrderedSet resort itself when iterating through the list?
+  		// Remove item and put it back in list to sort it according to the new set sort order 
   		m_orderedPogs.remove(pog);
-  		pog.setSortOrder(sortOrder);
   		m_orderedPogs.add(pog);
   	}
+  	
+  	/**
+  	 * Get the sort ID linked to specified map element
+  	 * @param mapElement mapElement
+  	 * @return Sort ID
+  	 */
+  	public long getSortId(MapElementInstance mapElement)
+  	{
+  		return m_elementSortIDs.get(mapElement.getId());
+  	}
 
-    
   	/**
   	 * List of pogs shown in the active pog panel
   	 */
-  	private SortedSet<MapElementInstance> m_orderedPogs	= new TreeSet<MapElementInstance>();	
+  	private final TreeSet<MapElementInstance> m_orderedPogs;
+  	private final Map<MapElementInstanceID, Long> m_elementSortIDs = new HashMap<MapElementInstanceID, Long>();
+  	private long g_nextSortID = 1;
+  	
+  	private class SortOrderComparator implements Comparator<MapElementInstance>
+  	{
+  		/*
+  		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+  		 */
+  		@Override
+  		public int compare(MapElementInstance o1, MapElementInstance o2)
+  		{
+  			int res = compareSortOrder(o1, o2);
+  			if (res != 0)
+  				return res;
+  			
+  			return o1.compareTo(o2);
+  		}
+  		
+  		/**
+  		 * Compare only the sort orders
+  		 * @param o1
+  		 * @param o2
+  		 * @return
+  		 */
+  		public int compareSortOrder(MapElementInstance o1, MapElementInstance o2)
+  		{
+  			Long i1 = m_elementSortIDs.get(o1.getId());
+  			Long i2 = m_elementSortIDs.get(o2.getId());
+  			
+  			if (i1 == i2)
+  				return 0;
+  			
+  			if (i1 == null)
+  				return -1;
+  			
+  			if (i2 == null)
+  				return 1;
+
+  			if (i1 > i2)
+  				return 1;
+
+  			return -1;
+  		}
+  	}
+  	
+  	// TODO save modified sort order on exit
 }

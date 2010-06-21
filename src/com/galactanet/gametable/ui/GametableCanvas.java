@@ -830,9 +830,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             for (MapElementInstanceID i: ids)
             {
                 final MapElementInstance toRemove = getActiveMap().getMapElementInstance(i);
-                if (toRemove.isCardElement())
+                final Card card = Card.getCard(toRemove);
+                if (card != null)
                 {
-                    final Card card = toRemove.getCard();
                     cardsList.add(card);
                 }
             }
@@ -868,9 +868,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             for (MapElementInstance toRemove : pogs)
             {
-                if (toRemove.isCardElement())
+            	final Card card = Card.getCard(toRemove);
+                if (card != null)
                 {
-                    final Card card = toRemove.getCard();
                     cardsList.add(card);
                 }
             }
@@ -2147,10 +2147,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
   		for (MapElementInstance pog : map.getMapElementInstances())
   		{
-  			if (pog.isCardElement())
+  			final Card pogCard = Card.getCard(pog);
+  			if (pogCard != null)
   			{
-  				final Card pogCard = pog.getCard();
-
   				// this is a card pog. Is it out of the discards?
   				for (int j = 0; j < discards.length; j++)
   				{
