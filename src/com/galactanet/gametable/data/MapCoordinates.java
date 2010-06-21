@@ -28,7 +28,7 @@ package com.galactanet.gametable.data;
  *
  * @author Eric Maziade
  * 
- * #GT-AUDIT MapCoordinates
+ * @audited by themaze75
  */
 public class MapCoordinates
 {

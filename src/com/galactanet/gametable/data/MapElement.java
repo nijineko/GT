@@ -31,7 +31,7 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * 
  * @author iffy
  * 
- *         #GT-AUDIT PogType -> MapElement
+ * @audited by themaze75
  */
 public class MapElement
 {

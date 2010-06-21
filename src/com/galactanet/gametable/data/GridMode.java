@@ -137,7 +137,8 @@ public class GridMode
 	 */
 	public MapCoordinates getSnappedMapCoordinates(final MapCoordinates mapCoordinates, final boolean bSnapForPog, final int pogSize)
 	{
-		// @review this does nothing??? 
+		// @revise this does nothing??? 
+		
 		// default behavior is to not snap at all.
 		return mapCoordinates;
 	}

@@ -26,6 +26,8 @@ package com.galactanet.gametable.data;
  * Listener interface to receive GameTableMap notifications
  *
  * @author Eric Maziade
+ * 
+ * @audited by themaze75
  */
 public interface GameTableMapListenerIF
 {
