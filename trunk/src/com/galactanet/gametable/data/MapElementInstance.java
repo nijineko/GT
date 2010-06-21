@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.*;
 
 import com.galactanet.gametable.data.MapElement.Layer;
-import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.MapElementRendererIF;
@@ -51,11 +50,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * TODO @revise not here - in the UI that actually cares about sorting Global min sort id for pogs.
-	 */
-	public static long										g_nextSortId						= 0;
-
-	/**
 	 * A bit field representing the surface of the image the cursor responds to
 	 * 
 	 * @revise move / share with instance (cache in here, stored with scaled image?)
@@ -87,11 +81,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	 *         editor which should apply the tinting
 	 */
 	private boolean												m_bTinted								= false;
-
-	/**
-	 * TODO @revise Cards elements should be entirely modular
-	 */
-	private Card													m_card;
 
 	/**
 	 * Marks whether this element is in a corrupted state and should be bypassed
@@ -171,13 +160,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	private MapElementInstanceRenderer		m_renderer							= null;
 
 	/**
-	 * The sort order for this element, by which it can be sorted
-	 * 
-	 * @revise Move this to view into the panel that uses it - it is the sole reason for that information
-	 */
-	private long													m_sortOrder							= 0;
-
-	/**
 	 * Constructor
 	 * 
 	 * @param dis Data input stream
@@ -199,7 +181,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		long id = dis.readLong();
 		m_id = MapElementInstanceID.fromNumeric(id);
 
-		m_sortOrder = dis.readLong();
 		setName(dis.readUTF());
 		// boolean underlay =
 
@@ -238,35 +219,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		catch (IOException exp)
 		{
 			m_locked = false;
-		}
-
-		try
-		{
-			// read in the card info, if any
-			final boolean bCardExists = dis.readBoolean();
-			if (bCardExists)
-			{
-				m_card = new Card();
-				m_card.read(dis);
-			}
-			else
-			{
-				// no card
-				m_card = null;
-			}
-
-			final int numAttributes = dis.readInt();
-			m_attributes.clear();
-			for (int i = 0; i < numAttributes; i++)
-			{
-				final String key = dis.readUTF();
-				final String value = dis.readUTF();
-				setAttribute(key, value);
-			}
-		}
-		catch (IOException exp)
-		{
-			m_card = null;
 		}
 
 		Layer layer;
@@ -364,16 +316,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		if (copygroup)
 			m_group = toCopy.m_group;
 
-		if (toCopy.m_card == null)
-		{
-			m_card = toCopy.m_card;
-		}
-		else
-		{
-			m_card = new Card();
-			m_card.copy(toCopy.m_card);
-		}
-
 		for (Attribute attribute : toCopy.m_attributes.values())
 		{
 			setAttribute(attribute.name, attribute.value);
@@ -391,17 +333,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	{
 		if (equals(pog))
 			return 0;
-
-		long sort1 = getSortOrder();
-		long sort2 = pog.getSortOrder();
-
-		if (sort1 != sort2)
-		{
-			if (sort1 < sort2)
-				return -1;
-
-			return 1;
-		}
 
 		String name1 = getName();
 		String name2 = pog.getName();
@@ -524,14 +455,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		final MapRectangle pogArea = new MapRectangle(m_position, getWidth(), getHeight());
 
 		return pogArea;
-	}
-
-	/**
-	 * @return Associated card item
-	 */
-	public Card getCard()
-	{
-		return m_card;
 	}
 
 	/**
@@ -678,16 +601,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * Get number this element should be sorted by
-	 * 
-	 * @return sort number
-	 */
-	public long getSortOrder()
-	{
-		return m_sortOrder;
-	}
-
-	/**
 	 * Get the width of this map element, in map units
 	 * 
 	 * @return map units
@@ -717,18 +630,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	public int hashCode()
 	{
 		return m_id.hashCode();
-	}
-
-	/**
-	 * @return True if this element is a card
-	 */
-	public boolean isCardElement()
-	{
-		if (m_card == null)
-		{
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -775,38 +676,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	public boolean isValidParent(MapElement parent)
 	{
 		return m_mapElement.getClass().equals(parent.getClass());
-	}
-
-	/**
-	 * @revise this should not be in Pog class (considering Deck / Card functionality as a plug-in)
-	 */
-	public void makeCardPog(final Card card)
-	{
-		// note the card info. We copy it, so we aren't affected
-		// by future changes to this card instance.
-		m_card = card.makeCopy();
-
-		/*
-		 * Commented out because these attributes become really annoying in play. They pop up whenever the mouse is over the
-		 * card and it's irritating.
-		 */
-		// set the appropriate attributes
-		String cardName = card.getCardName();
-		String cardDesc = card.getCardDesc();
-		String deckName = card.getDeckName();
-
-		if (cardName.length() > 0)
-		{
-			setName(cardName);
-		}
-		if (cardDesc.length() > 0)
-		{
-			setAttribute("Desc", cardDesc);
-		}
-		if (deckName.length() > 0)
-		{
-			setAttribute("Deck", deckName);
-		}
 	}
 
 	/**
@@ -970,16 +839,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * Change the sort order of this element
-	 * 
-	 * @param order New sort order index
-	 */
-	public void setSortOrder(final long order)
-	{
-		m_sortOrder = order;
-	}
-
-	/**
 	 * Set whether this element instance should be displayed as tinted
 	 * 
 	 * @param tinted True to set as tinted
@@ -1016,25 +875,13 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		dos.writeInt(m_position.y);
 		dos.writeInt(getMapElement().getFaceSize());
 		dos.writeLong(m_id.numeric());
-		dos.writeLong(m_sortOrder);
 		dos.writeUTF(m_name);
 		dos.writeFloat(m_faceSizeScale);
 		dos.writeDouble(m_angle);
 		dos.writeBoolean(m_flipH);
 		dos.writeBoolean(m_flipV);
 		dos.writeBoolean(m_locked);
-
-		// write out the card info, if any
-		if (m_card != null)
-		{
-			dos.writeBoolean(true); // we have a valid card
-			m_card.write(dos);
-		}
-		else
-		{
-			dos.writeBoolean(false); // no card info
-		}
-
+	
 		dos.writeInt(m_attributes.size());
 
 		for (Attribute attribute : m_attributes.values())

@@ -541,12 +541,6 @@ public class GametableFrame extends JFrame implements ActionListener
         getGametableCanvas().doAddPog(pog,
             (getGametableCanvas().getActiveMap() == getGametableCanvas().getPublicMap() ? true : false));
 
-        // update the next pog id if necessary
-        if (pog.getSortOrder() >= MapElementInstance.g_nextSortId)
-        {
-            MapElementInstance.g_nextSortId = pog.getSortOrder() + 1;
-        }
-
         if (m_netStatus == NETSTATE_HOST)
         {
             // if we're the host, send it to the clients
@@ -3570,6 +3564,7 @@ public class GametableFrame extends JFrame implements ActionListener
     }
 
     // makes a card pog out of the sent in card
+    @Deprecated
     public MapElementInstance makeCardPog(final Card card)
     {
         // there might not be a pog associated with this card
@@ -3590,7 +3585,7 @@ public class GametableFrame extends JFrame implements ActionListener
         final MapElementInstance newPog = new MapElementInstance(newPogType);
 
         // make it a card pog
-        newPog.makeCardPog(card);
+        Card.setCard(newPog, card);
         return newPog;
     }
 

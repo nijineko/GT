@@ -5,6 +5,11 @@ package com.galactanet.gametable.data.deck;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapElementInstanceID;
 
 
 
@@ -241,5 +246,58 @@ public class Card
         dos.writeInt(m_quantityInDeck);
         dos.writeInt(m_cardId);
     }
+    
+    /**
+     * Link a card to a mapElement instance. 
+     * @param mapElement Element instance to link
+     * @param card Card to link.  Null to unlink element
+     */
+    public static void setCard(MapElementInstance mapElement, Card card)
+    {    	
+    	if (card == null)
+    	{
+    		g_cardMap.remove(mapElement.getId());
+    		return;
+    	}
 
+    		/*
+    		 * Commented out because these attributes become really annoying in play. They pop up whenever the mouse is over the
+    		 * card and it's irritating.
+    		 */
+    		// set the appropriate attributes
+    		String cardName = card.getCardName();
+    		String cardDesc = card.getCardDesc();
+    		String deckName = card.getDeckName();
+
+    		if (cardName.length() > 0)
+    		{
+    			mapElement.setName(cardName);
+    		}
+    		if (cardDesc.length() > 0)
+    		{
+    			mapElement.setAttribute("Desc", cardDesc);
+    		}
+    		if (deckName.length() > 0)
+    		{
+    			mapElement.setAttribute("Deck", deckName);
+    		}
+    		
+    		// note the card info. We copy it, so we aren't affected
+    		// by future changes to this card instance.
+
+    		g_cardMap.put(mapElement.getId(), card.makeCopy());
+    }
+    /**
+     * Get card instance associated with MapElementInstance
+     * @param mapElement Instance to look for
+     * @return Card object or null if not a card 
+     */
+    public static Card getCard(MapElementInstance mapElement)
+    {
+    	return g_cardMap.get(mapElement.getId());
+    }
+
+    private static Map<MapElementInstanceID, Card> g_cardMap = new HashMap<MapElementInstanceID, Card>();
+    
+    // TODO card information should be saved
 }
