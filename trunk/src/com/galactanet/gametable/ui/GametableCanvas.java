@@ -121,6 +121,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     private boolean            m_scrolling;
     private long               m_scrollTime;
     private long               m_scrollTimeTotal;
+    
+    private SelectionHandler	m_selectionPublic;
+    private SelectionHandler 	m_selectionPrivate;
 
     /**
      * This is the number of screen pixels that are used per model pixel. It's never less than 1
@@ -135,6 +138,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public GametableCanvas()
     {
+    	m_selectionPublic = new SelectionHandler();
+    	m_selectionPrivate = new SelectionHandler();
+    	
         setFocusable(true);
         setRequestFocusEnabled(true);
 
@@ -168,7 +174,35 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         m_activeMap = m_publicMap;
         
      		updateSquareSize();
+     		
+        GameTableMapListenerIF mapListener = createGameTableMapListener();
+        m_publicMap.addListener(mapListener);
+        m_privateMap.addListener(mapListener);
     }
+    
+    private GameTableMapListenerIF createGameTableMapListener()
+		{
+			GameTableMapListenerIF mapListener = new GameTableMapAdapter() {
+				/*
+				 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElementInstance)
+				 */
+				@Override
+				public void onMapElementInstanceRemoved(GameTableMap map, MapElementInstance mapElement)
+				{
+					unselectMapElementInstance(mapElement, map == m_publicMap);
+				}
+				
+				/*
+				 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstancesCleared(com.galactanet.gametable.data.GameTableMap)
+				 */
+				@Override
+				public void onMapElementInstancesCleared(GameTableMap map)
+				{
+					unselectAllMapElementInstances(map == m_publicMap);
+				}
+			};
+			return mapListener;
+		}
 
     /**
      * Initializes all the keys for the canvas.
@@ -1677,9 +1711,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         int diffy = modelPos.y - toMove.getPosition().y;
         
         GameTableMap map = getActiveMap();
-        if(toMove.isSelected()) {            
+        if(isSelected(toMove)) {            
             
-            for (MapElementInstance pog : map.getSelectedMapElementInstances().toArray(new MapElementInstance[0]))	// converted to array to prevent concurrent modification issues
+            for (MapElementInstance pog : getSelectedMapElementInstances().toArray(new MapElementInstance[0]))	// converted to array to prevent concurrent modification issues
             {
                if(pog.getId() != id) {
               	 MapCoordinates newPos = pog.getPosition().delta(diffx, diffy);
@@ -2094,12 +2128,44 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public void removeCardPogsForCards(final Card discards[])
     {
         // distribute this to each layer
-        m_privateMap.removeCardPogsForCards(discards);
-        m_publicMap.removeCardPogsForCards(discards);
+        removeCardPogsForCards(m_privateMap, discards);
+        removeCardPogsForCards(m_publicMap, discards);
 
         m_gametableFrame.refreshActivePogList();
         repaint();
     }
+    
+  	/**
+  	 * Remove pogs linked to cards
+  	 * 
+  	 * @revise move to Card Module
+  	 * @param discards
+  	 */
+  	private void removeCardPogsForCards(GameTableMap map, final Card discards[])
+  	{
+  		final List<MapElementInstance> removeList = new ArrayList<MapElementInstance>();
+
+  		for (MapElementInstance pog : map.getMapElementInstances())
+  		{
+  			if (pog.isCardElement())
+  			{
+  				final Card pogCard = pog.getCard();
+
+  				// this is a card pog. Is it out of the discards?
+  				for (int j = 0; j < discards.length; j++)
+  				{
+  					if (pogCard.equals(discards[j]))
+  					{
+  						// it's the pog for this card
+  						removeList.add(pog);
+  					}
+  				}
+  			}
+  		}
+
+  		// remove any offending pogs
+  		map.removeMapElementInstances(removeList);
+  	}
 
     public void removePog(final MapElementInstanceID id)
     {
@@ -2571,5 +2637,132 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         g.drawLine(x, y, x2, y2);
         g2d.setStroke(oldStroke);
     }
+    
 
+
+    
+    
+    /**
+     * Verifies if specified element is selected on the current map
+     * @param mapElement element to verify
+     * @return true if selected
+     */
+    public boolean isSelected(MapElementInstance mapElement)
+    {
+    	return isSelected(mapElement, isPublicMap());
+    }
+
+    /**
+  	 * Adds a instance to the selected list on the current map
+  	 * 
+  	 * @param mapElement Instance to add to selection
+  	 */
+  	public void selectMapElementInstance(MapElementInstance mapElement)
+  	{
+  		selectMapElementInstance(mapElement, isPublicMap());
+  	}
+
+  	/**
+  	 * Add multiple instances to the selection on the current map
+  	 * 
+  	 * @param mapElements List of instance to add to the selection
+  	 */
+  	public void selectMapElementInstances(final List<MapElementInstance> mapElements)
+  	{
+  		selectMapElementInstances(mapElements, isPublicMap());
+  	}
+
+  	/**
+  	 * Remove all instance from selection on the current map
+  	 */
+  	public void unselectAllMapElementInstances()
+  	{
+  		unselectAllMapElementInstances(isPublicMap());
+  	}
+
+  	/**
+  	 * Remove an instance from the selection on the current map
+  	 * 
+  	 * @param mapElement Instance to remove
+  	 */
+  	public void unselectMapElementInstance(final MapElementInstance mapElement)
+  	{
+  		unselectMapElementInstance(mapElement, isPublicMap());
+  	}
+  	
+
+  	/**
+  	 * Gets selected map element instances list on the current map
+  	 * 
+  	 * @return The list of currently selected instances (unmodifiable). Never null.
+  	 */
+  	public List<MapElementInstance> getSelectedMapElementInstances()
+  	{
+  		return getSelectedMapElementInstances(isPublicMap());
+  	}
+  	
+    /**
+     * Verifies if specified element is selected
+     * @param mapElement element to verify
+     * @param publicMap true to query for public map, false for private map
+     * @return true if selected
+     */
+    public boolean isSelected(MapElementInstance mapElement, boolean publicMap)
+    {
+    	return (publicMap ? m_selectionPublic : m_selectionPrivate).isSelected(mapElement);
+    }
+
+    /**
+  	 * Adds a instance to the selected list
+  	 * 
+  	 * @param mapElement Instance to add to selection
+  	 * @param publicMap true to query for public map, false for private map
+  	 */
+  	public void selectMapElementInstance(MapElementInstance mapElement, boolean publicMap)
+  	{
+  		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstance(mapElement);  		
+  	}
+
+  	/**
+  	 * Add multiple instances to the selection
+  	 * 
+  	 * @param mapElements List of instance to add to the selection
+  	 * @param publicMap true to query for public map, false for private map
+  	 */
+  	public void selectMapElementInstances(final List<MapElementInstance> mapElements, boolean publicMap)
+  	{
+  		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstances(mapElements);
+  	}
+
+  	/**
+  	 * Remove all instance from selection
+  	 * @param publicMap true to query for public map, false for private map
+  	 */
+  	public void unselectAllMapElementInstances(boolean publicMap)
+  	{
+  		(publicMap ? m_selectionPublic : m_selectionPrivate).unselectAllMapElementInstances();
+  	}
+
+  	/**
+  	 * Remove an instance from the selection
+  	 * 
+  	 * @param mapElement Instance to remove
+  	 * @param publicMap true to query for public map, false for private map
+  	 */
+  	public void unselectMapElementInstance(final MapElementInstance mapElement, boolean publicMap)
+  	{
+  		(publicMap ? m_selectionPublic : m_selectionPrivate).unselectMapElementInstance(mapElement);
+  	}
+  	
+
+  	/**
+  	 * Gets selected map element instances list
+  	 * 
+  	 * @param publicMap true to query for public map, false for private map
+  	 * @return The list of currently selected instances (unmodifiable). Never null.
+  	 */
+  	public List<MapElementInstance> getSelectedMapElementInstances(boolean publicMap)
+  	{
+  		return (publicMap ? m_selectionPublic : m_selectionPrivate).getSelectedMapElementInstances();
+  	}
 }

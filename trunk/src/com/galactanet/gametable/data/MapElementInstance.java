@@ -81,14 +81,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	private final Map<String, Attribute>	m_attributes						= new TreeMap<String, Attribute>();
 
 	/**
-	 * Indicates whether this element is marked as selected
-	 * 
-	 * @revise this is view information, as it is the editor that decides whether the element is selected and it is also
-	 *         the editor which should display selection
-	 */
-	private boolean												m_bSelected							= false;
-
-	/**
 	 * Indicates whether this element should be displayed as tinted
 	 * 
 	 * @revise this is view information, as it is the editor that decides whether the element is tinted and it is also the
@@ -766,17 +758,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * Returns the selection state of the pog as last stored by its GameTableMap
-	 * 
-	 * @return true if selected
-	 */
-	public boolean isSelected()
-	{
-		// @review move to VIEW ?
-		return m_bSelected;
-	}
-
-	/**
 	 * @return if this element should be tinted
 	 */
 	public boolean isTinted()
@@ -1082,21 +1063,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	protected void setGroup(final String groupName)
 	{
 		m_group = groupName;
-	}
-
-	/**
-	 * Set the pog's selection status.
-	 * 
-	 * Only GametableMap should call this method, as it maintains its own representation of what is selected Calling the
-	 * pog's "setSelected" method will have no direct effect upon the map.
-	 * 
-	 * @param selected true to select, false to unselect.
-	 * 
-	 * @review move to VIEW ?
-	 */
-	protected void setSelected(final boolean selected)
-	{
-		m_bSelected = selected;
 	}
 
 	/**

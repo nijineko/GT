@@ -20,8 +20,6 @@ public class SelectTool extends NullTool
     private MapCoordinates           m_mouseAnchor;
     private MapCoordinates           m_mouseFloat;
 
-    private GameTableMap    m_map;
-
     /**
      * Default Constructor.
      */
@@ -44,7 +42,7 @@ public class SelectTool extends NullTool
     public void clearTints()
     {
     	// @revise move to MODEL ?
-    	for (MapElementInstance pog : m_map.getMapElementInstances())
+    	for (MapElementInstance pog : m_canvas.getActiveMap().getMapElementInstances())
     		pog.setTinted(false);       
     }
 
@@ -72,14 +70,7 @@ public class SelectTool extends NullTool
     @Override
 		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
-        if (m_canvas.isPublicMap()) {
-            m_map = m_canvas.getPublicMap();            
-        } else {
-            m_map = m_canvas.getPrivateMap();
-        }
-
-        m_map.unselectAllMapElementInstances();
-        m_canvas.repaint();
+        m_canvas.unselectAllMapElementInstances();
         
         m_mouseAnchor = modelPos;
         m_mouseFloat = m_mouseAnchor;
@@ -102,10 +93,10 @@ public class SelectTool extends NullTool
 
             // first off, copy all the pogs/underlays over to the public layer
             
-            for (MapElementInstance pog : m_map.getMapElementInstances())
+            for (MapElementInstance pog : m_canvas.getActiveMap().getMapElementInstances())
             {
                 if (pog.isTinted() && (!pog.isLocked() || bIgnoreLock)) {
-                    m_map.selectMapElementInstance(pog);
+                    m_canvas.selectMapElementInstance(pog);
                 }                
             }
         }
@@ -151,7 +142,7 @@ public class SelectTool extends NullTool
     {
         final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (MapElementInstance pog : m_map.getMapElementInstances())
+        for (MapElementInstance pog : m_canvas.getActiveMap().getMapElementInstances())
         {
         	final int size = pog.getFaceSize() * GameTableMap.getBaseSquareSize();
           
