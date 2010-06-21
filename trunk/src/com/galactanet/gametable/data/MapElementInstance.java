@@ -58,7 +58,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	/**
 	 * A bit field representing the surface of the image the cursor responds to
 	 * 
-	 * @review move / share with instance (cache in here, stored with scaled image?)
+	 * @revise move / share with instance (cache in here, stored with scaled image?)
 	 */
 	public BitSet													m_hitMap;
 
@@ -984,7 +984,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	 * 
 	 * @param tinted True to set as tinted
 	 * 
-	 * @review Move this to VIEW: editor functionality
+	 * @revise Move this to VIEW: editor functionality
 	 */
 	public void setTinted(final boolean tinted)
 	{
@@ -1058,7 +1058,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	 * 
 	 * @param groupName Name of the group to set
 	 * 
-	 * @review Move this to VIEW: editor functionality
+	 * @revise Move this to VIEW: editor functionality
 	 */
 	protected void setGroup(final String groupName)
 	{

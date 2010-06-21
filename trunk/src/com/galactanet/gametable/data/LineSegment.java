@@ -1,8 +1,20 @@
 /*
- * LineSegment.java: GameTable is in the Public Domain.
+ * GridMode.java
+ * 
+ * @created 2005-09-02
+ * 
+ * Copyright (C) 1999-2010 Open Source Game Table Project
+ * 
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-
-
 package com.galactanet.gametable.data;
 
 import java.awt.Color;
@@ -18,24 +30,40 @@ import java.util.List;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.MapElementRendererIF;
 
-
-
-
 /**
  * Immutable line segment
- * #GT-COMMENT
  * 
  * @author sephalon
  * 
- * #GT-AUDIT LineSegment
+ * @audited by themaze75
  */
 public class LineSegment implements MapElementRendererIF
 {
+	/**
+	 * Color of the line segmant
+	 */
     private Color m_color;
+    
+    /**
+     * End of the segment 
+     */
     private final MapCoordinates m_end;
+    
+    /**
+     * Start of the segment
+     */
     private final MapCoordinates m_start;
+    
+    /**
+     * Normalized rectangle made from the start and end points 
+     */
     private final MapRectangle m_bounds;
 
+    /**
+     * Constructor
+     * @param dis Data input stream to read from
+     * @throws IOException
+     */
     public LineSegment(final DataInputStream dis) throws IOException
     {
     	m_start = new MapCoordinates(dis.readInt(), dis.readInt());
@@ -47,15 +75,25 @@ public class LineSegment implements MapElementRendererIF
       m_bounds = new MapRectangle(m_start, m_end);
     }
 
-    public LineSegment(final LineSegment in)
+    /**
+     * Constructor
+     * @param segment Line segment to copy from
+     */
+    public LineSegment(final LineSegment segment)
     {
-        m_start = in.m_start;
-        m_end = in.m_end;
-        m_color = in.m_color;
+        m_start = segment.m_start;
+        m_end = segment.m_end;
+        m_color = segment.m_color;
         
         m_bounds = new MapRectangle(m_start, m_end);
     }
 
+    /**
+     * Constructor 
+     * @param start Start position
+     * @param end End position
+     * @param color Line color
+     */
     public LineSegment(final MapCoordinates start, final MapCoordinates end, final Color color)
     {
         m_start = start;
@@ -64,41 +102,41 @@ public class LineSegment implements MapElementRendererIF
         
         m_bounds = new MapRectangle(m_start, m_end);
     }
-
-    private void addLineSegment(final List<LineSegment> vector, final MapCoordinates start, final MapCoordinates end)
-    {
-        final LineSegment ls = new LineSegment(start, end, m_color);
-        vector.add(ls);
-    }
-
-    protected MapCoordinates confirmOnRectEdge(final MapCoordinates p, final Rectangle r)
+    
+    /**
+     * Checks if a given point is on a given rectangle's edge
+     * @param pos Coordinates to look for
+     * @param rect Rectangle to test against
+     * @return Valid coordinates (pos) or null
+     */
+    private MapCoordinates confirmOnRectEdge(final MapCoordinates pos, final Rectangle rect)
     {
         // garbage in, garbage out
-        if (p == null)
+        if (pos == null)
         {
             return null;
         }
 
         // if the point is within the rect than that counts
-        if (r.contains(p.x, p.y))
+        if (rect.contains(pos.x, pos.y))
         {
-            return p;
+            return pos;
         }
 
         // return the point if it's on the edge. null if it isn't
-        if ((p.x == r.x) || (p.x == r.x + r.width))
+        if ((pos.x == rect.x) || (pos.x == rect.x + rect.width))
         {
-            if ((p.y > r.y) && (p.y < r.y + r.height))
+            if ((pos.y > rect.y) && (pos.y < rect.y + rect.height))
             {
-                return p;
+                return pos;
             }
         }
 
-        if ((p.y == r.y) || (p.y == r.y + r.height))
+        if ((pos.y == rect.y) || (pos.y == rect.y + rect.height))
         {
-            if ((p.x > r.x) && (p.x < r.x + r.width))
+            if ((pos.x > rect.x) && (pos.x < rect.x + rect.width))
             {
-                return p;
+                return pos;
             }
         }
 
@@ -114,6 +152,12 @@ public class LineSegment implements MapElementRendererIF
     	return m_bounds;
     }
 
+    /**
+     * Returns line segments representing this segment cropped by the box specified by the given coordinates
+     * @param start Point defining a rectangle
+     * @param end	Point defining a rectangle
+     * @return Array of line segments
+     */
     public LineSegment[] crop(final MapCoordinates start, final MapCoordinates end)
     {
         final Rectangle r = new Rectangle();
@@ -178,19 +222,19 @@ public class LineSegment implements MapElementRendererIF
 
         if (leftInt != null)
         {
-            addLineSegment(returnLines, leftMost, leftInt);
+        	 returnLines.add( new LineSegment(leftMost, leftInt, m_color));
         }
         if (rightInt != null)
         {
-            addLineSegment(returnLines, rightMost, rightInt);
+        	returnLines.add( new LineSegment(rightMost, rightInt, m_color));
         }
         if (topInt != null)
         {
-            addLineSegment(returnLines, topMost, topInt);
+        	returnLines.add( new LineSegment(topMost, topInt, m_color));
         }
         if (bottomInt != null)
         {
-            addLineSegment(returnLines, bottomMost, bottomInt);
+        	returnLines.add( new LineSegment(bottomMost, bottomInt, m_color));
         }
 
         if (returnLines.size() == 0)
@@ -224,18 +268,13 @@ public class LineSegment implements MapElementRendererIF
     @Override
     public void drawToCanvas(final Graphics g, final GametableCanvas canvas)
     {
-        /*
-         * Graphics2D g2d = (Graphics2D)g; g2d.setStroke(new BasicStroke(canvas.getLineStrokeWidth()));
-         */
-
         // convert to draw coordinates
         final Point drawStart = canvas.modelToDraw(m_start);
         final Point drawEnd = canvas.modelToDraw(m_end);
 
         // don't draw if we're not touching the viewport at any point
 
-        // get the draw coords of the top-left of the viewable area
-        // and of the lower right
+        // get the draw coords of the top-left of the viewable area and of the lower right
         final Point portalDrawTL = new Point(canvas.getScrollPosition());
         final Point portalDrawBR = new Point(canvas.getScrollX() + canvas.getWidth(), canvas.getScrollY()
             + canvas.getHeight());
@@ -340,18 +379,23 @@ public class LineSegment implements MapElementRendererIF
         }
     }
 
+    /**
+     * @return This line segment's color
+     */
     public Color getColor()
     {
         return m_color;
     }
-
-    // returns the intersection of this line segment with
-    // a given pure vertical or horizontal. pos is either the x or the y,
-    // depending on the boolean sent with it.
-    // returns null if there is no intersection
-    public MapCoordinates getIntersection(final int pos, final boolean bIsVertical)
+    
+    /**
+     * Calculates the intersection of this line segment with a given pure vertical or horizontal. 
+     * @param pos Either the x or the y, depending on the boolean sent with it.
+     * @param vertical Determines the orientation of 'pos'
+     * @return Intersecting coordinates or null, if no intersection is found
+     */
+    public MapCoordinates getIntersection(final int pos, final boolean vertical)
     {
-        if (bIsVertical)
+        if (vertical)
         {
             if ((m_start.x < pos) && (m_end.x < pos))
             {
@@ -374,6 +418,7 @@ public class LineSegment implements MapElementRendererIF
             final double intersectX = pos;
             final double intersectY = m_start.y + ratio * (m_end.y - m_start.y);
             final MapCoordinates ret = new MapCoordinates((int)intersectX, (int)intersectY);
+            
             return ret;
         }
 
@@ -402,6 +447,12 @@ public class LineSegment implements MapElementRendererIF
         return ret;
     }
 
+    /**
+     * Calculates the part of this line segment that is within the box defined by two give sets of coordinates
+     * @param start Coordinates defining a rectangle
+     * @param end Coordinates defining a rectangle
+     * @return Cropped line segment, or null if no portion of this segment fits the box
+     */
     public LineSegment getPortionInsideRect(final MapCoordinates start, final MapCoordinates end)
     {
         final Rectangle r = new Rectangle();
@@ -491,9 +542,15 @@ public class LineSegment implements MapElementRendererIF
 
         // it should be impossible to get here.
         System.out.println("invalid end to LineSegment.getPortionInsideRect");
+        
         return null; // defensive coding return
     }
 
+    /**
+     * Writes information to data output stream
+     * @param dos
+     * @throws IOException
+     */
     public void writeToPacket(final DataOutputStream dos) throws IOException
     {
         dos.writeInt(m_start.x);

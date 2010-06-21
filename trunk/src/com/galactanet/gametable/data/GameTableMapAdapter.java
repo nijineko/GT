@@ -26,6 +26,8 @@ package com.galactanet.gametable.data;
  * Adapter class to facilitate nameless implementations of the listener
  *
  * @author Eric Maziade
+ * 
+ * @audited by themaze75
  */
 public class GameTableMapAdapter implements GameTableMapListenerIF
 {
@@ -36,8 +38,6 @@ public class GameTableMapAdapter implements GameTableMapListenerIF
 	@Override
 	public void onMapElementInstanceAdded(GameTableMap map, MapElementInstance mapElement)
 	{
-		// todo Auto-generated method stub
-
 	}
 
 	/*
@@ -46,8 +46,6 @@ public class GameTableMapAdapter implements GameTableMapListenerIF
 	@Override
 	public void onMapElementInstanceRemoved(GameTableMap map, MapElementInstance mapElement)
 	{
-		// todo Auto-generated method stub
-
 	}
 
 	/*
@@ -56,8 +54,5 @@ public class GameTableMapAdapter implements GameTableMapListenerIF
 	@Override
 	public void onMapElementInstancesCleared(GameTableMap map)
 	{
-		// todo Auto-generated method stub
-
 	}
-
 }
