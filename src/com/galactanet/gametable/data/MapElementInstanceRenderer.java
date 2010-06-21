@@ -106,9 +106,9 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
           final float scale = canvas == null ? 1 : (float)canvas.getSquareSize() / (float)GameTableMap.getBaseSquareSize();
 
           // @revise - what is tinted, what is selected - should we have clearer color scheme / standard UI artifact for selection? 
-          if (m_mapElement.isTinted() || m_mapElement.isSelected()) 
+          if (m_mapElement.isTinted() || (canvas != null && canvas.isSelected(m_mapElement))) 
           {
-              drawTinted(g,drawCoords.x, drawCoords.y, scale * m_mapElement.getFaceSizeScale());
+              drawTinted(g,drawCoords.x, drawCoords.y, scale * m_mapElement.getFaceSizeScale(), canvas);
           } 
           else 
           	drawScaled(g, drawCoords.x, drawCoords.y, scale * m_mapElement.getFaceSizeScale());
@@ -122,7 +122,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
    * @param y y Coordinate for the paint
    * @param scale Scaling ratio
    */
-  private void drawTinted(final Graphics g, final int x, final int y, final float scale) 
+  private void drawTinted(final Graphics g, final int x, final int y, final float scale, GametableCanvas canvas) 
   {         
       final int dw = Math.round(m_mapElement.getWidth() * scale);
       final int dh = Math.round(m_mapElement.getHeight() * scale);
@@ -133,7 +133,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
       Color useCol;
       
       //TODO @revise Determine tint color
-      if(m_mapElement.isSelected()) 
+      if(canvas != null && canvas.isSelected(m_mapElement)) 
       	useCol = Color.CYAN;        
       else 
       	useCol = Color.GREEN;

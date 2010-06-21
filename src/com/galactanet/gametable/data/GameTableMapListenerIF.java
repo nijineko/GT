@@ -23,7 +23,7 @@
 package com.galactanet.gametable.data;
 
 /**
- * todo: comment
+ * Listener interface to receive GameTableMap notifications
  *
  * @author Eric Maziade
  */

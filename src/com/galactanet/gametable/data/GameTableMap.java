@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
@@ -63,16 +62,6 @@ public class GameTableMap
 	private final boolean						m_publicMap;
 
 	/**
-	 * Lists the currently selected elements
-	 */
-	private final List<MapElementInstance>					m_selectedElements;
-
-	/**
-	 * Unmodifiable version of the selected elements to be returned to callers
-	 */
-	private final List<MapElementInstance>					m_selectedElementsUnmodifiable;
-
-	/**
 	 * Every 'square' is divided into this number of units
 	 */
 	private final static int    BASE_SQUARE_SIZE       = 64;
@@ -82,13 +71,11 @@ public class GameTableMap
 	/**
 	 * Constructor
 	 * 
-	 * @param publicMap true for public map (shared with other users). false for private map.
+	 * @param publicMap Sets whether this map is private or public
 	 */
 	public GameTableMap(boolean publicMap)
 	{
 		m_publicMap = publicMap;
-		m_selectedElements = new ArrayList<MapElementInstance>();
-		m_selectedElementsUnmodifiable = Collections.unmodifiableList(m_selectedElements);
 
 		m_lines = new ArrayList<LineSegment>();
 		m_linesUnmodifiable = Collections.unmodifiableList(m_lines);
@@ -302,17 +289,6 @@ public class GameTableMap
 		return retVal;
 	}
 
-	/**
-	 * Gets selected map element instances list
-	 * 
-	 * @revise move to VIEW?
-	 * @return The list of currently selected instances (unmodifiable). Never null.
-	 * 
-	 */
-	public List<MapElementInstance> getSelectedMapElementInstances()
-	{
-		return m_selectedElementsUnmodifiable;
-	}
 
 	/**
 	 * @return True if this is a public map.  False if it is a private map.
@@ -320,38 +296,6 @@ public class GameTableMap
 	public boolean isPublicMap()
 	{
 		return m_publicMap;
-	}
-
-	/**
-	 * Remove pogs linked to cards
-	 * 
-	 * @revise move to Card Module
-	 * @param discards
-	 */
-	public void removeCardPogsForCards(final Card discards[])
-	{
-		final List<MapElementInstance> removeList = new ArrayList<MapElementInstance>();
-
-		for (MapElementInstance pog : m_mapElements)
-		{
-			if (pog.isCardElement())
-			{
-				final Card pogCard = pog.getCard();
-
-				// this is a card pog. Is it out of the discards?
-				for (int j = 0; j < discards.length; j++)
-				{
-					if (pogCard.equals(discards[j]))
-					{
-						// it's the pog for this card
-						removeList.add(pog);
-					}
-				}
-			}
-		}
-
-		// remove any offending pogs
-		removeMapElementInstances(removeList);
 	}
 
 	/**
@@ -372,9 +316,6 @@ public class GameTableMap
 	 */
 	public void removeMapElementInstance(final MapElementInstance mapElement)
 	{
-		if (mapElement.isSelected())
-			unselectMapElementInstance(mapElement);
-
 		m_mapElements.remove(mapElement);
 		
 		for (GameTableMapListenerIF listener : m_listeners)
@@ -390,59 +331,6 @@ public class GameTableMap
 	{
 		for (MapElementInstance instance : instances)
 			removeMapElementInstance(instance);
-	}
-
-	/**
-	 * Adds a instance to the selected list
-	 * 
-	 * @param mapElement Instance to add to selection
-	 */
-	public void selectMapElementInstance(MapElementInstance mapElement)
-	{
-		m_selectedElements.add(mapElement);
-		mapElement.setSelected(true);
-		// @revise trigger listeners (select pog)
-	}
-
-	/**
-	 * Add multiple instances to the selection
-	 * 
-	 * @param mapElements List of instance to add to the selection
-	 */
-	public void selectMapElementInstances(final List<MapElementInstance> mapElements)
-	{
-		m_selectedElements.addAll(mapElements);
-
-		for (MapElementInstance instance : mapElements)
-			instance.setSelected(true);
-
-		// @revise trigger listeners (select pogs)
-	}
-
-	/**
-	 * Remove all instance from selection
-	 */
-	public void unselectAllMapElementInstances()
-	{
-		for (MapElementInstance instance : m_selectedElements)
-			instance.setSelected(false);
-
-		m_selectedElements.clear();
-
-		// @revise trigger listeners (unselect all)
-	}
-
-	/**
-	 * Remove an instance from the selection
-	 * 
-	 * @param mapElement Instance to remove
-	 */
-	public void unselectMapElementInstance(final MapElementInstance mapElement)
-	{
-		m_selectedElements.remove(mapElement);
-		mapElement.setSelected(false);
-
-		// @revise trigger listeners (unselect one)
 	}
 
 	/**

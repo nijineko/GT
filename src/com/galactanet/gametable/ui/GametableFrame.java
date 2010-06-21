@@ -2090,7 +2090,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 if (gd.isAccepted()) {
                     String g = gd.getGroup();
                     if((g != null) && (g.length() > 0))
-                    PogGroups.addPogsToGroup(g, getGametableCanvas().getActiveMap().getSelectedMapElementInstances());
+                    PogGroups.addPogsToGroup(g, getGametableCanvas().getSelectedMapElementInstances());
                 }
             }
         });
@@ -2115,7 +2115,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 gd.setVisible(true);
                 if (gd.isAccepted()) {
                     List<MapElementInstance> pogs = PogGroups.getGroupPogs(gd.getGroup());                        
-                    getGametableCanvas().getActiveMap().selectMapElementInstances(pogs);
+                    getGametableCanvas().selectMapElementInstances(pogs);
                     getGametableCanvas().repaint();
                 }
             }
@@ -2131,9 +2131,8 @@ public class GametableFrame extends JFrame implements ActionListener
         final JMenuItem item = new JMenuItem("UnGroup Selected");
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                GameTableMap map = getGametableCanvas().getActiveMap();
                 
-                for (MapElementInstance pog : map.getSelectedMapElementInstances())
+                for (MapElementInstance pog : getGametableCanvas().getSelectedMapElementInstances())
                 {
                     PogGroups.removePogFromGroup(pog);	
                 }
@@ -2365,9 +2364,8 @@ public class GametableFrame extends JFrame implements ActionListener
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
-            {
-                GameTableMap map = getGametableCanvas().getActiveMap();
-                getGametableCanvas().removePogs(map.getSelectedMapElementInstances(), false);
+            {   
+                getGametableCanvas().removePogs(getGametableCanvas().getSelectedMapElementInstances(), false);
             }
         });
 
@@ -2390,10 +2388,13 @@ public class GametableFrame extends JFrame implements ActionListener
                 MapElementInstance npog;
                 GameTableMap map = getGametableCanvas().getActiveMap();
                 GameTableMap to;
-                if(map == getGametableCanvas().getPublicMap()) to = getGametableCanvas().getPrivateMap();
-                else to = getGametableCanvas().getPublicMap();
+                
+                if (map == getGametableCanvas().getPublicMap()) 
+                	to = getGametableCanvas().getPrivateMap();
+                else 
+                	to = getGametableCanvas().getPublicMap();
 
-                for (MapElementInstance pog : map.getSelectedMapElementInstances())
+                for (MapElementInstance pog : getGametableCanvas().getSelectedMapElementInstances())
                 {
                   to.addMapElementInstance(pog);
                   map.removeMapElementInstance(pog);

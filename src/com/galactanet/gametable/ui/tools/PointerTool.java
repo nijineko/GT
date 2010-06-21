@@ -12,7 +12,10 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.*;
 
-import javax.swing.*;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElement.Layer;
@@ -377,7 +380,7 @@ public class PointerTool extends NullTool
                 }
             });
             menu.add(item);
-            item = new JMenuItem(m_menuPog.isSelected() ? "Unselect" : "Select");
+            item = new JMenuItem(m_canvas.isSelected(m_menuPog) ? "Unselect" : "Select");
             item.addActionListener(new ActionListener()
             {
                 public void actionPerformed(final ActionEvent e)
@@ -385,8 +388,8 @@ public class PointerTool extends NullTool
                     if (m_canvas.isPublicMap()) m_from = m_canvas.getPublicMap();
                     else m_from = m_canvas.getPrivateMap();                            
                     
-                    if(m_menuPog.isSelected()) m_from.unselectMapElementInstance(m_menuPog);
-                    else m_from.selectMapElementInstance(m_menuPog);                                     
+                    if(m_canvas.isSelected(m_menuPog)) m_canvas.unselectMapElementInstance(m_menuPog);
+                    else m_canvas.selectMapElementInstance(m_menuPog);                                     
                 }
             });
             menu.add(item);
@@ -779,7 +782,7 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                  	List<MapElementInstance> pogs = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getSelectedMapElementInstances();
+                  	List<MapElementInstance> pogs = m_canvas.getSelectedMapElementInstances();
                   	
                       int size = pogs.size();
                       if(size > 1) {
@@ -794,8 +797,7 @@ public class PointerTool extends NullTool
                       
                       MapElementInstance pog = pogs.get(0);                
                       GametableFrame.getGametableFrame().getGametableCanvas().setPogType(m_menuPog, pog);
-                      GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().unselectAllMapElementInstances();
-                     
+                      m_canvas.unselectAllMapElementInstances();
                   }
               });
               menu.add(item);
