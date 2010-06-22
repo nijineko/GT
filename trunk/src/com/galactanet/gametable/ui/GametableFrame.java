@@ -28,8 +28,8 @@ import org.xml.sax.SAXException;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.Group.Action;
 import com.galactanet.gametable.data.MapElement.Layer;
-import com.galactanet.gametable.data.PogGroups.Action;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.data.deck.DeckData;
@@ -2052,18 +2052,20 @@ public class GametableFrame extends JFrame implements ActionListener
         final JMenuItem item = new JMenuItem(g);
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                if(PogGroups.getGroupCount() < 1) {
+                if(Group.getGroupCount() < 1) {
                     JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
                         "No Groups", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
-                if(all == 1) PogGroups.deleteEmpryGroups();
-                if(all == 2) PogGroups.deleteAllGroups();
+                if(all == 1) Group.deleteEmpryGroups();
+                if(all == 2) Group.deleteAllGroups();
                 else {
                     GroupingDialog gd = new GroupingDialog(false);
                     gd.setVisible(true);
                     if (gd.isAccepted()) {
-                        PogGroups.deleteGroup(gd.getGroup());                        
+                    	Group g = gd.getGroup();
+                    	if(g != null)
+                        g.deleteGroup();                        
                     }
                 }
             }
@@ -2082,9 +2084,9 @@ public class GametableFrame extends JFrame implements ActionListener
                 GroupingDialog gd = new GroupingDialog(true);
                 gd.setVisible(true);
                 if (gd.isAccepted()) {
-                    String g = gd.getGroup();
-                    if((g != null) && (g.length() > 0))
-                    PogGroups.addPogsToGroup(g, getGametableCanvas().getSelectedMapElementInstances());
+                    Group g = gd.getGroup();
+                    if(g != null)
+                    g.addElements(getGametableCanvas().getSelectedMapElementInstances());
                 }
             }
         });
@@ -2100,15 +2102,17 @@ public class GametableFrame extends JFrame implements ActionListener
 
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {                
-                if(PogGroups.getGroupCount() < 1) {
+                if(Group.getGroupCount() < 1) {
                     JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
                         "No Groups", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
                 GroupingDialog gd = new GroupingDialog(false);
+                Group g = gd.getGroup();
                 gd.setVisible(true);
-                if (gd.isAccepted()) {
-                    List<MapElementInstance> pogs = PogGroups.getGroupPogs(gd.getGroup());                        
+                if (gd.isAccepted() && g != null) {
+                	
+                    List<MapElementInstance> pogs = g.getElements();                        
                     getGametableCanvas().selectMapElementInstances(pogs, true);
                     getGametableCanvas().repaint();
                 }
@@ -2128,7 +2132,9 @@ public class GametableFrame extends JFrame implements ActionListener
                 
                 for (MapElementInstance pog : getGametableCanvas().getSelectedMapElementInstances())
                 {
-                    PogGroups.removePogFromGroup(pog);	
+                	Group g = Group.getGroup(pog);
+                	if (g != null)
+                		g.removeElement(pog);	
                 }
             }
         });
@@ -2626,7 +2632,7 @@ public class GametableFrame extends JFrame implements ActionListener
         
         // If Im the one who sent the packet, ignore it. 
         if(player == getMyPlayerId()) return;
-        PogGroups.packetReceived(action, group, pog);
+        Group.packetReceived(action, group, pog);
     }
 
     /**

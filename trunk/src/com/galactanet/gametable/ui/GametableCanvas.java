@@ -817,7 +817,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         final MapElementInstance toRemove = getActiveMap().getMapElementInstance(id);
         if (toRemove != null)
         {
-            PogGroups.removePogFromGroup(toRemove); //#grouping @revise automatic removal from group should be centralized in DATA
+        	Group g = Group.getGroup(toRemove);
+        	if (g != null)
+        		g.removeElement(toRemove);	//#grouping @revise automatic removal from group should be centralized in DATA
+        	
             getActiveMap().removeMapElementInstance(toRemove);
         }
         m_gametableFrame.refreshActivePogList();
@@ -1714,6 +1717,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         int diffx = modelPos.x - toMove.getPosition().x;
         int diffy = modelPos.y - toMove.getPosition().y;
         
+        
+        Group group = Group.getGroup(toMove);
+        
         GameTableMap map = getActiveMap();
         if(isSelected(toMove)) {            
             
@@ -1724,8 +1730,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                    netmovePog(pog.getId(), newPos);
                }
             }
-        } else if(toMove.isGrouped()) {        
-            List<MapElementInstance> pogs = PogGroups.getGroupPogs(toMove.getGroup());
+        } else if(group != null) {        
+            List<MapElementInstance> pogs = group.getElements();
             MapElementInstance npog;
             
             for (MapElementInstance pog : pogs)
