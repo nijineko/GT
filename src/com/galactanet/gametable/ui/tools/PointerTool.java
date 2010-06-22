@@ -388,8 +388,8 @@ public class PointerTool extends NullTool
                     if (m_canvas.isPublicMap()) m_from = m_canvas.getPublicMap();
                     else m_from = m_canvas.getPrivateMap();                            
                     
-                    if(m_canvas.isSelected(m_menuPog)) m_canvas.unselectMapElementInstance(m_menuPog);
-                    else m_canvas.selectMapElementInstance(m_menuPog);                                     
+                    if(m_canvas.isSelected(m_menuPog)) m_canvas.selectMapElementInstance(m_menuPog, false);
+                    else m_canvas.selectMapElementInstance(m_menuPog, true);                                     
                 }
             });
             menu.add(item);

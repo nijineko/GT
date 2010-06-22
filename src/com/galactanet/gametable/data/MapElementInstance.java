@@ -75,14 +75,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	private final Map<String, Attribute>	m_attributes						= new TreeMap<String, Attribute>();
 
 	/**
-	 * Indicates whether this element should be displayed as tinted
-	 * 
-	 * @revise this is view information, as it is the editor that decides whether the element is tinted and it is also the
-	 *         editor which should apply the tinting
-	 */
-	private boolean												m_bTinted								= false;
-
-	/**
 	 * Marks whether this element is in a corrupted state and should be bypassed
 	 */
 	private boolean												m_corrupted							= false;
@@ -659,14 +651,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * @return if this element should be tinted
-	 */
-	public boolean isTinted()
-	{
-		return m_bTinted;
-	}
-
-	/**
 	 * Verifies that a given element type is valid for this instance. Useful to check before calling
 	 * {@link #setMapElement(MapElement)}
 	 * 
@@ -836,18 +820,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	public void setPosition(final MapCoordinates pos)
 	{
 		m_position = pos;
-	}
-
-	/**
-	 * Set whether this element instance should be displayed as tinted
-	 * 
-	 * @param tinted True to set as tinted
-	 * 
-	 * @revise Move this to VIEW: editor functionality
-	 */
-	public void setTinted(final boolean tinted)
-	{
-		m_bTinted = tinted;
 	}
 
 	/*

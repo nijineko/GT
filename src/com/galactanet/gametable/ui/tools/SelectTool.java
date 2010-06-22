@@ -41,9 +41,7 @@ public class SelectTool extends NullTool
     // turns off all the tinting for the pogs
     public void clearTints()
     {
-    	// @revise move to MODEL ?
-    	for (MapElementInstance pog : m_canvas.getActiveMap().getMapElementInstances())
-    		pog.setTinted(false);       
+    	m_canvas.highlightAllMapElementInstances(false);
     }
 
     @Override
@@ -95,8 +93,8 @@ public class SelectTool extends NullTool
             
             for (MapElementInstance pog : m_canvas.getActiveMap().getMapElementInstances())
             {
-                if (pog.isTinted() && (!pog.isLocked() || bIgnoreLock)) {
-                    m_canvas.selectMapElementInstance(pog);
+                if (m_canvas.isHighlighted(pog) && (!pog.isLocked() || bIgnoreLock)) {
+                    m_canvas.selectMapElementInstance(pog, true);
                 }                
             }
         }
@@ -153,12 +151,15 @@ public class SelectTool extends NullTool
             if (selRect.intersects(pogRect) && (!pog.isLocked() || bIgnoreLock))
             {
                 // this pog will be sent
-                pog.setTinted(true);
+            	m_canvas.highlightMapElementInstance(pog, true);
             }
             else
             {
-                pog.setTinted(false);
+            	
+            	m_canvas.highlightMapElementInstance(pog, false);
             }
         }
+        
+        m_canvas.repaint();
     }
 }

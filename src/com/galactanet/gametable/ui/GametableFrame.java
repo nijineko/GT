@@ -2109,7 +2109,7 @@ public class GametableFrame extends JFrame implements ActionListener
                 gd.setVisible(true);
                 if (gd.isAccepted()) {
                     List<MapElementInstance> pogs = PogGroups.getGroupPogs(gd.getGroup());                        
-                    getGametableCanvas().selectMapElementInstances(pogs);
+                    getGametableCanvas().selectMapElementInstances(pogs, true);
                     getGametableCanvas().repaint();
                 }
             }

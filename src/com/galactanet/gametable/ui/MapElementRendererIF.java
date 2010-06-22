@@ -35,8 +35,10 @@ public interface MapElementRendererIF
 	 * Renders an element onto the canvas
 	 * @param g Graphics device to render into
 	 * @param canvas Canvas to get scaling information.  If canvas is null, no scaling should be done.
+	 * 
+	 * @return false if drawing did not happen (if element is not visible, for example) 
 	 */
-  public void drawToCanvas(Graphics g, GametableCanvas canvas);
+  public boolean drawToCanvas(Graphics g, GametableCanvas canvas);
 
   /**
    * Draw the information overlay to the canvas.  Information overlay is optional information normally displayed

@@ -6,7 +6,7 @@
 package com.galactanet.gametable.util;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
+import java.awt.image.*;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.net.*;
@@ -19,6 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
 import com.galactanet.gametable.ui.handler.gtuser.Handler;
+import com.galactanet.gametable.ui.tools.ColorComposite;
 
 
 
@@ -817,12 +818,31 @@ public class UtilityFunctions
     public static Composite getGhostlyComposite()
     {
     	return AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
-    }
+    }			
     
     /**
-     * Draws the pog onto the given graphics context at the given opacity.
-     * 
-     * @param g Context to draw onto.
+     * Gets the composite object to use to paint ghostly images
+     * @return AlphaComposite
+     */
+    public static Composite getSelectedComposite()
+    {
+    	return g_selectedComposite;
+    }
+    
+    private static final ColorComposite g_selectedComposite = new ColorComposite(Color.CYAN, 0.5f);
+    
+    /**
+     * Gets the composite object to use to paint ghostly images
+     * @return AlphaComposite
+     */
+    public static Composite getHilightedComposite()
+    {
+    	return g_highlightedComposite;
+    }
+    
+    private static final ColorComposite g_highlightedComposite = new ColorComposite(Color.GREEN, 0.5f);
+			
+		/* @param g Context to draw onto.
      * @param x X position to draw at.
      * @param y Y position to draw at.
      * @param opacity 0 for fully transparent - 1 for fully opaque.

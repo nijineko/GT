@@ -124,6 +124,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     
     private SelectionHandler	m_selectionPublic;
     private SelectionHandler 	m_selectionPrivate;
+    private SelectionHandler 	m_highlightedElements;
 
     /**
      * This is the number of screen pixels that are used per model pixel. It's never less than 1
@@ -140,6 +141,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
     	m_selectionPublic = new SelectionHandler();
     	m_selectionPrivate = new SelectionHandler();
+    	m_highlightedElements = new SelectionHandler();
     	
         setFocusable(true);
         setRequestFocusEnabled(true);
@@ -189,7 +191,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				@Override
 				public void onMapElementInstanceRemoved(GameTableMap map, MapElementInstance mapElement)
 				{
-					unselectMapElementInstance(mapElement, map == m_publicMap);
+					selectMapElementInstance(mapElement, map == m_publicMap, false);
+					highlightMapElementInstance(mapElement, false);					
 				}
 				
 				/*
@@ -199,6 +202,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				public void onMapElementInstancesCleared(GameTableMap map)
 				{
 					unselectAllMapElementInstances(map == m_publicMap);
+					highlightAllMapElementInstances(false);					
 				}
 			};
 			return mapListener;
@@ -1864,7 +1868,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() != Layer.POG)
             {
-                pog.getRenderer().drawToCanvas(g, this);
+            	renderPog((Graphics2D)g, pog);
             }
         }
 
@@ -1894,7 +1898,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() == Layer.OVERLAY)
             {
-                pog.getRenderer().drawToCanvas(g, this);
+            	renderPog((Graphics2D)g, pog);
             }
         }       
 
@@ -1918,7 +1922,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() == Layer.ENVIRONMENT)
             {
-                pog.getRenderer().drawToCanvas(g, this);
+            	renderPog((Graphics2D)g, pog);                
             }
         }
 
@@ -1928,7 +1932,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() == Layer.POG)
             {
-                pog.getRenderer().drawToCanvas(g, this);
+            	pog.getRenderer().drawToCanvas(g, this);                
             }
         }
 
@@ -2023,6 +2027,28 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
           el.getRenderer().drawToCanvas(g2, this);
           g2.dispose();
       }
+      
+      /**
+    	 * @param g
+    	 * @param canvas
+    	 */
+        private void renderPog(Graphics2D g, MapElementInstance el)
+        { 
+        	Composite oldComposite = g.getComposite();
+        	
+          if (isSelected(el))
+          {
+          	g.setComposite(UtilityFunctions.getSelectedComposite());
+          }          	        
+          else if (isHighlighted(el))
+          {
+          	g.setComposite(UtilityFunctions.getHilightedComposite());
+          }
+        	
+          el.getRenderer().drawToCanvas(g, this);
+          
+          g.setComposite(oldComposite);
+        }
 
     // called by the pogs area when a pog is being dragged
     public void pogDrag()
@@ -2655,20 +2681,22 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   	 * Adds a instance to the selected list on the current map
   	 * 
   	 * @param mapElement Instance to add to selection
+  	 * @param select true to select, false to unselect
   	 */
-  	public void selectMapElementInstance(MapElementInstance mapElement)
+  	public void selectMapElementInstance(MapElementInstance mapElement, boolean select)
   	{
-  		selectMapElementInstance(mapElement, isPublicMap());
+  		selectMapElementInstance(mapElement, isPublicMap(), select);
   	}
 
   	/**
   	 * Add multiple instances to the selection on the current map
   	 * 
   	 * @param mapElements List of instance to add to the selection
+  	 * @param select true to select, false to unselect
   	 */
-  	public void selectMapElementInstances(final List<MapElementInstance> mapElements)
+  	public void selectMapElementInstances(final List<MapElementInstance> mapElements, boolean select)
   	{
-  		selectMapElementInstances(mapElements, isPublicMap());
+  		selectMapElementInstances(mapElements, isPublicMap(), select);
   	}
 
   	/**
@@ -2678,17 +2706,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   	{
   		unselectAllMapElementInstances(isPublicMap());
   	}
-
-  	/**
-  	 * Remove an instance from the selection on the current map
-  	 * 
-  	 * @param mapElement Instance to remove
-  	 */
-  	public void unselectMapElementInstance(final MapElementInstance mapElement)
-  	{
-  		unselectMapElementInstance(mapElement, isPublicMap());
-  	}
-  	
 
   	/**
   	 * Gets selected map element instances list on the current map
@@ -2716,10 +2733,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   	 * 
   	 * @param mapElement Instance to add to selection
   	 * @param publicMap true to query for public map, false for private map
+  	 * @param select true to select, false to unselect
   	 */
-  	public void selectMapElementInstance(MapElementInstance mapElement, boolean publicMap)
+  	public void selectMapElementInstance(MapElementInstance mapElement, boolean publicMap, boolean select)
   	{
-  		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstance(mapElement);  		
+  		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstance(mapElement, select);  		
   	}
 
   	/**
@@ -2727,10 +2745,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   	 * 
   	 * @param mapElements List of instance to add to the selection
   	 * @param publicMap true to query for public map, false for private map
+  	 * @param select true to select, false to unselect
   	 */
-  	public void selectMapElementInstances(final List<MapElementInstance> mapElements, boolean publicMap)
+  	public void selectMapElementInstances(final List<MapElementInstance> mapElements, boolean publicMap, boolean select)
   	{
-  		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstances(mapElements);
+  		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstances(mapElements, select);
   	}
 
   	/**
@@ -2743,18 +2762,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   	}
 
   	/**
-  	 * Remove an instance from the selection
-  	 * 
-  	 * @param mapElement Instance to remove
-  	 * @param publicMap true to query for public map, false for private map
-  	 */
-  	public void unselectMapElementInstance(final MapElementInstance mapElement, boolean publicMap)
-  	{
-  		(publicMap ? m_selectionPublic : m_selectionPrivate).unselectMapElementInstance(mapElement);
-  	}
-  	
-
-  	/**
   	 * Gets selected map element instances list
   	 * 
   	 * @param publicMap true to query for public map, false for private map
@@ -2764,4 +2771,62 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   	{
   		return (publicMap ? m_selectionPublic : m_selectionPrivate).getSelectedMapElementInstances();
   	}
+  	
+  	/**
+  	 * Set an element as highlighted
+  	 * @param mapElement Map element to highlight
+  	 * @param highlight true to highlight, false to 'unhighlight'
+  	 */
+  	public void highlightMapElementInstance(MapElementInstance mapElement, boolean highlight)
+  	{
+  		m_highlightedElements.selectMapElementInstance(mapElement, highlight);
+  		repaint();
+  	}
+  	
+  	/**
+  	 * Highlight or 'unhighlight' all element instances
+  	 * @param highlight true to highlight, false to 'unhighlight'
+  	 */
+  	public void highlightAllMapElementInstances(boolean highlight)
+  	{
+  		if (highlight)
+  			m_highlightedElements.selectMapElementInstances(getActiveMap().getMapElementInstances(), highlight);
+  		else
+  			m_highlightedElements.unselectAllMapElementInstances();
+  		
+  		repaint();
+  	}
+  	
+  	/**
+  	 * Highlight or 'unhighlight' a list of instances 
+  	 * @param mapElements list of instances to change highlight status
+  	 * @param highlight true to highlight, false to 'unhighlight'
+  	 */
+  	public void highlightMapElementInstances(List<MapElementInstance> mapElements, boolean highlight)
+  	{
+  		m_highlightedElements.selectMapElementInstances(mapElements, highlight);
+  		repaint();
+  	}
+  	
+  	/**
+  	 * Gets the list of highlighted element instances
+     *
+  	 * @return The list of currently selected instances (unmodifiable). Never null.
+  	 */
+  	public List<MapElementInstance> getHighlightedMapElementInstances()
+  	{
+  		return m_highlightedElements.getSelectedMapElementInstances();  		
+  	}
+  	
+  	/**
+  	 * Checks if a specific map element is marked as highlighted
+  	 * @param mapElement Map element to highlight
+  	 * @return true if highlighted
+  	 */
+  	public boolean isHighlighted(MapElementInstance mapElement)
+  	{
+  		return m_highlightedElements.isSelected(mapElement);
+  	}
+  	
+  	
 }
