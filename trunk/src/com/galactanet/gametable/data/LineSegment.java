@@ -266,7 +266,7 @@ public class LineSegment implements MapElementRendererIF
      * @see com.galactanet.gametable.ui.MapElementRendererIF#drawToCanvas(java.awt.Graphics, com.galactanet.gametable.ui.GametableCanvas)
      */
     @Override
-    public void drawToCanvas(final Graphics g, final GametableCanvas canvas)
+    public boolean drawToCanvas(final Graphics g, final GametableCanvas canvas)
     {
         // convert to draw coordinates
         final Point drawStart = canvas.modelToDraw(m_start);
@@ -305,24 +305,24 @@ public class LineSegment implements MapElementRendererIF
             if ((drawStart.getX() < portalRect.getX()) && (drawEnd.getX() < portalRect.getX()))
             {
                 // the line segment is entirely on the left. don't draw it
-                return;
+                return false;
             }
             if ((drawStart.getX() > portalRect.getX() + portalRect.getWidth())
                 && (drawEnd.getX() > portalRect.getX() + portalRect.getWidth()))
             {
                 // the line segment is entirely on the right. don't draw it
-                return;
+            	return false;
             }
             if ((drawStart.getY() < portalRect.getY()) && (drawEnd.getY() < portalRect.getY()))
             {
                 // the line segment is entirely above. don't draw it
-                return;
+            	return false;
             }
             if ((drawStart.getY() > portalRect.getY() + portalRect.getHeight())
                 && (drawEnd.getY() > portalRect.getY() + portalRect.getHeight()))
             {
                 // the line segment is entirely below. don't draw it
-                return;
+            	return false;
             }
 
             // if we're here, it means the line segment:
@@ -340,7 +340,7 @@ public class LineSegment implements MapElementRendererIF
 
         if (!bDrawLine)
         {
-            return;
+        	return false;
         }
 
         g.setColor(m_color);
@@ -377,6 +377,8 @@ public class LineSegment implements MapElementRendererIF
             x2 += nudgeX;
             y2 += nudgeY;
         }
+        
+        return true;
     }
 
     /**

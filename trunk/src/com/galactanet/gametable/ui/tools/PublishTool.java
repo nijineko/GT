@@ -51,9 +51,7 @@ public class PublishTool extends NullTool
     // turns off all the tinting for the pogs
     public void clearTints()
     {
-    	// @revise move to MODEL?
-    	for (MapElementInstance pog : m_from.getMapElementInstances())
-    		pog.setTinted(false);
+    	m_canvas.highlightAllMapElementInstances(false);
     }
 
     @Override
@@ -115,7 +113,7 @@ public class PublishTool extends NullTool
             // first off, copy all the pogs/underlays over to the public layer
         	for (MapElementInstance pog : m_from.getMapElementInstances())
             {
-                if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
+                if (m_canvas.isHighlighted(pog) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
                     // this pog gets copied
                     final MapElementInstance newPog = new MapElementInstance(pog);
@@ -166,7 +164,7 @@ public class PublishTool extends NullTool
             	
             	for (MapElementInstance pog : m_from.getMapElementInstances().toArray(new MapElementInstance[0]))	// converting list to array to avoid concurrent modifications
                 {
-                    if (pog.isTinted() && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
+                    if (m_canvas.isHighlighted(pog) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
                         m_canvas.removePog(pog.getId(), false);	// this would cause concurrent modifications if we used the returned list directly 
                     }
@@ -235,12 +233,11 @@ public class PublishTool extends NullTool
 
             if (selRect.intersects(pogRect) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
             {
-                // this pog will be sent
-                pog.setTinted(true);
+            	m_canvas.highlightMapElementInstance(pog, true);
             }
             else
             {
-                pog.setTinted(false);
+            	m_canvas.highlightMapElementInstance(pog, false);
             }
         }
     }

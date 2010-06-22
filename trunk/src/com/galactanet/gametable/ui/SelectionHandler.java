@@ -58,20 +58,37 @@ public class SelectionHandler
 	 * Adds a instance to the selected list
 	 * 
 	 * @param mapElement Instance to add to selection
+	 * @param select true to select, false to unselect
 	 */
-	public void selectMapElementInstance(MapElementInstance mapElement)
+	public void selectMapElementInstance(MapElementInstance mapElement, boolean select)
 	{
-		m_selectedElements.add(mapElement);
+		if (select)
+		{
+			// Make sure we're not adding doubles
+			if (!m_selectedElements.contains(mapElement))
+				m_selectedElements.add(mapElement);
+		}
+		else
+			m_selectedElements.remove(mapElement);
 	}
 
 	/**
 	 * Add multiple instances to the selection
 	 * 
 	 * @param mapElements List of instance to add to the selection
+	 * @param select true to select, false to unselect
 	 */
-	public void selectMapElementInstances(final List<MapElementInstance> mapElements)
+	public void selectMapElementInstances(final List<MapElementInstance> mapElements, boolean select)
 	{
-		m_selectedElements.addAll(mapElements);
+		if (select)
+		{
+			// Make sure we're not adding doubles - remove first
+			m_selectedElements.removeAll(mapElements);
+			
+			m_selectedElements.addAll(mapElements);
+		}
+		else
+			m_selectedElements.removeAll(mapElements);
 	}
 
 	/**
@@ -81,17 +98,6 @@ public class SelectionHandler
 	{
 		m_selectedElements.clear();
 	}
-
-	/**
-	 * Remove an instance from the selection
-	 * 
-	 * @param mapElement Instance to remove
-	 */
-	public void unselectMapElementInstance(final MapElementInstance mapElement)
-	{
-		m_selectedElements.remove(mapElement);
-	}
-	
 
 	/**
 	 * Gets selected map element instances list
