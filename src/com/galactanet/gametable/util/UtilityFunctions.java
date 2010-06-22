@@ -6,7 +6,6 @@
 package com.galactanet.gametable.util;
 
 import java.awt.*;
-import java.awt.image.*;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.net.*;
