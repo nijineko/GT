@@ -10,8 +10,8 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.Group.Action;
 import com.galactanet.gametable.data.MapElement.Layer;
-import com.galactanet.gametable.data.PogGroups.Action;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.ui.GametableFrame;

@@ -17,7 +17,7 @@ import java.util.List;
 
 import javax.swing.*;
 
-import com.galactanet.gametable.data.PogGroups;
+import com.galactanet.gametable.data.Group;
 import com.galactanet.gametable.util.Log;
 
 /** **********************************************************************************************
@@ -37,10 +37,11 @@ public class GroupingDialog extends JDialog implements FocusListener
     private final JComboBox m_groups      = new JComboBox();
     private JTextField      newGroup    = new JTextField(20);
     private JLabel          nlabel      = new JLabel("New Group "); 
+    private boolean m_newGroupMode = false;
 
-    public GroupingDialog(final boolean ngrp) {    
-        try {
-            initialize(ngrp);
+    public GroupingDialog(final boolean newGroupMode) {    
+        try {        	 
+            initialize(newGroupMode);
         }
         catch (final Exception e) {
             Log.log(Log.SYS, e);
@@ -85,7 +86,8 @@ public class GroupingDialog extends JDialog implements FocusListener
     /** **********************************************************************************************
      * 
      */
-    private void initialize(final boolean ngrp) {
+    private void initialize(final boolean newGroupMode) {
+    	m_newGroupMode = newGroupMode;
         setTitle("Select Group");
         setResizable(false);
 
@@ -126,7 +128,7 @@ public class GroupingDialog extends JDialog implements FocusListener
        
        
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        if(ngrp) {
+        if(newGroupMode) {
             panel.add(nlabel);
             outerBox.add(Box.createHorizontalStrut(PADDING));
             panel.add(newGroup);            
@@ -148,7 +150,7 @@ public class GroupingDialog extends JDialog implements FocusListener
         panel.add(b_cancel);        
         outerBox.add(Box.createVerticalStrut(PADDING));
         
-        List<String> groupNames = PogGroups.getGroupNames(null);
+        List<String> groupNames = Group.getGroupNames(null);
         
         for (String groupName : groupNames)
             m_groups.addItem(groupName);
@@ -171,9 +173,9 @@ public class GroupingDialog extends JDialog implements FocusListener
      * 
      * @return
      */
-    public String getGroup() {
+    public Group getGroup() {
       String n = newGroup.getText();
-      if((n == null) || (n.length() == 0)) return (String)m_groups.getSelectedItem();
-      return n;
+      if((n == null) || (n.length() == 0)) return Group.getGroup((String)m_groups.getSelectedItem(), m_newGroupMode);
+      return Group.getGroup(n, m_newGroupMode);
     }
 }

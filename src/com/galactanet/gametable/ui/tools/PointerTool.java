@@ -209,7 +209,7 @@ public class PointerTool extends NullTool
         m_grabbedPog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
         if (m_grabbedPog != null)
         {
-            m_ghostPog = new MapElementInstance(m_grabbedPog, false);
+            m_ghostPog = new MapElementInstance(m_grabbedPog);
             m_grabOffset = new Point(m_grabbedPog.getPosition().x - m_mousePosition.x, m_grabbedPog.getPosition().y - m_mousePosition.y);
             setSnapping(modifierMask);
         }
@@ -394,13 +394,15 @@ public class PointerTool extends NullTool
             });
             menu.add(item);
             
-            if(m_menuPog.isGrouped()) {
+            if(Group.getGroup(m_menuPog) != null) {
                 item = new JMenuItem("UnGroup");
                 item.addActionListener(new ActionListener()
                 {
                     public void actionPerformed(final ActionEvent e)
-                    {  
-                        PogGroups.removePogFromGroup(m_menuPog);
+                    {
+                    	Group group = Group.getGroup(m_menuPog);
+                    	if (group != null)
+                    		group.removeElement(m_menuPog);
                     }
                 });
                 menu.add(item);                

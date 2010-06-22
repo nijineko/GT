@@ -102,14 +102,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	private boolean												m_flipV									= false;
 
 	/**
-	 * Indicates which group this element is part of
-	 * 
-	 * @revise this is view information, as it is the editor that decides grouping and it is only in function of the
-	 *         editor
-	 */
-	private String												m_group									= null;														// #tag:grouping
-
-	/**
 	 * The unique id for this MapElementInstance
 	 */
 	private final MapElementInstanceID		m_id;
@@ -224,19 +216,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 			layer = Layer.UNDERLAY;
 		}
 
-		try
-		{
-			String group = dis.readUTF();
-			if (group.equals(""))
-				group = null;
-			if (group != null)
-				PogGroups.addPogToGroup(group, this);
-		}
-		catch (IOException exp)
-		{
-			m_group = null;
-		}
-
 		// special case pseudo-hack check
 		// through reasons unclear to me, sometimes a pog will get
 		// a size of around 2 billion. A more typical size would
@@ -277,20 +256,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	/**
 	 * Constructor
 	 * 
-	 * @param toCopy element to copy (group will also be copied)
+	 * @param toCopy element to copy
 	 */
 	public MapElementInstance(final MapElementInstance toCopy)
-	{
-		this(toCopy, true);
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param toCopy element to copy
-	 * @param copygroup If true, group will also be copied
-	 */
-	public MapElementInstance(final MapElementInstance toCopy, final boolean copygroup)
 	{
 		m_id = MapElementInstanceID.acquire();
 
@@ -304,9 +272,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		setName(toCopy.m_name);
 
 		m_layer = toCopy.m_layer;
-
-		if (copygroup)
-			m_group = toCopy.m_group;
 
 		for (Attribute attribute : toCopy.m_attributes.values())
 		{
@@ -495,16 +460,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * #tag:grouping
-	 * 
-	 * @return The name of the group this element belongs to. Null if not grouped.
-	 */
-	public String getGroup()
-	{
-		return m_group;
-	}
-
-	/**
 	 * Get the height of this map element, in map units
 	 * 
 	 * @return map units
@@ -630,16 +585,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	public boolean isCorrupted()
 	{
 		return m_corrupted;
-	}
-
-	/**
-	 * #tag:grouping Checks if this element instance belongs to a group
-	 * 
-	 * @return True if belonging to a group
-	 */
-	public boolean isGrouped()
-	{
-		return (m_group != null);
 	}
 
 	/**
@@ -863,25 +808,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		}
 
 		dos.writeInt(m_layer.ordinal());
-
-		if (m_group == null)
-			dos.writeUTF("");
-		else
-			dos.writeUTF(m_group);
-	}
-
-	/**
-	 * #tag:grouping
-	 * 
-	 * Set the pog's group name. Should only by called by PogGroups
-	 * 
-	 * @param groupName Name of the group to set
-	 * 
-	 * @revise Move this to VIEW: editor functionality
-	 */
-	protected void setGroup(final String groupName)
-	{
-		m_group = groupName;
 	}
 
 	/**
