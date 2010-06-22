@@ -31,6 +31,7 @@ import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.util.Log;
 
 /**
  * MapElement group integration
@@ -43,7 +44,7 @@ public class Group
 {
 	public enum Action
 	{
-		ADD, DELETE, NEW, REMOVE;
+		ADD, DELETE, NEW, REMOVE, RENAME;
 
 		/**
 		 * Get ActionType from ordinal value
@@ -149,9 +150,36 @@ public class Group
 			group.deleteGroup(false); // Do not send network packet, as we are reacting to a received packet
 			break;
 
+		case RENAME:
+			// handled through another method return
+			
 		case NEW:
 			// do nothing
 			break;
+		}
+	}
+	
+	/**
+	 * Handle a received network communication packet
+	 * 
+	 * @param action Action to process
+	 * @param groupName Name of affected group
+	 * @param elementID Element unique ID
+	 */
+	public static void reanemPacketReceived(final String groupName, final String newGroupName)
+	{
+		Group g = getGroup(groupName);
+		
+		if (g != null)
+		{
+			try
+			{
+				g.setName(newGroupName, false);
+			}
+			catch (InvalidNameException e)
+			{
+				Log.log(Log.PLAY, e.getMessage());
+			}
 		}
 	}
 
@@ -213,6 +241,25 @@ public class Group
 		{
 			final int player = frame.getMyPlayerId();
 			frame.send(PacketManager.makeGroupPacket(action, group == null ? "" : group.getName(), elementID, player));
+		}
+	}
+	
+	/**
+	 * Send a network packet
+	 * @param group group
+	 * @param newName new name
+	 */
+	private static void sendRename(final Group group, String oldName, String newName)
+	{
+		GametableFrame frame = GametableFrame.getGametableFrame();
+		GametableCanvas canvas = frame.getGametableCanvas();
+
+		// Make sure we are not processing the packet
+		// Ignore if editing the private map (publish action will handle networking when needed)
+		if (canvas.isPublicMap() && !PacketSourceState.isNetPacketProcessing())
+		{
+			final int player = frame.getMyPlayerId();
+			frame.send(PacketManager.makeRenameGroupPacket(oldName, newName, player));
 		}
 	}
 
@@ -429,7 +476,7 @@ public class Group
 			
 			g_groups.put(m_name, this);
 			
-			// TODO SEND Rename message
+			sendRename(this, oldName, m_name);
 	}
 
 	@Override

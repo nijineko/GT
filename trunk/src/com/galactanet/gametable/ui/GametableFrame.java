@@ -2063,9 +2063,9 @@ public class GametableFrame extends JFrame implements ActionListener
                     GroupingDialog gd = new GroupingDialog(false);
                     gd.setVisible(true);
                     if (gd.isAccepted()) {
-                    	Group g = gd.getGroup();
-                    	if(g != null)
-                        g.deleteGroup();                        
+                    	Group group = gd.getGroup();
+                    	if(group != null)
+                        group.deleteGroup();                        
                     }
                 }
             }
@@ -2633,6 +2633,23 @@ public class GametableFrame extends JFrame implements ActionListener
         // If Im the one who sent the packet, ignore it. 
         if(player == getMyPlayerId()) return;
         Group.packetReceived(action, group, pog);
+    }
+    
+    /** *************************************************************************************
+     * 
+     * @param openLink
+     * @param closeLink
+     */
+    public void groupPacketReceived(Action action, final String group, final String newGroupName, final int player) 
+    {
+        if(m_netStatus == NETSTATE_HOST) 
+        {
+            send(PacketManager.makeRenameGroupPacket(group, newGroupName, player));            
+        }
+        
+        // If Im the one who sent the packet, ignore it. 
+        if(player == getMyPlayerId()) return;
+        Group.reanemPacketReceived(group, newGroupName);
     }
 
     /**
