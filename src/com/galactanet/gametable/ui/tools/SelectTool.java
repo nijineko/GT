@@ -93,7 +93,7 @@ public class SelectTool extends NullTool
             
             for (MapElementInstance pog : m_canvas.getActiveMap().getMapElementInstances())
             {
-                if (m_canvas.isHighlighted(pog) && (!pog.isLocked() || bIgnoreLock)) {
+                if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || bIgnoreLock)) {
                     m_canvas.selectMapElementInstance(pog, true);
                 }                
             }
@@ -148,7 +148,7 @@ public class SelectTool extends NullTool
           
           final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
-            if (selRect.intersects(pogRect) && (!pog.isLocked() || bIgnoreLock))
+            if (selRect.intersects(pogRect) && (!m_canvas.isLocked(pog) || bIgnoreLock))
             {
                 // this pog will be sent
             	m_canvas.highlightMapElementInstance(pog, true);

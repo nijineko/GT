@@ -30,6 +30,7 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * #GT-AUDIT PacketManager
  * 
  * @revise Remodel to register packet types for handling and interface to send packet. New packet format would like an underlying JSON or XML format to help supporting multiple versions.
+ * @revise Should data be sending packets automatically?  Currently, a lot is handled by canvas and frame.
  */
 public class PacketManager
 {

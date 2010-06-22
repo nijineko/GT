@@ -112,13 +112,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	private Layer													m_layer									= Layer.UNDERLAY;
 
 	/**
-	 * Indicates whether this element is locked and can not be edited
-	 * 
-	 * @revise this is view information, as it is the editor that decides locking and modified its behavior by it
-	 */
-	private boolean												m_locked								= false;
-
-	/**
 	 * The parent element from which this element was instantiated
 	 */
 	private MapElement										m_mapElement;
@@ -194,15 +187,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		{
 			m_flipH = false;
 			m_flipV = false;
-		}
-
-		try
-		{
-			m_locked = dis.readBoolean();
-		}
-		catch (IOException exp)
-		{
-			m_locked = false;
 		}
 
 		Layer layer;
@@ -588,14 +572,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * @return True if this element is locked and cannot be edited
-	 */
-	public boolean isLocked()
-	{
-		return m_locked;
-	}
-
-	/**
 	 * Verifies that a given element type is valid for this instance. Useful to check before calling
 	 * {@link #setMapElement(MapElement)}
 	 * 
@@ -719,16 +695,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	}
 
 	/**
-	 * Sets the locking status for this element
-	 * 
-	 * @param locked true to set as locked, false to set as unlocked
-	 */
-	public void setLocked(final boolean locked)
-	{
-		m_locked = locked;
-	}
-
-	/**
 	 * Change the instance's element type - effectively changing this element's picture
 	 * 
 	 * @param newParent New parent element. Must be of same class as current parent.
@@ -797,7 +763,6 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		dos.writeDouble(m_angle);
 		dos.writeBoolean(m_flipH);
 		dos.writeBoolean(m_flipV);
-		dos.writeBoolean(m_locked);
 	
 		dos.writeInt(m_attributes.size());
 

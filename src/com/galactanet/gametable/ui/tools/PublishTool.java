@@ -113,7 +113,7 @@ public class PublishTool extends NullTool
             // first off, copy all the pogs/underlays over to the public layer
         	for (MapElementInstance pog : m_from.getMapElementInstances())
             {
-                if (m_canvas.isHighlighted(pog) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
+                if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
                     // this pog gets copied
                     final MapElementInstance newPog = new MapElementInstance(pog);
@@ -121,9 +121,9 @@ public class PublishTool extends NullTool
                     m_canvas.setActiveMap(m_to);
                     m_canvas.addPog(newPog);
                     
-                    if (pog.isLocked())
+                    if (m_canvas.isLocked(pog))
                     {
-                        newPog.setLocked(true);
+                        m_canvas.lockMapElementInstance(newPog, true);
                     }
                     
                     m_canvas.setActiveMap(m_from);
@@ -164,7 +164,7 @@ public class PublishTool extends NullTool
             	
             	for (MapElementInstance pog : m_from.getMapElementInstances().toArray(new MapElementInstance[0]))	// converting list to array to avoid concurrent modifications
                 {
-                    if (m_canvas.isHighlighted(pog) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
+                    if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
                         m_canvas.removePog(pog.getId(), false);	// this would cause concurrent modifications if we used the returned list directly 
                     }
@@ -231,7 +231,7 @@ public class PublishTool extends NullTool
             
             final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
-            if (selRect.intersects(pogRect) && (!pog.isLocked() || (modifierMask & MODIFIER_SHIFT) != 0))
+            if (selRect.intersects(pogRect) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
             {
             	m_canvas.highlightMapElementInstance(pog, true);
             }

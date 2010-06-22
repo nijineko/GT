@@ -3555,7 +3555,7 @@ public class GametableFrame extends JFrame implements ActionListener
     {
     	for (MapElementInstance pog : mapToLock.getMapElementInstances())
     	{       
-    		pog.setLocked(lock);
+    		m_gametableCanvas.lockMapElementInstance(pog, lock);
       }
     }
 

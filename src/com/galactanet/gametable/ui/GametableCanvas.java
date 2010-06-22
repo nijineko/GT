@@ -125,6 +125,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     private SelectionHandler	m_selectionPublic;
     private SelectionHandler 	m_selectionPrivate;
     private SelectionHandler 	m_highlightedElements;
+    private SelectionHandler 	m_lockedElements;
 
     /**
      * This is the number of screen pixels that are used per model pixel. It's never less than 1
@@ -139,9 +140,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
      */
     public GametableCanvas()
     {
+    	// @revise It would make the interface lighter if we proposed 'getHandler' methods instead of exposing 8+ member for every selection handler. Con: extra level of indirection.
+    	
     	m_selectionPublic = new SelectionHandler();
     	m_selectionPrivate = new SelectionHandler();
     	m_highlightedElements = new SelectionHandler();
+    	m_lockedElements = new SelectionHandler();
     	
         setFocusable(true);
         setRequestFocusEnabled(true);
@@ -760,7 +764,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             return;
         }
 
-        toLock.setLocked(newLock);
+        lockMapElementInstance(toLock, newLock);
 
         // this pog moves to the end of the array
         getActiveMap().removeMapElementInstance(toLock);
@@ -2835,4 +2839,67 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   	}
   	
   	
+  	
+  	
+  	
+  	// @revise Terminology - MapElementInstance is precise, but its long and hurts readability.  Maybe just 'Element' for methods and fields?
+  	
+  	/**
+  	 * Set an element as locked
+  	 * @param mapElement Map element to lock
+  	 * @param lock true to lock, false to 'unlock'
+  	 */
+  	public void lockMapElementInstance(MapElementInstance mapElement, boolean lock)
+  	{
+  		m_lockedElements.selectMapElementInstance(mapElement, lock);
+  		repaint();
+  	}
+  	
+  	/**
+  	 * lock or 'unlock' all element instances
+  	 * @param lock true to lock, false to 'unlock'
+  	 */
+  	public void lockAllMapElementInstances(boolean lock)
+  	{
+  		if (lock)
+  			m_lockedElements.selectMapElementInstances(getActiveMap().getMapElementInstances(), lock);
+  		else
+  			m_lockedElements.unselectAllMapElementInstances();
+  		
+  		repaint();
+  	}
+  	
+  	/**
+  	 * lock or 'unlock' a list of instances 
+  	 * @param mapElements list of instances to change lock status
+  	 * @param lock true to lock, false to 'unlock'
+  	 */
+  	public void lockMapElementInstances(List<MapElementInstance> mapElements, boolean lock)
+  	{
+  		m_lockedElements.selectMapElementInstances(mapElements, lock);
+  		repaint();
+  	}
+  	
+  	/**
+  	 * Gets the list of locked element instances
+     *
+  	 * @return The list of currently selected instances (unmodifiable). Never null.
+  	 */
+  	public List<MapElementInstance> getlockedMapElementInstances()
+  	{
+  		return m_lockedElements.getSelectedMapElementInstances();  		
+  	}
+  	
+  	/**
+  	 * Checks if a specific map element is marked as locked
+  	 * @param mapElement Map element to lock
+  	 * @return true if locked
+  	 */
+  	public boolean isLocked(MapElementInstance mapElement)
+  	{
+  		return m_lockedElements.isSelected(mapElement);
+  	}
+  	
+  	// TODO save lock information to save file
+  	// TODO maintain selection handlers through listeners
 }

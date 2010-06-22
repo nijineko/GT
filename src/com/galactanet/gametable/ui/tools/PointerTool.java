@@ -235,7 +235,7 @@ public class PointerTool extends NullTool
             }
             else
             {
-                if (!m_grabbedPog.isLocked())
+                if (!m_canvas.isLocked(m_grabbedPog))
                 {
                     // Dont need this, it is done in move pog, and why move it if we are removing it?
                     //m_grabbedPog.setPosition(m_ghostPog.getPosition());
@@ -262,7 +262,7 @@ public class PointerTool extends NullTool
     {
         setSnapping(modifierMask);
         m_mousePosition = modelPos;
-        if ((m_grabbedPog != null) && !m_grabbedPog.isLocked())
+        if ((m_grabbedPog != null) && !m_canvas.isLocked(m_grabbedPog))
         {
             m_clicked = false;
             if (m_snapping)
@@ -285,7 +285,7 @@ public class PointerTool extends NullTool
             final MapCoordinates modelDelta = m_canvas.drawToModel(m_startMouse.x - mousePosition.x, m_startMouse.y - mousePosition.y);
             m_canvas.scrollMapTo(m_startScroll.delta(modelDelta));
         }
-        else if ((m_grabbedPog != null) && m_grabbedPog.isLocked())
+        else if ((m_grabbedPog != null) && m_canvas.isLocked(m_grabbedPog))
         {
             m_clicked = false;
         }
@@ -370,12 +370,12 @@ public class PointerTool extends NullTool
         else
         {
             menu.add(new JMenuItem("Cancel"));
-            JMenuItem item = new JMenuItem(m_menuPog.isLocked() ? "Unlock" : "Lock");
+            JMenuItem item = new JMenuItem(m_canvas.isLocked(m_menuPog) ? "Unlock" : "Lock");
             item.addActionListener(new ActionListener()
             {
                 public void actionPerformed(final ActionEvent e)
                 {
-                    m_canvas.lockPog(m_menuPog.getId(), !m_menuPog.isLocked());
+                    m_canvas.lockPog(m_menuPog.getId(), !m_canvas.isLocked(m_menuPog));
                     //System.out.println(m_menuPog.isLocked());
                 }
             });
@@ -428,7 +428,7 @@ public class PointerTool extends NullTool
                     final MapElementInstance newPog = new MapElementInstance(pog);
                     m_canvas.setActiveMap(m_to);
                     m_canvas.addPog(newPog);
-                    m_canvas.lockPog(newPog.getId(), pog.isLocked());
+                    m_canvas.lockPog(newPog.getId(), m_canvas.isLocked(pog));
                     m_canvas.setActiveMap(m_from);
 
                     if ((modifierMask & MODIFIER_CTRL) == 0) // not holding control
