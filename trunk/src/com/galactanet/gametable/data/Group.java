@@ -498,5 +498,6 @@ public class Group
 	private static Map<MapElementInstanceID, Group> g_elements = new HashMap<MapElementInstanceID, Group>();
 	
 	// TODO save group information
+	// TODO grab onto listeners to auto-remove
 }
 
