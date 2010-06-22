@@ -28,6 +28,8 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * @author sephalon
  * 
  * #GT-AUDIT PacketManager
+ * 
+ * @revise Remodel to register packet types for handling and interface to send packet. New packet format would like an underlying JSON or XML format to help supporting multiple versions.
  */
 public class PacketManager
 {
@@ -575,6 +577,38 @@ public class PacketManager
         
     }
     
+    /** *******************************************************************************************
+     * #grouping 
+     * @revise these make... packets are more clues that packet types should be moved to classes 
+     * @param openLink
+     * @param closeLink
+     * @return
+     */
+    public static byte[] makeRenameGroupPacket(final String group, final String newGroupName, final int player) {
+        try
+        {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final DataOutputStream dos = new DataOutputStream(baos);
+            dos.writeInt(PACKET_GROUP);
+            dos.writeInt(Action.RENAME.ordinal());
+            if(group == null) dos.writeUTF("");
+            else dos.writeUTF(group);           
+            
+            if(newGroupName == null) dos.writeUTF("");
+            else dos.writeUTF(newGroupName);
+
+            
+            dos.writeInt(player);
+            return baos.toByteArray();
+        }
+        catch (final IOException ex)
+        {
+            Log.log(Log.SYS, ex);
+            return null;
+        }
+        
+    }
+    
     public static byte[] makePogTypePacket(final MapElementInstanceID id, final MapElementInstanceID type) {
       try
       {
@@ -605,12 +639,26 @@ public class PacketManager
             Action action = Action.fromOrdinal(actionOrd);
             
             final String group = dis.readUTF();
+            MapElementInstanceID pog = null;
             
-            long pogID = dis.readLong();
-            MapElementInstanceID pog = MapElementInstanceID.fromNumeric(pogID);
+            String newGroupName = null;
+            
+            if (action == Action.RENAME)
+            {
+            	newGroupName = dis.readUTF(); 
+            }
+            else
+            {            
+            	long pogID = dis.readLong();
+            	pog = MapElementInstanceID.fromNumeric(pogID);
+            }
             
             final int player = dis.readInt();
-            GametableFrame.getGametableFrame().groupPacketReceived(action, group, pog, player);
+            
+            if (pog != null)
+            	GametableFrame.getGametableFrame().groupPacketReceived(action, group, pog, player);
+            else
+            	GametableFrame.getGametableFrame().groupPacketReceived(action, group, newGroupName, player);
         }
         catch (final IOException ex)
         {
