@@ -18,7 +18,6 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
 import com.galactanet.gametable.ui.handler.gtuser.Handler;
-import com.galactanet.gametable.ui.tools.ColorComposite;
 
 
 

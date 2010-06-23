@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.List;
 
 import com.galactanet.gametable.data.MapCoordinates;
+import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
 
@@ -66,7 +67,7 @@ public class ToolManager
                 // Instantiate the tool given the name.
                 tool = (ToolIF)Class.forName(className).newInstance();
 
-                icon = Images.getImage(iconName);
+                icon = ImageCache.getImage(new File(iconName));
 
             }
             catch (final Exception e)
@@ -241,7 +242,7 @@ public class ToolManager
                 // Create the cursor based on the parsed data.
                 final Image target = Images.createBufferedImage(32, 32);
                 {
-                    final Image image = Images.getImage(imageName);
+                    final Image image = ImageCache.getImage(new File(imageName));
                     final Graphics g = target.getGraphics();
                     g.drawImage(image, 0, 0, null);
                     g.dispose();

@@ -8,6 +8,7 @@ package com.galactanet.gametable.ui;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.font.FontRenderContext;
+import java.io.File;
 import java.util.*;
 import java.util.List;
 
@@ -23,6 +24,7 @@ import javax.swing.tree.TreePath;
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -907,7 +909,7 @@ public class PogPanel extends JPanel
         toolbar.setRollover(true);
 
         final Insets margin = new Insets(2, 2, 2, 2);
-        final Image collapseImage = Images.getImage("assets/collapse.png");
+        final Image collapseImage = ImageCache.getImage(new File("assets/collapse.png"));
         final JButton collapseButton = new JButton("Collapse All", new ImageIcon(collapseImage));
         collapseButton.setFocusable(false);
         collapseButton.setMargin(margin);
@@ -923,7 +925,7 @@ public class PogPanel extends JPanel
         });
         toolbar.add(collapseButton);
 
-        final Image expandImage = Images.getImage("assets/expand.png");
+        final Image expandImage = ImageCache.getImage(new File("assets/expand.png"));
         final JButton expandButton = new JButton("Expand All", new ImageIcon(expandImage));
         expandButton.setMargin(margin);
         expandButton.setFocusable(false);

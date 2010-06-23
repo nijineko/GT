@@ -2737,6 +2737,8 @@ public class GametableFrame extends JFrame implements ActionListener
      */
     private void initialize() throws IOException
     {
+    	ImageCache.startCacheDaemon();
+    	
         if (DEBUG_FOCUS) // if debugging
         {
             final KeyboardFocusManager man = KeyboardFocusManager.getCurrentKeyboardFocusManager();

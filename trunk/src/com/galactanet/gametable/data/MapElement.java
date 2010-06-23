@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -77,27 +78,29 @@ public class MapElement
 		if (image != null)
 			return image;
 
-		String placeholderImage;
+		File placeholderImage;
 
 		// Load from the basic images
 		// NB : We default to the largest image to get better scaling quality
+		
+		// @revise I'd pretty much like these images to be within the jar instead of external
 
 		switch (faceSize)
 		{
 		case 1:
-			placeholderImage = "assets/pog_unk_1.png";
+			placeholderImage = new File("assets/pog_unk_1.png");
 
 		case 2:
-			placeholderImage = "assets/pog_unk_2.png";
+			placeholderImage = new File("assets/pog_unk_2.png");
 			break;
 
 		case 3:
 		default:
-			placeholderImage = "assets/pog_unk_3.png";
+			placeholderImage = new File("assets/pog_unk_3.png");
 			break;
 		}
 
-		image = Images.getCachedImage(placeholderImage);
+		image = ImageCache.getImage(placeholderImage);
 
 		// If it is bigger, we'll resize
 
@@ -327,7 +330,7 @@ public class MapElement
 		final Image oldImage = m_image;
 
 		// Load image from file name
-		m_image = Images.getImage(m_imageFilename);
+		m_image = ImageCache.getImage(new File(m_imageFilename));
 
 		m_listIcon = null;
 

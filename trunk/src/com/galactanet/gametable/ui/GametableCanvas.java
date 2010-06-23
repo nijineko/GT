@@ -35,6 +35,7 @@ import com.galactanet.gametable.data.grid.SquareGridMode;
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.tools.NullTool;
+import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -1009,9 +1010,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         repaint();
     }
     
-    /**
-     * TODO #grouping?
-     */
+    
     public void doSetPogType(final MapElementInstanceID id, final MapElementInstanceID type)
     {
         final MapElementInstance pog = getActiveMap().getMapElementInstance(id);
@@ -1323,9 +1322,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public void init(final GametableFrame frame)
     {
         m_gametableFrame = frame;
-        m_mapBackground = Images.getImage("assets/mapbk.png");
+        m_mapBackground = ImageCache.getImage(new File("assets/mapbk.png"));
 
-        m_pointingImage = Images.getImage("assets/whiteHand.png");
+        m_pointingImage = ImageCache.getImage(new File("assets/whiteHand.png"));
 
         //setPrimaryScroll(m_publicMap, 0, 0);
 
@@ -1412,36 +1411,38 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
     	Image newBk = null;
          
+    	// @revise all 'assets/' images should be within a jar.
+    	
             switch (color) {        
                 case GREEN :
-                	newBk = Images.getImage("assets/mapbk_green.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_green.png"));
                     break;
                 case DARK_GREY:
-                	newBk = Images.getImage("assets/mapbk_dgrey.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_dgrey.png"));
                     break;
                 case GREY :
-                	newBk = Images.getImage("assets/mapbk_grey.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_grey.png"));
                     break;
                 case BLUE :
-                	newBk = Images.getImage("assets/mapbk_blue.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_blue.png"));
                     break;
                 case BLACK :
-                	newBk = Images.getImage("assets/mapbk_black.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_black.png"));
                     break;
                 case WHITE :
-                	newBk = Images.getImage("assets/mapbk_white.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_white.png"));
                     break;
                 case DARK_BLUE:
-                	newBk = Images.getImage("assets/mapbk_dblue.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_dblue.png"));
                     break;
                 case DARK_GREEN :
-                	newBk = Images.getImage("assets/mapbk_dgreen.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_dgreen.png"));
                     break;
                 case BROWN :
-                	newBk = Images.getImage("assets/mapbk_brown.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk_brown.png"));
                     break;
                 default :
-                	newBk = Images.getImage("assets/mapbk.png");
+                	newBk = ImageCache.getImage(new File("assets/mapbk.png"));
                 break;
             }
             
@@ -2055,10 +2056,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
           	g.setComposite(UtilityFunctions.getHilightedComposite());
           }
         	
-          el.getRenderer().drawToCanvas(g, this);
-          
-          g.setComposite(oldComposite);
-        }
+          try
+          {
+          	el.getRenderer().drawToCanvas(g, this);
+          }
+          finally
+          {          
+          	g.setComposite(oldComposite);
+         	}
+       }
 
     // called by the pogs area when a pog is being dragged
     public void pogDrag()
