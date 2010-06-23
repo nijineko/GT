@@ -23,9 +23,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.PixelGrabber;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.galactanet.gametable.ui.GametableFrame;
 
@@ -41,19 +38,19 @@ public class Images
 
 	private static GraphicsConfiguration	g_defaultGraphicsConfiguration	= null;
 
-	private static Map<String, Image>			g_imageCache										= new HashMap<String, Image>();
-
 	private static RenderingHints					g_renderingHints								= null;
 
 	/**
-	 * Creates a new, empty buffered image matching the specified image's size and transparency model
+	 * Creates a new, empty buffered image matching the specified image's size 
 	 * 
 	 * @param image Image to read from
 	 * @return new image buffer
 	 */
-
 	public static BufferedImage createBufferedImage(final Image image)
 	{
+		return createBufferedImage(image.getWidth(null), image.getHeight(null));
+		
+		/*
 		// Determine if the image has transparent pixels; for this method's
 		// implementation, see e661 Determining If an Image Has Transparent Pixels
 		// final boolean hasAlpha = hasAlpha(outImage);
@@ -78,12 +75,15 @@ public class Images
 		{
 			// Create a buffered image using the default color model
 			int type = BufferedImage.TYPE_INT_RGB;
+			
 			if (transparency != Transparency.OPAQUE)
 				type = BufferedImage.TYPE_INT_ARGB;
+				
 			bimage = new BufferedImage(image.getWidth(null), image.getHeight(null), type);
 		}
 
 		return bimage;
+		*/
 	}
 
 	public static BufferedImage createBufferedImage(final int width, final int height)
@@ -127,27 +127,6 @@ public class Images
 	}
 
 	/**
-	 * Gets an image, caching it if possible.
-	 * 
-	 * @param name Name of image to get.
-	 * @return Image retrieved, or null.
-	 */
-	public static Image getCachedImage(final String name)
-	{
-		Image image = Images.g_imageCache.get(name);
-		if (image == null)
-		{
-			image = getImage(name);
-			if (image == null)
-			{
-				return null;
-			}
-			Images.g_imageCache.put(name, image);
-		}
-		return image;
-	}
-
-	/**
 	 * Get the default graphics configuration - useful for creating image buffers
 	 * 
 	 * @return GraphicsConfiguration object
@@ -163,18 +142,6 @@ public class Images
 		}
 
 		return Images.g_defaultGraphicsConfiguration;
-	}
-
-	public static Image getImage(final String name)
-	{
-		Image img = getImageFromJar(name);
-		if (img == null)
-		{
-			// couldn't find it in the jar. Try the local directory
-			img = loadAndWait(GametableFrame.getGametableFrame().getGametableCanvas(), name);
-		}
-
-		return img;
 	}
 
 	/**
@@ -312,16 +279,6 @@ public class Images
 	}
 
 	/**
-	 * Removes an image from the image cache.
-	 * 
-	 * @param name Name of the image to remove.
-	 */
-	public static void removeCachedImage(final String name)
-	{
-		Images.g_imageCache.remove(name);
-	}
-
-	/**
 	 * Do a rotation on a given image
 	 * 
 	 * @param srcImage image to rotate - will not be modified
@@ -383,91 +340,6 @@ public class Images
 		g.dispose();
 
 		return b;
-	}
-
-	private static Image getImageFromJar(final String name)
-	{
-		final URL imageUrl = GametableFrame.getGametableFrame().getGametableCanvas().getClass().getResource("/" + name);
-		if (imageUrl == null)
-		{
-			return null;
-		}
-
-		Image image = null;
-		try
-		{
-			image = Toolkit.getDefaultToolkit().createImage(imageUrl);
-			if (image == null)
-			{
-				return null;
-			}
-
-			final MediaTracker tracker = new MediaTracker(GametableFrame.getGametableFrame().getGametableCanvas());
-			tracker.addImage(image, 0);
-			tracker.waitForAll();
-		}
-		catch (final Exception e)
-		{
-			Log.log(Log.SYS, e);
-			return null;
-		}
-
-		if ((image.getWidth(null) < 1) || (image.getHeight(null) < 1))
-		{
-			// Log.log(Log.SYS, "JAR invalid file? " + name + " " + image.getWidth(null) + " x " +
-			// image.getHeight(null));
-			return null;
-		}
-
-		return image;
-	}
-	private static Image loadAndWait(final Component component, final String name)
-	{
-		MediaTracker tracker = new MediaTracker(component);
-		final Image image = loadImage(name, tracker);
-
-		if (image == null)
-		{
-			return null;
-		}
-
-		try
-		{
-			tracker.waitForAll(); // ignore exceptions
-		}
-		catch (final Exception e)
-		{
-			Log.log(Log.SYS, e);
-			return null;
-		}
-
-		if ((image.getWidth(null) < 1) || (image.getHeight(null) < 1))
-		{
-			// Log.log(Log.SYS, "FS invalid file? " + name + " " + image.getWidth(null) + " x " +
-			// image.getHeight(null));
-			return null;
-		}
-
-		tracker = null;
-		return image;
-	}
-	private static Image loadImage(final String name, final MediaTracker tracker)
-	{
-		Image image = null;
-		try
-		{
-			image = Toolkit.getDefaultToolkit().createImage(name);
-			if (image == null)
-			{
-				return null;
-			}
-			tracker.addImage(image, 0);
-		}
-		catch (final Exception e)
-		{
-			Log.log(Log.SYS, e);
-		}
-		return image;
 	}
 
 	private static void waitForImage(final Image image)

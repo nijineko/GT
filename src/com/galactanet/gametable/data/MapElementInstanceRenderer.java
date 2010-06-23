@@ -19,11 +19,14 @@
 package com.galactanet.gametable.data;
 
 import java.awt.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 
 import com.galactanet.gametable.data.MapElementInstance.Attribute;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.MapElementRendererIF;
+import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 
 /**
@@ -115,13 +118,24 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 	 */
 	private void drawScaled(final Graphics g, final int x, final int y, final float scale)
 	{
+		URI uri = createImageURI();
+		
+		Image im = ImageCache.getCachedImage(uri);
+		
+		if (im == null)
+		{
+			im = Images.rotateImage(
+				Images.flipImage(
+						m_mapElement.getMapElement().getImage(), m_mapElement.getFlipH(), m_mapElement.getFlipV()
+				),
+				m_mapElement.getAngle()
+			);
+			
+			ImageCache.cacheImage(uri, im);
+		}
+		
 		final int drawWidth = Math.round(m_mapElement.getWidth() * scale);
 		final int drawHeight = Math.round(m_mapElement.getHeight() * scale);
-
-		// TODO @revise CREATING MULTIPLE BUFFERS HORROR!
-
-		Image im = Images.rotateImage(Images.flipImage(m_mapElement.getMapElement().getImage(), m_mapElement.getFlipH(), m_mapElement.getFlipV()),
-				m_mapElement.getAngle());
 
 		// Center the image into a square, taking into consideration the height and width
 		int mw = 0;
@@ -135,6 +149,29 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 		}
 
 		g.drawImage(im, x - mw / 2, y - mh / 2, drawWidth, drawHeight, null);
+	}
+	
+	/**
+	 * Creates an URI based on the map element's display properties.  This URI will be used for caching purposes.
+	 * @return URI
+	 */
+	private URI createImageURI()
+	{
+		// Use the source image - if it was to change, and none of the other elements, I'd like to know.
+		Image srcImage = m_mapElement.getMapElement().getImage();
+		int srcHash = srcImage.hashCode();
+		
+		try
+		{
+			URI uri = new URI("gti://" + srcHash + "/" + m_mapElement.getAngle() + "/" + m_mapElement.getFlipH() + "/" + m_mapElement.getFlipV());		
+			return uri;
+		}
+		catch (URISyntaxException e)
+		{
+			e.printStackTrace();
+			System.exit(0);	// TODO Whoops! Debug :)
+			return null;
+		}
 	}
 
 	/**
