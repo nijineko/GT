@@ -36,7 +36,7 @@ import com.galactanet.gametable.util.UtilityFunctions;
  */
 public class MapElement
 {
-	// TODO @revise Convert this layer type to a more flexible model
+	// @revise Convert this layer type to a more flexible model
 	public enum Layer
 	{
 		ENVIRONMENT, OVERLAY, POG, UNDERLAY;

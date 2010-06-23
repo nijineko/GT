@@ -120,7 +120,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 	{
 		URI uri = createImageURI();
 		
-		Image im = ImageCache.getCachedImage(uri);
+		Image im = uri == null ? null : ImageCache.getCachedImage(uri);
 		
 		if (im == null)
 		{
@@ -168,9 +168,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 		}
 		catch (URISyntaxException e)
 		{
-			e.printStackTrace();
-			System.exit(0);	// TODO Whoops! Debug :)
-			return null;
+			return null;	// this will disable caching
 		}
 	}
 
