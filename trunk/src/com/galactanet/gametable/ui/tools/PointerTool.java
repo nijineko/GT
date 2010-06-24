@@ -18,7 +18,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.MapElement.Layer;
+import com.galactanet.gametable.data.MapElementType.Layer;
 import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -112,11 +112,11 @@ public class PointerTool extends NullTool
     private GameTableMap    m_from;
     private GameTableMap    m_to;
     private boolean         m_clicked = true;
-    private MapElementInstance             m_ghostPog;
-    private MapElementInstance             m_grabbedPog;
+    private MapElement             m_ghostPog;
+    private MapElement             m_grabbedPog;
     private Point           m_grabOffset;
-    private MapElementInstance             m_lastPogMousedOver;
-    private MapElementInstance             m_menuPog = null;
+    private MapElement             m_lastPogMousedOver;
+    private MapElement             m_menuPog = null;
     private MapCoordinates           m_mousePosition;
     private boolean         m_snapping;
 
@@ -171,7 +171,7 @@ public class PointerTool extends NullTool
     {
         if (GametableFrame.getGametableFrame().getPreferences().getBooleanValue(PREF_DRAG))
         {
-            final MapElementInstance pog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
+            final MapElement pog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
             if (pog != null)
             {
                 m_canvas.setToolCursor(0);
@@ -209,7 +209,7 @@ public class PointerTool extends NullTool
         m_grabbedPog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
         if (m_grabbedPog != null)
         {
-            m_ghostPog = new MapElementInstance(m_grabbedPog);
+            m_ghostPog = new MapElement(m_grabbedPog);
             m_grabOffset = new Point(m_grabbedPog.getPosition().x - m_mousePosition.x, m_grabbedPog.getPosition().y - m_mousePosition.y);
             setSnapping(modifierMask);
         }
@@ -310,7 +310,7 @@ public class PointerTool extends NullTool
     /**
      * @return A vector to adjust the drag position when snapping for odd-sized pogs.
      */
-    private Point getSnapDragAdjustment(MapElementInstance mapElement)
+    private Point getSnapDragAdjustment(MapElement mapElement)
     {
         final Point adjustment = new Point();
         final int width = mapElement.getWidth();
@@ -412,7 +412,7 @@ public class PointerTool extends NullTool
             {
                 public void actionPerformed(final ActionEvent e)
                 {
-                    final MapElementInstance pog = m_menuPog;
+                    final MapElement pog = m_menuPog;
                     if (m_canvas.isPublicMap())
                     {
                         m_from = m_canvas.getPublicMap();
@@ -425,7 +425,7 @@ public class PointerTool extends NullTool
                     }
 
                     // this pog gets copied
-                    final MapElementInstance newPog = new MapElementInstance(pog);
+                    final MapElement newPog = new MapElement(pog);
                     m_canvas.setActiveMap(m_to);
                     m_canvas.addPog(newPog);
                     m_canvas.lockPog(newPog.getId(), m_canvas.isLocked(pog));
@@ -501,7 +501,7 @@ public class PointerTool extends NullTool
                 {
                     public void actionPerformed(final ActionEvent e)
                     {
-                        final MapElementInstance pog = m_menuPog;
+                        final MapElement pog = m_menuPog;
                             GametableFrame.getGametableFrame().copyPog(pog);
                       
                     }
@@ -518,7 +518,7 @@ public class PointerTool extends NullTool
                 {
                     public void actionPerformed(final ActionEvent e)
                     {
-                        final MapElementInstance pog = m_menuPog;
+                        final MapElement pog = m_menuPog;
                         final File spaf = UtilityFunctions.doFileSaveDialog("Save As", "pog", true);
                         if (spaf != null)
                         {
@@ -784,7 +784,7 @@ public class PointerTool extends NullTool
               {
                   public void actionPerformed(final ActionEvent e)
                   {
-                  	List<MapElementInstance> pogs = m_canvas.getSelectedMapElementInstances();
+                  	List<MapElement> pogs = m_canvas.getSelectedMapElementInstances();
                   	
                       int size = pogs.size();
                       if(size > 1) {
@@ -797,7 +797,7 @@ public class PointerTool extends NullTool
                           return;
                       }
                       
-                      MapElementInstance pog = pogs.get(0);                
+                      MapElement pog = pogs.get(0);                
                       GametableFrame.getGametableFrame().getGametableCanvas().setPogType(m_menuPog, pog);
                       m_canvas.unselectAllMapElementInstances();
                   }

@@ -22,8 +22,9 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableMap;
+import com.galactanet.gametable.data.MapElementType;
 import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementInstance;
 import com.galactanet.gametable.data.MapElementTypeLibrary;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
@@ -207,14 +208,14 @@ public class PogPanel extends JPanel
             library = lib;
             children = new Vector<TreeNode>();
 
-            final List<MapElementTypeLibrary> childLibs = library.getChildren();
+            final List<MapElementTypeLibrary> childLibs = library.getSubLibraries();
             for (MapElementTypeLibrary child : childLibs)
             {
                 children.add(new LibraryNode(this, child));
             }
 
-            final List<MapElement> pogs = library.getPogs();
-            for (MapElement pogType : pogs)
+            final List<MapElementType> pogs = library.getElementTypes();
+            for (MapElementType pogType : pogs)
             {
                 children.add(new PogNode(this, pogType));
             }
@@ -391,9 +392,9 @@ public class PogPanel extends JPanel
     private static class PogNode implements TreeNode
     {
         private final LibraryNode parent;
-        private final MapElement     pog;
+        private final MapElementType     pog;
 
-        public PogNode(final LibraryNode parentNode, final MapElement child)
+        public PogNode(final LibraryNode parentNode, final MapElementType child)
         {
             parent = parentNode;
             pog = child;
@@ -464,7 +465,7 @@ public class PogPanel extends JPanel
         /**
          * @return Returns the pog.
          */
-        public MapElement getPog()
+        public MapElementType getPog()
         {
             return pog;
         }
@@ -501,7 +502,7 @@ public class PogPanel extends JPanel
         boolean                   leaf             = false;
         */
         MapElementTypeLibrary                library          = null;
-        MapElement                   pogType          = null;
+        MapElementType                   pogType          = null;
         private static int g_iconSize = -1; 
 
         public PogTreeCellRenderer()
@@ -603,9 +604,13 @@ public class PogPanel extends JPanel
             g2.setColor(Color.BLACK);
             if (pogType != null)
             {
-            	g2.drawImage(pogType.getListIcon(), 
-                SPACE + (g_iconSize - pogType.getListIconWidth()) / 2, 
-                SPACE + (g_iconSize - pogType.getListIconHeight()) / 2, this);
+            	Image icon = pogType.getListIcon();
+            	if (icon != null)
+            	{
+	            	g2.drawImage(icon, 
+	                SPACE + (g_iconSize - icon.getWidth(null)) / 2, 
+	                SPACE + (g_iconSize - icon.getHeight(null)) / 2, this);
+            	}
 
                 final String label = pogType.getDisplayLabel();
                 if ((label != null) && (label.length() > 0))
@@ -678,7 +683,7 @@ public class PogPanel extends JPanel
     /**
      * The currently grabbed pog.
      */
-    private MapElementInstance                   m_grabbedPog         = null;
+    private MapElement                   m_grabbedPog         = null;
 
     /**
      * The offset at which the pog was grabbed.
@@ -693,7 +698,7 @@ public class PogPanel extends JPanel
     /**
      * Pog that mouse is hovering over, if any.
      */
-    private MapElement               m_hoverPog           = null;
+    private MapElementType               m_hoverPog           = null;
     /**
      * The list of pogs held in this panel.
      */
@@ -725,7 +730,7 @@ public class PogPanel extends JPanel
     /**
      * @return Returns the currently grabbed pog.
      */
-    public MapElementInstance getGrabbedPog()
+    public MapElement getGrabbedPog()
     {
         return m_grabbedPog;
     }
@@ -822,9 +827,9 @@ public class PogPanel extends JPanel
                             .getY()));
                         
                         
-                        
-                        final Point localCoords = new Point(node.getPog().getImageWidth() / 2,
-                            node.getPog().getImageHeight() / 2);
+                        Image icon = node.getPog().getListIcon();
+                        final Point localCoords = icon == null ? new Point(0, 0) : new Point(icon.getWidth(null) / 2,
+                            icon.getHeight(null) / 2);
                         
                         if(e.getButton() == MouseEvent.BUTTON3) {
                             // Only do this on Private Maps, or if not in a network game as this would cause problems
@@ -863,7 +868,7 @@ public class PogPanel extends JPanel
                     moveGrabPosition(screenCoords);
 
                     final TreePath path = pogTree.getPathForLocation(e.getX(), e.getY());
-                    final MapElement oldPog = m_hoverPog;
+                    final MapElementType oldPog = m_hoverPog;
                     m_hoverPog = null;
                     if (path != null)
                     {
@@ -945,9 +950,9 @@ public class PogPanel extends JPanel
         return toolbar;
     }
 
-    private void grabPog(final MapElement p, final Point pos, final Point offset)
+    private void grabPog(final MapElementType p, final Point pos, final Point offset)
     {
-        m_grabbedPog = new MapElementInstance(p);
+        m_grabbedPog = new MapElement(p);
         m_grabbedPogPosition = pos;
         m_grabbedPogOffset = offset;
         m_canvas.pogDrag();
@@ -994,25 +999,29 @@ public class PogPanel extends JPanel
             final Point offset = getGrabOffset();
             g2.translate(localPos.x - offset.x, localPos.y - offset.y);
             
-            UtilityFunctions.drawTranslucent(g2, m_grabbedPog.getMapElement().getImage(), 0, 0, 0.5f);
+            UtilityFunctions.drawTranslucent(g2, m_grabbedPog.getMapElementType().getImage(), 0, 0, 0.5f);
 
             g2.dispose();
         }
         else if ((m_hoverPog != null) && (m_mousePosition != null))
         {
+        		Image hoverImage = m_hoverPog.getImage();
+        		int height = hoverImage == null ? GameTableMap.getBaseSquareSize() : hoverImage.getHeight(null);
+        		int width  = hoverImage == null ? GameTableMap.getBaseSquareSize() : hoverImage.getWidth(null);
+        	
             final Graphics2D g2 = (Graphics2D)g;
             int drawX = m_mousePosition.x;
             int drawY = m_mousePosition.y + 16;
-            final int overBottom = (drawY + m_hoverPog.getImageHeight()) - getHeight();
-            final int overTop = -(drawY - (m_hoverPog.getImageHeight() + 16));
+            final int overBottom = (drawY + height) - getHeight();
+            final int overTop = -(drawY - (height + 16));
             if (overBottom > overTop)
             {
-                drawY -= m_hoverPog.getImageHeight() + 16;
+                drawY -= height + 16;
             }
 
-            if (drawX > getWidth() - m_hoverPog.getImageWidth() - HOVER_MARGIN)
+            if (drawX > getWidth() - width - HOVER_MARGIN)
             {
-                drawX = getWidth() - m_hoverPog.getImageWidth() - HOVER_MARGIN;
+                drawX = getWidth() - width - HOVER_MARGIN;
             }
 
             if (drawX < HOVER_MARGIN)
@@ -1022,11 +1031,10 @@ public class PogPanel extends JPanel
 
             g2.translate(drawX, drawY);
             g2.setColor(POG_BACKGROUND_COLOR);
-            g2.fillRect(-POG_PADDING, -POG_PADDING, m_hoverPog.getImageWidth() + POG_PADDING * 2, m_hoverPog.getImageHeight()
+            g2.fillRect(-POG_PADDING, -POG_PADDING, width + POG_PADDING * 2, height
                 + POG_PADDING * 2);
             g2.setColor(POG_BORDER_COLOR);
-            g2.drawRect(-POG_PADDING, -POG_PADDING, m_hoverPog.getImageWidth() + POG_PADDING * 2 - 1, m_hoverPog
-                .getImageHeight()
+            g2.drawRect(-POG_PADDING, -POG_PADDING, width + POG_PADDING * 2 - 1, height
                 + POG_PADDING * 2 - 1);
             
             UtilityFunctions.drawTranslucent(g2, m_hoverPog.getImage(), 0, 0, 0.9f);
@@ -1100,7 +1108,7 @@ public class PogPanel extends JPanel
         if (res != UtilityFunctions.YES) return;       
         GametableFrame.getGametableFrame().getGametableCanvas().replacePogs(toReplace.getPog(), replaceWith.getPog());
         if(toReplace.getPog().isLoaded()) {           
-            toReplace.parent.library.removePog(toReplace.getPog());
+            toReplace.parent.library.removeElementType(toReplace.getPog());
             populateChildren();
             repaint();
         }

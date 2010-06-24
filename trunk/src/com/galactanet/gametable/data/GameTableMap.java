@@ -71,14 +71,14 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @revise Rebuild more versatile layer architecture
 	 */
-	private final List<MapElementInstance>					m_mapElements;
+	private final List<MapElement>					m_mapElements;
 
 	// @revise Build undo buffers using Java's #{@link javax.swing.undo.UndoableEdit}
 
 	/**
 	 * Unmodifiable list of elements
 	 */
-	private final List<MapElementInstance>					m_mapElementsUnmodifiable;
+	private final List<MapElement>					m_mapElementsUnmodifiable;
 
 	/**
 	 * Whether this is the public of private version of the map
@@ -97,7 +97,7 @@ public class GameTableMap implements XMLSerializer
 		m_lines = new ArrayList<LineSegment>();
 		m_linesUnmodifiable = Collections.unmodifiableList(m_lines);
 
-		m_mapElements = new ArrayList<MapElementInstance>();
+		m_mapElements = new ArrayList<MapElement>();
 		m_mapElementsUnmodifiable = Collections.unmodifiableList(m_mapElements);
 	}
 
@@ -127,7 +127,7 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @param mapElement Element to add to the map
 	 */
-	public void addMapElementInstance(MapElementInstance mapElement)
+	public void addMapElementInstance(MapElement mapElement)
 	{
 		m_mapElements.add(mapElement);
 		
@@ -165,7 +165,7 @@ public class GameTableMap implements XMLSerializer
   	m_mapElements.clear();
   	for (Element xmEl : XMLUtils.getChildElementsByTagName(elements, "element"))
   	{
-  		MapElementInstance el = new MapElementInstance(xmEl);
+  		MapElement el = new MapElement(xmEl);
   		m_mapElements.add(el);
   	}
   	
@@ -200,7 +200,7 @@ public class GameTableMap implements XMLSerializer
       }
   
       // Map elements
-      for (MapElementInstance mapElement : getMapElementInstances())
+      for (MapElement mapElement : getMapElementInstances())
       {
       	MapRectangle r = mapElement.getBounds();
           
@@ -232,9 +232,9 @@ public class GameTableMap implements XMLSerializer
 	 * @param id ID of the map element we are looking for
 	 * @return Matching map element or null
 	 */
-	public MapElementInstance getMapElementInstance(final MapElementInstanceID id)
+	public MapElement getMapElementInstance(final MapElementID id)
 	{
-		for (MapElementInstance mapElement : m_mapElements)
+		for (MapElement mapElement : m_mapElements)
 		{
 			if (mapElement.getId().equals(id))
 				return mapElement;
@@ -252,19 +252,19 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @revise Add support for disabled and hidden layers
 	 */
-	public MapElementInstance getMapElementInstanceAt(MapCoordinates modelPosition)
+	public MapElement getMapElementInstanceAt(MapCoordinates modelPosition)
 	{
 		if (modelPosition == null)
 		{
 			return null;
 		}
 
-		MapElementInstance pogHit = null;
-		MapElementInstance envHit = null;
-		MapElementInstance overlayHit = null;
-		MapElementInstance underlayHit = null;
+		MapElement pogHit = null;
+		MapElement envHit = null;
+		MapElement overlayHit = null;
+		MapElement underlayHit = null;
 
-		for (MapElementInstance mapElement : m_mapElements)
+		for (MapElement mapElement : m_mapElements)
 		{
 			if (mapElement.contains(modelPosition))
 			{
@@ -311,7 +311,7 @@ public class GameTableMap implements XMLSerializer
 	 * @param name name of the instance we are looking for
 	 * @return instance or null
 	 */
-	public MapElementInstance getMapElementInstanceByName(final String name)
+	public MapElement getMapElementInstanceByName(final String name)
 	{
 		return getMapElementInstancesByName(name, null);
 	}
@@ -321,7 +321,7 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @return unmodifiable list of instances
 	 */
-	public List<MapElementInstance> getMapElementInstances()
+	public List<MapElement> getMapElementInstances()
 	{
 		return m_mapElementsUnmodifiable;
 	}
@@ -332,9 +332,9 @@ public class GameTableMap implements XMLSerializer
 	 * @param name Name of the element instance we are looking for
 	 * @return List of matching elements (never null)
 	 */
-	public List<MapElementInstance> getMapElementInstancesByName(String name)
+	public List<MapElement> getMapElementInstancesByName(String name)
 	{
-		List<MapElementInstance> retVal = new ArrayList<MapElementInstance>();
+		List<MapElement> retVal = new ArrayList<MapElement>();
 		getMapElementInstancesByName(name, retVal);
 
 		return retVal;
@@ -375,7 +375,7 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @param mapElement Map element instance to remove
 	 */
-	public void removeMapElementInstance(final MapElementInstance mapElement)
+	public void removeMapElementInstance(final MapElement mapElement)
 	{
 		m_mapElements.remove(mapElement);
 		
@@ -388,9 +388,9 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @param instances list of instances to remove
 	 */
-	public void removeMapElementInstances(List<MapElementInstance> instances)
+	public void removeMapElementInstances(List<MapElement> instances)
 	{
-		for (MapElementInstance instance : instances)
+		for (MapElement instance : instances)
 			removeMapElementInstance(instance);
 	}
   
@@ -402,7 +402,7 @@ public class GameTableMap implements XMLSerializer
   {
   	Document doc = parent.getOwnerDocument();
   	Element elements = doc.createElement("elements");  	
-  	for (MapElementInstance el : m_mapElements)
+  	for (MapElement el : m_mapElements)
   	{
   		Element xmEl = doc.createElement("element");
   		el.serialize(xmEl);
@@ -427,14 +427,14 @@ public class GameTableMap implements XMLSerializer
 	 * @param mapElements if non-null, will be populated with all matching pogs
 	 * @return If mapElements is null, will return first matching insatnce
 	 */
-	private MapElementInstance getMapElementInstancesByName(String name, List<MapElementInstance> mapElements)
+	private MapElement getMapElementInstancesByName(String name, List<MapElement> mapElements)
 	{
 		if (name == null || name.equals(""))
 			return null;
 
 		final String normalizedName = UtilityFunctions.normalizeName(name);
 
-		for (MapElementInstance instance : m_mapElements)
+		for (MapElement instance : m_mapElements)
 		{
 			if (instance.getNormalizedName().equals(normalizedName))
 			{

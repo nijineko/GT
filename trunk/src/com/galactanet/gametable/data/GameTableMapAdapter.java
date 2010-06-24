@@ -36,7 +36,7 @@ public class GameTableMapAdapter implements GameTableMapListenerIF
 	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElementInstance)
 	 */
 	@Override
-	public void onMapElementInstanceAdded(GameTableMap map, MapElementInstance mapElement)
+	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement)
 	{
 	}
 
@@ -44,7 +44,7 @@ public class GameTableMapAdapter implements GameTableMapListenerIF
 	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElementInstance)
 	 */
 	@Override
-	public void onMapElementInstanceRemoved(GameTableMap map, MapElementInstance mapElement)
+	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement)
 	{
 	}
 

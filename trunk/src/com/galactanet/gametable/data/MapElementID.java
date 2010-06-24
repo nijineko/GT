@@ -30,19 +30,19 @@ import java.util.Map;
  *
  * @author Eric Maziade
  */
-public class MapElementInstanceID implements Comparable<MapElementInstanceID> 
+public class MapElementID implements Comparable<MapElementID> 
 {
 	/**
 	 * Get Id from numeric value (used only for network communications) 
 	 * @param id numeric value
 	 * @return MapElementInstanceID
 	 */
-	public static MapElementInstanceID fromNumeric(long id)
+	public static MapElementID fromNumeric(long id)
 	{
-		MapElementInstanceID mid = g_idMap.get(id);
+		MapElementID mid = g_idMap.get(id);
 		if (mid == null)
 		{
-			mid = new MapElementInstanceID(id);
+			mid = new MapElementID(id);
 		}
 		
 		return mid;
@@ -52,9 +52,9 @@ public class MapElementInstanceID implements Comparable<MapElementInstanceID>
 	 * Acquire the next available MapElementInstanceID 
 	 * @return ID
 	 */
-	public static MapElementInstanceID acquire()
+	public static MapElementID acquire()
 	{
-		return new MapElementInstanceID(g_nextAvailableID);
+		return new MapElementID(g_nextAvailableID);
 	}
 	
 	/**
@@ -64,7 +64,7 @@ public class MapElementInstanceID implements Comparable<MapElementInstanceID>
 	{
 		g_nextAvailableID = 1;
 		
-		for (MapElementInstanceID id : g_idMap.values())
+		for (MapElementID id : g_idMap.values())
 			id.invalidate();
 		
 		g_idMap.clear();
@@ -73,7 +73,7 @@ public class MapElementInstanceID implements Comparable<MapElementInstanceID>
 	/**
 	 * Private constructor - use static methods
 	 */
-	private MapElementInstanceID(long id)
+	private MapElementID(long id)
 	{
 		if (g_idMap.get(id) != null)
 			throw new IllegalArgumentException("Invalid MapElementInstanceID - " + id + " already in use");
@@ -90,7 +90,7 @@ public class MapElementInstanceID implements Comparable<MapElementInstanceID>
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
 	@Override
-	public int compareTo(MapElementInstanceID o)
+	public int compareTo(MapElementID o)
 	{
 		if (!m_valid)
 			throw new IllegalStateException("MapElementInstance " + m_id + " has been invalidated");
@@ -110,8 +110,8 @@ public class MapElementInstanceID implements Comparable<MapElementInstanceID>
 	@Override
 	public boolean equals(Object obj)
 	{		
-		if (obj instanceof MapElementInstanceID)
-			return equals((MapElementInstanceID)obj);
+		if (obj instanceof MapElementID)
+			return equals((MapElementID)obj);
 
 		return super.equals(obj);
 	}
@@ -119,7 +119,7 @@ public class MapElementInstanceID implements Comparable<MapElementInstanceID>
 	/*
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */	
-	public boolean equals(MapElementInstanceID id)
+	public boolean equals(MapElementID id)
 	{
 		if (!m_valid)
 			throw new IllegalStateException("MapElementInstance " + m_id + " has been invalidated");
@@ -172,7 +172,7 @@ public class MapElementInstanceID implements Comparable<MapElementInstanceID>
 	/**
 	 * Mapping of all used IDs
 	 */
-	private static Map<Long, MapElementInstanceID> g_idMap = new HashMap<Long, MapElementInstanceID>();
+	private static Map<Long, MapElementID> g_idMap = new HashMap<Long, MapElementID>();
 	
 	/**
 	 * Last used ID

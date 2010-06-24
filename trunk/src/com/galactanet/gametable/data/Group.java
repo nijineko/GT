@@ -127,10 +127,10 @@ public class Group
 	 * @param groupName Name of affected group
 	 * @param elementID Element unique ID
 	 */
-	public static void packetReceived(Action action, final String groupName, final MapElementInstanceID elementID)
+	public static void packetReceived(Action action, final String groupName, final MapElementID elementID)
 	{
 		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
-		final MapElementInstance element = map.getMapElementInstance(elementID);
+		final MapElement element = map.getMapElementInstance(elementID);
 		
 		Group group = getGroup(groupName, action == Action.NEW);
 		if (group == null)
@@ -230,7 +230,7 @@ public class Group
 	 * @param groupName Name of the affected group
 	 * @param elementID Unique element ID, if the action is related to an element.
 	 */
-	private static void send(Action action, final Group group, final MapElementInstanceID elementID)
+	private static void send(Action action, final Group group, final MapElementID elementID)
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();
 		GametableCanvas canvas = frame.getGametableCanvas();
@@ -279,12 +279,12 @@ public class Group
 	/**
 	 * List of elements contained within the group
 	 */
-	private List<MapElementInstance>	m_elements	= new ArrayList<MapElementInstance>();
+	private List<MapElement>	m_elements	= new ArrayList<MapElement>();
 	
 	/**
 	 * Unmodifiable element list
 	 */
-	private List<MapElementInstance>	m_elementsUnmodifiable	= null;
+	private List<MapElement>	m_elementsUnmodifiable	= null;
 
 	/**
 	 * Constructor
@@ -321,7 +321,7 @@ public class Group
 	 * Add an element to this group
 	 * @param element Map Element Instance to add
 	 */
-	public void addElement(final MapElementInstance element)
+	public void addElement(final MapElement element)
 	{
 		addElement(element, true);
 	}
@@ -331,7 +331,7 @@ public class Group
 	 * @param element Map Element Instance to add
 	 * @param network If true, send network message 
 	 */
-	protected void addElement(final MapElementInstance element, boolean network)
+	protected void addElement(final MapElement element, boolean network)
 	{
 		if (element == null)
 			return;
@@ -355,7 +355,7 @@ public class Group
 	 * Add elements to this group
 	 * @param elements List of elements to add
 	 */
-	public void addElements(List<MapElementInstance> elements)
+	public void addElements(List<MapElement> elements)
 	{
 		addElements(elements, true);
 	}
@@ -365,9 +365,9 @@ public class Group
 	 * @param elements List of elements to add
 	 * @param network If true, send network message
 	 */
-	protected void addElements(List<MapElementInstance> elements, boolean network)
+	protected void addElements(List<MapElement> elements, boolean network)
 	{
-		for (MapElementInstance element : elements)
+		for (MapElement element : elements)
 			addElement(element, network);
 	}
 
@@ -393,7 +393,7 @@ public class Group
 	 * Return unmodifiable, synchronized list of elements in this group
 	 * @return List of elements (never null)
 	 */
-	public List<MapElementInstance> getElements()
+	public List<MapElement> getElements()
 	{
 		if (m_elementsUnmodifiable == null)
 			m_elementsUnmodifiable = Collections.unmodifiableList(m_elements);
@@ -406,7 +406,7 @@ public class Group
 	 */
 	public void removeAllElements()
 	{
-		for (MapElementInstance element : m_elements)
+		for (MapElement element : m_elements)
 		{
 			g_elements.remove(element.getId());
 		}			
@@ -418,7 +418,7 @@ public class Group
 	 * Remove map element from this list
 	 * @param element element to remove
 	 */
-	public void removeElement(final MapElementInstance element)
+	public void removeElement(final MapElement element)
 	{
 		removeElement(element, true);
 	}
@@ -428,7 +428,7 @@ public class Group
 	 * @param element element to remove
 	 * @param network true to send operation over network
 	 */
-	protected void removeElement(final MapElementInstance element, boolean network)
+	protected void removeElement(final MapElement element, boolean network)
 	{
 		m_elements.remove(element);
 		g_elements.remove(element.getId());
@@ -490,12 +490,12 @@ public class Group
 	 * @param element Element to look for
 	 * @return Group instance or null
 	 */
-	public static Group getGroup(MapElementInstance element)
+	public static Group getGroup(MapElement element)
 	{
 		return g_elements.get(element.getId());
 	}
 	
-	private static Map<MapElementInstanceID, Group> g_elements = new HashMap<MapElementInstanceID, Group>();
+	private static Map<MapElementID, Group> g_elements = new HashMap<MapElementID, Group>();
 	
 	// TODO save group information
 	// TODO grab onto listeners to auto-remove

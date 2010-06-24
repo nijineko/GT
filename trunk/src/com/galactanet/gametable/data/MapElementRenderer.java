@@ -23,7 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 
-import com.galactanet.gametable.data.MapElementInstance.Attribute;
+import com.galactanet.gametable.data.MapElement.Attribute;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.MapElementRendererIF;
 import com.galactanet.gametable.util.ImageCache;
@@ -34,7 +34,7 @@ import com.galactanet.gametable.util.Images;
  * 
  * @author Eric Maziade
  */
-public class MapElementInstanceRenderer implements MapElementRendererIF
+public class MapElementRenderer implements MapElementRendererIF
 {
 	/**
 	 * Background color for basic text. TODO @revise move these to some global properties
@@ -71,7 +71,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 	 * 
 	 * @param mapElement Map element handled by this instance
 	 */
-	protected MapElementInstanceRenderer(MapElementInstance mapElement)
+	protected MapElementRenderer(MapElement mapElement)
 	{
 		m_mapElement = mapElement;
 	}
@@ -126,7 +126,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 		{
 			im = Images.rotateImage(
 				Images.flipImage(
-						m_mapElement.getMapElement().getImage(), m_mapElement.getFlipH(), m_mapElement.getFlipV()
+						m_mapElement.getMapElementType().getImage(), m_mapElement.getFlipH(), m_mapElement.getFlipV()
 				),
 				m_mapElement.getAngle()
 			);
@@ -142,7 +142,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 		int mh = 0;
 		if (m_mapElement.getAngle() != 0)
 		{
-			Image image = m_mapElement.getMapElement().getImage();
+			Image image = m_mapElement.getMapElementType().getImage();
 
 			mw = Math.round(drawWidth - (image.getHeight(null) * scale));
 			mw = Math.round(drawHeight - (image.getWidth(null) * scale));
@@ -158,7 +158,7 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 	private URI createImageURI()
 	{
 		// Use the source image - if it was to change, and none of the other elements, I'd like to know.
-		Image srcImage = m_mapElement.getMapElement().getImage();
+		Image srcImage = m_mapElement.getMapElementType().getImage();
 		int srcHash = srcImage.hashCode();
 		
 		try
@@ -339,5 +339,5 @@ public class MapElementInstanceRenderer implements MapElementRendererIF
 	/**
 	 * Map element to render
 	 */
-	protected final MapElementInstance	m_mapElement;
+	protected final MapElement	m_mapElement;
 }
