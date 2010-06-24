@@ -220,28 +220,23 @@ public class Images
 
 		final int width = Math.round(image.getWidth(null) * scale);
 		final int height = Math.round(image.getHeight(null) * scale);
-
+		
 		return Images.getScaledInstance(image, width, height);
 	}
 
 	public static Image getScaledInstance(final Image image, final int width, final int height)
 	{
 		if (image == null)
-		{
 			return null;
-		}
-
-		// todo: Option for SMOOTH vs FAST?
-		Image scaledImage;
-		scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-		if (scaledImage == null)
-		{
-			return null;
-		}
-
-		waitForImage(scaledImage);
-
-		return scaledImage;
+		
+		BufferedImage img = createBufferedImage(width, height);
+		Graphics2D g = img.createGraphics();
+		g.setRenderingHints(getRenderingHints());
+		g.drawImage(image, 0, 0, width, height, null);
+		g.dispose();
+		waitForImage(img);
+		
+		return img;
 	}
 
 	/**

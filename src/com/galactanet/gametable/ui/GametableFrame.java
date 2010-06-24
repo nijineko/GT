@@ -302,7 +302,7 @@ public class GametableFrame extends JFrame implements ActionListener
 //    private boolean                 b_pogWindowDocked        = true;
 //    private boolean                 b_chatWindowDocked       = true;
 
-    private PogLibrary              m_pogLibrary             = null;
+    private MapElementTypeLibrary              m_pogLibrary             = null;
     
     
 
@@ -2144,7 +2144,7 @@ public class GametableFrame extends JFrame implements ActionListener
     /**
      * @return The root pog library.
      */
-    public PogLibrary getPogLibrary()
+    public MapElementTypeLibrary getPogLibrary()
     {
         return m_pogLibrary;
     }
@@ -2860,7 +2860,7 @@ public class GametableFrame extends JFrame implements ActionListener
         getContentPane().add(m_toolBar, BorderLayout.NORTH);
 
         getGametableCanvas().init(this);
-        m_pogLibrary = new PogLibrary();
+        m_pogLibrary = MapElementTypeLibrary.getMasterLibrary();
 
         // pogWindow
 
@@ -3598,7 +3598,7 @@ public class GametableFrame extends JFrame implements ActionListener
             return null;
         }
 
-        final MapElement newPogType = getPogLibrary().getPog("pogs" + File.separator + card.getCardFile());
+        final MapElement newPogType = getPogLibrary().getPogByFilename("pogs" + File.separator + card.getCardFile());
 
         // there could be a problem with the deck definition. It's an easy mistake
         // to make. So rather than freak out, we just return null.

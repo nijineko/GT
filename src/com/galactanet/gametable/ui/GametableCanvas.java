@@ -2106,7 +2106,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public boolean pogInViewport(final MapElementInstance pog)
     {
         // only add the pog if they dropped it in the visible area
-        final int width = pog.getFaceSize() * GameTableMap.getBaseSquareSize();
+        final int width = (int)(pog.getFaceSize() * GameTableMap.getBaseSquareSize());
 
         // get the model coords of the viewable area
         final MapCoordinates portalTL = viewToModel(0, 0);
