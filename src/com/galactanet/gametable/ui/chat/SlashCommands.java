@@ -10,7 +10,7 @@ package com.galactanet.gametable.ui.chat;
 import java.util.List;
 
 import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.dicemacro.DiceMacro;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -156,13 +156,13 @@ public class SlashCommands
 
         final String name = UtilityFunctions.stitchTogetherWords(words, 1);
         final GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap();
-        final List<MapElementInstance> pogs = map.getMapElementInstances();
+        final List<MapElement> pogs = map.getMapElementInstances();
         final StringBuffer buffer = new StringBuffer();
         buffer.append("<b><u>Pogs with \'" + name + "\' attribute</u></b><br>");
         int tally = 0;
         for (int i = 0, size = pogs.size(); i < size; ++i)
         {
-            final MapElementInstance pog = pogs.get(i);
+            final MapElement pog = pogs.get(i);
             final String value = pog.getAttribute(name);
             if ((value != null) && (value.length() > 0))
             {
@@ -319,7 +319,7 @@ public class SlashCommands
         }
 
         final String name = UtilityFunctions.stitchTogetherWords(words, 1);
-        final MapElementInstance pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getMapElementInstanceByName(name);
+        final MapElement pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getMapElementInstanceByName(name);
         if (pog == null)
         {
             logAlertMessage("Unable to find pog named \"" + name + "\".");

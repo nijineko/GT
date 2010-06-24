@@ -36,7 +36,7 @@ public interface GameTableMapListenerIF
 	 * @param map The triggering map
 	 * @param mapElement The map element that has been added
 	 */
-	public void onMapElementInstanceAdded(GameTableMap map, MapElementInstance mapElement);
+	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement);
 	
 	/**
 	 * Called when all map element instances have been removed in one call
@@ -49,6 +49,6 @@ public interface GameTableMapListenerIF
 	 * @param map The triggering map
 	 * @param mapElement The map element that has been removed
 	 */
-	public void onMapElementInstanceRemoved(GameTableMap map, MapElementInstance mapElement);
+	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement);
 
 }

@@ -105,7 +105,7 @@ public class GridMode
 	 * @param pog Pog to reposition
 	 * 
 	 */
-	public void snapPogToGrid(final MapElementInstance pog)
+	public void snapPogToGrid(final MapElement pog)
 	{
 		MapCoordinates snappedPoint = getSnappedMapCoordinates(pog.getPosition(), true, (int)(GameTableMap.getBaseSquareSize() * pog.getFaceSize()));
 		pog.setPosition(snappedPoint);

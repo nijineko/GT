@@ -20,7 +20,7 @@ import javax.swing.tree.*;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.MapElement.Layer;
+import com.galactanet.gametable.data.MapElementType.Layer;
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
@@ -54,7 +54,7 @@ public class ActivePogsPanel extends JPanel
         String                    attribute        = null;
         //boolean                   expanded         = false;
         //boolean                   leaf             = false;
-        MapElementInstance                       pog              = null;
+        MapElement                       pog              = null;
 
         public ActivePogTreeCellRenderer()
         {
@@ -166,16 +166,20 @@ public class ActivePogsPanel extends JPanel
                 return;
             }
 
-            final MapElement pogType = pog.getMapElement();
+            final MapElementType pogType = pog.getMapElementType();
             final Graphics2D g2 = (Graphics2D)g;
             g2.addRenderingHints(Images.getRenderingHints());
             g2.setColor(Color.BLACK);
             if (attribute == null)
             {
-            	g2.drawImage(pogType.getListIcon(),
-            				SPACE + (g_iconSize - pogType.getListIconWidth()) / 2, 
-            				SPACE + (g_iconSize - pogType.getListIconHeight()) / 2,
-            				this);
+            	Image icon = pogType.getListIcon();
+            	if (icon != null)
+            	{
+	            	g2.drawImage(icon,
+	            				SPACE + (g_iconSize - icon.getWidth(null)) / 2, 
+	            				SPACE + (g_iconSize - icon.getHeight(null)) / 2,
+	            				this);
+            	}
 
                 final String label = getLabel();
                 if ((label != null) && (label.length() > 0))
@@ -249,7 +253,7 @@ public class ActivePogsPanel extends JPanel
         /**
          * @return Returns the pog for this node.
          */
-        public MapElementInstance getPog()
+        public MapElement getPog()
         {
             return getPogNodeParent().getPog();
         }
@@ -278,8 +282,8 @@ public class ActivePogsPanel extends JPanel
     private class BranchTracker implements TreeExpansionListener
     {
         private boolean   allExpanded    = false;
-        private final Set<MapElementInstance> collapsedNodes = new HashSet<MapElementInstance>();
-        private final Set<MapElementInstance> expandedNodes  = new HashSet<MapElementInstance>();
+        private final Set<MapElement> collapsedNodes = new HashSet<MapElement>();
+        private final Set<MapElement> expandedNodes  = new HashSet<MapElement>();
 
         public BranchTracker()
         {
@@ -352,7 +356,7 @@ public class ActivePogsPanel extends JPanel
             tree.removeTreeExpansionListener(this);
             try
             {
-                for (MapElementInstance pog : expandedNodes)
+                for (MapElement pog : expandedNodes)
                 {
                     final PogNode node = root.findNodeFor(pog);
                     if (node != null)
@@ -366,7 +370,7 @@ public class ActivePogsPanel extends JPanel
                     }
                 }
 
-                for (MapElementInstance pog : collapsedNodes)
+                for (MapElement pog : collapsedNodes)
                 {
                     final PogNode node = root.findNodeFor(pog);
                     if (node != null)
@@ -435,7 +439,7 @@ public class ActivePogsPanel extends JPanel
          */
         private static final long serialVersionUID = -5086776295684411196L;
 
-        public PogNode(final MapElementInstance pog)
+        public PogNode(final MapElement pog)
         {
             super(pog, true);
             for (String name : getPog().getAttributeNames())
@@ -463,9 +467,9 @@ public class ActivePogsPanel extends JPanel
         /**
          * @return Returns the pog for this node.
          */
-        public MapElementInstance getPog()
+        public MapElement getPog()
         {
-            return (MapElementInstance)getUserObject();
+            return (MapElement)getUserObject();
         }
 
         /*
@@ -491,13 +495,13 @@ public class ActivePogsPanel extends JPanel
         private RootNode(final GameTableMap map)
         {
             super(map, true);
-            for (MapElementInstance pog : m_orderedPogs)
+            for (MapElement pog : m_orderedPogs)
             {                
                 add(new PogNode(pog));
             }
         }
 
-        public PogNode findNodeFor(final MapElementInstance pog)
+        public PogNode findNodeFor(final MapElement pog)
         {
             for (int i = 0, size = getChildCount(); i < size; ++i)
             {
@@ -592,7 +596,7 @@ public class ActivePogsPanel extends JPanel
     {   	
         super(new BorderLayout());
         
-      	m_orderedPogs = new TreeSet<MapElementInstance>(new SortOrderComparator());
+      	m_orderedPogs = new TreeSet<MapElement>(new SortOrderComparator());
       	
       	g_iconSize = GametableApp.getIntegerProperty(GametableApp.PROPERTY_ICON_SIZE);        
         add(getScrollPane(), BorderLayout.CENTER);
@@ -605,7 +609,7 @@ public class ActivePogsPanel extends JPanel
         // -------------------
         GameTableMap map = canvas.getPublicMap();
 
-        for (MapElementInstance mapElement : map.getMapElementInstances())
+        for (MapElement mapElement : map.getMapElementInstances())
         	addOrderedPog(mapElement);
         	
         map.addListener(mapListener);
@@ -613,7 +617,7 @@ public class ActivePogsPanel extends JPanel
         // -------------------
         map = canvas.getPrivateMap();
         
-        for (MapElementInstance mapElement : map.getMapElementInstances())
+        for (MapElement mapElement : map.getMapElementInstances())
         	addOrderedPog(mapElement);
         	
         map.addListener(mapListener);
@@ -631,19 +635,19 @@ public class ActivePogsPanel extends JPanel
       // -------------------
       GameTableMap map = canvas.getPublicMap();
 
-      for (MapElementInstance mapElement : map.getMapElementInstances())
+      for (MapElement mapElement : map.getMapElementInstances())
       	addOrderedPog(mapElement);
       
       // -------------------
       map = canvas.getPrivateMap();
       
-      for (MapElementInstance mapElement : map.getMapElementInstances())
+      for (MapElement mapElement : map.getMapElementInstances())
       	addOrderedPog(mapElement);
     	
     }
     
 
-    public void reorderPogs(final Map<MapElementInstanceID, Long> changes, boolean notifyNetwork)
+    public void reorderPogs(final Map<MapElementID, Long> changes, boolean notifyNetwork)
     {
     	GametableFrame frame = GametableFrame.getGametableFrame();
     	
@@ -661,13 +665,13 @@ public class ActivePogsPanel extends JPanel
         }
     }
     
-    private void doPogReorder(final Map<MapElementInstanceID, Long> changes)
+    private void doPogReorder(final Map<MapElementID, Long> changes)
     {
     	GametableFrame frame = GametableFrame.getGametableFrame();
     	
     	GameTableMap map = frame.getGametableCanvas().getActiveMap();
     		
-    		for (Entry<MapElementInstanceID, Long> entry : changes.entrySet())
+    		for (Entry<MapElementID, Long> entry : changes.entrySet())
     		{
     			setSortOrder(entry.getKey(), entry.getValue(), map);
     		}
@@ -685,7 +689,7 @@ public class ActivePogsPanel extends JPanel
 				 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElementInstance)
 				 */
 				@Override
-				public void onMapElementInstanceAdded(GameTableMap map, MapElementInstance mapElement)
+				public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement)
 				{
 					addOrderedPog(mapElement);
 				}
@@ -694,7 +698,7 @@ public class ActivePogsPanel extends JPanel
 				 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElementInstance)
 				 */
 				@Override
-				public void onMapElementInstanceRemoved(GameTableMap map, MapElementInstance mapElement)
+				public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement)
 				{
 					removeOrderedPog(mapElement);
 				}
@@ -822,8 +826,10 @@ public class ActivePogsPanel extends JPanel
                     {
                         final PogNode node = (PogNode)val;
                         final Point screenCoords = UtilityFunctions.getScreenCoordinates(pogTree, m_lastPressPosition);
-                        final Point localCoords = new Point(node.getPog().getMapElement().getListIconWidth() / 2, node
-                            .getPog().getMapElement().getListIconHeight() / 2);
+                        
+                        Image icon = node.getPog().getMapElementType().getListIcon();
+                        
+                        final Point localCoords = icon == null ? new Point(0, 0) : new Point(icon.getWidth(null) / 2, icon.getHeight(null) / 2);
                         grabPog(node, screenCoords, localCoords);
                     }
                 }
@@ -1071,15 +1077,15 @@ public class ActivePogsPanel extends JPanel
                     }
                 }
 
-                final MapElementInstance sourcePog = m_grabbedNode.getPog();
-                MapElementInstance targetPog = node.getPog();
+                final MapElement sourcePog = m_grabbedNode.getPog();
+                MapElement targetPog = node.getPog();
                 if (!sourcePog.equals(targetPog))
                 {
-                    final List<MapElementInstance> pogs = new ArrayList<MapElementInstance>(m_orderedPogs);
+                    final List<MapElement> pogs = new ArrayList<MapElement>(m_orderedPogs);
                     
                     final int sourceIndex = pogs.indexOf(sourcePog);
                     int targetIndex = pogs.indexOf(targetPog);
-                    final Map<MapElementInstanceID, Long> changes = new HashMap<MapElementInstanceID, Long>();
+                    final Map<MapElementID, Long> changes = new HashMap<MapElementID, Long>();
                     if (sourceIndex < targetIndex)
                     {
                         // Moving a pog down in the list
@@ -1091,8 +1097,8 @@ public class ActivePogsPanel extends JPanel
                         changes.put(sourcePog.getId(), getSortId(targetPog));
                         for (int i = sourceIndex + 1; i <= targetIndex; ++i)
                         {
-                            final MapElementInstance a = pogs.get(i);
-                            final MapElementInstance b = pogs.get(i - 1);
+                            final MapElement a = pogs.get(i);
+                            final MapElement b = pogs.get(i - 1);
 
                             changes.put(a.getId(), getSortId(b));
                         }
@@ -1103,8 +1109,8 @@ public class ActivePogsPanel extends JPanel
                         changes.put(sourcePog.getId(), getSortId(targetPog));
                         for (int i = targetIndex; i < sourceIndex; ++i)
                         {
-                            final MapElementInstance a = pogs.get(i);
-                            final MapElementInstance b = pogs.get(i + 1);
+                            final MapElement a = pogs.get(i);
+                            final MapElement b = pogs.get(i + 1);
 
                             changes.put(a.getId(),getSortId(b));
                         }
@@ -1134,7 +1140,7 @@ public class ActivePogsPanel extends JPanel
   	 * 
   	 * @param pog
   	 */
-  	public void addOrderedPog(final MapElementInstance pog)
+  	public void addOrderedPog(final MapElement pog)
   	{
 			if (pog.getLayer() != Layer.POG)
 				return;
@@ -1149,7 +1155,7 @@ public class ActivePogsPanel extends JPanel
   	 * @revise move to ActivePogPanel
   	 * @param pog
   	 */
-  	public void removeOrderedPog(final MapElementInstance pog)
+  	public void removeOrderedPog(final MapElement pog)
   	{
   		m_orderedPogs.remove(pog);
   		m_elementSortIDs.remove(pog.getId());
@@ -1162,9 +1168,9 @@ public class ActivePogsPanel extends JPanel
   	 * @param sortOrder sort order number
   	 * @revise move to ActivePogPanel
   	 */
-  	public void setSortOrder(MapElementInstanceID pogID, long sortOrder, GameTableMap map)
+  	public void setSortOrder(MapElementID pogID, long sortOrder, GameTableMap map)
   	{
-  		final MapElementInstance pog = map.getMapElementInstance(pogID);
+  		final MapElement pog = map.getMapElementInstance(pogID);
   		if (pog == null)
   			return;
   		
@@ -1183,7 +1189,7 @@ public class ActivePogsPanel extends JPanel
   	 * @param mapElement mapElement
   	 * @return Sort ID
   	 */
-  	public long getSortId(MapElementInstance mapElement)
+  	public long getSortId(MapElement mapElement)
   	{
   		return m_elementSortIDs.get(mapElement.getId());
   	}
@@ -1191,17 +1197,17 @@ public class ActivePogsPanel extends JPanel
   	/**
   	 * List of pogs shown in the active pog panel
   	 */
-  	private final TreeSet<MapElementInstance> m_orderedPogs;
-  	private final Map<MapElementInstanceID, Long> m_elementSortIDs = new HashMap<MapElementInstanceID, Long>();
+  	private final TreeSet<MapElement> m_orderedPogs;
+  	private final Map<MapElementID, Long> m_elementSortIDs = new HashMap<MapElementID, Long>();
   	private long g_nextSortID = 1;
   	
-  	private class SortOrderComparator implements Comparator<MapElementInstance>
+  	private class SortOrderComparator implements Comparator<MapElement>
   	{
   		/*
   		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
   		 */
   		@Override
-  		public int compare(MapElementInstance o1, MapElementInstance o2)
+  		public int compare(MapElement o1, MapElement o2)
   		{
   			int res = compareSortOrder(o1, o2);
   			if (res != 0)
@@ -1216,7 +1222,7 @@ public class ActivePogsPanel extends JPanel
   		 * @param o2
   		 * @return
   		 */
-  		public int compareSortOrder(MapElementInstance o1, MapElementInstance o2)
+  		public int compareSortOrder(MapElement o1, MapElement o2)
   		{
   			Long i1 = m_elementSortIDs.get(o1.getId());
   			Long i2 = m_elementSortIDs.get(o2.getId());

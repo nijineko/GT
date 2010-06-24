@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.galactanet.gametable.data.MapElementInstance;
-import com.galactanet.gametable.data.MapElementInstanceID;
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementID;
 
 
 
@@ -252,7 +252,7 @@ public class Card
      * @param mapElement Element instance to link
      * @param card Card to link.  Null to unlink element
      */
-    public static void setCard(MapElementInstance mapElement, Card card)
+    public static void setCard(MapElement mapElement, Card card)
     {    	
     	if (card == null)
     	{
@@ -292,12 +292,12 @@ public class Card
      * @param mapElement Instance to look for
      * @return Card object or null if not a card 
      */
-    public static Card getCard(MapElementInstance mapElement)
+    public static Card getCard(MapElement mapElement)
     {
     	return g_cardMap.get(mapElement.getId());
     }
 
-    private static Map<MapElementInstanceID, Card> g_cardMap = new HashMap<MapElementInstanceID, Card>();
+    private static Map<MapElementID, Card> g_cardMap = new HashMap<MapElementID, Card>();
     
     // TODO card information should be saved
 }

@@ -17,16 +17,16 @@
  */
 package com.galactanet.gametable.data;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import com.galactanet.gametable.data.MapElement.Layer;
-import com.galactanet.gametable.util.Log;
+import com.galactanet.gametable.data.MapElementType.Layer;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
- * Library containing MapElementTypes
+ * Basic library, used as root.
  * 
  * @author iffy
  * 
@@ -34,67 +34,29 @@ import com.galactanet.gametable.util.UtilityFunctions;
  */
 public class MapElementTypeLibrary
 {
-    /**
-     * Calculated the library name from a directory file.
-     * 
-     * @param file Directory to use to calculate name.
-     * 
-     * @return Name of this library node.
-     */
-    private static String getNameFromDirectory(final File file)
-    {
-    	return file.getName();
-    }
-
-    /**
-     * Set of acquired libraries.
-     */
-    private final Set<File>  acquiredLibraries = new HashSet<File>();
-
-    /**
-     * Set of acquired pog names.
-     */
-    private final Set<File> acquiredPogs      = new HashSet<File>();
-
+	/**
+	 * The fully qualified name for this library, build from its parent's names
+	 */
+	private String m_fullyQualifiedName = null;
+	
     /**
      * A list of child libraries, sorted by name.
      */
-    private final List<MapElementTypeLibrary> children          = new ArrayList<MapElementTypeLibrary>();
-
-    /**
-     * Whether this is a pog or underlay library.
-     */
-    private Layer        libraryType       = MapElement.Layer.POG;
-
-    /**
-     * The filesystem path to this set of pogs.
-     */
-    private final File       m_libraryPath;
+    private final List<MapElementTypeLibrary> m_childLibraries;
     
     /**
-     * Used to build relative path stringd
+     * Unmodifiable, synchronized list of children
      */
-    private final String m_rootPathName;
+    private final List<MapElementTypeLibrary> m_childLibrariesUnmodifiable; 
 
     /**
      * The short name of this library. Unique within the parent library.
      */
-    private String     m_libraryName              = null;
-
-    // --- Constructors ----------------------------------------------------------------------------------------------
+    private String m_libraryName = "root";
 
     /**
-     * The parent library.
+     * Instance of the root library
      */
-    private MapElementTypeLibrary parent            = null;
-
-    /**
-     * The list of pogs in this library.
-     */
-    private final List<MapElement> pogs              = new ArrayList<MapElement>();
-
-    // --- Methods ---------------------------------------------------------------------------------------------------
-    
     private static MapElementTypeLibrary g_masterLibrary = null;
     
     /**
@@ -111,343 +73,73 @@ public class MapElementTypeLibrary
     }
 
     /**
-     * Root PogLibrary Constructor.
-     * 
-     * @throws IOException
+     * Protected constructor
      */
-    private MapElementTypeLibrary() throws IOException
+    protected MapElementTypeLibrary()
     {
-        m_libraryPath = new File(".").getCanonicalFile();
-        m_rootPathName = getRoot().m_libraryPath.getAbsolutePath() + File.separator;
-        
-        m_libraryName = getNameFromDirectory(m_libraryPath);
-        
-        addLibrary("pogs", Layer.POG);
-        addLibrary("environment", Layer.ENVIRONMENT);
-        addLibrary("overlays", Layer.OVERLAY);
-        addLibrary("underlays", Layer.UNDERLAY);
-    }
-
-    /**
-     * Child PogLibrary Constructor.
-     */
-    public MapElementTypeLibrary(final MapElementTypeLibrary mommy, final String directory, final Layer type) throws IOException
-    {
-        parent = mommy;
-        libraryType = type;
-        m_libraryPath = new File(directory).getCanonicalFile();
-        m_rootPathName = getRoot().m_libraryPath.getAbsolutePath() + File.separator;
-        
-        if(!m_libraryPath.exists()) {
-            if(!m_libraryPath.mkdir()) {
-                throw new IOException("Failed to find and create directory " + directory);
-            }            
-        }
-        if (!m_libraryPath.canRead() || !m_libraryPath.isDirectory())
-        {
-            throw new IOException("cannot read from " + directory);
-        }
-        m_libraryName = getNameFromDirectory(m_libraryPath);
-
-        acquirePogs();
+      m_childLibraries = new ArrayList<MapElementTypeLibrary>();
+    	m_childLibrariesUnmodifiable = Collections.unmodifiableList(m_childLibraries); 
     }
     
-    private String makeRelativePath(File file)
-    {
-    	return file.getAbsolutePath().replace(m_rootPathName, "");
-    }
-
     /**
-     * Ensures that this panel has all the available pogs loaded.
+     * Adds a sub library to this library
+     * @param library Library implementation
      */
-    public boolean acquirePogs()
+    public void addSubLibrary(MapElementTypeLibrary library)
     {
-        if (!m_libraryPath.exists())
-        {
-            return false;
-        }
-
-        boolean retVal = false;
-
-        // We don't want to scour the root library for pogs
-        if (getParent() != null)
-        {
-            final File[] files = m_libraryPath.listFiles();
-
-            for (File file : files)
-            {
-            	if (file.getName().startsWith("."))
-            		continue;	// skip files starting with a period (.svn, etc.)
-            	
-                final String filename = makeRelativePath(file);
-
-                if (file.isFile() && file.canRead())
-                {
-                    if (addPog(file, 1, libraryType, true) != null)
-                    {
-                        retVal = true;
-                    }
-                }
-                else if (file.isDirectory() && file.canRead())
-                {
-                    if (addLibrary(filename, libraryType) != null)
-                    {
-                        retVal = true;
-                    }
-                }
-            }
-        }
-
-        final int numPogs = pogs.size();
-        for (int i = 0; i < numPogs; ++i)
-        {
-            final MapElement pog = pogs.get(i);
-            if (pog.isLoaded())
-            {
-                pog.load();
-            }
-        }
-
-        final int size = children.size();
-        for (int i = 0; i < size; ++i)
-        {
-            final MapElementTypeLibrary child = children.get(i);
-            if (child.acquirePogs())
-            {
-                retVal = true;
-            }
-        }
-
-        return retVal;
+    	m_childLibraries.add(library);
+    	// todo add listener trigger when library is added
     }
 
     /**
-     * Adds library to this library, ensuring it doesn't already exist.
-     * 
-     * @param libName
-     * @param type
-     * @return
-     */
-    private MapElementTypeLibrary addLibrary(final String libName, final Layer type)
-    {
-        try
-        {
-            final File libDir = new File(libName).getAbsoluteFile();
-            if (acquiredLibraries.contains(libDir))
-            {
-                return null;
-            }
-
-            final MapElementTypeLibrary child = new MapElementTypeLibrary(this, libDir.getPath(), type);
-            children.add(child);
-            // Log.log(Log.SYS, new Exception(this + " added: " + child));
-            acquiredLibraries.add(libDir);
-            return child;
-        }
-        catch (final Exception ex)
-        {
-            // any exceptions thrown in this process cancel
-            // the addition of that one directory.
-            Log.log(Log.SYS, ex);
-            return null;
-        }
-    }
-
-    private MapElement addPog(File pogFile, final int facing, final Layer type)
-    {
-        return addPog(pogFile, facing, type, false);
-    }
-
-    private MapElement addPog(File pogFile, final int facing, final Layer type, boolean ignoreOnFail)
-    {
-        try
-        {
-            
-            if (acquiredPogs.contains(pogFile))
-            {
-                return null;
-            }
-
-            String filePath = makeRelativePath(pogFile);
-            
-            final MapElement pog = new MapElement(filePath, facing, type);
-            
-            if (!ignoreOnFail || !pog.isLoaded())
-            {
-                // Log.log(Log.SYS, new Exception(this + " added: " + pog));
-                pogs.add(pog);
-                Collections.sort(pogs, m_typeComparator);
-            }
-            acquiredPogs.add(pogFile);
-            return pog;
-        }
-        catch (final Exception ex)
-        {
-            // any exceptions thrown in this process cancel
-            // the addition of that one pog.
-            Log.log(Log.SYS, ex);
-            return null;
-        }
-    }
-
-    /**
-     * Creates a placeholder PogType for a pog that hasn't been received yet. Delegates to children if appropriate.
-     * 
-     * @param filename Filename of pog to create placeholder for.
-     * @param face What we think the face size of the pog is at this point.
-     * @return Placeholder PogType
-     */
-    public MapElement createPlaceholder(final String filename, final int face)
-    {
-        // Log.log(Log.SYS, this + ".createPlaceholder(" + filename + ", " + face + ")");
-        final File f = new File(filename);
-        final File p = f.getParentFile();
-        final MapElementTypeLibrary lib = findDeepestChild(p);
-        if (lib == null)
-        {
-            Log.log(Log.SYS, "unable to create library");
-            return null;
-        }
-
-        if (lib != this)
-        {
-            return lib.createPlaceholder(filename, face);
-        }
-
-        final File absParent = p.getAbsoluteFile();
-        p.mkdirs();
-        if (!absParent.equals(getLocation()))
-        {
-            MapElementTypeLibrary child = getChild(p.getPath());
-            if (child != null)
-            {
-                return child.createPlaceholder(filename, face);
-            }
-
-            File next = absParent;
-            while (!next.getParentFile().equals(getLocation()))
-            {
-                next = next.getParentFile();
-            }
-            child = addLibrary(next.getAbsolutePath(), libraryType);
-            if (child == null)
-            {
-                return null;
-            }
-            return child.createPlaceholder(filename, face);
-        }
-
-        return addPog(f, face, libraryType);
-    }
-
-    private MapElementTypeLibrary findDeepestChild(final File p)
-    {
-        final File path = p.getAbsoluteFile();
-
-        // trivial accept
-        if (path.equals(getLocation()))
-        {
-            return this;
-        }
-
-        for (MapElementTypeLibrary child : children)
-        {
-            final MapElementTypeLibrary lib = child.findDeepestChild(path);
-            if (lib != null)
-            {
-                return lib;
-            }
-        }
-
-        if (!UtilityFunctions.isAncestorFile(getLocation(), path))
-        {
-            return null;
-        }
-
-        return this;
-    }
-
-    /**
-     * @return Returns the pogs in this library.
-     */
-    public List<MapElement> getAllPogs()
-    {
-        final int size = children.size();
-        if (size < 1)
-        {
-            return getPogs();
-        }
-
-        final List<MapElement> accum = new ArrayList<MapElement>(pogs);   //@revise this copies the array on each call.  can we can maintain a syncrhonized unmodifiable list instead?
-        for (MapElementTypeLibrary child : children)
-        {
-            accum.addAll(child.getAllPogs());
-        }
-
-        return Collections.unmodifiableList(accum);
-    }
-
-    /**
-     * Gets the child library of the given name.
+     * Gets a sub library
      * 
      * @param libraryName Name of library to get.
-     * @return Library found or null.
-     */
-    public MapElementTypeLibrary getChild(final String libraryName)
-    {
-        final MapElementTypeLibrary child = getChildExact(libraryName);
-        if (child != null)
-        {
-            return child;
-        }
-
-        final File childPath = UtilityFunctions.getCanonicalFile(new File(m_libraryPath.getPath()
-            + File.separator + libraryName));
-
-        return getChildExact(childPath.getPath());
-    }
-
-    /**
-     * Gets a child by the exact name.
      * 
-     * @param libraryName Exact name of child to find.
-     * @return Child library with the given name, or null if not found.
+     * @return Library found or null.
+     *
      */
-    private MapElementTypeLibrary getChildExact(final String libraryName)
+    public MapElementTypeLibrary getSubLibrary(final String libraryName)
     {
-        final File file = UtilityFunctions.getCanonicalFile(new File(libraryName));
-        final int size = children.size();
-        for (int i = 0; i < size; ++i)
-        {
-            final MapElementTypeLibrary child = children.get(i);
-            if (file.equals(child.getLocation()))
-            {
-                return child;
-            }
-        }
-
-        return null;
+    	for (MapElementTypeLibrary library : m_childLibraries)
+    	{
+    		if (library.getName().equals(libraryName))
+    			return library;
+    	}
+    	
+      return null;
+    }
+    
+    /**
+     * Gets a library from FQL
+     * 
+     * @param fullyQualifiedLibraryName Fully qualified library name
+     * 
+     * @return Library found or null.
+     * 
+     */
+    public MapElementTypeLibrary getLibraryFromFQN(final String fullyQualifiedLibraryName)
+    {
+    	for (MapElementTypeLibrary library : m_childLibraries)
+    	{
+    		if (library.getFullyQualifiedName().equals(fullyQualifiedLibraryName))
+    			return library;
+    		
+    		MapElementTypeLibrary search = library.getLibraryFromFQN(fullyQualifiedLibraryName);
+    		if (search != null)
+    			return search;
+    	}
+    	
+      return null;
     }
 
     /**
-     * @return Returns the child libraries of this library.
+     * @return Returns an unmodifiable list of sub libraries
      */
-    public List<MapElementTypeLibrary> getChildren()
+    public List<MapElementTypeLibrary> getSubLibraries()
     {
-        return Collections.unmodifiableList(children);  // @revise keep that instance - it remains synchronized. 
+    	return m_childLibrariesUnmodifiable;    
     }
-
-    // --- Object Implementation ---
-
-    /**
-     * @return Returns the location of this library.
-     */
-    public File getLocation()
-    {
-        return m_libraryPath;
-    }
-
-    // --- Private Methods ---
 
     /**
      * @return Returns the name of this library.
@@ -458,112 +150,47 @@ public class MapElementTypeLibrary
     }
 
     /**
-     * @return Returns the parent library.
+     * @return Returns the parent library.  Null if this is the root library.
      */
     public MapElementTypeLibrary getParent()
     {
-        return parent;
-    }
-
-    /**
-     * @return Gets the canonical path of this library.
-     */
-    public String getPath()
-    {
-        try
-        {
-            return m_libraryPath.getCanonicalPath();
-        }
-        catch (final IOException ioe)
-        {
-            return m_libraryPath.getAbsolutePath();
-        }
-    }
-    
-    
-
-    /**
-     * Gets the pog with the given name.
-     * 
-     * @revise Should not be looking by filename
-     * 
-     * @param pogName name of pog to fetch
-     * @return Pog found or null.
-     */
-    public MapElement getPogByFilename(final String pogName)
-    {
-        int size = pogs.size();
-        for (int i = 0; i < size; ++i)
-        {
-            final MapElement pogType = pogs.get(i);
-            if (pogName.equals(pogType.getImageFilename()))
-            {
-                return pogType;
-            }
-        }
-
-        size = children.size();
-        for (int i = 0; i < size; ++i)
-        {
-            final MapElementTypeLibrary child = children.get(i);
-            final MapElement pog = child.getPogByFilename(pogName);
-            if (pog != null)
-            {
-                return pog;
-            }
-        }
-
         return null;
     }
-    
+
     /**
-     * Gets a MapElementType by its normalized name
-     * @param normalizedName
-     * @return MapElementType or null
+     * Looks through this library and its children to find a specified type
+     *    
+     * @param fullyQualifiedTypeName Unique type name
+     * @return MapElementType or null, if none found
      */
-    /*
-    public MapElement getMapElementType(String normalizedName)
+    public MapElementType getElementType(final String fullyQualifiedTypeName)
     {
-    	for (MapElement type : pogs)
+    	for (MapElementTypeLibrary library : m_childLibraries)
     	{
-    		if (type.getNormalizedName().equals(normalizedName))
-    			return type;
-    	}
-    	
-    	for (PogLibrary child : children)
-    	{
-    		MapElement type = child.getMapElementType(normalizedName);
+    		MapElementType type = library.getElementType(fullyQualifiedTypeName);
     		if (type != null)
     			return type;
     	}
-
-      return null;
-    }
-    */
-
-    /**
-     * @return Returns the pogs in this library.
-     */
-    public List<MapElement> getPogs()
-    {
-        return Collections.unmodifiableList(pogs);
+    	
+    	return null;
     }
 
     /**
-     * @return Returns the root library.
+     * @return Returns a list of element types directly under this library
      */
-    public MapElementTypeLibrary getRoot()
+    public List<MapElementType> getElementTypes()
     {
-        if (parent == null)
-        {
-            return this;
-        }
-
-        return parent.getRoot();
+        return Collections.emptyList();
     }
     
-    public void removePog(final MapElement pt) {
-        pogs.remove(pt);       
+    /**
+     * Remove a map element type from this library
+     * @param type Type to remove
+     * @return true if type has been removed, false if it was not within this library
+     */    
+    public boolean removeElementType(final MapElementType type) 
+    {
+        return false;       
     }
 
     /*
@@ -571,15 +198,112 @@ public class MapElementTypeLibrary
      */
     public String toString()
     {
-        return "[PogLib " + getLocation() + " (" + pogs.size() + ")]";
+        return "[MapElementTypeLibrary " + getFullyQualifiedName() + "]"; 
     }
     
-    private Comparator<MapElement> m_typeComparator = new Comparator<MapElement>()        
-    {            
-      @Override            
-      public int compare(MapElement pa, MapElement pb)
-      {
-          return pa.getDisplayLabel().compareTo(pb.getDisplayLabel());
-      }
-  };	
+    /**
+     * Refresh the content of this library
+     * @param recurse If true, will also refresh child libraries
+     * @throws IOException if something fails.  In this case, throwing should be non-breaking; Accumulating errors and throwing them at the end is OK.
+     */
+    public void refresh(boolean recurse) throws IOException
+    {
+    	if (recurse)
+    	{
+    		for (MapElementTypeLibrary library : m_childLibraries)
+    			library.refresh(recurse);
+    	}
+    }
+    
+    /**
+     * Creates a place holder type to use when we absolutely need a specific type
+     * @param typeName Unique name for place holder
+     * @param faceSize Number of tiles on a face
+     */
+    public MapElementType createPlaceholderType(String typeName, int faceSize)
+    {
+    	if (typeName == null)
+    		return null;
+    	
+    	int pos = typeName.indexOf(TYPE_SEPARATOR);
+    	if (pos < 0)
+    		return null;
+    		
+    	String libraryName = typeName.substring(0, pos); 
+
+    	MapElementTypeLibrary lib = getLibraryFromFQN(libraryName);
+    	
+    	// TODO If we can't find the library, we'll need to somehow create it!
+    	if (lib == null)
+    	{
+    		throw new IllegalStateException("Library not found. Not robust enough yet.");
+    	}
+    	
+    	// TODO I can't arbitrarily decide type - I must be able to get type from type FQN.
+    	BasicMapElementTypeLibrary basicLib = (BasicMapElementTypeLibrary)lib;  
+    	
+    	BasicMapElementType type = new BasicMapElementType(basicLib, faceSize, Layer.UNDERLAY);
+    	basicLib.addElementType(type);
+    	
+    	return type;
+    }
+    
+    /**
+     * Rebuilds fully qualified name for this library. 
+     */
+    private void rebuildFullyQualifiedName()
+    {
+    	if (this == g_masterLibrary)
+    	{
+    		m_fullyQualifiedName = "";
+    		return;
+    	}
+    	
+    	if (getParent() == null)
+    	{
+    		m_fullyQualifiedName = UtilityFunctions.normalizeName(m_libraryName);
+    		return;
+    	}
+    	
+    	String fqn = UtilityFunctions.normalizeName(m_libraryName);
+    	
+    	MapElementTypeLibrary lib = getParent();
+    	
+    	while (lib != null && lib != g_masterLibrary)
+    	{    		
+    		fqn = UtilityFunctions.normalizeName(lib.getName()) + LIBRARY_SEPARATOR + fqn;
+    		lib = lib.getParent();
+    	}
+    	
+    	m_fullyQualifiedName = fqn;
+    }
+    
+    /**
+     * Sets the display name for this library.  Automatically rebuilds fully qualified name.
+     * @param name Library's name
+     */
+    protected final void setLibraryName(String name)
+    {
+    	m_libraryName = name;
+    	rebuildFullyQualifiedName();
+    }
+    
+    /**
+     * Returns the fully qualified name of this library.  This method is final.  To rebuild the FQN, {@link #rebuildFullyQualifiedName()}
+     * @return FQN string
+     */
+    public final String getFullyQualifiedName()
+    {
+    	return m_fullyQualifiedName;
+    }
+    
+    /**
+     * Character used to separate library names 
+     */
+    public static final String LIBRARY_SEPARATOR = ":";
+    
+    /**
+     * Character used to separate type names from library names 
+     */
+    public static final String TYPE_SEPARATOR = "+";
 }

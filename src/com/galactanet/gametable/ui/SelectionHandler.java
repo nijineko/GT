@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapElement;
 
 /**
  * Handles selection operations for the canvas
@@ -40,7 +40,7 @@ public class SelectionHandler
 	 */
 	protected SelectionHandler()
 	{
-		m_selectedElements = new ArrayList<MapElementInstance>();
+		m_selectedElements = new ArrayList<MapElement>();
 		m_selectedElementsUnmodifiable = Collections.unmodifiableList(m_selectedElements);	
 	}
 	
@@ -49,7 +49,7 @@ public class SelectionHandler
    * @param mapElement element to verify
    * @return true if selected
    */
-  public boolean isSelected(MapElementInstance mapElement)
+  public boolean isSelected(MapElement mapElement)
   {
   	return m_selectedElements.contains(mapElement);    	
   }
@@ -60,7 +60,7 @@ public class SelectionHandler
 	 * @param mapElement Instance to add to selection
 	 * @param select true to select, false to unselect
 	 */
-	public void selectMapElementInstance(MapElementInstance mapElement, boolean select)
+	public void selectMapElementInstance(MapElement mapElement, boolean select)
 	{
 		if (select)
 		{
@@ -78,7 +78,7 @@ public class SelectionHandler
 	 * @param mapElements List of instance to add to the selection
 	 * @param select true to select, false to unselect
 	 */
-	public void selectMapElementInstances(final List<MapElementInstance> mapElements, boolean select)
+	public void selectMapElementInstances(final List<MapElement> mapElements, boolean select)
 	{
 		if (select)
 		{
@@ -104,7 +104,7 @@ public class SelectionHandler
 	 * 
 	 * @return The list of currently selected instances (unmodifiable). Never null.
 	 */
-	public List<MapElementInstance> getSelectedMapElementInstances()
+	public List<MapElement> getSelectedMapElementInstances()
 	{
 		return m_selectedElementsUnmodifiable;
 	}
@@ -112,10 +112,10 @@ public class SelectionHandler
 	/**
 	 * Lists the currently selected elements
 	 */
-	private final List<MapElementInstance>					m_selectedElements;
+	private final List<MapElement>					m_selectedElements;
 	
 	/**
 	 * Unmodifiable version of selected elements
 	 */
-	private final List<MapElementInstance>	m_selectedElementsUnmodifiable;
+	private final List<MapElement>	m_selectedElementsUnmodifiable;
 }
