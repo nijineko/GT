@@ -225,7 +225,7 @@ public class PublishTool extends NullTool
 
         for (MapElementInstance pog : m_from.getMapElementInstances())
         {
-            final int size = pog.getFaceSize() * GameTableMap.getBaseSquareSize();
+            final int size = (int)(pog.getFaceSize() * GameTableMap.getBaseSquareSize());
             
             MapCoordinates bottomRight = pog.getPosition().delta(size, size);
             

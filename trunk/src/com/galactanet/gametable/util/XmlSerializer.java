@@ -22,6 +22,7 @@ import java.util.Map.Entry;
  * 
  * #GT-AUDIT XmlSerializer
  */
+@Deprecated
 public class XmlSerializer
 {
     // --- Members ---------------------------------------------------------------------------------------------------

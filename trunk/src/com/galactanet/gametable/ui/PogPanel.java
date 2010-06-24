@@ -24,6 +24,7 @@ import javax.swing.tree.TreePath;
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementInstance;
+import com.galactanet.gametable.data.MapElementTypeLibrary;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -49,8 +50,8 @@ public class PogPanel extends JPanel
     private class BranchTracker implements TreeExpansionListener
     {
         private boolean   allExpanded    = false;
-        private final Set<PogLibrary> collapsedNodes = new HashSet<PogLibrary>();
-        private final Set<PogLibrary> expandedNodes  = new HashSet<PogLibrary>();
+        private final Set<MapElementTypeLibrary> collapsedNodes = new HashSet<MapElementTypeLibrary>();
+        private final Set<MapElementTypeLibrary> expandedNodes  = new HashSet<MapElementTypeLibrary>();
 
         public BranchTracker()
         {
@@ -126,7 +127,7 @@ public class PogPanel extends JPanel
             {
                 // @revise why are we creating a copy?  is it for syncrhonization issues?  I think so.  Maybe we would prefer a CopyOnWriteArraySet instead of a HashSet?
                 // same for below loop
-                for (PogLibrary lib : new HashSet<PogLibrary>(expandedNodes))
+                for (MapElementTypeLibrary lib : new HashSet<MapElementTypeLibrary>(expandedNodes))
                 {
                     final LibraryNode node = root.findNodeFor(lib);
                     if (node != null)
@@ -140,7 +141,7 @@ public class PogPanel extends JPanel
                     }
                 }
 
-                for (PogLibrary lib : new HashSet<PogLibrary>(collapsedNodes))
+                for (MapElementTypeLibrary lib : new HashSet<MapElementTypeLibrary>(collapsedNodes))
                 {
                     final LibraryNode node = root.findNodeFor(lib);
                     if (node != null)
@@ -192,22 +193,22 @@ public class PogPanel extends JPanel
     private static class LibraryNode implements TreeNode
     {
         private final Vector<TreeNode>     children;
-        private final PogLibrary library;
+        private final MapElementTypeLibrary library;
         private LibraryNode      parent;
 
-        public LibraryNode(final LibraryNode mommy, final PogLibrary lib)
+        public LibraryNode(final LibraryNode mommy, final MapElementTypeLibrary lib)
         {
             this(lib);
             parent = mommy;
         }
 
-        public LibraryNode(final PogLibrary lib)
+        public LibraryNode(final MapElementTypeLibrary lib)
         {
             library = lib;
             children = new Vector<TreeNode>();
 
-            final List<PogLibrary> childLibs = library.getChildren();
-            for (PogLibrary child : childLibs)
+            final List<MapElementTypeLibrary> childLibs = library.getChildren();
+            for (MapElementTypeLibrary child : childLibs)
             {
                 children.add(new LibraryNode(this, child));
             }
@@ -252,7 +253,7 @@ public class PogPanel extends JPanel
          * @param lib Library to find node for.
          * @return Node for library, or null if not found.
          */
-        public LibraryNode findNodeFor(final PogLibrary lib)
+        public LibraryNode findNodeFor(final MapElementTypeLibrary lib)
         {
             if (getLibrary().equals(lib))
             {
@@ -344,7 +345,7 @@ public class PogPanel extends JPanel
         /**
          * @return Returns the library.
          */
-        public PogLibrary getLibrary()
+        public MapElementTypeLibrary getLibrary()
         {
             return library;
         }
@@ -499,7 +500,7 @@ public class PogPanel extends JPanel
         boolean                   expanded         = false;
         boolean                   leaf             = false;
         */
-        PogLibrary                library          = null;
+        MapElementTypeLibrary                library          = null;
         MapElement                   pogType          = null;
         private static int g_iconSize = -1; 
 
@@ -696,7 +697,7 @@ public class PogPanel extends JPanel
     /**
      * The list of pogs held in this panel.
      */
-    private PogLibrary            m_library            = null;
+    private MapElementTypeLibrary            m_library            = null;
     private Point                 m_mousePosition      = null;
 
     // --- Child Components ---
@@ -712,7 +713,7 @@ public class PogPanel extends JPanel
      * @param canvas Handle to the canvas.
      * @param bPogsMode True if for Pogs, False if for Underlays.
      */
-    public PogPanel(final PogLibrary library, final GametableCanvas canvas)
+    public PogPanel(final MapElementTypeLibrary library, final GametableCanvas canvas)
     {
         m_library = library;
         m_canvas = canvas;

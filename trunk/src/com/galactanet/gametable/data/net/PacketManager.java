@@ -2073,7 +2073,7 @@ public class PacketManager
             os.flush();
             os.close();
 
-            final MapElement pogType = GametableFrame.getGametableFrame().getPogLibrary().getPog(filename);
+            final MapElement pogType = GametableFrame.getGametableFrame().getPogLibrary().getPogByFilename(filename);
             pogType.load();
 
             // tell the pog panels to check for the new image

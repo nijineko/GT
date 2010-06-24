@@ -343,15 +343,15 @@ public class PointerTool extends NullTool
         {   
             final int xLocation;
             final int yLocation;
-            final int pogSize = m_menuPog.getFaceSize();
+            final float pogSize = m_menuPog.getFaceSize();
             MapCoordinates pogPos = m_menuPog.getPosition();
-            final int tempSize = pogSize;
+            final float tempSize = pogSize;
             final int m_gridModeId = m_canvas.getGridModeId();
 
             if (m_gridModeId == 1) //square mode
             {
-                xLocation =  (pogPos.x / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2);
-                yLocation = ((pogPos.y / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2)) * -1;
+                xLocation =  (int)((pogPos.x / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2));
+                yLocation = (int)(((pogPos.y / 64) + ( ((tempSize % 2 == 0) ? pogSize - 1 : pogSize) / 2)) * -1);
             }
             else if (m_gridModeId == 2) //hex mode - needs work to get it to display appropriate numbers
             {

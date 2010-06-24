@@ -1,62 +1,49 @@
 /*
- * PogLibrary.java: GameTable is in the Public Domain.
+ * MapElementTypeLibrary.java
+ * 
+ * @created 2010-06-19
+ * 
+ * Copyright (C) 1999-2010 Open Source Game Table Project
+ * 
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-
-
-package com.galactanet.gametable.ui;
+package com.galactanet.gametable.data;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
-
-
 /**
- * A recursively-defined representation of a set of pogs.
+ * Library containing MapElementTypes
  * 
  * @author iffy
  * 
  * #GT-AUDIT PogLibrary
  */
-public class PogLibrary
+public class MapElementTypeLibrary
 {
-    // --- Constants -------------------------------------------------------------------------------------------------
-
-
-
-    // --- Members ---------------------------------------------------------------------------------------------------
-
     /**
      * Calculated the library name from a directory file.
      * 
      * @param file Directory to use to calculate name.
+     * 
      * @return Name of this library node.
      */
     private static String getNameFromDirectory(final File file)
     {
     	return file.getName();
-    }
-
-    /**
-     * In-place sorts the list of pogs by height.
-     * 
-     * @param toSort List of Pogs to sort.
-     */
-    private static void sortPogsByLabel(final List<MapElement> toSort)
-    {
-        Collections.sort(toSort, new Comparator<MapElement>()        
-        {            
-            @Override            
-            public int compare(MapElement pa, MapElement pb)
-            {
-                return pa.getNormalizedDisplayLabel().compareTo(pb.getNormalizedDisplayLabel());
-            }
-        });
     }
 
     /**
@@ -72,7 +59,7 @@ public class PogLibrary
     /**
      * A list of child libraries, sorted by name.
      */
-    private final List<PogLibrary> children          = new ArrayList<PogLibrary>();
+    private final List<MapElementTypeLibrary> children          = new ArrayList<MapElementTypeLibrary>();
 
     /**
      * Whether this is a pog or underlay library.
@@ -99,7 +86,7 @@ public class PogLibrary
     /**
      * The parent library.
      */
-    private PogLibrary parent            = null;
+    private MapElementTypeLibrary parent            = null;
 
     /**
      * The list of pogs in this library.
@@ -107,13 +94,28 @@ public class PogLibrary
     private final List<MapElement> pogs              = new ArrayList<MapElement>();
 
     // --- Methods ---------------------------------------------------------------------------------------------------
+    
+    private static MapElementTypeLibrary g_masterLibrary = null;
+    
+    /**
+     * Get the main library
+     * 
+     * TODO should not throw. Should not auto initialize
+     */
+    public static MapElementTypeLibrary getMasterLibrary() throws IOException
+    {
+    	if (g_masterLibrary == null)
+    		g_masterLibrary = new MapElementTypeLibrary();
+    	
+    	return g_masterLibrary;
+    }
 
     /**
      * Root PogLibrary Constructor.
      * 
      * @throws IOException
      */
-    public PogLibrary() throws IOException
+    private MapElementTypeLibrary() throws IOException
     {
         m_libraryPath = new File(".").getCanonicalFile();
         m_rootPathName = getRoot().m_libraryPath.getAbsolutePath() + File.separator;
@@ -129,7 +131,7 @@ public class PogLibrary
     /**
      * Child PogLibrary Constructor.
      */
-    public PogLibrary(final PogLibrary mommy, final String directory, final Layer type) throws IOException
+    public MapElementTypeLibrary(final MapElementTypeLibrary mommy, final String directory, final Layer type) throws IOException
     {
         parent = mommy;
         libraryType = type;
@@ -209,7 +211,7 @@ public class PogLibrary
         final int size = children.size();
         for (int i = 0; i < size; ++i)
         {
-            final PogLibrary child = children.get(i);
+            final MapElementTypeLibrary child = children.get(i);
             if (child.acquirePogs())
             {
                 retVal = true;
@@ -226,7 +228,7 @@ public class PogLibrary
      * @param type
      * @return
      */
-    private PogLibrary addLibrary(final String libName, final Layer type)
+    private MapElementTypeLibrary addLibrary(final String libName, final Layer type)
     {
         try
         {
@@ -236,7 +238,7 @@ public class PogLibrary
                 return null;
             }
 
-            final PogLibrary child = new PogLibrary(this, libDir.getPath(), type);
+            final MapElementTypeLibrary child = new MapElementTypeLibrary(this, libDir.getPath(), type);
             children.add(child);
             // Log.log(Log.SYS, new Exception(this + " added: " + child));
             acquiredLibraries.add(libDir);
@@ -269,11 +271,12 @@ public class PogLibrary
             String filePath = makeRelativePath(pogFile);
             
             final MapElement pog = new MapElement(filePath, facing, type);
+            
             if (!ignoreOnFail || !pog.isLoaded())
             {
                 // Log.log(Log.SYS, new Exception(this + " added: " + pog));
                 pogs.add(pog);
-                sortPogsByLabel(pogs);
+                Collections.sort(pogs, m_typeComparator);
             }
             acquiredPogs.add(pogFile);
             return pog;
@@ -299,7 +302,7 @@ public class PogLibrary
         // Log.log(Log.SYS, this + ".createPlaceholder(" + filename + ", " + face + ")");
         final File f = new File(filename);
         final File p = f.getParentFile();
-        final PogLibrary lib = findDeepestChild(p);
+        final MapElementTypeLibrary lib = findDeepestChild(p);
         if (lib == null)
         {
             Log.log(Log.SYS, "unable to create library");
@@ -315,7 +318,7 @@ public class PogLibrary
         p.mkdirs();
         if (!absParent.equals(getLocation()))
         {
-            PogLibrary child = getChild(p.getPath());
+            MapElementTypeLibrary child = getChild(p.getPath());
             if (child != null)
             {
                 return child.createPlaceholder(filename, face);
@@ -337,7 +340,7 @@ public class PogLibrary
         return addPog(f, face, libraryType);
     }
 
-    private PogLibrary findDeepestChild(final File p)
+    private MapElementTypeLibrary findDeepestChild(final File p)
     {
         final File path = p.getAbsoluteFile();
 
@@ -347,9 +350,9 @@ public class PogLibrary
             return this;
         }
 
-        for (PogLibrary child : children)
+        for (MapElementTypeLibrary child : children)
         {
-            final PogLibrary lib = child.findDeepestChild(path);
+            final MapElementTypeLibrary lib = child.findDeepestChild(path);
             if (lib != null)
             {
                 return lib;
@@ -376,7 +379,7 @@ public class PogLibrary
         }
 
         final List<MapElement> accum = new ArrayList<MapElement>(pogs);   //@revise this copies the array on each call.  can we can maintain a syncrhonized unmodifiable list instead?
-        for (PogLibrary child : children)
+        for (MapElementTypeLibrary child : children)
         {
             accum.addAll(child.getAllPogs());
         }
@@ -390,9 +393,9 @@ public class PogLibrary
      * @param libraryName Name of library to get.
      * @return Library found or null.
      */
-    public PogLibrary getChild(final String libraryName)
+    public MapElementTypeLibrary getChild(final String libraryName)
     {
-        final PogLibrary child = getChildExact(libraryName);
+        final MapElementTypeLibrary child = getChildExact(libraryName);
         if (child != null)
         {
             return child;
@@ -410,13 +413,13 @@ public class PogLibrary
      * @param libraryName Exact name of child to find.
      * @return Child library with the given name, or null if not found.
      */
-    private PogLibrary getChildExact(final String libraryName)
+    private MapElementTypeLibrary getChildExact(final String libraryName)
     {
         final File file = UtilityFunctions.getCanonicalFile(new File(libraryName));
         final int size = children.size();
         for (int i = 0; i < size; ++i)
         {
-            final PogLibrary child = children.get(i);
+            final MapElementTypeLibrary child = children.get(i);
             if (file.equals(child.getLocation()))
             {
                 return child;
@@ -429,7 +432,7 @@ public class PogLibrary
     /**
      * @return Returns the child libraries of this library.
      */
-    public List<PogLibrary> getChildren()
+    public List<MapElementTypeLibrary> getChildren()
     {
         return Collections.unmodifiableList(children);  // @revise keep that instance - it remains synchronized. 
     }
@@ -457,7 +460,7 @@ public class PogLibrary
     /**
      * @return Returns the parent library.
      */
-    public PogLibrary getParent()
+    public MapElementTypeLibrary getParent()
     {
         return parent;
     }
@@ -476,14 +479,18 @@ public class PogLibrary
             return m_libraryPath.getAbsolutePath();
         }
     }
+    
+    
 
     /**
      * Gets the pog with the given name.
      * 
+     * @revise Should not be looking by filename
+     * 
      * @param pogName name of pog to fetch
      * @return Pog found or null.
      */
-    public MapElement getPog(final String pogName)
+    public MapElement getPogByFilename(final String pogName)
     {
         int size = pogs.size();
         for (int i = 0; i < size; ++i)
@@ -498,8 +505,8 @@ public class PogLibrary
         size = children.size();
         for (int i = 0; i < size; ++i)
         {
-            final PogLibrary child = children.get(i);
-            final MapElement pog = child.getPog(pogName);
+            final MapElementTypeLibrary child = children.get(i);
+            final MapElement pog = child.getPogByFilename(pogName);
             if (pog != null)
             {
                 return pog;
@@ -508,6 +515,31 @@ public class PogLibrary
 
         return null;
     }
+    
+    /**
+     * Gets a MapElementType by its normalized name
+     * @param normalizedName
+     * @return MapElementType or null
+     */
+    /*
+    public MapElement getMapElementType(String normalizedName)
+    {
+    	for (MapElement type : pogs)
+    	{
+    		if (type.getNormalizedName().equals(normalizedName))
+    			return type;
+    	}
+    	
+    	for (PogLibrary child : children)
+    	{
+    		MapElement type = child.getMapElementType(normalizedName);
+    		if (type != null)
+    			return type;
+    	}
+
+      return null;
+    }
+    */
 
     /**
      * @return Returns the pogs in this library.
@@ -520,7 +552,7 @@ public class PogLibrary
     /**
      * @return Returns the root library.
      */
-    public PogLibrary getRoot()
+    public MapElementTypeLibrary getRoot()
     {
         if (parent == null)
         {
@@ -541,5 +573,13 @@ public class PogLibrary
     {
         return "[PogLib " + getLocation() + " (" + pogs.size() + ")]";
     }
-
+    
+    private Comparator<MapElement> m_typeComparator = new Comparator<MapElement>()        
+    {            
+      @Override            
+      public int compare(MapElement pa, MapElement pb)
+      {
+          return pa.getDisplayLabel().compareTo(pb.getDisplayLabel());
+      }
+  };	
 }

@@ -22,6 +22,12 @@
 
 package com.galactanet.gametable.data;
 
+import org.w3c.dom.Element;
+
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import com.maziade.tools.XMLUtils;
+
 
 /**
  * _Immutable_ point class replacement to enforce type safety regarding map coordinates.
@@ -30,9 +36,48 @@ package com.galactanet.gametable.data;
  * 
  * @audited by themaze75
  */
-public class MapCoordinates
+public class MapCoordinates implements XMLSerializer
 {
 	public static final MapCoordinates ORIGIN = new MapCoordinates(0, 0);
+	
+	/**
+	 * Constructor
+	 * @param parent Parent XML element
+	 */
+	public MapCoordinates(Element parent)
+	{
+		Element loc = XMLUtils.getFirstChildElementByTagName(parent, "loc");
+		if (loc == null)
+		{
+			x = 0;
+			y = 0;
+			return;
+		}
+
+		int i = 0;
+		try
+		{
+			i = Integer.parseInt(loc.getAttribute("x"));
+		}
+		catch (NumberFormatException e)
+		{
+			i = 0;
+		}
+		
+		x = i;
+		i = 0;
+		
+		try
+		{
+			i = Integer.parseInt(loc.getAttribute("y"));
+		}
+		catch (NumberFormatException e)
+		{
+			i = 0;
+		}
+		
+		y = i;
+	}
 	
 	/**
 	 * Constructor 
@@ -82,7 +127,38 @@ public class MapCoordinates
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 	
+	/*
+	 * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
+	 */
+	@Override
+	public void deserialize(Element parent)
+	{
+		// Use constructor instead
+		throw new NotImplementedException();		
+	}
 	
+	/*
+	 * @see com.galactanet.gametable.data.XMLSerializer#serialize(org.w3c.dom.Element)
+	 */
+	@Override
+	public void serialize(Element parent)
+	{
+		Element el = parent.getOwnerDocument().createElement("loc");
+		
+		// Cheating a bit here from XML specs for simplicity
+		el.setAttribute("x", String.valueOf(x));
+		el.setAttribute("y", String.valueOf(y));
+		
+		parent.appendChild(el);
+	}	
+	
+	/**
+	 * x Coordinate
+	 */
 	public final int x;
+	
+	/**
+	 * y Coordinate
+	 */
 	public final int y;
 }

@@ -827,5 +827,23 @@ public class UtilityFunctions
       g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
       g.drawImage(image, x, y, null);
       g.setComposite(c);
-    } 
+    }
+    
+    /**
+     * Parse float value from string and handles number format exception  
+     * @param value String value to parse
+     * @param defaultVal Default value to use is value is invalid
+     * @return Numeric value
+     */
+    public static float parseFloat(String value, float defaultVal)
+    {
+	    try
+			{
+				return Float.parseFloat(value);
+			}
+			catch (NumberFormatException e)
+			{
+				return defaultVal;
+			}	
+		}
 }

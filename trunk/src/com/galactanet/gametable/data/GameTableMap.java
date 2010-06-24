@@ -22,7 +22,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.maziade.tools.XMLUtils;
 
 /**
  * Holds all data pertaining to a map (including MapElementInstance and LineSegment)
@@ -32,8 +38,22 @@ import com.galactanet.gametable.util.UtilityFunctions;
  *         #GT-AUDIT GametableMap
  * 
  */
-public class GameTableMap
+public class GameTableMap implements XMLSerializer
 {
+	/**
+	 * Every 'square' is divided into this number of units
+	 */
+	private final static int    BASE_SQUARE_SIZE       = 64;
+
+	/**
+	 * Returns the number of map units found within a square
+	 * @return Number of map units - NOT DIRECTLY RELATED TO PIXELS
+	 */
+	public final static int getBaseSquareSize()
+	{
+		return GameTableMap.BASE_SQUARE_SIZE;
+	}
+
 	/**
 	 * Lines drawn on the map @revise should lines be an external graphical object?
 	 */
@@ -44,12 +64,16 @@ public class GameTableMap
 	 */
 	private final List<LineSegment>	m_linesUnmodifiable;
 
+	private List<GameTableMapListenerIF> m_listeners = new CopyOnWriteArrayList<GameTableMapListenerIF>();
+
 	/**
 	 * List of elements or all types to display on the map
 	 * 
 	 * @revise Rebuild more versatile layer architecture
 	 */
 	private final List<MapElementInstance>					m_mapElements;
+
+	// @revise Build undo buffers using Java's #{@link javax.swing.undo.UndoableEdit}
 
 	/**
 	 * Unmodifiable list of elements
@@ -60,13 +84,6 @@ public class GameTableMap
 	 * Whether this is the public of private version of the map
 	 */
 	private final boolean						m_publicMap;
-
-	/**
-	 * Every 'square' is divided into this number of units
-	 */
-	private final static int    BASE_SQUARE_SIZE       = 64;
-
-	// @revise Build undo buffers using Java's #{@link javax.swing.undo.UndoableEdit}
 
 	/**
 	 * Constructor
@@ -96,6 +113,16 @@ public class GameTableMap
 	}
 
 	/**
+   * Adds a GameTableMapListener to this map
+   * @param listener Listener to call when something changes within the map
+   */
+  public void addListener(GameTableMapListenerIF listener)
+  {
+  	m_listeners.remove(listener);
+  	m_listeners.add(listener);
+  }
+
+	/**
 	 * Adds an element instance to the map
 	 * 
 	 * @param mapElement Element to add to the map
@@ -116,8 +143,8 @@ public class GameTableMap
 		m_lines.clear();
 		// @revise trigger listeners (clear lines)
 	}
-
-	/**
+	
+  /**
 	 * Remove all elements from the map
 	 */
 	public void clearMapElementInstances()
@@ -128,6 +155,67 @@ public class GameTableMap
 			listener.onMapElementInstancesCleared(this);
 	}
 
+	/*
+   * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
+   */
+  @Override
+  public void deserialize(Element parent)
+  {
+  	Element elements = XMLUtils.getFirstChildElementByTagName(parent, "elements");
+  	m_mapElements.clear();
+  	for (Element xmEl : XMLUtils.getChildElementsByTagName(elements, "element"))
+  	{
+  		MapElementInstance el = new MapElementInstance(xmEl);
+  		m_mapElements.add(el);
+  	}
+  	
+  	elements = XMLUtils.getFirstChildElementByTagName(parent, "lines");
+  	m_lines.clear();
+  	for (Element xmLine : XMLUtils.getChildElementsByTagName(elements, "line"))
+  	{
+  		LineSegment ls = new LineSegment(xmLine);
+  		m_lines.add(ls);
+  	} 	
+  }
+
+	/**
+   * Calculate the bounds used by the specified map
+   * @param map map to calculate
+   * @return coordinates of the space used by the map
+   */
+  public MapRectangle getBounds()
+  {
+  	MapRectangle bounds = null;
+  	
+      // lines
+      for (LineSegment ls : getLines())
+      {
+      	
+          MapRectangle r = ls.getBounds();
+          
+          if (bounds == null)
+              bounds = r;
+          else
+              bounds.add(r);
+      }
+  
+      // Map elements
+      for (MapElementInstance mapElement : getMapElementInstances())
+      {
+      	MapRectangle r = mapElement.getBounds();
+          
+          if (bounds == null)
+              bounds = r;
+          else
+              bounds.add(r);
+      }
+      
+      if (bounds == null)
+          bounds = new MapRectangle(MapCoordinates.ORIGIN, 1, 1);
+      
+      return bounds;
+  }
+
 	/**
 	 * Get unmodifiable list of lines contained within GameTableMap
 	 * 
@@ -137,6 +225,24 @@ public class GameTableMap
 	{
 		return m_linesUnmodifiable;
 	}
+
+	/**
+	 * Get map element instance by ID
+	 * 
+	 * @param id ID of the map element we are looking for
+	 * @return Matching map element or null
+	 */
+	public MapElementInstance getMapElementInstance(final MapElementInstanceID id)
+	{
+		for (MapElementInstance mapElement : m_mapElements)
+		{
+			if (mapElement.getId().equals(id))
+				return mapElement;
+		}
+
+		return null;
+	}
+
 
 	/**
 	 * Get topmost element matching given position on the map
@@ -198,61 +304,6 @@ public class GameTableMap
 		// Underlay is fourth layer
 		return underlayHit;
 	}
-	
-  /**
-   * Calculate the bounds used by the specified map
-   * @param map map to calculate
-   * @return coordinates of the space used by the map
-   */
-  public MapRectangle getBounds()
-  {
-  	MapRectangle bounds = null;
-  	
-      // lines
-      for (LineSegment ls : getLines())
-      {
-      	
-          MapRectangle r = ls.getBounds();
-          
-          if (bounds == null)
-              bounds = r;
-          else
-              bounds.add(r);
-      }
-  
-      // Map elements
-      for (MapElementInstance mapElement : getMapElementInstances())
-      {
-      	MapRectangle r = mapElement.getBounds();
-          
-          if (bounds == null)
-              bounds = r;
-          else
-              bounds.add(r);
-      }
-      
-      if (bounds == null)
-          bounds = new MapRectangle(MapCoordinates.ORIGIN, 1, 1);
-      
-      return bounds;
-  }
-
-	/**
-	 * Get map element instance by ID
-	 * 
-	 * @param id ID of the map element we are looking for
-	 * @return Matching map element or null
-	 */
-	public MapElementInstance getMapElementInstance(final MapElementInstanceID id)
-	{
-		for (MapElementInstance mapElement : m_mapElements)
-		{
-			if (mapElement.getId().equals(id))
-				return mapElement;
-		}
-
-		return null;
-	}
 
 	/**
 	 * Get map element instance by name
@@ -289,7 +340,6 @@ public class GameTableMap
 		return retVal;
 	}
 
-
 	/**
 	 * @return True if this is a public map.  False if it is a private map.
 	 */
@@ -308,8 +358,19 @@ public class GameTableMap
 		m_lines.remove(ls);
 		// @revise trigger listener (remove line segment)
 	}
-
-	/**
+	
+  
+  /**
+   * Removes a listener from this map
+   * @param listener Listener to remove
+   * @return True if listener was found and removed
+   */
+  public boolean removeListener(GameTableMapListenerIF listener)
+  {
+  	return m_listeners.remove(listener);
+  }
+  
+  /**
 	 * Remove a given map element instance from the map
 	 * 
 	 * @param mapElement Map element instance to remove
@@ -321,8 +382,8 @@ public class GameTableMap
 		for (GameTableMapListenerIF listener : m_listeners)
 			listener.onMapElementInstanceRemoved(this, mapElement);
 	}
-
-	/**
+  
+  /**
 	 * Remove multiple element instances from the map
 	 * 
 	 * @param instances list of instances to remove
@@ -332,8 +393,34 @@ public class GameTableMap
 		for (MapElementInstance instance : instances)
 			removeMapElementInstance(instance);
 	}
-
-	/**
+  
+  /*
+   * @see com.galactanet.gametable.data.XMLSerializer#serialize(org.w3c.dom.Element)
+   */
+  @Override
+  public void serialize(Element parent)
+  {
+  	Document doc = parent.getOwnerDocument();
+  	Element elements = doc.createElement("elements");  	
+  	for (MapElementInstance el : m_mapElements)
+  	{
+  		Element xmEl = doc.createElement("element");
+  		el.serialize(xmEl);
+  		elements.appendChild(xmEl);
+  	}
+  	parent.appendChild(elements);
+  	
+  	Element lines = doc.createElement("lines");  	
+  	for (LineSegment line : m_lines)
+  	{
+  		Element xmLine = doc.createElement("line");
+  		line.serialize(xmLine);
+  		lines.appendChild(xmLine);
+  	}
+  	parent.appendChild(lines);
+  }
+  
+  /**
 	 * Find instances matching a given name
 	 * 
 	 * @param name Name of the pog we are looking for
@@ -360,38 +447,6 @@ public class GameTableMap
 
 		return null;
 	}
-
-	/**
-	 * Returns the number of map units found within a square
-	 * @return Number of map units - NOT DIRECTLY RELATED TO PIXELS
-	 */
-	public final static int getBaseSquareSize()
-	{
-		return GameTableMap.BASE_SQUARE_SIZE;
-	}
-	
-  
-  /**
-   * Adds a GameTableMapListener to this map
-   * @param listener Listener to call when something changes within the map
-   */
-  public void addListener(GameTableMapListenerIF listener)
-  {
-  	m_listeners.remove(listener);
-  	m_listeners.add(listener);
-  }
-  
-  /**
-   * Removes a listener from this map
-   * @param listener Listener to remove
-   * @return True if listener was found and removed
-   */
-  public boolean removeListener(GameTableMapListenerIF listener)
-  {
-  	return m_listeners.remove(listener);
-  }
-  
-  private List<GameTableMapListenerIF> m_listeners = new CopyOnWriteArrayList<GameTableMapListenerIF>();
 	
 	// TODO Plan to store scroll position from UI when saving 
 }

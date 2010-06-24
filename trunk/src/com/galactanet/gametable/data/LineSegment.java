@@ -27,8 +27,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.MapElementRendererIF;
+import com.maziade.tools.XMLUtils;
 
 /**
  * Immutable line segment
@@ -37,12 +43,12 @@ import com.galactanet.gametable.ui.MapElementRendererIF;
  * 
  * @audited by themaze75
  */
-public class LineSegment implements MapElementRendererIF
+public class LineSegment implements MapElementRendererIF, XMLSerializer
 {
 	/**
-	 * Color of the line segmant
+	 * Color of the line segment
 	 */
-    private Color m_color;
+    private final Color m_color;
     
     /**
      * End of the segment 
@@ -58,6 +64,35 @@ public class LineSegment implements MapElementRendererIF
      * Normalized rectangle made from the start and end points 
      */
     private final MapRectangle m_bounds;
+    
+    /**
+     * Constructor
+     * @param parent XML parent element
+     */
+    public LineSegment(Element parent)
+    {
+    	Element colorEl = XMLUtils.getFirstChildElementByTagName(parent, "color");
+    	String rgb = XMLUtils.getElementValue(colorEl);
+    	Color c;
+    	try
+    	{
+	    	int iRGB = Integer.parseInt(rgb, 8);
+	    	c = new Color(iRGB, true);
+    	}
+    	catch (NumberFormatException e)
+    	{
+    		c = Color.BLACK;
+    	}    	
+    	m_color = c;
+    	
+    	Element startEl = XMLUtils.getFirstChildElementByTagName(parent, "start");
+    	m_start = new MapCoordinates(startEl);
+    	
+    	Element endEl = XMLUtils.getFirstChildElementByTagName(parent, "end");
+    	m_end = new MapCoordinates(endEl);
+    	
+    	m_bounds = new MapRectangle(m_start, m_end);
+    }
 
     /**
      * Constructor
@@ -560,5 +595,35 @@ public class LineSegment implements MapElementRendererIF
         dos.writeInt(m_end.x);
         dos.writeInt(m_end.y);
         dos.writeInt(m_color.getRGB());
+    }
+    
+    /*
+     * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
+     */
+    @Override
+    public void deserialize(Element parent)
+    {
+    	// Use constructor
+    	throw new NotImplementedException();    	
+    }
+    
+    /*
+     * @see com.galactanet.gametable.data.XMLSerializer#serialize(org.w3c.dom.Element)
+     */
+    @Override
+    public void serialize(Element parent)
+    {
+    	Document doc = parent.getOwnerDocument();
+    	Element colorEl = doc.createElement("color");
+    	colorEl.appendChild(doc.createTextNode(Integer.toHexString(m_color.getRGB())));
+    	parent.appendChild(colorEl);
+    	
+    	Element startEl = doc.createElement("start");
+    	m_start.serialize(startEl);
+    	parent.appendChild(startEl);
+    	
+    	Element endEl = doc.createElement("end");
+    	m_end.serialize(endEl);
+    	parent.appendChild(endEl);
     }
 }

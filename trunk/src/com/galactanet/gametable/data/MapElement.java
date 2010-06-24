@@ -166,16 +166,16 @@ public class MapElement
 	 * 
 	 *         Constructor
 	 * 
-	 * @param filename Name of the file to load as image. Image is automatically loaded through this constructor.
+	 * @param relativePath Name of the file to load as image. Image is automatically loaded through this constructor.
 	 * @param faceSize Size of one of this element's face in map units
 	 * @param layerType Layer type one such element is associated
 	 */
-	public MapElement(String filename, int faceSize, Layer layerType)
+	public MapElement(String relativePath, int faceSize, Layer layerType)
 	{
 		if (layerType == null)
 			throw new IllegalArgumentException("Invalid layerType");
 		
-		m_imageFilename = UtilityFunctions.getLocalPath(filename);
+		m_imageFilename = UtilityFunctions.getLocalPath(relativePath);
 		m_layerType = layerType;
 
 		m_faceSize = faceSize;
@@ -300,6 +300,7 @@ public class MapElement
 	}
 
 	/**
+	 * TODO doesn't feel useful
 	 * @return A normalized display label (extra / illegal characters removed)
 	 */
 	public String getNormalizedDisplayLabel()
@@ -376,7 +377,7 @@ public class MapElement
 	{
 		return "[PogType@" + hashCode() + " name: " + m_imageFilename + " face-size: " + m_faceSize + ", loaded: " + isLoaded() + "]";
 	}
-
+	
 	/**
 	 * Provides a scaled version of this MapElement
 	 * 

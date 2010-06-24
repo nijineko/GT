@@ -15,14 +15,19 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.Entry;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import com.galactanet.gametable.data.MapElement.Layer;
 import com.galactanet.gametable.data.net.PacketSourceState;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.MapElementRendererIF;
-import com.galactanet.gametable.ui.PogLibrary;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.maziade.tools.XMLUtils;
 
 /**
  * Represents an instance of a MapElement on the Map.
@@ -31,7 +36,7 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * 
  *         #GT-AUDIT MapElementInstance
  */
-public class MapElementInstance implements Comparable<MapElementInstance>
+public class MapElementInstance implements Comparable<MapElementInstance>, XMLSerializer
 {
 	/**
 	 * TODO @revise Attribute system to be replaced by more flexible properties system
@@ -90,6 +95,11 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	 * The scale ratio is automatically configured when the face size of this element is set.
 	 */
 	private float													m_faceSizeScale					= 1f;
+	
+	/**
+	 * Number of tiles taken by a face of this map element instance
+	 */
+	private float	m_faceSize = 1f;
 
 	/**
 	 * Whether this element should be displayed as flipped horizontally
@@ -135,6 +145,72 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	 * Renderer instance In future versions, we could allow a plug-in to supply its own renderer
 	 */
 	private MapElementInstanceRenderer		m_renderer							= null;
+	
+	/**
+	 * Constructor
+	 * @param parent Parent XML element
+	 */
+	public MapElementInstance(Element parent)
+	{		
+		m_id = MapElementInstanceID.acquire();
+		
+		m_angle = UtilityFunctions.parseFloat(XMLUtils.getFirstChildElementContent(parent, "angle"), 0f);
+		m_name = XMLUtils.getFirstChildElementContent(parent, "name", "");
+		
+		setFaceSize(UtilityFunctions.parseFloat(XMLUtils.getFirstChildElementContent(parent, "facesize", "1"), 1f));
+		
+		String layerName = XMLUtils.getFirstChildElementContent(parent, "layer", Layer.UNDERLAY.name());
+		try
+		{
+			m_layer = Layer.valueOf(layerName);
+		}
+		catch (IllegalArgumentException e)
+		{
+			m_layer = Layer.UNDERLAY;
+		}
+		
+		Element flip = XMLUtils.getFirstChildElementByTagName(parent, "flip");
+		m_flipH = flip.getAttribute("h") != "false";
+		m_flipV = flip.getAttribute("v") != "false";
+		
+		Element pos = XMLUtils.getFirstChildElementByTagName(parent, "pos");
+		if (pos != null)
+			m_position = new MapCoordinates(pos);
+
+		// TODO UNSERLIAZE "type" AS MapElement. (?)
+		/*
+		// Normalized type name
+		String typeName = XMLUtils.getFirstChildElementContent(parent, "type");
+
+		MapElementTypeLibrary library;
+		try{
+		library = MapElementTypeLibrary.getMasterLibrary();
+		}catch (IOException e)
+		{ throw new RuntimeException(e); }	// TODO should not have to catch
+		
+		MapElement type = library.getMapElementType(typeName);
+		if (type == null)
+		{
+			// type = library.createPlaceholder(filename, getf);
+		}
+		*/
+
+		// TODO Rename MapElement to MapElementType, MapElementInstance to MapElement, MapElementInstanceID to MapElementID.  Revise method names.  Its all too confusing.
+
+		// Load bakc values
+		Element values = XMLUtils.getFirstChildElementByTagName(parent, "values");
+		if (values != null)
+		{
+			for (Element value : XMLUtils.getChildElementsByTagName(values, "value"))
+			{
+				String normalized = value.getAttribute("name");
+				String name = XMLUtils.getFirstChildElementContent(value, "name", normalized);
+				String val =  XMLUtils.getFirstChildElementContent(value, "value", "");
+				
+				setAttribute(name, val);
+			}
+		}				
+	}
 
 	/**
 	 * Constructor
@@ -146,8 +222,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	{
 		String filename = UtilityFunctions.getLocalPath(dis.readUTF());
 
-		// TODO @revise PogLibrary should be in model
-		final PogLibrary lib = GametableFrame.getGametableFrame().getPogLibrary();
+		final MapElementTypeLibrary lib = MapElementTypeLibrary.getMasterLibrary();
 		filename = UtilityFunctions.getRelativePath(lib.getLocation(), new File(filename));
 
 		final int x = dis.readInt();
@@ -212,7 +287,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 
 		stopDisplayPogDataChange();
 
-		MapElement type = lib.getPog(filename);
+		MapElement type = lib.getPogByFilename(filename);
 		if (type == null)
 		{
 			type = lib.createPlaceholder(filename, size);
@@ -403,18 +478,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	 * 
 	 * @return Size of a face
 	 */
-	public int getFaceSize()
+	public float getFaceSize()
 	{
-		if (m_faceSizeScale == 1f)
-		{
-			return m_mapElement.getFaceSize();
-		}
-
-		int size = Math.round(m_mapElement.getFaceSize() * m_faceSizeScale);
-		if (size < 1)
-			return 1;
-
-		return size;
+		return m_faceSize;		
 	}
 
 	/**
@@ -644,6 +710,9 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 	 */
 	public void setFaceSize(final float faceSize)
 	{
+		if (faceSize == m_faceSize)
+			return;
+		
 		if (faceSize <= 0)
 		{
 			if (m_faceSizeScale != 1)
@@ -668,6 +737,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 			throw new ArithmeticException("Zero sized pog dimension: " + this);
 
 		m_faceSizeScale = targetDimension / maxDimension;
+		m_faceSize = faceSize;
 		reinitializeHitMap();
 	}
 
@@ -756,7 +826,7 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 		dos.writeUTF(getMapElement().getImageFilename());
 		dos.writeInt(m_position.x);
 		dos.writeInt(m_position.y);
-		dos.writeInt(getMapElement().getFaceSize());
+		dos.writeInt(getMapElement().getFaceSize());	// why? we have an internal float....
 		dos.writeLong(m_id.numeric());
 		dos.writeUTF(m_name);
 		dos.writeFloat(m_faceSizeScale);
@@ -893,5 +963,55 @@ public class MapElementInstance implements Comparable<MapElementInstance>
 			m_elementSize.setSize(image.getWidth(null), image.getHeight(null));
 			// Images.getRotatedSquareSize(image.getWidth(null), image.getHeight(null), m_angle, m_elementSize);
 		}
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
+	 */
+	@Override
+	public void deserialize(Element parent)
+	{
+		// Use constructor instead
+		throw new NotImplementedException();
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.XMLSerializer#serialize(org.w3c.dom.Element)
+	 */
+	@Override
+	public void serialize(Element parent)
+	{
+		Document doc = parent.getOwnerDocument();
+		
+		parent.appendChild(XMLUtils.createElementValue(doc, "angle", String.valueOf(m_angle)));
+		parent.appendChild(XMLUtils.createElementValue(doc, "name", m_name));
+		parent.appendChild(XMLUtils.createElementValue(doc, "facesize", String.valueOf(m_faceSize)));
+		parent.appendChild(XMLUtils.createElementValue(doc, "layer", m_layer == null ? "" : m_layer.name()));
+		
+		// TODO save type
+		// parent.appendChild(XMLUtils.createElementValue(doc, "type", m_mapElement.getNormalizedName()));
+		
+		Element el = doc.createElement("flip");
+		el.setAttribute("h", m_flipH ? "true" : "false");		
+		el.setAttribute("v", m_flipV ? "true" : "false");
+		parent.appendChild(el);
+		
+		el = doc.createElement("pos");
+		m_position.serialize(el);
+		parent.appendChild(el);		
+		
+		Element values = doc.createElement("values");		
+		for (Entry<String, Attribute> entry : m_attributes.entrySet())
+		{
+			Element value = doc.createElement("value");
+			value.setAttribute("name", entry.getKey());
+			
+			value.appendChild(XMLUtils.createElementValue(doc, "value", entry.getValue().value));
+			value.appendChild(XMLUtils.createElementValue(doc, "name", entry.getValue().name));
+			
+			values.appendChild(value);		
+		}
+		
+		parent.appendChild(values);				
 	}
 }
