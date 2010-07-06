@@ -59,6 +59,7 @@ public class MapElementID implements Comparable<MapElementID>
 	
 	/**
 	 * Clear all generated MapElementID
+	 * TODO Clear IDs on new projects
 	 */
 	public static void clear()
 	{

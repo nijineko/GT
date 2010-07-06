@@ -24,21 +24,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 /**
- * Holds all data pertaining to a map (including MapElementInstance and LineSegment)
+ * Holds data pertaining to a map
  * 
  * @author sephalon
  * 
- *         #GT-AUDIT GametableMap
+ * @audited by themaze75
  * 
  */
-public class GameTableMap implements XMLSerializer
+public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 {
 	/**
 	 * Every 'square' is divided into this number of units
@@ -55,7 +54,7 @@ public class GameTableMap implements XMLSerializer
 	}
 
 	/**
-	 * Lines drawn on the map @revise should lines be an external graphical object?
+	 * Lines drawn on the map
 	 */
 	private final List<LineSegment>	m_lines;
 
@@ -68,8 +67,6 @@ public class GameTableMap implements XMLSerializer
 
 	/**
 	 * List of elements or all types to display on the map
-	 * 
-	 * @revise Rebuild more versatile layer architecture
 	 */
 	private final List<MapElement>					m_mapElements;
 
@@ -200,7 +197,7 @@ public class GameTableMap implements XMLSerializer
       }
   
       // Map elements
-      for (MapElement mapElement : getMapElementInstances())
+      for (MapElement mapElement : getMapElements())
       {
       	MapRectangle r = mapElement.getBounds();
           
@@ -232,7 +229,8 @@ public class GameTableMap implements XMLSerializer
 	 * @param id ID of the map element we are looking for
 	 * @return Matching map element or null
 	 */
-	public MapElement getMapElementInstance(final MapElementID id)
+	@Override
+	public MapElement getMapElement(final MapElementID id)
 	{
 		for (MapElement mapElement : m_mapElements)
 		{
@@ -252,7 +250,7 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @revise Add support for disabled and hidden layers
 	 */
-	public MapElement getMapElementInstanceAt(MapCoordinates modelPosition)
+	public MapElement getMapElementAt(MapCoordinates modelPosition)
 	{
 		if (modelPosition == null)
 		{
@@ -311,7 +309,7 @@ public class GameTableMap implements XMLSerializer
 	 * @param name name of the instance we are looking for
 	 * @return instance or null
 	 */
-	public MapElement getMapElementInstanceByName(final String name)
+	public MapElement getMapElementByName(final String name)
 	{
 		return getMapElementInstancesByName(name, null);
 	}
@@ -321,7 +319,7 @@ public class GameTableMap implements XMLSerializer
 	 * 
 	 * @return unmodifiable list of instances
 	 */
-	public List<MapElement> getMapElementInstances()
+	public List<MapElement> getMapElements()
 	{
 		return m_mapElementsUnmodifiable;
 	}
@@ -332,7 +330,7 @@ public class GameTableMap implements XMLSerializer
 	 * @param name Name of the element instance we are looking for
 	 * @return List of matching elements (never null)
 	 */
-	public List<MapElement> getMapElementInstancesByName(String name)
+	public List<MapElement> getMapElementsByName(String name)
 	{
 		List<MapElement> retVal = new ArrayList<MapElement>();
 		getMapElementInstancesByName(name, retVal);

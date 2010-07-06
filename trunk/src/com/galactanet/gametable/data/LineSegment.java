@@ -34,6 +34,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.MapElementRendererIF;
+import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 /**
@@ -43,7 +44,7 @@ import com.maziade.tools.XMLUtils;
  * 
  * @audited by themaze75
  */
-public class LineSegment implements MapElementRendererIF, XMLSerializer
+public class LineSegment implements MapElementRendererIF, XMLSerializeIF
 {
 	/**
 	 * Color of the line segment

@@ -609,7 +609,7 @@ public class ActivePogsPanel extends JPanel
         // -------------------
         GameTableMap map = canvas.getPublicMap();
 
-        for (MapElement mapElement : map.getMapElementInstances())
+        for (MapElement mapElement : map.getMapElements())
         	addOrderedPog(mapElement);
         	
         map.addListener(mapListener);
@@ -617,7 +617,7 @@ public class ActivePogsPanel extends JPanel
         // -------------------
         map = canvas.getPrivateMap();
         
-        for (MapElement mapElement : map.getMapElementInstances())
+        for (MapElement mapElement : map.getMapElements())
         	addOrderedPog(mapElement);
         	
         map.addListener(mapListener);
@@ -635,13 +635,13 @@ public class ActivePogsPanel extends JPanel
       // -------------------
       GameTableMap map = canvas.getPublicMap();
 
-      for (MapElement mapElement : map.getMapElementInstances())
+      for (MapElement mapElement : map.getMapElements())
       	addOrderedPog(mapElement);
       
       // -------------------
       map = canvas.getPrivateMap();
       
-      for (MapElement mapElement : map.getMapElementInstances())
+      for (MapElement mapElement : map.getMapElements())
       	addOrderedPog(mapElement);
     	
     }
@@ -1170,7 +1170,7 @@ public class ActivePogsPanel extends JPanel
   	 */
   	public void setSortOrder(MapElementID pogID, long sortOrder, GameTableMap map)
   	{
-  		final MapElement pog = map.getMapElementInstance(pogID);
+  		final MapElement pog = map.getMapElement(pogID);
   		if (pog == null)
   			return;
   		

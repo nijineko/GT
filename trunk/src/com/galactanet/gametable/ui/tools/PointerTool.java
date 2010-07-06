@@ -171,7 +171,7 @@ public class PointerTool extends NullTool
     {
         if (GametableFrame.getGametableFrame().getPreferences().getBooleanValue(PREF_DRAG))
         {
-            final MapElement pog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
+            final MapElement pog = m_canvas.getActiveMap().getMapElementAt(m_mousePosition);
             if (pog != null)
             {
                 m_canvas.setToolCursor(0);
@@ -206,7 +206,7 @@ public class PointerTool extends NullTool
     {
         m_clicked = true;
         m_mousePosition = modelPos;
-        m_grabbedPog = m_canvas.getActiveMap().getMapElementInstanceAt(m_mousePosition);
+        m_grabbedPog = m_canvas.getActiveMap().getMapElementAt(m_mousePosition);
         if (m_grabbedPog != null)
         {
             m_ghostPog = new MapElement(m_grabbedPog);

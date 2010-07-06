@@ -25,7 +25,9 @@ import com.galactanet.gametable.data.MapElementType.Layer;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.MapElementRendererIF;
 import com.galactanet.gametable.util.Images;
+import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 /**
@@ -33,12 +35,12 @@ import com.maziade.tools.XMLUtils;
  * 
  * @author sephalon
  * 
- *         #GT-AUDIT MapElementInstance
+ * @audited by themaze75
  */
-public class MapElement implements Comparable<MapElement>, XMLSerializer
+public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 {
 	/**
-	 * TODO @revise Attribute system to be replaced by more flexible properties system
+	 * TODO Attribute system to be replaced by more flexible properties system
 	 */
 	protected static class Attribute
 	{
@@ -56,7 +58,6 @@ public class MapElement implements Comparable<MapElement>, XMLSerializer
 	/**
 	 * A bit field representing the surface of the image the cursor responds to
 	 * 
-	 * @revise move / share with instance (cache in here, stored with scaled image?)
 	 */
 	public BitSet													m_hitMap;
 
@@ -150,8 +151,18 @@ public class MapElement implements Comparable<MapElement>, XMLSerializer
 	 * @param parent Parent XML element
 	 */
 	public MapElement(Element parent)
-	{		
-		m_id = MapElementID.acquire();
+	{
+		MapElementID id;
+		try
+		{
+			id = MapElementID.fromNumeric(Long.valueOf(XMLUtils.getFirstChildElementContent(parent, "id")));
+		}
+		catch (NumberFormatException e)
+		{
+			Log.log(Log.SYS, "Invalid in element definition node : " + XMLUtils.getFirstChildElementContent(parent, "id") );
+			id = MapElementID.acquire();
+		}
+		m_id = id;
 		
 		m_angle = UtilityFunctions.parseFloat(XMLUtils.getFirstChildElementContent(parent, "angle"), 0f);
 		m_name = XMLUtils.getFirstChildElementContent(parent, "name", "");
@@ -169,34 +180,28 @@ public class MapElement implements Comparable<MapElement>, XMLSerializer
 		}
 		
 		Element flip = XMLUtils.getFirstChildElementByTagName(parent, "flip");
-		m_flipH = flip.getAttribute("h") != "false";
-		m_flipV = flip.getAttribute("v") != "false";
+		if (flip != null)
+		{
+			m_flipH = !UtilityFunctions.areStringsEquals(flip.getAttribute("h"), "false");
+			m_flipV = !UtilityFunctions.areStringsEquals(flip.getAttribute("v"), "false");
+		}
 		
 		Element pos = XMLUtils.getFirstChildElementByTagName(parent, "pos");
 		if (pos != null)
 			m_position = new MapCoordinates(pos);
 
-		// TODO UNSERLIAZE "type" AS MapElement. (?)
-		/*
 		// Normalized type name
-		String typeName = XMLUtils.getFirstChildElementContent(parent, "type");
-
-		MapElementTypeLibrary library;
-		try{
-		library = MapElementTypeLibrary.getMasterLibrary();
-		}catch (IOException e)
-		{ throw new RuntimeException(e); }	// TODO should not have to catch
+		String fullyQualifiedTypeName = XMLUtils.getFirstChildElementContent(parent, "type");
+		MapElementType type = MapElementTypeLibrary.getMasterLibrary().getElementType(fullyQualifiedTypeName);
 		
-		MapElement type = library.getMapElementType(typeName);
 		if (type == null)
 		{
-			// type = library.createPlaceholder(filename, getf);
+			type = MapElementTypeLibrary.getMasterLibrary().createPlaceholderType(fullyQualifiedTypeName, Math.max(1, (int)getFaceSize()));
 		}
-		*/
+		
+		m_mapElementType = type;
 
-		// TODO Rename MapElement to MapElementType, MapElementInstance to MapElement, MapElementInstanceID to MapElementID.  Revise method names.  Its all too confusing.
-
-		// Load bakc values
+		// Load back values
 		Element values = XMLUtils.getFirstChildElementByTagName(parent, "values");
 		if (values != null)
 		{
@@ -208,7 +213,9 @@ public class MapElement implements Comparable<MapElement>, XMLSerializer
 				
 				setAttribute(name, val);
 			}
-		}				
+		}			
+
+		reinitializeHitMap();
 	}
 
 	/**
@@ -298,7 +305,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializer
 	}
 
 	/**
-	 * Creates a new instance based on type TODO @revise Use MapElement as factory - all constructors should be protected
+	 * Creates a new instance based on type TODO Use MapElement as factory - all constructors should be protected
 	 * 
 	 * @param type
 	 */
@@ -981,14 +988,14 @@ public class MapElement implements Comparable<MapElement>, XMLSerializer
 	public void serialize(Element parent)
 	{
 		Document doc = parent.getOwnerDocument();
-		
+
+		parent.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(m_id.numeric())));
 		parent.appendChild(XMLUtils.createElementValue(doc, "angle", String.valueOf(m_angle)));
 		parent.appendChild(XMLUtils.createElementValue(doc, "name", m_name));
 		parent.appendChild(XMLUtils.createElementValue(doc, "facesize", String.valueOf(m_faceSize)));
 		parent.appendChild(XMLUtils.createElementValue(doc, "layer", m_layer == null ? "" : m_layer.name()));
 		
-		// TODO save type
-		// parent.appendChild(XMLUtils.createElementValue(doc, "type", m_mapElement.getNormalizedName()));
+		parent.appendChild(XMLUtils.createElementValue(doc, "type", m_mapElementType.getFullyQualifiedName()));
 		
 		Element el = doc.createElement("flip");
 		el.setAttribute("h", m_flipH ? "true" : "false");		

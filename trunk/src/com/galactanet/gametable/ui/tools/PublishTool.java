@@ -111,7 +111,7 @@ public class PublishTool extends NullTool
             // GametableFrame frame = GametableFrame.g_gameTableFrame;
 
             // first off, copy all the pogs/underlays over to the public layer
-        	for (MapElement pog : m_from.getMapElementInstances())
+        	for (MapElement pog : m_from.getMapElements())
             {
                 if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
@@ -162,7 +162,7 @@ public class PublishTool extends NullTool
             {
                 // remove the pogs that we moved
             	
-            	for (MapElement pog : m_from.getMapElementInstances().toArray(new MapElement[0]))	// converting list to array to avoid concurrent modifications
+            	for (MapElement pog : m_from.getMapElements().toArray(new MapElement[0]))	// converting list to array to avoid concurrent modifications
                 {
                     if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
@@ -223,7 +223,7 @@ public class PublishTool extends NullTool
     {
         final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (MapElement pog : m_from.getMapElementInstances())
+        for (MapElement pog : m_from.getMapElements())
         {
             final int size = (int)(pog.getFaceSize() * GameTableMap.getBaseSquareSize());
             

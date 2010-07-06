@@ -830,6 +830,24 @@ public class UtilityFunctions
     }
     
     /**
+     * Null-safe string comparison routine
+     * @param s1 String 1
+     * @param s2 String 2
+     * @return true if equal
+     */
+    public static boolean areStringsEquals(String s1, String s2)
+    {
+    	if (s1 == s2)
+    		return true;
+    	
+    	if (s1 == null || s2 == null)
+    		return false;
+    	
+    	return s1.equals(s2);
+    }
+    
+    
+    /**
      * Parse float value from string and handles number format exception  
      * @param value String value to parse
      * @param defaultVal Default value to use is value is invalid
@@ -837,6 +855,9 @@ public class UtilityFunctions
      */
     public static float parseFloat(String value, float defaultVal)
     {
+    	if (value == null)
+    		return defaultVal;
+    	
 	    try
 			{
 				return Float.parseFloat(value);
