@@ -234,9 +234,12 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 		@Override
 		public MapElementType getElementType(String fullyQualifiedTypeName)
 		{
-			for (BasicMapElementType type : m_types)
-				if (type.getFullyQualifiedName().equals(fullyQualifiedTypeName))
-					return type;
+			if (fullyQualifiedTypeName.startsWith(getFullyQualifiedName()))
+			{
+				for (BasicMapElementType type : m_types)
+					if (type.getFullyQualifiedName().equals(fullyQualifiedTypeName))
+						return type;
+			}
 			
 			return super.getElementType(fullyQualifiedTypeName);
 		}

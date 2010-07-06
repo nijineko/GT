@@ -26,6 +26,7 @@ import org.w3c.dom.Element;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 
@@ -36,7 +37,7 @@ import com.maziade.tools.XMLUtils;
  * 
  * @audited by themaze75
  */
-public class MapCoordinates implements XMLSerializer
+public class MapCoordinates implements XMLSerializeIF
 {
 	public static final MapCoordinates ORIGIN = new MapCoordinates(0, 0);
 	

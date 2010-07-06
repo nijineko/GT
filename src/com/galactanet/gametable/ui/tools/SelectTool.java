@@ -91,7 +91,7 @@ public class SelectTool extends NullTool
 
             // first off, copy all the pogs/underlays over to the public layer
             
-            for (MapElement pog : m_canvas.getActiveMap().getMapElementInstances())
+            for (MapElement pog : m_canvas.getActiveMap().getMapElements())
             {
                 if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || bIgnoreLock)) {
                     m_canvas.selectMapElementInstance(pog, true);
@@ -140,7 +140,7 @@ public class SelectTool extends NullTool
     {
         final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (MapElement pog : m_canvas.getActiveMap().getMapElementInstances())
+        for (MapElement pog : m_canvas.getActiveMap().getMapElements())
         {
         	final int size = (int)(pog.getFaceSize() * GameTableMap.getBaseSquareSize());
           

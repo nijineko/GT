@@ -1,7 +1,7 @@
 /*
- * XMLSerializer.java
+ * MapElementRepositoryIF.java
  *
- * @created 2010-06-23
+ * @created 2010-06-25
  *
  * Copyright (C) 1999-2010 Open Source Game Table Project
  * 
@@ -22,24 +22,19 @@
 
 package com.galactanet.gametable.data;
 
-import org.w3c.dom.Element;
-
 /**
- * todo: comment
+ * Interface for any objects that holds map elements
  *
  * @author Eric Maziade
  */
-public interface XMLSerializer
+public interface MapElementRepositoryIF
 {
 	/**
-	 * Store information from your component from inside parent element 
-	 * @param parent Parent element, as populated by calling thread.  You can add custom XML data as children.
+	 * Get map element instance by ID
+	 * 
+	 * @param id ID of the map element we are looking for
+	 * 
+	 * @return Matching map element or null
 	 */
-	public void serialize(Element parent);
-	
-	/**
-	 * Restore information from your component from within supplied parent element
-	 * @param parent Parent element, as restored from calling thread
-	 */
-	public void deserialize(Element parent);
+	public MapElement getMapElement(final MapElementID id);
 }

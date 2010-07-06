@@ -30,7 +30,7 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * 
  * @author iffy
  * 
- * #GT-AUDIT PogLibrary
+ * @audited by themaze75
  */
 public class MapElementTypeLibrary
 {
@@ -62,9 +62,8 @@ public class MapElementTypeLibrary
     /**
      * Get the main library
      * 
-     * TODO should not throw. Should not auto initialize
      */
-    public static MapElementTypeLibrary getMasterLibrary() throws IOException
+    public static MapElementTypeLibrary getMasterLibrary()
     {
     	if (g_masterLibrary == null)
     		g_masterLibrary = new MapElementTypeLibrary();
@@ -233,13 +232,13 @@ public class MapElementTypeLibrary
 
     	MapElementTypeLibrary lib = getLibraryFromFQN(libraryName);
     	
-    	// TODO If we can't find the library, we'll need to somehow create it!
+    	// todo If we can't find the library, we'll need to somehow create it!
     	if (lib == null)
     	{
-    		throw new IllegalStateException("Library not found. Not robust enough yet.");
+    		throw new IllegalStateException("Library not found. Design not robust enough yet :)");
     	}
     	
-    	// TODO I can't arbitrarily decide type - I must be able to get type from type FQN.
+    	// todo I can't arbitrarily decide type - I must be able to get type from type FQN. (only one type for now, but I don't want to break compatibility later)
     	BasicMapElementTypeLibrary basicLib = (BasicMapElementTypeLibrary)lib;  
     	
     	BasicMapElementType type = new BasicMapElementType(basicLib, faceSize, Layer.UNDERLAY);

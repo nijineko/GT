@@ -24,6 +24,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import com.galactanet.gametable.GametableApp;
@@ -43,6 +45,7 @@ import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
 import com.galactanet.gametable.util.*;
+import com.maziade.tools.XMLUtils;
 
 /*
  * The main Gametable Frame class.
@@ -79,7 +82,7 @@ import com.galactanet.gametable.util.*;
  * 
  * #GT-AUDIT GametableFrame
  */
-public class GametableFrame extends JFrame implements ActionListener
+public class GametableFrame extends JFrame implements ActionListener, MapElementRepositoryIF
 {
     /**
      * This class provides a mechanism to store the active tool in the gametable canvas
@@ -237,7 +240,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
     // files for the public map, the private map, and the die macros
     public File                     m_actingFileMacros;
-    public File                     m_actingFilePrivate;
+//    public File                     m_actingFilePrivate;
     public File                     m_actingFilePublic;
 
     
@@ -1229,7 +1232,7 @@ public class GametableFrame extends JFrame implements ActionListener
     public void eraseAllPogs()
     {
         // make an int array of all the IDs
-    	List<MapElement> pogs = getGametableCanvas().getActiveMap().getMapElementInstances();
+    	List<MapElement> pogs = getGametableCanvas().getActiveMap().getMapElements();
       getGametableCanvas().removePogs(pogs, true);
     }
 
@@ -1922,6 +1925,16 @@ public class GametableFrame extends JFrame implements ActionListener
              */
             public void actionPerformed(final ActionEvent e)
             {
+            	final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
+            	
+            	if (openFile != null)
+            	{
+            		loadFromXML(openFile); // TODO LOAD XML
+            	}
+            	
+            	//---------------
+            	/*
+            	
                 // opening while on the public layer...
                 if (getGametableCanvas().getActiveMap() == getGametableCanvas().getPublicMap())
                 {
@@ -1982,6 +1995,7 @@ public class GametableFrame extends JFrame implements ActionListener
                         m_netStatus = oldStatus;
                     }
                 }
+                */
             }
         });
 
@@ -2057,7 +2071,7 @@ public class GametableFrame extends JFrame implements ActionListener
                         "No Groups", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
-                if(all == 1) Group.deleteEmpryGroups();
+                if(all == 1) Group.deleteEmptyGroups();
                 if(all == 2) Group.deleteAllGroups();
                 else {
                     GroupingDialog gd = new GroupingDialog(false);
@@ -2439,6 +2453,13 @@ public class GametableFrame extends JFrame implements ActionListener
         {
             public void actionPerformed(final ActionEvent e)
             {
+            	m_actingFilePublic = UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "xml", true);
+            	if (m_actingFilePublic != null)
+            		saveToXML(m_actingFilePublic);
+
+            		/*
+            	
+            	
                 if (getGametableCanvas().isPublicMap())
                 {
                     m_actingFilePublic = UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true);
@@ -2455,6 +2476,7 @@ public class GametableFrame extends JFrame implements ActionListener
                         saveState(getGametableCanvas().getActiveMap(), m_actingFilePrivate);
                     }
                 }
+                */
             }
         });
 
@@ -2500,6 +2522,13 @@ public class GametableFrame extends JFrame implements ActionListener
              */
             public void actionPerformed(final ActionEvent e)
             {
+            	if (m_actingFilePublic == null)
+                  m_actingFilePublic = UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "xml", true);
+            	
+            	if (m_actingFilePublic != null)
+            		saveToXML(m_actingFilePublic);
+              
+            	/*
                 if (getGametableCanvas().isPublicMap())
                 {
                     if (m_actingFilePublic == null)
@@ -2526,6 +2555,7 @@ public class GametableFrame extends JFrame implements ActionListener
                         saveState(getGametableCanvas().getActiveMap(), m_actingFilePrivate);
                     }
                 }
+                */
             }
         });
 
@@ -2895,13 +2925,19 @@ public class GametableFrame extends JFrame implements ActionListener
         m_colorCombo.setRenderer(renderer);
 
         // load the primary map
-        getGametableCanvas().setActiveMap(getGametableCanvas().getPrivateMap());
+        //getGametableCanvas().setActiveMap(getGametableCanvas().getPrivateMap());
         PacketSourceState.beginFileLoad();
-        loadState(new File("autosavepvt.grm"));
+        File autoSave = getAutoSaveXMLFile();
+        if (autoSave.exists())
+        	loadFromXML(autoSave);
+        
+        //loadState(new File("autosavepvt.grm"));
         PacketSourceState.endFileLoad();
 
+        /*
         getGametableCanvas().setActiveMap(getGametableCanvas().getPublicMap());
         loadState(new File("autosave.grm"));
+        */
         //loadPrefs();
 
         addPlayer(new Player(m_playerName, m_characterName, -1));
@@ -3052,6 +3088,11 @@ public class GametableFrame extends JFrame implements ActionListener
 
         initializeExecutorThread();
     }
+
+		private File getAutoSaveXMLFile()
+		{
+			return new File("autosave.xml");
+		}
 
     /**
      * starts the execution thread
@@ -3490,8 +3531,42 @@ public class GametableFrame extends JFrame implements ActionListener
         repaint();
         refreshPogList();
     }
+    
+    public void loadFromXML(File file)
+    {
+    	Document doc;
+			try
+			{
+				doc = XMLUtils.parseXMLDocument(file);
+			}
+			catch (IOException e)
+			{
+				JOptionPane.showMessageDialog(this, "Error loading " + file.getName() + " : " + e.getMessage(), null, JOptionPane.ERROR_MESSAGE);
+				// TODO proper error handling
+				return;
+			}
+			
+    	Element root = doc.getDocumentElement();
+    	if (!root.getTagName().equals("gt"))
+    	{
+    		JOptionPane.showMessageDialog(this, "Invalid file format", null, JOptionPane.ERROR_MESSAGE);
+    		return;
+    	}
+    	
+    	MapElementID.clear();
+    	Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
+    	m_gametableCanvas.getPublicMap().deserialize(publicEl);
+    	
+    	Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
+    	m_gametableCanvas.getPrivateMap().deserialize(privateEl);
+    	
+    	Element groupsEl = XMLUtils.getFirstChildElementByTagName(root, "groups");
+    	Group.deserializeGroups(groupsEl, this);
+    	
+    	// TODO Add hook for modules to load data from save file
+    }
 
-    public void loadState(final File file)
+    private void loadBinaryState(final File file)
     {
         if (!file.exists())
         {
@@ -3560,7 +3635,7 @@ public class GametableFrame extends JFrame implements ActionListener
 
     private void lockMap(final GameTableMap mapToLock, final boolean lock) 
     {
-    	for (MapElement pog : mapToLock.getMapElementInstances())
+    	for (MapElement pog : mapToLock.getMapElements())
     	{       
     		m_gametableCanvas.lockMapElementInstance(pog, lock);
       }
@@ -3687,7 +3762,7 @@ public class GametableFrame extends JFrame implements ActionListener
         send(PacketManager.makeLinesPacket(getGametableCanvas().getPublicMap().getLines(), -1, -1), player);
 
         // pogs
-        for (MapElement pog : getGametableCanvas().getPublicMap().getMapElementInstances())
+        for (MapElement pog : getGametableCanvas().getPublicMap().getMapElements())
         {
             send(PacketManager.makeAddPogPacket(pog), player);
         }
@@ -4154,8 +4229,9 @@ public class GametableFrame extends JFrame implements ActionListener
      */
     private void saveAll()
     {
-        saveState(getGametableCanvas().getPublicMap(), new File("autosave.grm"));
-        saveState(getGametableCanvas().getPrivateMap(), new File("autosavepvt.grm"));
+    	saveToXML(getAutoSaveXMLFile());    	
+        //saveState(getGametableCanvas().getPublicMap(), new File("autosave.grm"));
+        //saveState(getGametableCanvas().getPrivateMap(), new File("autosavepvt.grm"));
         savePrefs();
     }
 
@@ -4273,8 +4349,53 @@ public class GametableFrame extends JFrame implements ActionListener
             Log.log(Log.SYS, ex1);
         }
     }
+    
+    public void saveToXML(final File file)
+    {
+    	Document doc;
+			try
+			{
+				doc = XMLUtils.createDocument();
+			}
+			catch (IOException e)
+			{
+				Log.log(Log.SYS, e.getMessage());
+				JOptionPane.showMessageDialog(this, e.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			
+    	Element root = doc.createElement("gt");
+    	doc.appendChild(root);
+    	
+    	Element publicEl = doc.createElement("public_map");
+    	root.appendChild(publicEl);
+    	m_gametableCanvas.getPublicMap().serialize(publicEl);
+    	
+    	Element privateEl = doc.createElement("private_map");
+    	root.appendChild(privateEl);
+    	m_gametableCanvas.getPrivateMap().serialize(privateEl);
+    	
+    	Element groupsEl = doc.createElement("goups");
+    	root.appendChild(groupsEl);
+    	Group.serializeGroups(groupsEl);    
+    	
+    	// TODO Add hook for plugins to add elements to save 
 
-    public void saveState(final GameTableMap mapToSave, final File file)
+    	try
+			{
+    		XMLUtils.saveDocument(file, doc);
+			}
+			catch (IOException e)
+			{
+				Log.log(Log.SYS, e.getMessage());
+				JOptionPane.showMessageDialog(this, e.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+    }
+
+
+    private void saveStateBinary(final GameTableMap mapToSave, final File file)
     {
         // save out all our data. The best way to do this is with packets, cause they're
         // already designed to pass data around.
@@ -4288,7 +4409,7 @@ public class GametableFrame extends JFrame implements ActionListener
             dos.write(linesPacket);
 
             // pogs
-            for (MapElement pog : mapToSave.getMapElementInstances())
+            for (MapElement pog : mapToSave.getMapElements())
             {
                 final byte[] pogsPacket = PacketManager.makeAddPogPacket(pog);
                 dos.writeInt(pogsPacket.length);
@@ -4677,5 +4798,18 @@ public class GametableFrame extends JFrame implements ActionListener
             m_windowSize = getSize();
             m_windowPos = getLocation();
         }
+    }
+    
+    /*
+    * @see com.galactanet.gametable.data.MapElementRepositoryIF#getMapElement(com.galactanet.gametable.data.MapElementID)
+    */
+    @Override
+    public MapElement getMapElement(MapElementID id)
+    {
+    	MapElement el = m_gametableCanvas.getPublicMap().getMapElement(id);
+    	if (el == null)
+    		el = m_gametableCanvas.getPrivateMap().getMapElement(id);
+
+    	return el;
     }
 }

@@ -156,7 +156,7 @@ public class SlashCommands
 
         final String name = UtilityFunctions.stitchTogetherWords(words, 1);
         final GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap();
-        final List<MapElement> pogs = map.getMapElementInstances();
+        final List<MapElement> pogs = map.getMapElements();
         final StringBuffer buffer = new StringBuffer();
         buffer.append("<b><u>Pogs with \'" + name + "\' attribute</u></b><br>");
         int tally = 0;
@@ -319,7 +319,7 @@ public class SlashCommands
         }
 
         final String name = UtilityFunctions.stitchTogetherWords(words, 1);
-        final MapElement pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getMapElementInstanceByName(name);
+        final MapElement pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getMapElementByName(name);
         if (pog == null)
         {
             logAlertMessage("Unable to find pog named \"" + name + "\".");

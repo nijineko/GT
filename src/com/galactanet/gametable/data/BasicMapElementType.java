@@ -25,7 +25,6 @@ import java.util.Map;
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
-import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
  * Holds static information shared by all MapElements - creates MapElementInstance for GameTableMap
@@ -113,20 +112,6 @@ public class BasicMapElementType implements MapElementType
 	 * The name of the image file this element is using
 	 */
 	private final File		m_imageFile;
-
-	/**
-	 * Scale ration used for the last image scaling through drawScaledImage. Used to verify cache validity.
-	 * 
-	 * @revise I'm thinking of revising the caching model
-	 */
-	private float					m_lastScale;
-
-	/**
-	 * Cache of the scaled element image, as last rendered by drawScaledImage
-	 * 
-	 * @revise I'm thinking of revising the caching model
-	 */
-	private Image					m_lastScaledImage;
 
 	/**
 	 * The layer type this Map Element is linked to
@@ -338,20 +323,9 @@ public class BasicMapElementType implements MapElementType
 	}
 
 	/**
-	 * TODO doesn't feel useful
-	 * @return A normalized display label (extra / illegal characters removed)
-	 */
-	public String getNormalizedDisplayLabel()
-	{
-		return UtilityFunctions.normalizeName(getDisplayLabel());
-	}
-
-	/**
 	 * Verifies if this MapElement has been loaded
 	 * 
 	 * Mostly used in network communications to see if image transfer is required
-	 * 
-	 * @revise Generalize process for multiple MapElement classes
 	 * 
 	 * @return true If this Map Element has been fully loaded. See {@link #load()}
 	 */
@@ -374,10 +348,6 @@ public class BasicMapElementType implements MapElementType
 		m_image = ImageCache.getImage(m_imageFile);
 
 		m_listIcon = null;
-
-		// Clear the last scaled image buffer @revise buffering strategy
-		m_lastScaledImage = null;
-		m_lastScale = 0f;
 
 		// If image load failed, we'll revert to backup or placeholder image
 		if (m_image == null)
@@ -422,10 +392,6 @@ public class BasicMapElementType implements MapElementType
 
 		m_listIcon = null;
 
-		// Clear the last scaled image buffer @revise buffering strategy
-		m_lastScaledImage = null;
-		m_lastScale = 0f;
-
 		m_loaded = true;
 		m_image = getPlaceHolderImage(m_faceSize);
 	}
@@ -437,35 +403,6 @@ public class BasicMapElementType implements MapElementType
 	public String toString()
 	{
 		return "[PogType@" + hashCode() + " name: " + m_imageFile + " face-size: " + m_faceSize + ", loaded: " + isLoaded() + "]";
-	}
-	
-	/**
-	 * Provides a scaled version of this MapElement
-	 * 
-	 * @param Uniform scale ratio to apply to regular-sized element, 1 being 100%
-	 * @return Scaled image
-	 */
-	protected Image getScaledImage(final float scale)
-	{
-		// If no scale requested, return regular image
-		if (scale == 1.0f)
-			return getImage();
-
-		// @revise buffering strategy. Would it be worth to retain more than one scaled version of the image? Do we want a
-		// central buffering system?
-
-		// Compare requested scale with buffered scaling ratio - if the buffered image is not valid, let us generate a new
-		// one
-
-		// NB: float ratios are converted to integer ratios on a 100 scale to prevent having to regenerate images due to
-		// float imprecision
-		if ((m_lastScaledImage == null) || (Math.round(m_lastScale * 100) != Math.round(scale * 100)))
-		{
-			m_lastScale = scale;
-			m_lastScaledImage = Images.getScaledInstance(m_image, m_lastScale);
-		}
-
-		return m_lastScaledImage;
 	}
 	
 	/*

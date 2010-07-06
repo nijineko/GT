@@ -27,11 +27,15 @@ import java.util.Map.Entry;
 
 import javax.naming.InvalidNameException;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
+import com.maziade.tools.XMLUtils;
 
 /**
  * MapElement group integration
@@ -87,7 +91,7 @@ public class Group
 	/**
 	 * Removes all empty groups from the list
 	 */
-	public static void deleteEmpryGroups()
+	public static void deleteEmptyGroups()
 	{
 		Iterator<Entry<String, Group>> iter = g_groups.entrySet().iterator();
 		while (iter.hasNext())
@@ -130,7 +134,7 @@ public class Group
 	public static void packetReceived(Action action, final String groupName, final MapElementID elementID)
 	{
 		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
-		final MapElement element = map.getMapElementInstance(elementID);
+		final MapElement element = map.getMapElement(elementID);
 		
 		Group group = getGroup(groupName, action == Action.NEW);
 		if (group == null)
@@ -450,7 +454,7 @@ public class Group
 	/**
 	 * Change this group's name
 	 * @param groupName New name for the group to rename - the new group name must be unique
-	 * @parma network Send message over network
+	 * @param network Send message over network
 	 * @throws InvalidNameException if newGroupName is already in use
 	 */
 	public void setName(final String groupName, boolean network) throws InvalidNameException
@@ -495,9 +499,84 @@ public class Group
 		return g_elements.get(element.getId());
 	}
 	
+	/**
+	 * Store information from your component from inside parent element 
+	 * @param parent Parent element, as populated by calling thread.  You can add custom XML data as children.
+	 */
+	public static void  serializeGroups(Element parent)
+	{
+		Document doc = parent.getOwnerDocument();
+		
+		for (Group group : g_groups.values())
+		{
+			Element groupEl = doc.createElement("group");			
+			groupEl.appendChild(XMLUtils.createElementValue(doc, "name", group.getName()));
+			
+			// elements
+			Element elementsEl = doc.createElement("elements");
+			groupEl.appendChild(elementsEl);
+			
+			for (MapElement element : group.getElements())
+			{				
+				elementsEl.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(element.getId().numeric())));
+			}
+			
+			parent.appendChild(groupEl);
+		}
+	}
+	
+	/**
+	 * Restore information from your component from within supplied parent element
+	 * @param parent Parent element, as restored from calling thread
+	 * @param repository Interface to get map element instances from
+	 */
+	public static void  deserializeGroups(Element parent, MapElementRepositoryIF repository)
+	{
+		g_groups.clear();
+
+		int idx = 0;
+		List<MapElement> elements = new ArrayList<MapElement>();
+		
+		for (Element groupEl : XMLUtils.getChildElementsByTagName(parent, "group"))
+		{			
+			String name = XMLUtils.getFirstChildElementContent(groupEl, "name");
+			if (name == null)
+				name = "group#" + (++idx);
+			
+			Group group = Group.getGroup(name, true);
+			
+			Element elementsEl = XMLUtils.getFirstChildElementByTagName(groupEl, "elements");
+			if (elementsEl != null)
+			{
+				elements.clear();
+				for (Element idEl : XMLUtils.getChildElementsByTagName(elementsEl, "id"))
+				{
+					try
+					{
+						MapElementID id = MapElementID.fromNumeric(Long.valueOf(XMLUtils.getNodeValue(idEl)));
+						MapElement element = repository.getMapElement(id);
+						
+						if (element != null)
+							elements.add(element);
+					}
+					catch (NumberFormatException e)
+					{
+						Log.log(Log.SYS, "Invalid numeric format loading element ID in " + parent.getOwnerDocument().getDocumentURI());
+					}
+				}
+				
+				group.addElements(elements);
+			}
+		}
+	
+	}
+	
+	/**
+	 * Global list of groups
+	 */
 	private static Map<MapElementID, Group> g_elements = new HashMap<MapElementID, Group>();
 	
-	// TODO save group information
+	// TODO Frame should call onto save group information?
 	// TODO grab onto listeners to auto-remove
 }
 

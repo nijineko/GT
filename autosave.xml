@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<gt>
+<public_map>
+<elements>
+<element>
+<id>1</id>
+<angle>0.0</angle>
+<name/>
+<facesize>1.0</facesize>
+<layer>POG</layer>
+<type>pogs+pog1.png</type>
+<flip h="false" v="false"/>
+<pos>
+<loc x="-704" y="-320"/>
+</pos>
+<values/>
+</element>
+<element>
+<id>3</id>
+<angle>0.0</angle>
+<name/>
+<facesize>1.0</facesize>
+<layer>POG</layer>
+<type>pogs+pog2.png</type>
+<flip h="false" v="false"/>
+<pos>
+<loc x="-640" y="-256"/>
+</pos>
+<values/>
+</element>
+</elements>
+<lines/>
+</public_map>
+<private_map>
+<elements/>
+<lines/>
+</private_map>
+<goups/>
+</gt>
