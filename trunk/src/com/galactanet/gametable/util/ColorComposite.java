@@ -112,6 +112,106 @@ public class ColorComposite implements Composite
 			m_pixel = m_model.getRGB(s);
 		}
 	}
+	
+	/**
+	 * Byte Pixel representation
+	 *
+	 * @author Eric Maziade
+	 */
+	private class BytePixel4 implements Pixel
+	{
+		/**
+		 * Red
+		 */
+		int					m_r;
+		/**
+		 * Green
+		 */
+		int m_g;
+		/**
+		 * Blue
+		 */
+		int m_b;
+		/**
+		 * Alpha
+		 */
+		int m_a;
+
+		/**
+		 * Raster buffer
+		 */
+		Raster			m_raster;
+		
+		/**
+		 * Number of raster bands
+		 */
+		int m_bands;
+
+		/**
+		 * Constructor
+		 * @param r raster object
+		 * @param cmodel color model
+		 */
+		public BytePixel4(Raster r, ColorModel cmodel)
+		{
+			m_raster = r;
+			m_bands = m_raster.getNumBands();
+		}
+
+		/*
+		 * @see com.galactanet.gametable.ui.tools.ColorComposite.Pixel#getA()
+		 */
+		@Override
+		public int getA()
+		{
+			return m_a;
+		}
+
+		/*
+		 * @see com.galactanet.gametable.ui.tools.ColorComposite.Pixel#getB()
+		 */
+		@Override
+		public int getB()
+		{
+			return m_b;
+		}
+
+		/*
+		 * @see com.galactanet.gametable.ui.tools.ColorComposite.Pixel#getG()
+		 */
+		@Override
+		public int getG()
+		{
+			return m_g;
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.ui.tools.ColorComposite.Pixel#getR()
+		 */
+		@Override
+		public int getR()
+		{
+			return m_r;
+		}
+		/*
+		 * @see com.galactanet.gametable.ui.tools.TestCompositeContext.Pixel#getPixel(int, int)
+		 */
+		@Override
+		public void readPixel(int x, int y)
+		{
+			if (m_bands >= 3)
+			{
+				m_r = m_raster.getSample(x, y, 0);
+				m_g = m_raster.getSample(x, y, 1);
+				m_b = m_raster.getSample(x, y, 2);
+			}
+			
+			if (m_bands >= 4)
+				m_a = m_raster.getSample(x, y, 3);
+			else
+				m_a = 255;
+		}
+	}
 
 	/**
 	 * Composite Context - the object that does the actual work
@@ -155,7 +255,10 @@ public class ColorComposite implements Composite
 			{
 			case DataBuffer.TYPE_USHORT:
 			case DataBuffer.TYPE_BYTE:
-				srcPx = new BytePixel(src, m_srcColorModel);
+				if (src.getNumBands() == 1)
+					srcPx = new BytePixel(src, m_srcColorModel);
+				else
+					srcPx = new BytePixel4(src, m_srcColorModel);
 				break;
 
 			case DataBuffer.TYPE_INT:
@@ -185,7 +288,7 @@ public class ColorComposite implements Composite
 
 					dstInPx.merge(srcPx);
 
-					// Alpha treshold - if pixel being drawn is not over 80 alpha (30%), we do not apply tint
+					// Alpha threshold - if pixel being drawn is not over 80 alpha (30%), we do not apply tint
 					if (srcPx.getA() > 80)	
 						dstInPx.tint();
 

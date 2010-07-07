@@ -819,6 +819,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void doRemovePog(final MapElementID id)
     {
+    	doRemovePog(id, false);
+    }
+    
+    public void doRemovePog(final MapElementID id, boolean discardCard)
+    {
         final MapElement toRemove = getActiveMap().getMapElement(id);
         if (toRemove != null)
         {
@@ -828,6 +833,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         	
             getActiveMap().removeMapElementInstance(toRemove);
         }
+        
+        if (discardCard)
+        {
+        	Card c = Card.getCard(toRemove);
+        	if (c != null)
+                m_gametableFrame.discardCards(new Card[] {c});
+        }
+        
         m_gametableFrame.refreshActivePogList();
         repaint();
     }
@@ -1943,7 +1956,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             if (pog.getLayer() == Layer.POG)
             {
-            	pog.getRenderer().drawToCanvas(g, this);                
+            	renderPog((Graphics2D)g, pog);
             }
         }
 
@@ -2215,7 +2228,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void removePog(final MapElementID id, final boolean bDiscardCards)
     {
-        removePog(id, bDiscardCards);
+    	doRemovePogs(new MapElementID[] {id}, bDiscardCards);
     }
 
     /*
