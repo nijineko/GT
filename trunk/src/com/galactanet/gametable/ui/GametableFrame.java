@@ -40,12 +40,15 @@ import com.galactanet.gametable.data.dicemacro.DiceMacroSaxHandler;
 import com.galactanet.gametable.data.net.*;
 import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
 import com.galactanet.gametable.data.prefs.Preferences;
+import com.galactanet.gametable.module.ModuleIF;
+import com.galactanet.gametable.module.ModuleSaveIF;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
 import com.galactanet.gametable.util.*;
 import com.maziade.tools.XMLUtils;
+import com.maziade.tools.XMLUtils.XMLOutputProperties;
 
 /*
  * The main Gametable Frame class.
@@ -1929,7 +1932,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             	
             	if (openFile != null)
             	{
-            		loadFromXML(openFile); // TODO LOAD XML
+            		loadFromXML(openFile);
+            		// TODO LOADXML: Send data to other connected players
             	}
             	
             	//---------------
@@ -2850,7 +2854,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // todo : this is definitely better somewhere else
         m_gridunitmultiplier.getDocument().addDocumentListener(new DocumentListener()
         {
-            //TODO: exceptions should be captured
+            //todo exceptions should be captured
             public void changedUpdate(final DocumentEvent e)
             {
                 grid_multiplier = Double.parseDouble(m_gridunitmultiplier.getText());
@@ -3563,7 +3567,25 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     	Element groupsEl = XMLUtils.getFirstChildElementByTagName(root, "groups");
     	Group.deserializeGroups(groupsEl, this);
     	
-    	// TODO Add hook for modules to load data from save file
+    	// Hook for modules to load data from save file
+    	Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
+    	
+    	if (modulesEl != null)
+    	{
+	    	for (ModuleIF module : g_modules)
+	    	{
+	    		if (module instanceof ModuleSaveIF)
+	    		{
+	    			Element moduleEl = XMLUtils.findFirstChildElement(modulesEl, "module", "name", module.getModuleName());
+	    			
+	    			if (moduleEl != null)
+	    			{
+	    				ModuleSaveIF save = (ModuleSaveIF)module;
+	    				save.loadFromXML(moduleEl);
+	    			}
+	    		}    	
+	    	}
+    	}
     }
 
     private void loadBinaryState(final File file)
@@ -4375,15 +4397,37 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     	root.appendChild(privateEl);
     	m_gametableCanvas.getPrivateMap().serialize(privateEl);
     	
-    	Element groupsEl = doc.createElement("goups");
+    	Element groupsEl = doc.createElement("groups");
     	root.appendChild(groupsEl);
     	Group.serializeGroups(groupsEl);    
     	
-    	// TODO Add hook for plugins to add elements to save 
+    	// Hook for modules to add elements to save file
+    	Element modulesEl = doc.createElement("modules");
+    	
+    	for (ModuleIF module : g_modules)
+    	{
+    		if (module instanceof ModuleSaveIF)
+    		{
+  				ModuleSaveIF save = (ModuleSaveIF)module;
+  				
+    			Element moduleEl = doc.createElement("module");
+    			moduleEl.setAttribute("name", module.getModuleName());
+    			
+    			if (save.saveToXML(moduleEl))
+    				modulesEl.appendChild(moduleEl);
+    		}    	
+    	}
+    	
+    	// If non-empty, append
+    	if (modulesEl.getFirstChild() != null)
+    		root.appendChild(modulesEl);
 
+    	//-------------------------------------
     	try
 			{
-    		XMLUtils.saveDocument(file, doc);
+    		XMLOutputProperties props = new XMLOutputProperties();
+    		props.indentXML = false;
+    		XMLUtils.saveDocument(file, doc, props);
 			}
 			catch (IOException e)
 			{
@@ -4812,4 +4856,16 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
     	return el;
     }
+    
+    /**
+     * Register a new module with GameTable
+     * @param module
+     */
+    public static void registerModule(ModuleIF module)
+    {
+    	g_modules.remove(module);
+    	g_modules.add(module);
+    }
+    
+    private static List<ModuleIF> g_modules = new ArrayList<ModuleIF>();
 }

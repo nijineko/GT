@@ -867,4 +867,25 @@ public class UtilityFunctions
 				return defaultVal;
 			}	
 		}
+    
+    /**
+     * Parse long value from string and handles number format exception  
+     * @param value String value to parse
+     * @param defaultVal Default value to use is value is invalid
+     * @return Numeric value
+     */
+    public static long parseLong(String value, long defaultVal)
+    {
+    	if (value == null)
+    		return defaultVal;
+    	
+	    try
+			{
+				return Long.parseLong(value);
+			}
+			catch (NumberFormatException e)
+			{
+				return defaultVal;
+			}	
+		}
 }

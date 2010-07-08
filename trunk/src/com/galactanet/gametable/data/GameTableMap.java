@@ -446,5 +446,5 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 		return null;
 	}
 	
-	// TODO Plan to store scroll position from UI when saving 
+	// TODO LOADXML: Plan to store scroll position from UI when saving 
 }
