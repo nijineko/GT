@@ -2103,7 +2103,7 @@ public class PacketManager
                         if (packet == null)
                         {
                             // Still can't make packet
-                            // TODO: echo failure message to peoples?
+                            // todo echo failure message to peoples?
                             break;
                         }
                     }

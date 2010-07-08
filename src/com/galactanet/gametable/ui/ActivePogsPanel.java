@@ -18,14 +18,20 @@ import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.*;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElementType.Layer;
 import com.galactanet.gametable.data.net.PacketManager;
+import com.galactanet.gametable.module.ModuleIF;
+import com.galactanet.gametable.module.ModuleSaveIF;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.maziade.tools.XMLUtils;
 
 
 
@@ -36,7 +42,7 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * 
  * #GT-AUDIT ActivePogsPanel
  */
-public class ActivePogsPanel extends JPanel
+public class ActivePogsPanel extends JPanel implements ModuleIF, ModuleSaveIF
 {
     // --- Constants -------------------------------------------------------------------------------------------------
 
@@ -596,6 +602,8 @@ public class ActivePogsPanel extends JPanel
     {   	
         super(new BorderLayout());
         
+        GametableFrame.registerModule(this);
+        
       	m_orderedPogs = new TreeSet<MapElement>(new SortOrderComparator());
       	
       	g_iconSize = GametableApp.getIntegerProperty(GametableApp.PROPERTY_ICON_SIZE);        
@@ -1152,7 +1160,6 @@ public class ActivePogsPanel extends JPanel
   	/**
   	 * Remove ordered pog
   	 * 
-  	 * @revise move to ActivePogPanel
   	 * @param pog
   	 */
   	public void removeOrderedPog(final MapElement pog)
@@ -1166,7 +1173,6 @@ public class ActivePogsPanel extends JPanel
   	 * 
   	 * @param pogID pog ID to look for
   	 * @param sortOrder sort order number
-  	 * @revise move to ActivePogPanel
   	 */
   	public void setSortOrder(MapElementID pogID, long sortOrder, GameTableMap map)
   	{
@@ -1243,5 +1249,68 @@ public class ActivePogsPanel extends JPanel
   		}
   	}
   	
-  	// TODO save modified sort order on exit
+  	/*
+  	* @see java.awt.Component#getName()
+  	*/
+  	@Override
+  	public String getModuleName()
+  	{
+  		return ActivePogsPanel.class.getName();
+  	}
+  	
+  	/*
+  	* @see com.galactanet.gametable.module.ModuleSaveIF#loadFromXML(org.w3c.dom.Element)
+  	*/
+  	@Override
+  	public void loadFromXML(Element node)
+  	{
+  		m_elementSortIDs.clear();
+  		m_orderedPogs.clear();
+  		g_nextSortID = 0;
+  		
+  		Element sortEl = XMLUtils.getFirstChildElementByTagName(node, "sort");
+  		if (sortEl == null)
+  			return;
+  		
+  		GametableFrame frame = GametableFrame.getGametableFrame();
+  		
+  		for (Element itemEl : XMLUtils.getChildElementsByTagName(sortEl, "item"))
+  		{
+  			MapElementID elementID = MapElementID.fromNumeric(UtilityFunctions.parseLong(itemEl.getAttribute("id"), 0));
+  			
+  			MapElement mapEl = frame.getMapElement(elementID);
+  			if (mapEl != null)
+  			{
+    			long val = UtilityFunctions.parseLong(itemEl.getAttribute("val"), 0);
+  				g_nextSortID = Math.max(g_nextSortID, val + 1);
+  				
+  				m_elementSortIDs.put(elementID, val);
+  				m_orderedPogs.add(mapEl);
+  			}
+  		}
+  	}
+  	
+  	/*
+  	* @see com.galactanet.gametable.module.ModuleSaveIF#saveToXML(org.w3c.dom.Element)
+  	*/
+  	@Override
+  	public boolean saveToXML(Element node)
+  	{
+  		if (m_elementSortIDs.size() == 0)
+  			return false;
+  		
+  		Document doc = node.getOwnerDocument();
+  		Element sort = doc.createElement("sort");
+  		node.appendChild(sort);
+  		
+  		for (Entry<MapElementID, Long> entry : m_elementSortIDs.entrySet())
+  		{  			
+  			Element item = doc.createElement("item");
+  			item.setAttribute("id", String.valueOf(entry.getKey().numeric()));
+  			item.setAttribute("val", String.valueOf(entry.getValue()));
+  			sort.appendChild(item);
+  		}
+  		
+  		return true;
+  	}
 }

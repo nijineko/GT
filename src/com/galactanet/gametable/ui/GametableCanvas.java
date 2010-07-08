@@ -2919,6 +2919,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   		return m_lockedElements.isSelected(mapElement);
   	}
   	
-  	// TODO save lock information to save file
+  	// TODO LOADXML: save lock information to save file
   	// TODO maintain selection handlers through listeners
 }

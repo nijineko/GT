@@ -299,5 +299,5 @@ public class Card
 
     private static Map<MapElementID, Card> g_cardMap = new HashMap<MapElementID, Card>();
     
-    // TODO card information should be saved
+    // TODO LOADXML: card information should be saved
 }

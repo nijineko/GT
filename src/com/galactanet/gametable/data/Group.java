@@ -576,7 +576,6 @@ public class Group
 	 */
 	private static Map<MapElementID, Group> g_elements = new HashMap<MapElementID, Group>();
 	
-	// TODO Frame should call onto save group information?
 	// TODO grab onto listeners to auto-remove
 }
 
