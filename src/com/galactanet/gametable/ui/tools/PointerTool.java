@@ -18,7 +18,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;

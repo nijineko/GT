@@ -26,6 +26,7 @@ import java.net.URI;
 import java.util.*;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
 
 /**
  * Static class handling all image caching
@@ -184,7 +185,21 @@ public class ImageCache
 	{
 		try
 		{
-			return ImageIO.read(imageFile);
+			ImageInputStream stream = ImageIO.createImageInputStream(imageFile);
+			
+			if (PNGUtils.isPNG(stream))
+			{
+				return PNGUtils.loadPNGImage(stream);
+			}
+						
+			return ImageIO.read(stream);
+			
+			/*
+			BufferedImage i2 = Images.createBufferedImage(img);
+			Graphics g = i2.getGraphics();
+			g.drawImage(img, 0, 0, null);
+			return i2;
+			*/
 		}
 		catch (IOException e)
 		{

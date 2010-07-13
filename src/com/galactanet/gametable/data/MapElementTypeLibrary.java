@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
@@ -162,11 +162,11 @@ public class MapElementTypeLibrary
      * @param fullyQualifiedTypeName Unique type name
      * @return MapElementType or null, if none found
      */
-    public MapElementType getElementType(final String fullyQualifiedTypeName)
+    public MapElementTypeIF getElementType(final String fullyQualifiedTypeName)
     {
     	for (MapElementTypeLibrary library : m_childLibraries)
     	{
-    		MapElementType type = library.getElementType(fullyQualifiedTypeName);
+    		MapElementTypeIF type = library.getElementType(fullyQualifiedTypeName);
     		if (type != null)
     			return type;
     	}
@@ -177,7 +177,7 @@ public class MapElementTypeLibrary
     /**
      * @return Returns a list of element types directly under this library
      */
-    public List<MapElementType> getElementTypes()
+    public List<MapElementTypeIF> getElementTypes()
     {
         return Collections.emptyList();
     }
@@ -187,7 +187,7 @@ public class MapElementTypeLibrary
      * @param type Type to remove
      * @return true if type has been removed, false if it was not within this library
      */    
-    public boolean removeElementType(final MapElementType type) 
+    public boolean removeElementType(final MapElementTypeIF type) 
     {
         return false;       
     }
@@ -219,7 +219,7 @@ public class MapElementTypeLibrary
      * @param typeName Unique name for place holder
      * @param faceSize Number of tiles on a face
      */
-    public MapElementType createPlaceholderType(String typeName, int faceSize)
+    public MapElementTypeIF createPlaceholderType(String typeName, int faceSize)
     {
     	if (typeName == null)
     		return null;

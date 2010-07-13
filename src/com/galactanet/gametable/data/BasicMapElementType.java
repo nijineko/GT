@@ -33,7 +33,7 @@ import com.galactanet.gametable.util.Images;
  * 
  * @audited by themaze75
  */
-public class BasicMapElementType implements MapElementType
+public class BasicMapElementType implements MapElementTypeIF
 {
 	// --- Members ---------------------------------------------------------------------------------------------------
 

@@ -11,7 +11,7 @@ import java.util.Map.Entry;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.Group.Action;
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -2076,7 +2076,7 @@ public class PacketManager
             os.flush();
             os.close();
 
-            final MapElementType pogType = GametableFrame.getGametableFrame().getPogLibrary().getElementType(filename);
+            final MapElementTypeIF pogType = GametableFrame.getGametableFrame().getPogLibrary().getElementType(filename);
             pogType.load();
 
             // tell the pog panels to check for the new image

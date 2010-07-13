@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 
 /**
  * Library containing MapElementTypes
@@ -49,7 +49,7 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
     /**
      * Default layer associated with library
      */
-    private Layer        m_defaultLayer       = MapElementType.Layer.POG;
+    private Layer        m_defaultLayer       = MapElementTypeIF.Layer.POG;
 
     /**
      * Local path to elements within this library
@@ -200,7 +200,7 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
      * @param skipUnloaded If true, types that are not loaded are not automatically added to the list
      * @return MapElementType or null 
      */
-    private MapElementType addElementType(File imageFile, final int faceSize, final Layer defaultLayer, boolean skipUnloaded)
+    private MapElementTypeIF addElementType(File imageFile, final int faceSize, final Layer defaultLayer, boolean skipUnloaded)
     {
     	//String typeFQN = getFullyQualifiedName() + MapElementTypeLibrary.TYPE_SEPARATOR + imageFile.getName();
     	
@@ -232,7 +232,7 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 		* @see com.galactanet.gametable.data.MapElementTypeLibrary#getElementType(java.lang.String)
 		*/
 		@Override
-		public MapElementType getElementType(String fullyQualifiedTypeName)
+		public MapElementTypeIF getElementType(String fullyQualifiedTypeName)
 		{
 			if (fullyQualifiedTypeName.startsWith(getFullyQualifiedName()))
 			{
@@ -248,9 +248,9 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
     * @see com.galactanet.gametable.data.MapElementTypeLibrary#getElementTypes()
     */
     @Override
-    public List<MapElementType> getElementTypes()
+    public List<MapElementTypeIF> getElementTypes()
     {
-    	return new ArrayList<MapElementType>(m_types);
+    	return new ArrayList<MapElementTypeIF>(m_types);
     }
 
     /**
@@ -266,7 +266,7 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
     * @see com.galactanet.gametable.data.MapElementTypeLibrary#removeElementType(com.galactanet.gametable.data.MapElementType)
     */
     @Override
-    public boolean removeElementType(MapElementType type)
+    public boolean removeElementType(MapElementTypeIF type)
     {
     	return m_types.remove(type);
     }
@@ -282,10 +282,10 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
     /**
      * Comparator to keep element types ordered
      */
-    private Comparator<MapElementType> m_typeComparator = new Comparator<MapElementType>()        
+    private Comparator<MapElementTypeIF> m_typeComparator = new Comparator<MapElementTypeIF>()        
     {            
       @Override            
-      public int compare(MapElementType pa, MapElementType pb)
+      public int compare(MapElementTypeIF pa, MapElementTypeIF pb)
       {
           return pa.getDisplayLabel().compareTo(pb.getDisplayLabel());
       }

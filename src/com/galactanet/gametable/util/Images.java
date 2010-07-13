@@ -337,7 +337,7 @@ public class Images
 		return b;
 	}
 
-	private static void waitForImage(final Image image)
+	public static void waitForImage(final Image image)
 	{
 		final MediaTracker tracker = new MediaTracker(GametableFrame.getGametableFrame());
 		tracker.addImage(image, 0);
