@@ -55,7 +55,7 @@ UNKNOWN_STATE               = Unknown state
 
 //File
 FILE                        = File
-MAP_OPEN                    = Open map
+MAP_OPEN                    = Load Map
 MAP_OPEN_BAD_VERSION        = Invalid save file version.
 MAP_OPEN_CONFIRM            = Confirm Load
 MAP_OPEN_DONE               = loads a new map.

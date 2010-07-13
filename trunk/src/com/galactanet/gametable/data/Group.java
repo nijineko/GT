@@ -22,20 +22,11 @@
 
 package com.galactanet.gametable.data;
 
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.naming.InvalidNameException;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
-import com.galactanet.gametable.data.net.PacketManager;
-import com.galactanet.gametable.data.net.PacketSourceState;
-import com.galactanet.gametable.ui.GametableCanvas;
-import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.util.Log;
-import com.maziade.tools.XMLUtils;
 
 /**
  * MapElement group integration
@@ -69,213 +60,6 @@ public class Group
 	}
 
 	/**
-	 * All groups mapped by group name
-	 */
-	private static Map<String, Group>	g_groups							= new HashMap<String, Group>();
-
-
-	/**
-	 * Removes all groups from the list
-	 */
-	public static void deleteAllGroups()
-	{
-		for (Group g : g_groups.values())
-		{
-			g.removeAllElements();
-			send(Action.DELETE, g, null);
-		}
-
-		g_groups.clear();
-	}
-
-	/**
-	 * Removes all empty groups from the list
-	 */
-	public static void deleteEmptyGroups()
-	{
-		Iterator<Entry<String, Group>> iter = g_groups.entrySet().iterator();
-		while (iter.hasNext())
-		{
-			Group g = iter.next().getValue();
-			
-			if (g.getElementCount() == 0)
-			{
-				iter.remove();
-				send(Action.DELETE, g, null);
-			}			
-		}
-	}
-
-	/**
-	 * Returns a list of existing group names
-	 * @param names If non-null, will be populated with the group names, otherwise a new list instance will be created
-	 * @return list of existing group names
-	 */
-	public static List<String> getGroupNames(List<String> names)
-	{
-		if (names == null)
-			names = new ArrayList<String>();
-		
-		for (Group group : g_groups.values())
-		{
-			names.add(group.getName());
-		}
-		
-		return names;
-	}
-	
-	/**
-	 * Handle a received network communication packet
-	 * 
-	 * @param action Action to process
-	 * @param groupName Name of affected group
-	 * @param elementID Element unique ID
-	 */
-	public static void packetReceived(Action action, final String groupName, final MapElementID elementID)
-	{
-		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
-		final MapElement element = map.getMapElement(elementID);
-		
-		Group group = getGroup(groupName, action == Action.NEW);
-		if (group == null)
-			return;
-
-		switch (action)
-		{
-		case ADD:
-			group.addElement(element, false); // Do not send network packet, as we are reacting to a received packet
-			break;
-
-		case REMOVE:
-			group.removeElement(element, false); // Do not send network packet, as we are reacting to a received packet
-			break;
-
-		case DELETE:
-			group.deleteGroup(false); // Do not send network packet, as we are reacting to a received packet
-			break;
-
-		case RENAME:
-			// handled through another method return
-			
-		case NEW:
-			// do nothing
-			break;
-		}
-	}
-	
-	/**
-	 * Handle a received network communication packet
-	 * 
-	 * @param action Action to process
-	 * @param groupName Name of affected group
-	 * @param elementID Element unique ID
-	 */
-	public static void reanemPacketReceived(final String groupName, final String newGroupName)
-	{
-		Group g = getGroup(groupName);
-		
-		if (g != null)
-		{
-			try
-			{
-				g.setName(newGroupName, false);
-			}
-			catch (InvalidNameException e)
-			{
-				Log.log(Log.PLAY, e.getMessage());
-			}
-		}
-	}
-
-	/**
-	 * Get an existing group / create a new group
-	 * 
-	 * @param groupName Name for new group
-	 * @param autoCreate If true, non-found group is automatically created
-	 * @return Group instance or null
-	 */
-	public static Group getGroup(final String groupName, boolean autoCreate)
-	{
-		Group g = g_groups.get(groupName);
-		if (g != null)
-			return g;
-
-		if (!autoCreate)
-			return null;
-
-		g = new Group(groupName);
-		g_groups.put(groupName, g);
-		return g;
-	}
-	
-	/**
-	 * Get an existing group 
-	 * 
-	 * @param groupName Name for new group
-	 * @return Group instance or null
-	 */
-	public static Group getGroup(final String groupName)
-	{
-		return getGroup(groupName, false);
-	}
-	
-	/**
-	 * @return The number of existing groups
-	 */
-	public static int getGroupCount()
-	{
-		return g_groups.size();
-	}
-
-	/**
-	 * Send a network packet
-	 * 
-	 * @param action Network action to perform
-	 * @param groupName Name of the affected group
-	 * @param elementID Unique element ID, if the action is related to an element.
-	 */
-	private static void send(Action action, final Group group, final MapElementID elementID)
-	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		GametableCanvas canvas = frame.getGametableCanvas();
-
-		// Make sure we are not processing the packet
-		// Ignore if editing the private map (publish action will handle networking when needed)
-		if (canvas.isPublicMap() && !PacketSourceState.isNetPacketProcessing())
-		{
-			final int player = frame.getMyPlayerId();
-			frame.send(PacketManager.makeGroupPacket(action, group == null ? "" : group.getName(), elementID, player));
-		}
-	}
-	
-	/**
-	 * Send a network packet
-	 * @param group group
-	 * @param newName new name
-	 */
-	private static void sendRename(final Group group, String oldName, String newName)
-	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		GametableCanvas canvas = frame.getGametableCanvas();
-
-		// Make sure we are not processing the packet
-		// Ignore if editing the private map (publish action will handle networking when needed)
-		if (canvas.isPublicMap() && !PacketSourceState.isNetPacketProcessing())
-		{
-			final int player = frame.getMyPlayerId();
-			frame.send(PacketManager.makeRenameGroupPacket(oldName, newName, player));
-		}
-	}
-
-	/**
-	 * Private constructor - use static methods
-	 */
-	private Group()
-	{
-		// nothing to do
-	}
-	
-	/**
 	 * Group name
 	 */
 	private String		m_name	= null;
@@ -294,8 +78,9 @@ public class Group
 	 * Constructor
 	 * @param groupName Name of the group
 	 */
-	private Group(final String groupName)
+	protected Group(final GroupManager manager, final String groupName)
 	{
+		m_manager = manager;
 		m_name = groupName;
 	}
 
@@ -314,10 +99,10 @@ public class Group
 	public void deleteGroup(boolean network)
 	{
 		removeAllElements();
-		g_groups.remove(getName());
+		m_manager.removeGroup(getName());
 		
 		if (network)
-			send(Action.DELETE, this, null);
+			m_manager.send(Action.DELETE, this, null);
 	}
 	
 	
@@ -341,7 +126,7 @@ public class Group
 			return;
 		
 		// Remove element from any other group
-		Group group = Group.getGroup(element);
+		Group group = m_manager.getGroup(element);
 		
 		if (group != null && group != this)
 			group.removeElement(element);
@@ -349,9 +134,9 @@ public class Group
 		if (group != this)
 		{		
 			m_elements.add(element);
-			g_elements.put(element.getId(), this);
+			m_manager.registerElement(element.getId(), this);
 			
-			send(Action.ADD, group, element.getId());
+			m_manager.send(Action.ADD, group, element.getId());
 		}
 	}
 	
@@ -412,7 +197,7 @@ public class Group
 	{
 		for (MapElement element : m_elements)
 		{
-			g_elements.remove(element.getId());
+			m_manager.unregisterElement(element.getId());
 		}			
 		
 		m_elements.clear();
@@ -435,10 +220,10 @@ public class Group
 	protected void removeElement(final MapElement element, boolean network)
 	{
 		m_elements.remove(element);
-		g_elements.remove(element.getId());
+		m_manager.unregisterElement(element.getId());
 		
 		if (network)
-			send(Action.REMOVE, this, element.getId());
+			m_manager.send(Action.REMOVE, this, element.getId());
 	}
 	
 	/**
@@ -468,19 +253,19 @@ public class Group
 			if (m_name != null && groupName.equals(m_name))
 				return; // nothing to do
 
-			if (getGroup(groupName, false) != null)
+			if (m_manager.getGroup(groupName, false) != null)
 				throw new InvalidNameException(groupName + " already in use");
 
 			String oldName = m_name;
 			
 			if (m_name != null)
-				g_groups.remove(m_name);
+				m_manager.removeGroup(m_name);
 			
 			m_name = groupName;
 			
-			g_groups.put(m_name, this);
+			m_manager.addGroup(this);
 			
-			sendRename(this, oldName, m_name);
+			m_manager.sendRename(this, oldName, m_name);
 	}
 
 	@Override
@@ -488,94 +273,11 @@ public class Group
 	{
 		return getName();
 	}
-	
-	/**
-	 * Get the group linked to a given element
-	 * @param element Element to look for
-	 * @return Group instance or null
-	 */
-	public static Group getGroup(MapElement element)
-	{
-		return g_elements.get(element.getId());
-	}
-	
-	/**
-	 * Store information from your component from inside parent element 
-	 * @param parent Parent element, as populated by calling thread.  You can add custom XML data as children.
-	 */
-	public static void  serializeGroups(Element parent)
-	{
-		Document doc = parent.getOwnerDocument();
-		
-		for (Group group : g_groups.values())
-		{
-			Element groupEl = doc.createElement("group");			
-			groupEl.appendChild(XMLUtils.createElementValue(doc, "name", group.getName()));
-			
-			// elements
-			Element elementsEl = doc.createElement("elements");
-			groupEl.appendChild(elementsEl);
-			
-			for (MapElement element : group.getElements())
-			{				
-				elementsEl.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(element.getId().numeric())));
-			}
-			
-			parent.appendChild(groupEl);
-		}
-	}
-	
-	/**
-	 * Restore information from your component from within supplied parent element
-	 * @param parent Parent element, as restored from calling thread
-	 * @param repository Interface to get map element instances from
-	 */
-	public static void  deserializeGroups(Element parent, MapElementRepositoryIF repository)
-	{
-		g_groups.clear();
 
-		int idx = 0;
-		List<MapElement> elements = new ArrayList<MapElement>();
-		
-		for (Element groupEl : XMLUtils.getChildElementsByTagName(parent, "group"))
-		{			
-			String name = XMLUtils.getFirstChildElementContent(groupEl, "name");
-			if (name == null)
-				name = "group#" + (++idx);
-			
-			Group group = Group.getGroup(name, true);
-			
-			Element elementsEl = XMLUtils.getFirstChildElementByTagName(groupEl, "elements");
-			if (elementsEl != null)
-			{
-				elements.clear();
-				for (Element idEl : XMLUtils.getChildElementsByTagName(elementsEl, "id"))
-				{
-					try
-					{
-						MapElementID id = MapElementID.fromNumeric(Long.valueOf(XMLUtils.getNodeValue(idEl)));
-						MapElement element = repository.getMapElement(id);
-						
-						if (element != null)
-							elements.add(element);
-					}
-					catch (NumberFormatException e)
-					{
-						Log.log(Log.SYS, "Invalid numeric format loading element ID in " + parent.getOwnerDocument().getDocumentURI());
-					}
-				}
-				
-				group.addElements(elements);
-			}
-		}
-	
-	}
-	
+
 	/**
-	 * Global list of groups
+	 * Group's manager instance
 	 */
-	private static Map<MapElementID, Group> g_elements = new HashMap<MapElementID, Group>();
-	
-	// TODO grab onto listeners to auto-remove
+	private final GroupManager m_manager;	
 }
 

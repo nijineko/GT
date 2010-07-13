@@ -24,6 +24,8 @@ package com.galactanet.gametable.module;
 
 import org.w3c.dom.Element;
 
+import com.galactanet.gametable.data.XMLSerializeConverter;
+
 /**
  * If this interface is implemented in a module, it is expected to be able to load & save information to XML and from XML save file 
  *
@@ -34,8 +36,9 @@ public interface ModuleSaveIF
 	/**
 	 * Load from an XML DOM node
 	 * @param node An XML node located by the engine.
+	 * @param converter to convert stored MapElementIDs to actual map element IDs
 	 */
-	public void loadFromXML(Element node);
+	public void loadFromXML(Element node, XMLSerializeConverter converter);
 	
 	/**
 	 * Save to an XML DOM node

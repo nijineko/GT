@@ -1511,7 +1511,18 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         final JMenu menu = new JMenu(lang.FILE);
 
-        menu.add(getOpenMapMenuItem());
+    		JMenuItem item = new JMenuItem(m_actionLoadMap);			
+        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
+        menu.add(item);
+        
+        item = new JMenuItem(m_actionLoadPublicMap);			
+        //item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
+        menu.add(item);
+        
+        item = new JMenuItem(m_actionLoadPrivateMap);			
+        //item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
+        menu.add(item);
+        
         menu.add(getSaveMapMenuItem());
         menu.add(getSaveAsMapMenuItem());
         menu.add(getScanForPogsMenuItem());
@@ -1550,6 +1561,19 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         final JMenu menu = new JMenu(lang.HELP);
         menu.add(getAboutMenuItem());
+        
+        /*
+        menu.add(new JMenuItem(new AbstractAction("ISHOST") {					
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						Player p = getMyPlayer();
+						System.out.println(p.isHostPlayer() ? "host" : "guest");
+						System.out.println(p.getConnection() == null ? "disconnected" : "connected");
+					}
+        }));
+        */
+        
         return menu;
     }
 
@@ -1858,7 +1882,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public Player getMyPlayer()
     {
-        return m_players.get(getMyPlayerIndex());
+    	if (m_players.size() == 0)
+    		return null;
+    	
+      return m_players.get(getMyPlayerIndex());
     }
 
     /**
@@ -1866,7 +1893,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public int getMyPlayerId()
     {
-        return getMyPlayer().getId();
+    	Player p = getMyPlayer();
+    	if (p == null)
+    		return 0;
+    	
+      return p.getId();
     }
 
     /**
@@ -1908,103 +1939,100 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     public int getNewStateId()
     {
         return m_nextStateId++;
-    }
+    }	
 
     /**
-     * Builds and returns the menu item for opening a new map
-     * The function includes defining the action listener and the actions it will
-     * perform when this item is called.
      * 
-     * @return the File/Open menu item.
      */
-    private JMenuItem getOpenMapMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(lang.MAP_OPEN);
-        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
-        item.addActionListener(new ActionListener()
-        {
-            /*
-             * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-             */
-            public void actionPerformed(final ActionEvent e)
-            {
-            	final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
-            	
-            	if (openFile != null)
-            	{
-            		loadFromXML(openFile);
-            		// TODO LOADXML: Send data to other connected players
-            	}
-            	
-            	//---------------
-            	/*
-            	
-                // opening while on the public layer...
-                if (getGametableCanvas().getActiveMap() == getGametableCanvas().getPublicMap())
-                {
-                    final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "grm", true);
+private void loadMap(boolean loadPublic, boolean loadPrivate)
+{
+	final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
 
-                    if (openFile == null)
-                    {
-                        // they canceled out of the open
-                        return;
-                    }
+	if (openFile != null)
+	{
+		loadFromXML(openFile, loadPublic, loadPrivate);
+	
+	// TODO LOADXML: Send data to other connected players
+	
+	// The menu should read:
+	//	Load map
+	//	Load public map
+	// 	Load private map
+	// Options should be disabled based on proper scenario
+	
+	// Loading on the public layer
+	// Loading on the private layer
+	// Loading on the public layer - Host only?
+	
+	
+	// The old method sent the public map's binary save file.
+}
 
-                    m_actingFilePublic = openFile;
+//---------------
+/*
 
-                    final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
-                        lang.MAP_OPEN_WARN, lang.MAP_OPEN_CONFIRM);
-                    if (result == UtilityFunctions.YES)
-                    {
+  // opening while on the public layer...
+  if (getGametableCanvas().getActiveMap() == getGametableCanvas().getPublicMap())
+  {
+      final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "grm", true);
 
-                        if (m_actingFilePublic != null)
-                        {
-                            // clear the state
-                            eraseAll();
+      if (openFile == null)
+      {
+          // they canceled out of the open
+          return;
+      }
 
-                            // load
-                            if (m_netStatus == NETSTATE_JOINED)
-                            {
-                                // joiners dispatch the save file to the host
-                                // for processing
-                                final byte grmFile[] = UtilityFunctions.loadFileToArray(m_actingFilePublic);
-                                if (grmFile != null)
-                                {
-                                    send(PacketManager.makeGrmPacket(grmFile));
-                                }
-                            }
-                            else
-                            {
-                                // actually do the load if we're the host or offline
-                                loadState(m_actingFilePublic);
-                            }
+      m_actingFilePublic = openFile;
 
-                            postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.MAP_OPEN_DONE);
-                        }
-                    }
-                }
-                else
-                {
-                    // opening while on the private layer
-                    m_actingFilePrivate = UtilityFunctions.doFileOpenDialog(lang.OPEN, "grm", true);
-                    if (m_actingFilePrivate != null)
-                    {
-                        // we have to pretend we're not connected while loading. We
-                        // don't want these packets to be propagated to other players
-                        final int oldStatus = m_netStatus;
-                        m_netStatus = NETSTATE_NONE;
-                        PacketSourceState.beginFileLoad();
-                        loadState(m_actingFilePrivate);
-                        PacketSourceState.endFileLoad();
-                        m_netStatus = oldStatus;
-                    }
-                }
-                */
-            }
-        });
+      final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
+          lang.MAP_OPEN_WARN, lang.MAP_OPEN_CONFIRM);
+      if (result == UtilityFunctions.YES)
+      {
 
-        return item;
-    }
+          if (m_actingFilePublic != null)
+          {
+              // clear the state
+              eraseAll();
+
+              // load
+              if (m_netStatus == NETSTATE_JOINED)
+              {
+                  // joiners dispatch the save file to the host
+                  // for processing
+                  final byte grmFile[] = UtilityFunctions.loadFileToArray(m_actingFilePublic);
+                  if (grmFile != null)
+                  {
+                      send(PacketManager.makeGrmPacket(grmFile));
+                  }
+              }
+              else
+              {
+                  // actually do the load if we're the host or offline
+                  loadState(m_actingFilePublic);
+              }
+
+              postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.MAP_OPEN_DONE);
+          }
+      }
+  }
+  else
+  {
+      // opening while on the private layer
+      m_actingFilePrivate = UtilityFunctions.doFileOpenDialog(lang.OPEN, "grm", true);
+      if (m_actingFilePrivate != null)
+      {
+          // we have to pretend we're not connected while loading. We
+          // don't want these packets to be propagated to other players
+          final int oldStatus = m_netStatus;
+          m_netStatus = NETSTATE_NONE;
+          PacketSourceState.beginFileLoad();
+          loadState(m_actingFilePrivate);
+          PacketSourceState.endFileLoad();
+          m_netStatus = oldStatus;
+      }
+  }
+  */
+}
 
     /**
      * gets the player associated with a connection
@@ -2070,13 +2098,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         final JMenuItem item = new JMenuItem(g);
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                if(Group.getGroupCount() < 1) {
+                if(getActiveGroupManager().getGroupCount() < 1) {
                     JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
                         "No Groups", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
-                if(all == 1) Group.deleteEmptyGroups();
-                if(all == 2) Group.deleteAllGroups();
+                if(all == 1) getActiveGroupManager().deleteEmptyGroups();
+                if(all == 2) getActiveGroupManager().deleteAllGroups();
                 else {
                     GroupingDialog gd = new GroupingDialog(false);
                     gd.setVisible(true);
@@ -2120,7 +2148,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
         item.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {                
-                if(Group.getGroupCount() < 1) {
+                if(getActiveGroupManager().getGroupCount() < 1) {
                     JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", 
                         "No Groups", JOptionPane.INFORMATION_MESSAGE);
                     return;
@@ -2150,7 +2178,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
                 
                 for (MapElement pog : getGametableCanvas().getSelectedMapElementInstances())
                 {
-                	Group g = Group.getGroup(pog);
+                	Group g = getActiveGroupManager().getGroup(pog);
                 	if (g != null)
                 		g.removeElement(pog);	
                 }
@@ -2666,7 +2694,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         
         // If Im the one who sent the packet, ignore it. 
         if(player == getMyPlayerId()) return;
-        Group.packetReceived(action, group, pog);
+        getActiveGroupManager().packetReceived(action, group, pog);
     }
     
     /** *************************************************************************************
@@ -2683,7 +2711,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         
         // If Im the one who sent the packet, ignore it. 
         if(player == getMyPlayerId()) return;
-        Group.reanemPacketReceived(group, newGroupName);
+        getActiveGroupManager().renamePacketReceived(group, newGroupName);
     }
 
     /**
@@ -2772,6 +2800,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private void initialize() throws IOException
     {
     	ImageCache.startCacheDaemon();
+    	buildActions();
     	
         if (DEBUG_FOCUS) // if debugging
         {
@@ -2933,7 +2962,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         PacketSourceState.beginFileLoad();
         File autoSave = getAutoSaveXMLFile();
         if (autoSave.exists())
-        	loadFromXML(autoSave);
+        	loadFromXML(autoSave, true, true);
         
         //loadState(new File("autosavepvt.grm"));
         PacketSourceState.endFileLoad();
@@ -3536,7 +3565,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         refreshPogList();
     }
     
-    public void loadFromXML(File file)
+    public void loadFromXML(File file, boolean loadPublic, boolean loadPrivate)
     {
     	Document doc;
 			try
@@ -3557,34 +3586,53 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     		return;
     	}
     	
-    	MapElementID.clear();
-    	Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
-    	m_gametableCanvas.getPublicMap().deserialize(publicEl);
-    	
-    	Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
-    	m_gametableCanvas.getPrivateMap().deserialize(privateEl);
-    	
-    	Element groupsEl = XMLUtils.getFirstChildElementByTagName(root, "groups");
-    	Group.deserializeGroups(groupsEl, this);
-    	
-    	// Hook for modules to load data from save file
-    	Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
-    	
-    	if (modulesEl != null)
+    	try
     	{
-	    	for (ModuleIF module : g_modules)
+	    	PacketSourceState.beginFileLoad();
+	    	
+	    	if (loadPrivate && loadPublic)
+	    		MapElementID.clear();
+	    	
+	    	XMLSerializeConverter converter= new XMLSerializeConverter();
+	    	
+	    	if (loadPublic)
 	    	{
-	    		if (module instanceof ModuleSaveIF)
-	    		{
-	    			Element moduleEl = XMLUtils.findFirstChildElement(modulesEl, "module", "name", module.getModuleName());
-	    			
-	    			if (moduleEl != null)
-	    			{
-	    				ModuleSaveIF save = (ModuleSaveIF)module;
-	    				save.loadFromXML(moduleEl);
-	    			}
-	    		}    	
+	    		Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
+	    		m_gametableCanvas.getPublicMap().deserialize(publicEl, converter);
 	    	}
+	    	
+	    	if (loadPrivate)
+	    	{
+	    		Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
+	    		m_gametableCanvas.getPrivateMap().deserialize(privateEl, converter);
+	    	}
+	    	
+	    	if (loadPublic && loadPrivate)
+	    	{
+		    	// Hook for modules to load data from save file
+		    	Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
+		    	
+		    	if (modulesEl != null)
+		    	{
+			    	for (ModuleIF module : g_modules)
+			    	{
+			    		if (module instanceof ModuleSaveIF)
+			    		{
+			    			Element moduleEl = XMLUtils.findFirstChildElement(modulesEl, "module", "name", module.getModuleName());
+			    			
+			    			if (moduleEl != null)
+			    			{
+			    				ModuleSaveIF save = (ModuleSaveIF)module;
+			    				save.loadFromXML(moduleEl, converter);
+			    			}
+			    		}    	
+			    	}
+		    	}
+	    	}
+    	}
+    	finally
+    	{
+    		PacketSourceState.endFileLoad();
     	}
     }
 
@@ -4396,11 +4444,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     	Element privateEl = doc.createElement("private_map");
     	root.appendChild(privateEl);
     	m_gametableCanvas.getPrivateMap().serialize(privateEl);
-    	
-    	Element groupsEl = doc.createElement("groups");
-    	root.appendChild(groupsEl);
-    	Group.serializeGroups(groupsEl);    
-    	
+      	
     	// Hook for modules to add elements to save file
     	Element modulesEl = doc.createElement("modules");
     	
@@ -4438,6 +4482,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
     }
 
+    public GroupManager getActiveGroupManager()
+    {
+    	 return getGametableCanvas().getActiveMap().getGroupManager();
+    }
 
     private void saveStateBinary(final GameTableMap mapToSave, final File file)
     {
@@ -4766,28 +4814,32 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         switch (m_netStatus)
         {
             case NETSTATE_NONE:
-            {
                 m_status.setText(" " + lang.DISCONNECTED);
-            }
-            break;
+                m_actionLoadMap.setEnabled(true);
+                m_actionLoadPrivateMap.setEnabled(true);
+                m_actionLoadPublicMap.setEnabled(true);
+                break;
 
             case NETSTATE_JOINED:
-            {
                 m_status.setText(" " + lang.CONNECTED + ": ");
-            }
-            break;
+                m_actionLoadMap.setEnabled(false);
+                m_actionLoadPrivateMap.setEnabled(true);
+                m_actionLoadPublicMap.setEnabled(false);
+                break;
 
             case NETSTATE_HOST:
-            {
                 m_status.setText(" " + lang.HOSTING + ": ");
-            }
-            break;
+                m_actionLoadMap.setEnabled(true);
+                m_actionLoadPrivateMap.setEnabled(true);
+                m_actionLoadPublicMap.setEnabled(true);
+                break;
 
             default:
-            {
                 m_status.setText(" " + lang.UNKNOWN_STATE + " ");
-            }
-            break;
+                m_actionLoadMap.setEnabled(false);
+                m_actionLoadPrivateMap.setEnabled(true);
+                m_actionLoadPublicMap.setEnabled(false);
+                break;
         }
 
         if (m_netStatus != NETSTATE_NONE)
@@ -4866,6 +4918,40 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     	g_modules.remove(module);
     	g_modules.add(module);
     }
+    
+    /**
+     * @revise Temporary holding - we'll want something more gobal
+     */
+    private void buildActions()
+    {
+	    m_actionLoadMap = new AbstractAction(lang.MAP_OPEN) {				
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					loadMap(true, true);
+				}
+			};
+			
+			m_actionLoadPrivateMap = new AbstractAction("Load Private Map") {				
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					loadMap(false, true);
+				}
+			};
+			
+			m_actionLoadPublicMap = new AbstractAction("Load Public Map") {				
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					loadMap(true, false);
+				}
+			};
+    }
+		
+    private javax.swing.Action m_actionLoadMap;
+    private javax.swing.Action m_actionLoadPrivateMap;
+    private javax.swing.Action m_actionLoadPublicMap;
     
     private static List<ModuleIF> g_modules = new ArrayList<ModuleIF>();
 }

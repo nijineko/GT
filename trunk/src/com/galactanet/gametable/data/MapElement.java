@@ -27,7 +27,6 @@ import com.galactanet.gametable.ui.MapElementRendererIF;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
-import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 /**
@@ -150,12 +149,14 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 * Constructor
 	 * @param parent Parent XML element
 	 */
-	public MapElement(Element parent)
+	public MapElement(Element parent, XMLSerializeConverter converter)
 	{
 		MapElementID id;
 		try
 		{
-			id = MapElementID.fromNumeric(Long.valueOf(XMLUtils.getFirstChildElementContent(parent, "id")));
+			long l = Long.valueOf(XMLUtils.getFirstChildElementContent(parent, "id"));
+			id = MapElementID.acquire();
+			converter.storeMapElementID(l, id);		
 		}
 		catch (NumberFormatException e)
 		{
@@ -972,11 +973,11 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	}
 	
 	/*
-	 * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
-	 */
-	@Override
-	public void deserialize(Element parent)
-	{
+   * @see com.galactanet.gametable.data.XMLSerializeIF#deserialize(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter)
+   */
+  @Override
+  public void deserialize(Element parent, XMLSerializeConverter converter)
+  {
 		// Use constructor instead
 		throw new NotImplementedException();
 	}

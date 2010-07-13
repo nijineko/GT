@@ -26,7 +26,6 @@ import org.w3c.dom.Element;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 
@@ -129,10 +128,10 @@ public class MapCoordinates implements XMLSerializeIF
 	}
 	
 	/*
-	 * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
-	 */
-	@Override
-	public void deserialize(Element parent)
+   * @see com.galactanet.gametable.data.XMLSerializeIF#deserialize(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter)
+   */
+  @Override
+  public void deserialize(Element parent, XMLSerializeConverter converter)
 	{
 		// Use constructor instead
 		throw new NotImplementedException();		

@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.util;
+package com.galactanet.gametable.data;
 
 import org.w3c.dom.Element;
 
@@ -40,6 +40,7 @@ public interface XMLSerializeIF
 	/**
 	 * Restore information from your component from within supplied parent element
 	 * @param parent Parent element, as restored from calling thread
+	 * @param converter Converter interface to convert saved element IDs to loaded element IDs
 	 */
-	public void deserialize(Element parent);
+	public void deserialize(Element parent, XMLSerializeConverter converter);
 }

@@ -26,7 +26,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.galactanet.gametable.util.UtilityFunctions;
-import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 /**
@@ -81,6 +80,11 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	 * Whether this is the public of private version of the map
 	 */
 	private final boolean						m_publicMap;
+	
+	/**
+	 * Group manager object
+	 */
+	private final GroupManager 			m_groupManager;
 
 	/**
 	 * Constructor
@@ -96,6 +100,8 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 
 		m_mapElements = new ArrayList<MapElement>();
 		m_mapElementsUnmodifiable = Collections.unmodifiableList(m_mapElements);
+		
+		m_groupManager = new GroupManager();
 	}
 
 	/**
@@ -153,16 +159,16 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	}
 
 	/*
-   * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
-   */
-  @Override
-  public void deserialize(Element parent)
+	 * @see com.galactanet.gametable.data.XMLSerializeIF#deserialize(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter)
+	 */
+  @Override  
+  public void deserialize(Element parent, XMLSerializeConverter converter)
   {
   	Element elements = XMLUtils.getFirstChildElementByTagName(parent, "elements");
   	m_mapElements.clear();
   	for (Element xmEl : XMLUtils.getChildElementsByTagName(elements, "element"))
   	{
-  		MapElement el = new MapElement(xmEl);
+  		MapElement el = new MapElement(xmEl, converter);
   		m_mapElements.add(el);
   	}
   	
@@ -172,7 +178,10 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
   	{
   		LineSegment ls = new LineSegment(xmLine);
   		m_lines.add(ls);
-  	} 	
+  	}
+  	
+  	Element groupsEl = XMLUtils.getFirstChildElementByTagName(parent, "groups");
+  	m_groupManager.deserializeGroups(groupsEl, converter, this);
   }
 
 	/**
@@ -221,6 +230,15 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	public List<LineSegment> getLines()
 	{
 		return m_linesUnmodifiable;
+	}
+	
+	/**
+	 * Get the maps' group manager
+	 * @return Group Manager instance
+	 */
+	public GroupManager getGroupManager()
+	{
+		return m_groupManager;
 	}
 
 	/**
@@ -416,6 +434,10 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
   		lines.appendChild(xmLine);
   	}
   	parent.appendChild(lines);
+  	
+  	Element groupsEl = doc.createElement("groups");
+  	parent.appendChild(groupsEl);
+  	m_groupManager.serializeGroups(groupsEl);
   }
   
   /**
