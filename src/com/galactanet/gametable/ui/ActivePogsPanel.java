@@ -1262,7 +1262,7 @@ public class ActivePogsPanel extends JPanel implements ModuleIF, ModuleSaveIF
   	* @see com.galactanet.gametable.module.ModuleSaveIF#loadFromXML(org.w3c.dom.Element)
   	*/
   	@Override
-  	public void loadFromXML(Element node)
+  	public void loadFromXML(Element node, XMLSerializeConverter converter)
   	{
   		m_elementSortIDs.clear();
   		m_orderedPogs.clear();
@@ -1276,7 +1276,8 @@ public class ActivePogsPanel extends JPanel implements ModuleIF, ModuleSaveIF
   		
   		for (Element itemEl : XMLUtils.getChildElementsByTagName(sortEl, "item"))
   		{
-  			MapElementID elementID = MapElementID.fromNumeric(UtilityFunctions.parseLong(itemEl.getAttribute("id"), 0));
+  			long lid = UtilityFunctions.parseLong(itemEl.getAttribute("id"), 0);
+  			MapElementID elementID = converter.getMapElementID(lid);
   			
   			MapElement mapEl = frame.getMapElement(elementID);
   			if (mapEl != null)

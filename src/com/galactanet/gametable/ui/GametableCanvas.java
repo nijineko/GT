@@ -827,7 +827,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         final MapElement toRemove = getActiveMap().getMapElement(id);
         if (toRemove != null)
         {
-        	Group g = Group.getGroup(toRemove);
+        	Group g = getActiveMap().getGroupManager().getGroup(toRemove);
         	if (g != null)
         		g.removeElement(toRemove);	//#grouping @revise automatic removal from group should be centralized in DATA
         	
@@ -1736,7 +1736,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         int diffy = modelPos.y - toMove.getPosition().y;
         
         
-        Group group = Group.getGroup(toMove);
+        Group group = getActiveMap().getGroupManager().getGroup(toMove);
         
         GameTableMap map = getActiveMap();
         if(isSelected(toMove)) {            

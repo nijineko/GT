@@ -884,6 +884,8 @@ public class PacketManager
             // write the packet type
             dos.writeInt(PACKET_FILE);
 
+            // TODO validate file handling method.  We're not limited to png files.
+            
             // write the mime type
             dos.writeUTF("image/png");
 
@@ -1581,6 +1583,7 @@ public class PacketManager
             // get the mime type
             final String mimeType = dis.readUTF();
 
+            // TODO validate file handling method.  We're not limited to png files.
             if (mimeType.equals("image/png"))
             {
                 // this is a png file

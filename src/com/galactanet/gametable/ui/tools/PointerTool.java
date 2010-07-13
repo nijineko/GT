@@ -394,13 +394,14 @@ public class PointerTool extends NullTool
             });
             menu.add(item);
             
-            if(Group.getGroup(m_menuPog) != null) {
+            
+            if(GametableFrame.getGametableFrame().getActiveGroupManager().getGroup(m_menuPog) != null) {
                 item = new JMenuItem("UnGroup");
                 item.addActionListener(new ActionListener()
                 {
                     public void actionPerformed(final ActionEvent e)
                     {
-                    	Group group = Group.getGroup(m_menuPog);
+                    	Group group = GametableFrame.getGametableFrame().getActiveGroupManager().getGroup(m_menuPog);
                     	if (group != null)
                     		group.removeElement(m_menuPog);
                     }

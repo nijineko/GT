@@ -34,7 +34,6 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.MapElementRendererIF;
-import com.galactanet.gametable.util.XMLSerializeIF;
 import com.maziade.tools.XMLUtils;
 
 /**
@@ -597,14 +596,13 @@ public class LineSegment implements MapElementRendererIF, XMLSerializeIF
         dos.writeInt(m_end.y);
         dos.writeInt(m_color.getRGB());
     }
-    
+
     /*
-     * @see com.galactanet.gametable.data.XMLSerializer#deserialize(org.w3c.dom.Element)
+     * @see com.galactanet.gametable.data.XMLSerializeIF#deserialize(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter)
      */
     @Override
-    public void deserialize(Element parent)
-    {
-    	// Use constructor
+    public void deserialize(Element parent, XMLSerializeConverter converter)
+    { 
     	throw new NotImplementedException();    	
     }
     
