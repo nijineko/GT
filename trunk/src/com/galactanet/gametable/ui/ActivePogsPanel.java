@@ -23,7 +23,7 @@ import org.w3c.dom.Element;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.module.ModuleIF;
 import com.galactanet.gametable.module.ModuleSaveIF;
@@ -172,7 +172,7 @@ public class ActivePogsPanel extends JPanel implements ModuleIF, ModuleSaveIF
                 return;
             }
 
-            final MapElementType pogType = pog.getMapElementType();
+            final MapElementTypeIF pogType = pog.getMapElementType();
             final Graphics2D g2 = (Graphics2D)g;
             g2.addRenderingHints(Images.getRenderingHints());
             g2.setColor(Color.BLACK);

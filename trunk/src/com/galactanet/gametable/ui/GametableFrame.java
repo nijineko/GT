@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.Group.Action;
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.data.deck.DeckData;
@@ -3748,7 +3748,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             return null;
         }
 
-        final MapElementType newPogType = getPogLibrary().getElementType("pogs" + File.separator + card.getCardFile());
+        final MapElementTypeIF newPogType = getPogLibrary().getElementType("pogs" + File.separator + card.getCardFile());
 
         // there could be a problem with the deck definition. It's an easy mistake
         // to make. So rather than freak out, we just return null.

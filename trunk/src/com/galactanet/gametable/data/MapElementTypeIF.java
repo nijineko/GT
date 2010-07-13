@@ -26,7 +26,7 @@ import java.awt.Image;
  * 
  * @audited by themaze75
  */
-public interface MapElementType
+public interface MapElementTypeIF
 {
 	// @revise Convert this layer type to a more flexible model
 	public enum Layer

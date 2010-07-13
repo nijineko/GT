@@ -23,7 +23,7 @@ import javax.swing.tree.TreePath;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.MapElementType;
+import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementTypeLibrary;
 import com.galactanet.gametable.util.ImageCache;
@@ -214,8 +214,8 @@ public class PogPanel extends JPanel
                 children.add(new LibraryNode(this, child));
             }
 
-            final List<MapElementType> pogs = library.getElementTypes();
-            for (MapElementType pogType : pogs)
+            final List<MapElementTypeIF> pogs = library.getElementTypes();
+            for (MapElementTypeIF pogType : pogs)
             {
                 children.add(new PogNode(this, pogType));
             }
@@ -392,9 +392,9 @@ public class PogPanel extends JPanel
     private static class PogNode implements TreeNode
     {
         private final LibraryNode parent;
-        private final MapElementType     pog;
+        private final MapElementTypeIF     pog;
 
-        public PogNode(final LibraryNode parentNode, final MapElementType child)
+        public PogNode(final LibraryNode parentNode, final MapElementTypeIF child)
         {
             parent = parentNode;
             pog = child;
@@ -465,7 +465,7 @@ public class PogPanel extends JPanel
         /**
          * @return Returns the pog.
          */
-        public MapElementType getPog()
+        public MapElementTypeIF getPog()
         {
             return pog;
         }
@@ -502,7 +502,7 @@ public class PogPanel extends JPanel
         boolean                   leaf             = false;
         */
         MapElementTypeLibrary                library          = null;
-        MapElementType                   pogType          = null;
+        MapElementTypeIF                   pogType          = null;
         private static int g_iconSize = -1; 
 
         public PogTreeCellRenderer()
@@ -698,7 +698,7 @@ public class PogPanel extends JPanel
     /**
      * Pog that mouse is hovering over, if any.
      */
-    private MapElementType               m_hoverPog           = null;
+    private MapElementTypeIF               m_hoverPog           = null;
     /**
      * The list of pogs held in this panel.
      */
@@ -868,7 +868,7 @@ public class PogPanel extends JPanel
                     moveGrabPosition(screenCoords);
 
                     final TreePath path = pogTree.getPathForLocation(e.getX(), e.getY());
-                    final MapElementType oldPog = m_hoverPog;
+                    final MapElementTypeIF oldPog = m_hoverPog;
                     m_hoverPog = null;
                     if (path != null)
                     {
@@ -950,7 +950,7 @@ public class PogPanel extends JPanel
         return toolbar;
     }
 
-    private void grabPog(final MapElementType p, final Point pos, final Point offset)
+    private void grabPog(final MapElementTypeIF p, final Point pos, final Point offset)
     {
         m_grabbedPog = new MapElement(p);
         m_grabbedPogPosition = pos;

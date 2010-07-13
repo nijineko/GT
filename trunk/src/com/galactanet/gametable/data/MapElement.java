@@ -21,7 +21,7 @@ import org.w3c.dom.Element;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.MapElementRendererIF;
 import com.galactanet.gametable.util.Images;
@@ -123,7 +123,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	/**
 	 * The parent element from which this element was instantiated
 	 */
-	private MapElementType										m_mapElementType;
+	private MapElementTypeIF										m_mapElementType;
 
 	/**
 	 * The primary label for the element.
@@ -193,7 +193,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 
 		// Normalized type name
 		String fullyQualifiedTypeName = XMLUtils.getFirstChildElementContent(parent, "type");
-		MapElementType type = MapElementTypeLibrary.getMasterLibrary().getElementType(fullyQualifiedTypeName);
+		MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getElementType(fullyQualifiedTypeName);
 		
 		if (type == null)
 		{
@@ -292,7 +292,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 
 		stopDisplayPogDataChange();
 
-		MapElementType type = lib.getElementType(type_fqn);
+		MapElementTypeIF type = lib.getElementType(type_fqn);
 		if (type == null)
 		{
 			type = lib.createPlaceholderType(type_fqn, size);
@@ -310,7 +310,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 * 
 	 * @param type
 	 */
-	public MapElement(final MapElementType type)
+	public MapElement(final MapElementTypeIF type)
 	{
 		m_id = MapElementID.acquire();
 		m_mapElementType = type;
@@ -554,7 +554,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 * 
 	 * @return MapElement
 	 */
-	public MapElementType getMapElementType()
+	public MapElementTypeIF getMapElementType()
 	{
 		return m_mapElementType;
 	}
@@ -644,12 +644,12 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 
 	/**
 	 * Verifies that a given element type is valid for this instance. Useful to check before calling
-	 * {@link #setElementType(MapElementType)}
+	 * {@link #setElementType(MapElementTypeIF)}
 	 * 
 	 * @param parent MapElement to test
 	 * @return True if valid
 	 */
-	private boolean isValidParent(MapElementType parent)
+	private boolean isValidParent(MapElementTypeIF parent)
 	{
 		return true;
 		//return m_mapElement.getClass().equals(parent.getClass());
@@ -775,7 +775,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 * 
 	 * @param newParent New parent element. Must be of same class as current parent.
 	 */
-	public void setElementType(MapElementType newParent)
+	public void setElementType(MapElementTypeIF newParent)
 	{
 		if (!isValidParent(newParent))
 			throw new IllegalArgumentException("Invalid parent - cannot replace " + m_mapElementType.getClass().getName() + " by "

@@ -28,7 +28,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.text.JTextComponent;
 
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.MapElementType.Layer;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.grid.HexGridMode;
 import com.galactanet.gametable.data.grid.SquareGridMode;
@@ -1784,7 +1784,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
     
-    public void replacePogs(final MapElementType toReplace, final MapElementType replaceWith) {
+    public void replacePogs(final MapElementTypeIF toReplace, final MapElementTypeIF replaceWith) {
         GameTableMap mapToReplace;
         if (isPublicMap()) mapToReplace = m_publicMap;
         else mapToReplace = m_privateMap;
