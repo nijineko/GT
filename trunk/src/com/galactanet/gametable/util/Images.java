@@ -351,4 +351,31 @@ public class Images
 		}
 	}
 
+	/**
+	 * Checks the given binary data to see if it is a valid PNG file. 
+	 * It does this by checking the PNG signature.
+	 * 
+	 * @param data binary data to check
+	 * @return true if the binary data is a valid PNG file, false otherwise.
+	 */
+	public static boolean isPngData(final byte[] data)
+	{
+	    for (int i = 0; i < PNG_SIGNATURE.length; i++)
+	    {
+	        if (data[i] != PNG_SIGNATURE[i])
+	        {
+	            return false;
+	        }
+	    }
+	
+	    return true;
+	}
+
+
+  /**
+   * The PNG signature to verify PNG data with.
+   */
+  private static final byte[]        PNG_SIGNATURE            = {
+      (byte)(137 & 0xFF), 80, 78, 71, 13, 10, 26, 10
+                                                              };
 }

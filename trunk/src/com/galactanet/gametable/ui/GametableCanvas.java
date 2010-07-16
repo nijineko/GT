@@ -1400,7 +1400,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     }
     
     public BackgroundColor cur_bg_col = BackgroundColor.DEFAULT;
-    public MapElementID cur_bg_pog = null; 
+    public MapElementTypeIF m_bg_elementType = null; 
     public boolean m_backgroundTypeMapElement = false;
 		/**
 		 * Current scroll coordinates, relative to scroll origin
@@ -1470,10 +1470,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
     public void changeBackground(final MapElement pog) {
         if(pog == null) return;
-        m_mapBackground = pog.getMapElementType().getImage();
-        cur_bg_pog = pog.getId();
-        m_backgroundTypeMapElement = true;
+        changeBackground(pog.getMapElementType());
     }
+    
+    public void changeBackground(MapElementTypeIF type) 
+    {
+    	m_bg_elementType = type;
+      m_mapBackground = type.getImage();
+      m_backgroundTypeMapElement = true;
+  }
     
     public void changeBackgroundCP(BackgroundColor color) {
         if(m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_NONE) {
@@ -1485,14 +1490,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         changeBackground(color);        
     }
     
-    public void changeBackgroundCP(MapElementID elementID) {
+    public void changeBackgroundCP(MapElementTypeIF type) {
       if(m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_NONE) {
-          m_gametableFrame.send(PacketManager.makeBGColPacket(elementID));
+          m_gametableFrame.send(PacketManager.makeBGColPacket(type));
           m_gametableFrame.postSystemMessage(
               m_gametableFrame.getMyPlayer().getPlayerName() + " has change the background.");
           return;
       }
-      changeBackground(elementID);        
+      changeBackground(type);        
   }
 
 

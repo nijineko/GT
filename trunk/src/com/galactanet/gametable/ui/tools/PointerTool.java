@@ -816,7 +816,7 @@ public class PointerTool extends NullTool
                           final int result = UtilityFunctions.yesNoDialog(GametableFrame.getGametableFrame(),
                               "Are you sure you wish to change the background to this pog's Image?", "Change Background?");
                           if (result == UtilityFunctions.YES)
-                              m_canvas.changeBackgroundCP(m_menuPog.getId());                        
+                              m_canvas.changeBackgroundCP(m_menuPog.getMapElementType());                        
                       }
                   });
                   menu.add(item);

@@ -74,7 +74,7 @@ public class PacketManager
     // Eraser used
     public static final int PACKET_ERASE              = 4;
 
-    // png data transfer
+    // File data transfer
     public static final int PACKET_FILE               = 12;
 
     // notification of a hex mode / grid mode change
@@ -99,8 +99,8 @@ public class PacketManager
     // Packet sent by a new joiner as soon as he joins
     public static final int PACKET_PLAYER             = 0;
 
-    // request for a png
-    public static final int PACKET_PNGREQUEST         = 13;
+    // request for an image
+    public static final int PACKET_IMAGE_REQUEST         = 13;
 
     // pog reorder packet
     public static final int PACKET_POG_REORDER        = 21;
@@ -226,8 +226,8 @@ public class PacketManager
                 return "PACKET_RECENTER";
             case PACKET_FILE:
                 return "PACKET_FILE";
-            case PACKET_PNGREQUEST:
-                return "PACKET_PNGREQUEST";
+            case PACKET_IMAGE_REQUEST:
+                return "PACKET_IMAGE_REQUEST";
             case PACKET_HEX_MODE:
                 return "PACKET_HEX_MODE";
             case PACKET_LOGIN_COMPLETE:
@@ -315,7 +315,7 @@ public class PacketManager
         } 
     }
     
-    public static byte[] makeBGColPacket(MapElementID elementID) {
+    public static byte[] makeBGColPacket(MapElementTypeIF elementType) {
       try
       {
           final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -323,8 +323,7 @@ public class PacketManager
 
           dos.writeInt(PACKET_BGCOL); // type
           dos.writeBoolean(true);	// type:pog ID
-          dos.writeLong(elementID.numeric());
-          
+          dos.writeUTF(elementType.getFullyQualifiedName());
           
           return baos.toByteArray();
       }
@@ -866,12 +865,12 @@ public class PacketManager
         }
     }
 
-    public static byte[] makePngPacket(final String filename)
+    public static byte[] makeImagePacket(final String filename)
     {
-        // load the entire png file
-        final byte[] pngFileData = UtilityFunctions.loadFileToArray(filename);
+        // load the entire image file
+        final byte[] imageFileData = UtilityFunctions.loadFileToArray(filename);
 
-        if (pngFileData == null)
+        if (imageFileData == null)
         {
             return null;
         }
@@ -883,20 +882,18 @@ public class PacketManager
 
             // write the packet type
             dos.writeInt(PACKET_FILE);
-
-            // TODO validate file handling method.  We're not limited to png files.
             
             // write the mime type
-            dos.writeUTF("image/png");
+            dos.writeUTF("image/image");
 
             // write the filename
             dos.writeUTF(UtilityFunctions.getUniversalPath(filename));
 
             // now write the data length
-            dos.writeInt(pngFileData.length);
+            dos.writeInt(imageFileData.length);
 
             // and finally, the data itself
-            dos.write(pngFileData);
+            dos.write(imageFileData);
 
             return baos.toByteArray();
         }
@@ -907,14 +904,14 @@ public class PacketManager
         }
     }
 
-    public static byte[] makePngRequestPacket(final String filename)
+    public static byte[] makeImageRequestPacket(final String filename)
     {
         try
         {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final DataOutputStream dos = new DataOutputStream(baos);
 
-            dos.writeInt(PACKET_PNGREQUEST); // type
+            dos.writeInt(PACKET_IMAGE_REQUEST); // type
             dos.writeUTF(UtilityFunctions.getUniversalPath(filename));
 
             return baos.toByteArray();
@@ -1434,9 +1431,16 @@ public class PacketManager
             
             if (pogMode)
             {
-            	long pogID = dis.readLong();
-            	MapElementID id = MapElementID.fromNumeric(pogID);
-            	GametableFrame.getGametableFrame().changeBGPacketRec(id);
+            	String mapElementTypeFQN = dis.readUTF();
+            	MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getElementType(mapElementTypeFQN);
+            	if (type != null)
+            	{            	
+            		GametableFrame.getGametableFrame().changeBGPacketRec(type);
+            	}
+            	else
+            	{
+            		Log.log(Log.SYS, "Map element type not found: " + mapElementTypeFQN);
+            	}
             }
             else
             {
@@ -1583,15 +1587,14 @@ public class PacketManager
             // get the mime type
             final String mimeType = dis.readUTF();
 
-            // TODO validate file handling method.  We're not limited to png files.
-            if (mimeType.equals("image/png"))
+            if (mimeType.equals("image/image"))
             {
-                // this is a png file
-                readPngPacket(dis);
+                // this is an image file
+                readImagePacket(dis);
             }
             else if (mimeType.equals("application/x-gametable-grm"))
             {
-                // this is a png file
+                // this is a GRM file
                 readGrmPacket(dis);
             }
         }
@@ -1624,7 +1627,7 @@ public class PacketManager
     {
         try
         {
-            // read the length of the png file data
+            // read the length of the GRM file data
             final int len = dis.readInt();
 
             // the file itself
@@ -1667,8 +1670,6 @@ public class PacketManager
             Log.log(Log.SYS, ex);
         }
     }
-
-    /* *********************** PNG PACKET *********************************** */
 
     public static void readLockAllPogPacket(final DataInputStream dis)
     {
@@ -1882,9 +1883,9 @@ public class PacketManager
                 }
                 break;
 
-                case PACKET_PNGREQUEST:
+                case PACKET_IMAGE_REQUEST:
                 {
-                    readPngRequestPacket(conn, dis);
+                    readImageRequestPacket(conn, dis);
                 }
                 break;
 
@@ -1976,8 +1977,6 @@ public class PacketManager
         PacketSourceState.endNetPacketProcessing();
     }
 
-    /* *********************** PNG REQUEST PACKET *********************************** */
-
     public static void readPingPacket(final DataInputStream dis)
     {
         // there's no data in a login_complete packet.
@@ -2019,27 +2018,19 @@ public class PacketManager
 
     /* *********************** TEXT PACKET *********************************** */
 
-    public static void readPngPacket(final DataInputStream dis)
+    public static void readImagePacket(final DataInputStream dis)
     {
         try
         {
             // the file name
             final String filename = UtilityFunctions.getLocalPath(dis.readUTF());
 
-            // read the length of the png file data
+            // read the length of the image file data
             final int len = dis.readInt();
 
             // the file itself
-            final byte[] pngFile = new byte[len];
-            dis.read(pngFile);
-
-            // validate PNG file
-            if (!UtilityFunctions.isPngData(pngFile))
-            {
-                GametableFrame.getGametableFrame().getChatPanel().logAlertMessage(
-                    "Illegal pog data: \"" + filename + "\", aborting transfer.");
-                return;
-            }
+            final byte[] imageFile = new byte[len];
+            dis.read(imageFile);
 
             // validate file location
             final File here = new File("").getAbsoluteFile();
@@ -2070,9 +2061,9 @@ public class PacketManager
                 parentDir.mkdirs();
             }
 
-            // now save out the png file
+            // now save out the image file
             final OutputStream os = new BufferedOutputStream(new FileOutputStream(target));
-            os.write(pngFile);
+            os.write(imageFile);
             os.flush();
             os.close();
 
@@ -2102,7 +2093,7 @@ public class PacketManager
                 {
                     if (packet == null)
                     {
-                        packet = makePngPacket(filename);
+                        packet = makeImagePacket(filename);
                         if (packet == null)
                         {
                             // Still can't make packet
@@ -2125,15 +2116,15 @@ public class PacketManager
         }
     }
 
-    public static void readPngRequestPacket(final Connection conn, final DataInputStream dis)
+    public static void readImageRequestPacket(final Connection conn, final DataInputStream dis)
     {
         try
         {
-            // someone wants a png file from us.
+            // someone wants an image file from us.
             final String filename = UtilityFunctions.getLocalPath(dis.readUTF());
 
-            // make a png packet and send it back
-            final byte[] packet = makePngPacket(filename);
+            // make a image packet and send it back
+            final byte[] packet = makeImagePacket(filename);
             if (packet != null)
             {
                 conn.sendPacket(packet);
@@ -2502,7 +2493,7 @@ public class PacketManager
             return;
         }
 
-        conn.sendPacket(makePngRequestPacket(desiredFile));
+        conn.sendPacket(makeImageRequestPacket(desiredFile));
     }
 
     // --- Constructors ----------------------------------------------------------------------------------------------

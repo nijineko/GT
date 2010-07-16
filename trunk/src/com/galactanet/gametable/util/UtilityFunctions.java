@@ -36,13 +36,6 @@ public class UtilityFunctions
 
     public final static int            NO                       = 0;
 
-    /**
-     * The PNG signature to verify PNG data with.
-     */
-    private static final byte[]        PNG_SIGNATURE            = {
-        (byte)(137 & 0xFF), 80, 78, 71, 13, 10, 26, 10
-                                                                };
-
     private static final Random        RANDOM                   = getRandomInstance();
 
     // constants
@@ -400,25 +393,6 @@ public class UtilityFunctions
 
         final boolean b = isAncestorFile(ancestor, parent);
         return b;
-    }
-
-    /**
-     * Checks the given binary date to see if it is a valid PNG file. It does this by checking the PNG signature.
-     * 
-     * @param data binary data to check
-     * @return true if the binary data is a valid PNG file, false otherwise.
-     */
-    public static boolean isPngData(final byte[] data)
-    {
-        for (int i = 0; i < PNG_SIGNATURE.length; i++)
-        {
-            if (data[i] != PNG_SIGNATURE[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public static void launchBrowser(final String url)
@@ -882,6 +856,27 @@ public class UtilityFunctions
 	    try
 			{
 				return Long.parseLong(value);
+			}
+			catch (NumberFormatException e)
+			{
+				return defaultVal;
+			}	
+		}
+    
+    /**
+     * Parse int value from string and handles number format exception  
+     * @param value String value to parse
+     * @param defaultVal Default value to use is value is invalid
+     * @return Numeric value
+     */
+    public static int parseInt(String value, int defaultVal)
+    {
+    	if (value == null)
+    		return defaultVal;
+    	
+	    try
+			{
+				return Integer.parseInt(value);
 			}
 			catch (NumberFormatException e)
 			{
