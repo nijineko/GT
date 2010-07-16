@@ -33,6 +33,7 @@ import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.Group.Action;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.deck.Card;
+import com.galactanet.gametable.data.deck.CardModule;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.data.deck.DeckData;
 import com.galactanet.gametable.data.dicemacro.DiceMacro;
@@ -577,10 +578,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      * Changes The background color of the map. Each color is a png in the jar file
      * @param color
      */
-    public void changeBGPacketRec(final MapElementID elementID) {
-        m_gametableCanvas.changeBackground(elementID);
+    public void changeBGPacketRec(final MapElementTypeIF type) {
+        m_gametableCanvas.changeBackground(type);
         if(m_netStatus == NETSTATE_HOST) {
-            send(PacketManager.makeBGColPacket(elementID));
+            send(PacketManager.makeBGColPacket(type));
         }
     }
     
@@ -1234,7 +1235,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void eraseAllPogs()
     {
-        // make an int array of all the IDs
+      // make an int array of all the IDs
     	List<MapElement> pogs = getGametableCanvas().getActiveMap().getMapElements();
       getGametableCanvas().removePogs(pogs, true);
     }
@@ -1509,26 +1510,28 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenu getFileMenu()
     {
-        final JMenu menu = new JMenu(lang.FILE);
+    	// todo Add File->New
+    	
+      final JMenu menu = new JMenu(lang.FILE);
 
-    		JMenuItem item = new JMenuItem(m_actionLoadMap);			
-        item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
-        menu.add(item);
-        
-        item = new JMenuItem(m_actionLoadPublicMap);			
-        //item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
-        menu.add(item);
-        
-        item = new JMenuItem(m_actionLoadPrivateMap);			
-        //item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
-        menu.add(item);
-        
-        menu.add(getSaveMapMenuItem());
-        menu.add(getSaveAsMapMenuItem());
-        menu.add(getScanForPogsMenuItem());
-        menu.add(getQuitMenuItem());
+  		JMenuItem item = new JMenuItem(m_actionLoadMap);			
+      item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
+      menu.add(item);
+      
+      item = new JMenuItem(m_actionLoadPublicMap);			
+      //item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
+      menu.add(item);
+      
+      item = new JMenuItem(m_actionLoadPrivateMap);			
+      //item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
+      menu.add(item);
+      
+      menu.add(getSaveMapMenuItem());
+      menu.add(getSaveAsMapMenuItem());
+      menu.add(getScanForPogsMenuItem());
+      menu.add(getQuitMenuItem());
 
-        return menu;
+      return menu;
     }
 
     /**
@@ -2802,6 +2805,9 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     	ImageCache.startCacheDaemon();
     	buildActions();
     	
+    	// todo Automated module loading mechanism
+    	registerModule(new CardModule());
+    	
         if (DEBUG_FOCUS) // if debugging
         {
             final KeyboardFocusManager man = KeyboardFocusManager.getCurrentKeyboardFocusManager();
@@ -3609,6 +3615,8 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 	    	
 	    	if (loadPublic && loadPrivate)
 	    	{
+	        loadGridFromXML(root, converter);
+	      	
 		    	// Hook for modules to load data from save file
 		    	Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
 		    	
@@ -3635,6 +3643,46 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     		PacketSourceState.endFileLoad();
     	}
     }
+
+		private void loadGridFromXML(Element root, XMLSerializeConverter converter)
+		{
+			// grid 
+			Element gridEl = XMLUtils.getFirstChildElementByTagName(root, "grid");
+			if (gridEl != null)
+			{
+				int gridMode = UtilityFunctions.parseInt(gridEl.getAttribute("modeid"), GametableCanvas.GRID_MODE_SQUARES);
+				m_gametableCanvas.setGridModeByID(gridMode);
+			
+				// grid background
+				Element bkEl = XMLUtils.getFirstChildElementByTagName(gridEl, "background");
+				String typeFQN = bkEl.getAttribute("element_type");
+				MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getElementType(typeFQN);
+				if (type != null)
+				{
+					m_gametableCanvas.changeBackground(type);
+				}
+				else				
+				{
+					String color = bkEl.getAttribute("color");
+					BackgroundColor bkColor = BackgroundColor.DEFAULT;
+					
+					try
+					{
+						bkColor = BackgroundColor.valueOf(color);
+					}
+					catch (IllegalArgumentException e)
+					{
+						// stick to default
+					}
+					catch (NullPointerException e)
+					{
+						// stick to default	    					
+					}
+					
+					getGametableCanvas().changeBackground(bkColor);
+				}
+			}
+		}
 
     private void loadBinaryState(final File file)
     {
@@ -4444,6 +4492,8 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     	Element privateEl = doc.createElement("private_map");
     	root.appendChild(privateEl);
     	m_gametableCanvas.getPrivateMap().serialize(privateEl);
+
+      storeGridToXML(doc, root);
       	
     	// Hook for modules to add elements to save file
     	Element modulesEl = doc.createElement("modules");
@@ -4482,6 +4532,26 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 
     }
 
+		private void storeGridToXML(Document doc, Element root)
+		{
+			// grid 
+    	Element gridEl = doc.createElement("grid");
+    	gridEl.setAttribute("modeid", String.valueOf(getGametableCanvas().getGridModeId()));
+    	root.appendChild(gridEl); // TODO load
+      
+    	// grid background
+    	Element bkEl = doc.createElement("background");
+    	gridEl.appendChild(bkEl);
+    	if (m_gametableCanvas.m_backgroundTypeMapElement && m_gametableCanvas.m_bg_elementType != null)
+    	{    		
+    		bkEl.setAttribute("element_type", m_gametableCanvas.m_bg_elementType.getFullyQualifiedName());
+    	}
+    	else
+    	{
+    		bkEl.setAttribute("color", m_gametableCanvas.cur_bg_col.name());
+    	}
+		}
+
     public GroupManager getActiveGroupManager()
     {
     	 return getGametableCanvas().getActiveMap().getGroupManager();
@@ -4515,9 +4585,9 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 
             // bgstate
             byte bgState[];
-            if (m_gametableCanvas.m_backgroundTypeMapElement && m_gametableCanvas.cur_bg_pog != null)
+            if (m_gametableCanvas.m_backgroundTypeMapElement && m_gametableCanvas.m_bg_elementType != null)
             {
-            	bgState = PacketManager.makeBGColPacket(m_gametableCanvas.cur_bg_pog);
+            	bgState = PacketManager.makeBGColPacket(m_gametableCanvas.m_bg_elementType);
             }
             else
             {

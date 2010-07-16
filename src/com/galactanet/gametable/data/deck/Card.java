@@ -8,8 +8,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.util.UtilityFunctions;
+import com.maziade.tools.XMLUtils;
 
 
 
@@ -296,8 +301,36 @@ public class Card
     {
     	return g_cardMap.get(mapElement.getId());
     }
-
-    private static Map<MapElementID, Card> g_cardMap = new HashMap<MapElementID, Card>();
     
-    // TODO LOADXML: card information should be saved
+    /**
+     * Save card to XML
+     * @param node
+     * @return
+     */
+    protected void saveToXML(Element node)
+  	{
+  		Document doc = node.getOwnerDocument();
+  		node.appendChild(XMLUtils.createElementValue(doc, "name", m_cardName));
+  		node.appendChild(XMLUtils.createElementValue(doc, "file", m_cardFile));
+  		node.appendChild(XMLUtils.createElementValue(doc, "desc", m_cardDesc));
+  		node.appendChild(XMLUtils.createElementValue(doc, "deck", m_deckName));
+  		node.appendChild(XMLUtils.createElementValue(doc, "qty", String.valueOf(m_quantityInDeck)));
+  		node.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(m_cardId)));
+  	}
+    
+    /**
+     * Load card from XML
+     * @param node
+     */
+    protected void loadFromXML(Element node)
+  	{
+    	m_cardName = XMLUtils.getFirstChildNodeValue(node, "name", "Card " + (g_cardMap.size() + 1));
+    	m_cardFile = XMLUtils.getFirstChildNodeValue(node, "file", m_cardFile);
+    	m_cardDesc = XMLUtils.getFirstChildNodeValue(node, "desc", m_cardDesc);
+    	m_deckName = XMLUtils.getFirstChildNodeValue(node, "deck", m_deckName);
+    	m_quantityInDeck = UtilityFunctions.parseInt(XMLUtils.getFirstChildNodeValue(node, "qty", ""), m_quantityInDeck);
+    	m_cardId = UtilityFunctions.parseInt(XMLUtils.getFirstChildNodeValue(node, "id", ""), m_cardId);
+  	}
+
+    protected static Map<MapElementID, Card> g_cardMap = new HashMap<MapElementID, Card>();
 }
