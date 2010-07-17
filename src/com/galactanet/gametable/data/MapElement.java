@@ -220,7 +220,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	}
 
 	/**
-	 * Constructor
+	 * Constructor (network communications only)
 	 * 
 	 * @param dis Data input stream
 	 * @throws IOException
@@ -236,6 +236,12 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 		final int size = dis.readInt();
 
 		long id = dis.readLong();
+		
+		// If ID is already in use by another MapElement, we need to reassign it
+		MapElementID existingID = MapElementID.get(id);
+		if (existingID != null)
+			existingID.reassignInternalID();
+		
 		m_id = MapElementID.fromNumeric(id);
 
 		setName(dis.readUTF());
@@ -823,9 +829,6 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 * 
 	 * @param dos
 	 * @throws IOException
-	 * 
-	 *           TODO @revise Saves to binary file format. Change this for an XML file format. Keep in mind that we want
-	 *           to add export in gt2 as well
 	 */
 	public void writeToPacket(final DataOutputStream dos) throws IOException
 	{

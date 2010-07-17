@@ -9,6 +9,9 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.Group.Action;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
@@ -18,6 +21,7 @@ import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.maziade.tools.XMLUtils;
 
 
 
@@ -149,6 +153,8 @@ public class PacketManager
     
     public static final int PACKET_GROUP              = 107;
     public static final int PACKET_POG_TYPE           = 108;
+
+    public static final int PACKET_PUBLIC_MAP 								= 109;
 
     
     // --- Static Members --------------------------------------------------------------------------------------------
@@ -512,34 +518,72 @@ public class PacketManager
             return null;
         }
     }
-
-    public static byte[] makeGrmPacket(final byte[] grmData)
+    
+    /**
+     * Receive a public map packet
+     * @param dis
+     */
+    public static void readPublicMapPacket(final DataInputStream dis)
     {
-        // grmData will be the contents of the file
         try
         {
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final DataOutputStream dos = new DataOutputStream(baos);
-
-            // write the packet type
-            dos.writeInt(PACKET_FILE);
-
-            // write the mime type
-            dos.writeUTF("application/x-gametable-grm");
-
-            // now write the data length
-            dos.writeInt(grmData.length);
-
-            // and finally, the data itself
-            dos.write(grmData);
-
-            return baos.toByteArray();
+        	String xml = dis.readUTF();
+        	Document mapDocument = XMLUtils.parseXMLDocument(new StringReader(xml), null);
+        	
+        	GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
+        	map.clearMap();
+        	
+        	LoadMapSerializeConverter converter = new LoadMapSerializeConverter();
+        	map.deserialize(mapDocument.getDocumentElement(), converter);
+        	
+        	GametableFrame.getGametableFrame().repaint();
         }
         catch (final IOException ex)
         {
             Log.log(Log.SYS, ex);
-            return null;
         }
+    }
+
+    /**
+     * Create a packet to send public map over connection
+     * @param map
+     * @return
+     */
+    public static byte[] makePublicMapPacket(GameTableMap map)
+    {
+    	Document doc = null;
+    	try
+			{
+				doc = XMLUtils.createDocument();
+				Element rootEl = doc.createElement("map");
+				doc.appendChild(rootEl);
+				map.serialize(rootEl);
+			}
+			catch (IOException e)
+			{
+				Log.log(Log.SYS, "Could not create XML document " + e.getMessage());
+			}
+			
+			if (doc == null)
+				return null;
+		
+      try
+      {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final DataOutputStream dos = new DataOutputStream(baos);
+
+        // write the packet type
+        dos.writeInt(PACKET_PUBLIC_MAP);
+        
+        dos.writeUTF(XMLUtils.xmlToString(doc, "UTF-8"));
+
+        return baos.toByteArray();
+      }
+      catch (final IOException ex)
+      {
+          Log.log(Log.SYS, ex);
+          return null;
+      }
     }
 
     /* *********************** PRIVATE TEXT PACKET *************************** */
@@ -1591,12 +1635,7 @@ public class PacketManager
             {
                 // this is an image file
                 readImagePacket(dis);
-            }
-            else if (mimeType.equals("application/x-gametable-grm"))
-            {
-                // this is a GRM file
-                readGrmPacket(dis);
-            }
+            }           
         }
         catch (final IOException ex)
         {
@@ -1616,27 +1655,6 @@ public class PacketManager
             // tell the model
             final GametableFrame gtFrame = GametableFrame.getGametableFrame();
             gtFrame.gridModePacketReceived(gridMode);
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-        }
-    }
-
-    public static void readGrmPacket(final DataInputStream dis)
-    {
-        try
-        {
-            // read the length of the GRM file data
-            final int len = dis.readInt();
-
-            // the file itself
-            final byte[] grmFile = new byte[len];
-            dis.read(grmFile);
-
-            // tell the model
-            final GametableFrame gtFrame = GametableFrame.getGametableFrame();
-            gtFrame.grmPacketReceived(grmFile);
         }
         catch (final IOException ex)
         {
@@ -1958,9 +1976,14 @@ public class PacketManager
                 case PACKET_GROUP:
                   readGroupPacket(dis);
                   break;
+                  
               case PACKET_POG_TYPE:
                   readPogTypePacket(dis);
                   break;
+                  
+              case PACKET_PUBLIC_MAP:
+              	readPublicMapPacket(dis);
+              	break;
 
 
                 default:
@@ -2502,6 +2525,40 @@ public class PacketManager
     private PacketManager()
     {
         throw new RuntimeException("PacketManager should not be instantiated!");
+    }
+    
+    /**
+     * MapElementID converter when loading a map.
+     * 
+     * Reassigns element IDs that already in use 
+     *
+     * @author Eric Maziade
+     */
+    private static class LoadMapSerializeConverter extends XMLSerializeConverter
+    {
+    	/*
+    	 * @see com.galactanet.gametable.data.XMLSerializeConverter#getMapElementID(long)
+    	 */
+    	@Override
+    	public MapElementID getMapElementID(long savedElementID)
+    	{
+    		MapElementID id = super.getMapElementID(savedElementID);
+    		if (id != null)
+    			return id;
+    		
+    		id = MapElementID.get(savedElementID);
+    		
+    		// If ID was in use, let us reassign internal ID
+    		if (id != null)
+    		{
+    			id.reassignInternalID();
+    		}
+    		
+    		id = MapElementID.fromNumeric(savedElementID);
+    		this.storeMapElementID(savedElementID, id);
+    		
+    		return id;
+   		}
     }
 
 }

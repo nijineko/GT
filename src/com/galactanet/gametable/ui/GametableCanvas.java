@@ -34,6 +34,7 @@ import com.galactanet.gametable.data.grid.HexGridMode;
 import com.galactanet.gametable.data.grid.SquareGridMode;
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.data.net.PacketSourceState;
+import com.galactanet.gametable.ui.GametableFrame.NetStatus;
 import com.galactanet.gametable.ui.tools.NullTool;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
@@ -589,14 +590,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
           // if we're a joiner, just push it to the host
           // stateID is irrelevant if we're a joiner
           int stateID = -1;
-          if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+          if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
           {
               stateID = m_gametableFrame.getNewStateId();
           }
           m_gametableFrame.send(PacketManager.makeLinesPacket(line, m_gametableFrame.getMyPlayerId(), stateID));
 
           // if we're the host or if we're offline, go ahead and add them now
-          if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+          if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
           {
               doAddLineSegment(line, m_gametableFrame.getMyPlayerId(), stateID);
           }
@@ -615,14 +616,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             // if we're a joiner, just push it to the host
             // stateID is irrelevant if we're a joiner
             int stateID = -1;
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 stateID = m_gametableFrame.getNewStateId();
             }
             m_gametableFrame.send(PacketManager.makeLinesPacket(lines, m_gametableFrame.getMyPlayerId(), stateID));
 
             // if we're the host or if we're offline, go ahead and add them now
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doAddLineSegments(lines, m_gametableFrame.getMyPlayerId(), stateID);
             }
@@ -640,7 +641,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makeAddPogPacket(toAdd));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doAddPog(toAdd, true);
             }
@@ -1095,13 +1096,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             // if we're a joiner, just push it to the host
             // stateID is irrelevant if we're a joiner
             int stateID = -1;
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 stateID = m_gametableFrame.getNewStateId();
             }
             m_gametableFrame.send(PacketManager.makeErasePacket(r, bColorSpecific, color, m_gametableFrame
                 .getMyPlayerId(), stateID));
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doErase(r, bColorSpecific, color, m_gametableFrame.getMyPlayerId(), stateID);
             }
@@ -1481,7 +1482,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   }
     
     public void changeBackgroundCP(BackgroundColor color) {
-        if(m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_NONE) {
+        if(m_gametableFrame.getNetStatus() != NetStatus.DISCONNECTED) {
             m_gametableFrame.send(PacketManager.makeBGColPacket(color));
             m_gametableFrame.postSystemMessage(
                 m_gametableFrame.getMyPlayer().getPlayerName() + " has change the background.");
@@ -1491,7 +1492,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     }
     
     public void changeBackgroundCP(MapElementTypeIF type) {
-      if(m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_NONE) {
+      if(m_gametableFrame.getNetStatus() != NetStatus.DISCONNECTED) {
           m_gametableFrame.send(PacketManager.makeBGColPacket(type));
           m_gametableFrame.postSystemMessage(
               m_gametableFrame.getMyPlayer().getPlayerName() + " has change the background.");
@@ -1559,7 +1560,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makeLockPogPacket(id, newLock));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doLockPog(id, newLock);
             }
@@ -1778,7 +1779,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makeMovePogPacket(id, modelPos));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doMovePog(id, modelPos);
             }
@@ -2179,7 +2180,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
         m_gametableFrame.send(PacketManager.makeRecenterPacket(modelCenter, zoomLevel));
 
-        if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+        if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
         {
             doRecenterView(modelCenter, zoomLevel);
         }
@@ -2239,7 +2240,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     /*
     * Pass the ability to check NetStatus up the chain of object calls
     */
-    public int getNetStatus ( )
+    public NetStatus getNetStatus ( )
     {
         return m_gametableFrame.getNetStatus();
     }
@@ -2250,7 +2251,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makeRemovePogsPacket(ids));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doRemovePogs(ids, bDiscardCards);
             }
@@ -2267,7 +2268,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makeRemovePogsPacket(pogs));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doRemovePogs(pogs, bDiscardCards);
             }
@@ -2285,7 +2286,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makeRotatePogPacket(id, newAngle));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doRotatePog(id, newAngle);
             }
@@ -2302,7 +2303,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makeFlipPogPacket(id, flipH, flipV));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doFlipPog(id, flipH, flipV);
             }
@@ -2377,7 +2378,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makePogDataPacket(id, s, toAdd, toDelete));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doSetPogData(id, s, toAdd, toDelete);
             }
@@ -2397,7 +2398,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     {
         if (isPublicMap()) {
             m_gametableFrame.send(PacketManager.makePogLayerPacket(id, layer));
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED) 
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED) 
                 doSetPogLayer(id, layer);            
         } else {
             doSetPogLayer(id, layer);
@@ -2413,7 +2414,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         {
             m_gametableFrame.send(PacketManager.makePogSizePacket(id, size));
 
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doSetPogSize(id, size);
             }
@@ -2430,7 +2431,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public void setPogType(final MapElement pog, final MapElement type) {        
         if (isPublicMap()) {
             m_gametableFrame.send(PacketManager.makePogTypePacket(pog.getId(), type.getId()));
-            if (m_gametableFrame.getNetStatus() != GametableFrame.NETSTATE_JOINED) {
+            if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED) {
                 doSetPogType(pog.getId(),type.getId());
             }
         } else {
@@ -2924,6 +2925,5 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
   		return m_lockedElements.isSelected(mapElement);
   	}
   	
-  	// TODO LOADXML: save lock information to save file
   	// TODO maintain selection handlers through listeners
 }

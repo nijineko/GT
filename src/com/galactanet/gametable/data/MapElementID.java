@@ -49,6 +49,17 @@ public class MapElementID implements Comparable<MapElementID>
 	}
 	
 	/**
+	 * Get Id from numeric value (used only for network communications) 
+	 * @param id numeric value
+	 * @return MapElementInstanceID
+	 */
+	public static MapElementID get(long id)
+	{
+		MapElementID mid = g_idMap.get(id);				
+		return mid;
+	}
+	
+	/**
 	 * Acquire the next available MapElementInstanceID 
 	 * @return ID
 	 */
@@ -61,7 +72,7 @@ public class MapElementID implements Comparable<MapElementID>
 	 * Clear all generated MapElementID
 	 * TODO Clear IDs on new projects
 	 */
-	public static void clear()
+	public synchronized static void clear()
 	{
 		g_nextAvailableID = 1;
 		
@@ -79,12 +90,15 @@ public class MapElementID implements Comparable<MapElementID>
 		if (g_idMap.get(id) != null)
 			throw new IllegalArgumentException("Invalid MapElementInstanceID - " + id + " already in use");
 		
-		// set next available id
-		if (id >= g_nextAvailableID)
-			g_nextAvailableID = id + 1;
-		
-		m_id = id;
-		g_idMap.put(id, this);
+		synchronized (this)
+		{
+			// set next available id
+			if (id >= g_nextAvailableID)
+				g_nextAvailableID = id + 1;
+			
+			m_id = id;
+			g_idMap.put(id, this);	
+		}		
 	}
 	
 	/*
@@ -161,9 +175,20 @@ public class MapElementID implements Comparable<MapElementID>
 	}
 	
 	/**
+	 * Finds a new internal ID to use for this map element ID
+	 */
+	public synchronized void reassignInternalID()
+	{
+		g_idMap.remove(m_id);
+		m_id = g_nextAvailableID++;
+		g_idMap.put(m_id, this);
+		
+	}
+	
+	/**
 	 * Internal representation of ID
 	 */
-	private final long m_id;
+	private long m_id;
 	
 	/**
 	 * Validity flag of pog ID

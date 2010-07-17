@@ -27,6 +27,7 @@ import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.module.ModuleIF;
 import com.galactanet.gametable.module.ModuleSaveIF;
+import com.galactanet.gametable.ui.GametableFrame.NetStatus;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
@@ -662,7 +663,7 @@ public class ActivePogsPanel extends JPanel implements ModuleIF, ModuleSaveIF
         if (notifyNetwork && frame.getGametableCanvas().isPublicMap())
         {
             frame.send(PacketManager.makePogReorderPacket(changes));
-            if (frame.getNetStatus() != GametableFrame.NETSTATE_JOINED)
+            if (frame.getNetStatus() != NetStatus.CONNECTED)
             {
                 doPogReorder(changes);
             }
