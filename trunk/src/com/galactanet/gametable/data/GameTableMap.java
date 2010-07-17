@@ -137,6 +137,16 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 		for (GameTableMapListenerIF listener : m_listeners)
 			listener.onMapElementInstanceAdded(this, mapElement);
 	}
+	
+	/**
+	 * Clear this map of all data
+	 */
+	public void clearMap()
+	{
+		getGroupManager().deleteAllGroups();
+		clearLineSegments();
+		clearMapElementInstances();		
+	}
 
 	/**
 	 * Remove all lines from the map

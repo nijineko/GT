@@ -207,9 +207,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     /**
      * Constants for Net status
      */
-    public final static int       NETSTATE_HOST            = 1;
-    public final static int       NETSTATE_JOINED          = 2;
-    public final static int       NETSTATE_NONE            = 0;
+    public enum NetStatus {DISCONNECTED, CONNECTED, HOSTING; }
 
     public final static int       PING_INTERVAL            = 2500;
 
@@ -289,7 +287,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     // which player I am
     private int                     m_myPlayerIndex;
 
-    private int                     m_netStatus              = NETSTATE_NONE;
+    private NetStatus                     m_netStatus  = NetStatus.DISCONNECTED;
 
     private volatile NetworkThread  m_networkThread;
 
@@ -548,7 +546,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         getGametableCanvas().doAddPog(pog,
             (getGametableCanvas().getActiveMap() == getGametableCanvas().getPublicMap() ? true : false));
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             send(PacketManager.makeAddPogPacket(pog));
@@ -580,7 +578,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void changeBGPacketRec(final MapElementTypeIF type) {
         m_gametableCanvas.changeBackground(type);
-        if(m_netStatus == NETSTATE_HOST) {
+        if(m_netStatus == NetStatus.HOSTING) {
             send(PacketManager.makeBGColPacket(type));
         }
     }
@@ -591,7 +589,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void changeBGPacketRec(BackgroundColor color) {
         m_gametableCanvas.changeBackground(color);
-        if(m_netStatus == NETSTATE_HOST) {
+        if(m_netStatus == NetStatus.HOSTING) {
             send(PacketManager.makeBGColPacket(color));
         }
     }
@@ -605,7 +603,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // if you're the host, send out the packet to tell everyone to
         // clear their decks. If you're a joiner, don't. Either way
         // clear out your own hand of the offending cards
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             send(PacketManager.makeClearDeckPacket(deckName));
         }
@@ -628,7 +626,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void confirmHost() throws IllegalStateException
     {
-        if (m_netStatus != NETSTATE_HOST)
+        if (m_netStatus != NetStatus.HOSTING)
         {
             throw new IllegalStateException(lang.CONFIRM_HOST_FAIL);
         }
@@ -637,12 +635,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     // --- MenuItems ---
     
     /**
-     * throws an exception is the current status is not NETSTATE_JOINED
+     * throws an exception is the current status is not NetStatus.JOINED
      * @throws IllegalStateException
      */
     public void confirmJoined() throws IllegalStateException
     {
-        if (m_netStatus != NETSTATE_JOINED)
+        if (m_netStatus != NetStatus.CONNECTED)
         {
             throw new IllegalStateException("confirmJoined failure");
         }
@@ -654,13 +652,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void connectionDropped(final Connection conn)
     {
-        if (m_netStatus == NETSTATE_JOINED) // if we were connected before
+        if (m_netStatus == NetStatus.CONNECTED) // if we were connected before
         {
             // we lost our connection to the host
             m_chatPanel.logAlertMessage(lang.CONNECTION_LOST);
             disconnect(); // do any disconnection processing
 
-            m_netStatus = NETSTATE_NONE; // change the status to reflect we are not connected
+            m_netStatus = NetStatus.DISCONNECTED; // change the status to reflect we are not connected
             return;
         }
 
@@ -688,7 +686,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         final MapElement nPog = new MapElement(pog);
         final boolean priv = !(getGametableCanvas().isPublicMap());
 
-        if ((m_netStatus == NETSTATE_NONE) || priv)  {
+        if ((m_netStatus == NetStatus.DISCONNECTED) || priv)  {
             addPogPacketReceived(nPog, !priv);
         } else {
             send(PacketManager.makeAddPogPacket(nPog));
@@ -703,7 +701,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         // we need to be in a network game to issue deck commands
         // otherwise log the error and exit
-        if (m_netStatus == NETSTATE_NONE)
+        if (m_netStatus == NetStatus.DISCONNECTED)
         {
             m_chatPanel.logAlertMessage(lang.DECK_NOT_CONNECTED);
             return;
@@ -722,7 +720,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
         if (command.equals("create")) // create a new deck
         {
-            if (m_netStatus != NETSTATE_HOST) // verify that we are the host of the network game
+            if (m_netStatus != NetStatus.HOSTING) // verify that we are the host of the network game
             {
                 m_chatPanel.logAlertMessage(lang.DECK_NOT_HOST_CREATE);
                 return;
@@ -780,7 +778,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
         else if (command.equals("destroy")) // remove a deck
         {
-            if (m_netStatus != NETSTATE_HOST)
+            if (m_netStatus != NetStatus.HOSTING)
             {
                 m_chatPanel.logAlertMessage(lang.DECK_NOT_HOST_DESTROY);
                 return;
@@ -815,7 +813,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
         else if (command.equals("shuffle")) // shuffle the deck
         {
-            if (m_netStatus != NETSTATE_HOST) // only if you are the host
+            if (m_netStatus != NetStatus.HOSTING) // only if you are the host
             {
                 m_chatPanel.logAlertMessage(lang.DECK_NOT_HOST_SHUFFLE);
                 return;
@@ -1025,7 +1023,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     public void deckListPacketReceived(final String[] deckNames)
     {
         // if we're the host, this is a packet we should never get
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             throw new IllegalStateException(lang.DECK_ERROR_HOST_DECKLIST);
         }
@@ -1047,13 +1045,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void discardCards(final Card discards[])
     {
-        if (m_netStatus == NETSTATE_JOINED)
+        if (m_netStatus == NetStatus.CONNECTED)
         {
             // if we are not the host we have bogus decks, so we send a package to
             // notify of the discards. It will be processed by the host
             send(PacketManager.makeDiscardCardsPacket(getMyPlayer().getPlayerName(), discards));
         }
-        else if (m_netStatus == NETSTATE_HOST)
+        else if (m_netStatus == NetStatus.HOSTING)
         {
             // we are the host, so we can process the discard of the cards
             doDiscardCards(getMyPlayer().getPlayerName(), discards);
@@ -1082,7 +1080,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void disconnect()
     {
-        if (m_netStatus == NETSTATE_NONE)
+        if (m_netStatus == NetStatus.DISCONNECTED)
         {
             m_chatPanel.logAlertMessage(lang.CONNECTION_NO_DISCONNECT);
             return;
@@ -1110,7 +1108,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // we might have disconnected during initial data receipt
         PacketSourceState.endHostDump();
 
-        m_netStatus = NETSTATE_NONE;
+        m_netStatus = NetStatus.DISCONNECTED;
         m_chatPanel.logSystemMessage(lang.DISCONNECTED);
         updateStatus();
     }
@@ -1129,7 +1127,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
 
         // only the host should get this
-        if (m_netStatus != NETSTATE_HOST)
+        if (m_netStatus != NetStatus.HOSTING)
         {
             throw new IllegalStateException(lang.DECK_ERROR_DODISCARD);
         }
@@ -1176,7 +1174,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void drawCards(final String deckName, final int numToDraw)
     {
-        if (m_netStatus == NETSTATE_JOINED)
+        if (m_netStatus == NetStatus.CONNECTED)
         {
             // joiners send a request for cards
             send(PacketManager.makeRequestCardsPacket(deckName, numToDraw));
@@ -1252,7 +1250,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         final int authorID, final int state)
     {
         int stateId = state;
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             // and give it a genuine state ID first
@@ -1914,7 +1912,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     /**
      * @return Returns the m_netStatus.
      */
-    public int getNetStatus()
+    public NetStatus getNetStatus()
     {
         return m_netStatus;
     }
@@ -1945,97 +1943,25 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     }	
 
     /**
-     * 
+     * Load map
+     * @param loadPublic Load public map from file
+     * @param loadPrivate Load private map from file
      */
-private void loadMap(boolean loadPublic, boolean loadPrivate)
-{
-	final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
-
-	if (openFile != null)
-	{
-		loadFromXML(openFile, loadPublic, loadPrivate);
-	
-	// TODO LOADXML: Send data to other connected players
-	
-	// The menu should read:
-	//	Load map
-	//	Load public map
-	// 	Load private map
-	// Options should be disabled based on proper scenario
-	
-	// Loading on the public layer
-	// Loading on the private layer
-	// Loading on the public layer - Host only?
-	
-	
-	// The old method sent the public map's binary save file.
-}
-
-//---------------
-/*
-
-  // opening while on the public layer...
-  if (getGametableCanvas().getActiveMap() == getGametableCanvas().getPublicMap())
-  {
-      final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "grm", true);
-
-      if (openFile == null)
-      {
-          // they canceled out of the open
-          return;
-      }
-
-      m_actingFilePublic = openFile;
-
-      final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
-          lang.MAP_OPEN_WARN, lang.MAP_OPEN_CONFIRM);
-      if (result == UtilityFunctions.YES)
-      {
-
-          if (m_actingFilePublic != null)
-          {
-              // clear the state
-              eraseAll();
-
-              // load
-              if (m_netStatus == NETSTATE_JOINED)
-              {
-                  // joiners dispatch the save file to the host
-                  // for processing
-                  final byte grmFile[] = UtilityFunctions.loadFileToArray(m_actingFilePublic);
-                  if (grmFile != null)
-                  {
-                      send(PacketManager.makeGrmPacket(grmFile));
-                  }
-              }
-              else
-              {
-                  // actually do the load if we're the host or offline
-                  loadState(m_actingFilePublic);
-              }
-
-              postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.MAP_OPEN_DONE);
-          }
-      }
-  }
-  else
-  {
-      // opening while on the private layer
-      m_actingFilePrivate = UtilityFunctions.doFileOpenDialog(lang.OPEN, "grm", true);
-      if (m_actingFilePrivate != null)
-      {
-          // we have to pretend we're not connected while loading. We
-          // don't want these packets to be propagated to other players
-          final int oldStatus = m_netStatus;
-          m_netStatus = NETSTATE_NONE;
-          PacketSourceState.beginFileLoad();
-          loadState(m_actingFilePrivate);
-          PacketSourceState.endFileLoad();
-          m_netStatus = oldStatus;
-      }
-  }
-  */
-}
+		private void loadMap(boolean loadPublic, boolean loadPrivate)
+		{
+			final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
+		
+			if (openFile != null)
+			{
+				loadFromXML(openFile, loadPublic, loadPrivate);
+				
+				if (m_netStatus == NetStatus.HOSTING)
+				{
+					// Send data to other connected players (host only)
+					send(PacketManager.makePublicMapPacket(m_gametableCanvas.getPublicMap()));
+				}	
+			}
+		}
 
     /**
      * gets the player associated with a connection
@@ -2659,7 +2585,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
         getGametableCanvas().setGridModeByID(gridMode);
         updateGridModeMenu(); // sets the appropriate checks in the menu
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             send(PacketManager.makeGridModePacket(gridMode));
@@ -2677,7 +2603,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
         // only the host should ever get this packet. If a joiner gets it
         // for some reason, it should ignore it.
         // if we're offline, then sure, go ahead and load
-        if (m_netStatus != NETSTATE_JOINED)
+        if (m_netStatus != NetStatus.CONNECTED)
         {
             loadStateFromRawFileData(grmFile);
         }
@@ -2690,7 +2616,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
      */
     public void groupPacketReceived(Action action, final String group, final MapElementID pog, final int player) 
     {
-        if(m_netStatus == NETSTATE_HOST) 
+        if(m_netStatus == NetStatus.HOSTING) 
         {
             send(PacketManager.makeGroupPacket(action, group, pog, player));            
         }
@@ -2707,7 +2633,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
      */
     public void groupPacketReceived(Action action, final String group, final String newGroupName, final int player) 
     {
-        if(m_netStatus == NETSTATE_HOST) 
+        if(m_netStatus == NetStatus.HOSTING) 
         {
             send(PacketManager.makeRenameGroupPacket(group, newGroupName, player));            
         }
@@ -2731,12 +2657,12 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
      */
     public void host(boolean force)
     {
-        if (m_netStatus == NETSTATE_HOST) // if we are already the host
+        if (m_netStatus == NetStatus.HOSTING) // if we are already the host
         {
             m_chatPanel.logAlertMessage(lang.HOST_ERROR_HOST);
             return;
         }
-        if (m_netStatus == NETSTATE_JOINED) // if we are connected to a game and not hosting
+        if (m_netStatus == NetStatus.CONNECTED) // if we are connected to a game and not hosting
         {
             m_chatPanel.logAlertMessage(lang.HOST_ERROR_JOIN);
             return;
@@ -2765,7 +2691,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
         m_networkThread.start();
         // TODO: fix hosting failure detection
 
-        m_netStatus = NETSTATE_HOST; // our status is now hosting
+        m_netStatus = NetStatus.HOSTING; // our status is now hosting
         final String message = "Hosting on port: " + m_port;
         m_chatPanel.logSystemMessage(message);
 
@@ -3215,12 +3141,12 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
      */
     public void join()
     {
-        if (m_netStatus == NETSTATE_HOST) // we can't join if we're hosting
+        if (m_netStatus == NetStatus.HOSTING) // we can't join if we're hosting
         {
             m_chatPanel.logAlertMessage(lang.JOIN_ERROR_HOST);
             return;
         }
-        if (m_netStatus == NETSTATE_JOINED) // we can't join if we are already connected
+        if (m_netStatus == NetStatus.CONNECTED) // we can't join if we are already connected
         {
             m_chatPanel.logAlertMessage(lang.JOIN_ERROR_JOIN);
             return;
@@ -3264,7 +3190,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             PacketSourceState.beginHostDump();
 
             // and now we're ready to pay attention
-            m_netStatus = NETSTATE_JOINED;
+            m_netStatus = NetStatus.CONNECTED;
 
             m_chatPanel.logSystemMessage(lang.JOINED);
 
@@ -3302,7 +3228,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     public void linesPacketReceived(List<LineSegment> lines, final int authorID, final int state)
     {
         int stateId = state;
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             // and give it a genuine state ID first
@@ -3411,7 +3337,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             if (nPog.isUnknown()) { // we need this image
                 PacketManager.requestPogImage(null, nPog);
             }
-            if ((m_netStatus == NETSTATE_NONE) || priv)  {
+            if ((m_netStatus == NetStatus.DISCONNECTED) || priv)  {
                 nPog.assignUniqueId();
                 addPogPacketReceived(nPog, !priv);
             } else 
@@ -3616,6 +3542,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 	    	if (loadPublic && loadPrivate)
 	    	{
 	        loadGridFromXML(root, converter);
+	        loadLockedElementsFromXML(root, converter);
 	      	
 		    	// Hook for modules to load data from save file
 		    	Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
@@ -3644,6 +3571,31 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     	}
     }
 
+    /**
+     * Store locked element list
+     * @param root
+     * @param converter
+     */
+    private void loadLockedElementsFromXML(Element root, XMLSerializeConverter converter)
+    {
+    	m_gametableCanvas.lockAllMapElementInstances(false);
+    	Element listEl = XMLUtils.getFirstChildElementByTagName(root, "locked");
+    	if (listEl == null)
+    		return;
+    	
+    	for (Element el : XMLUtils.getChildElementsByTagName(listEl, "id"))
+    	{
+    		long id = UtilityFunctions.parseLong(XMLUtils.getNodeValue(el), 0);
+    		MapElementID elID = converter.getMapElementID(id);
+    		if (elID != null)
+    		{
+    			MapElement mapEl = getMapElement(elID);
+    			if (mapEl != null)
+    				m_gametableCanvas.lockMapElementInstance(mapEl, true);
+    		}
+    	}
+    }
+    
 		private void loadGridFromXML(Element root, XMLSerializeConverter converter)
 		{
 			// grid 
@@ -3737,7 +3689,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doLockPog(id, newLock);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             send(PacketManager.makeLockPogPacket(id, newLock));
@@ -3746,7 +3698,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 
     public void lockAllPogPacketReceived(final boolean lock) {
         lockMap(getGametableCanvas().getPublicMap(),lock);
-        if(m_netStatus == NETSTATE_HOST) {
+        if(m_netStatus == NetStatus.HOSTING) {
             m_networkThread.send(PacketManager.makeLockAllPogPacket(lock));
         }
     }
@@ -3765,7 +3717,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
         boolean priv = true;
         if(mapToLock == getGametableCanvas().getPublicMap()) priv = false;
 
-        if(priv || (m_netStatus == NETSTATE_NONE))
+        if(priv || (m_netStatus == NetStatus.DISCONNECTED))
         {
             lockMap(mapToLock, lock);
             if(lock) m_chatPanel.logMechanics(lang.MAP_LOCK_ALL_DONE);
@@ -3816,7 +3768,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doMovePog(id, newPos);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             send(PacketManager.makeMovePogPacket(id, newPos));
@@ -3904,7 +3856,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doSetPogData(id, s, toAdd, toDelete);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             m_networkThread.send(PacketManager.makePogDataPacket(id, s, toAdd, toDelete));
         }
@@ -3918,7 +3870,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     public void pogLayerPacketReceived(final MapElementID id, final Layer layer)
     {
         getGametableCanvas().doSetPogLayer(id, layer);
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             m_networkThread.send(PacketManager.makePogLayerPacket(id, layer));
         }
@@ -3927,7 +3879,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     public void pogReorderPacketReceived(final Map<MapElementID, Long> changes)
     {
     	m_activePogsPanel.reorderPogs(changes, false);
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             m_networkThread.send(PacketManager.makePogReorderPacket(changes));
         }
@@ -3937,7 +3889,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doSetPogSize(id, size);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             m_networkThread.send(PacketManager.makePogSizePacket(id, size));
         }
@@ -3947,7 +3899,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doSetPogType(id, type);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             m_networkThread.send(PacketManager.makePogTypePacket(id, type));
         }
@@ -3963,7 +3915,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             plr.setPointing(bPointing);
         }
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             send(PacketManager.makePointPacket(plrIdx, modelPos, bPointing));
         }
@@ -3978,7 +3930,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 
     public void postMessage(final String text)
     {
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if you're the host, push to all players
             send(PacketManager.makeTextPacket(text));
@@ -3986,7 +3938,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             // add it to your own text log
             m_chatPanel.logMessage(text);
         }
-        else if (m_netStatus == NETSTATE_JOINED)
+        else if (m_netStatus == NetStatus.CONNECTED)
         {
             // if you're a player, just post it to the GM
             send(PacketManager.makeTextPacket(text));
@@ -4000,7 +3952,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     
     public void postMechanics(final String text)
     {
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if you're the host, push to all players
             send(PacketManager.makeMechanicsPacket(text));
@@ -4008,7 +3960,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             // add it to your own text log
             m_chatPanel.logMechanics(text);
         }
-        else if (m_netStatus == NETSTATE_JOINED)
+        else if (m_netStatus == NetStatus.CONNECTED)
         {
             // if you're a player, just post it to the GM
             send(PacketManager.makeMechanicsPacket(text));
@@ -4022,7 +3974,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     
     public void postPrivMechanics(final String toName, final String text)
     {
-        if (m_netStatus == NETSTATE_HOST) {
+        if (m_netStatus == NetStatus.HOSTING) {
             for (int i = 0; i < m_players.size(); i++) {
                 final Player player = m_players.get(i);
                 if (player.hasName(toName)) {
@@ -4032,7 +3984,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             if (getMyPlayer().hasName(toName)) {
                 m_chatPanel.logMechanics(text);
             }
-        } else if (m_netStatus == NETSTATE_JOINED) {
+        } else if (m_netStatus == NetStatus.CONNECTED) {
             send(PacketManager.makePrivMechanicsPacket(toName, text));
         } else  {
             if (getMyPlayer().hasName(toName)) {
@@ -4043,7 +3995,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     
     public void postPrivateMessage(final String fromName, final String toName, final String text)
     {
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if you're the host, push to the appropriate player(s)
             for (int i = 0; i < m_players.size(); i++)
@@ -4062,7 +4014,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
                 m_chatPanel.logPrivateMessage(fromName, toName, text);
             }
         }
-        else if (m_netStatus == NETSTATE_JOINED)
+        else if (m_netStatus == NetStatus.CONNECTED)
         {
             // if you're a player, just post it to the GM
             send(PacketManager.makePrivateTextPacket(fromName, toName, text));
@@ -4085,7 +4037,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 
     public void privMechanicsPacketReceived(final String toName, final String text)
     {
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if you're the host, push to all players
             postPrivMechanics(toName, text);
@@ -4099,7 +4051,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     
     public void privateTextPacketReceived(final String fromName, final String toName, final String text)
     {
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if you're the host, push to all players
             postPrivateMessage(fromName, toName, text);
@@ -4171,7 +4123,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doRecenterView(modelPoint, zoom);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             m_networkThread.send(PacketManager.makeRecenterPacket(modelPoint, zoom));
         }
@@ -4247,7 +4199,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doRemovePogs(ids, false);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             send(PacketManager.makeRemovePogsPacket(ids));
@@ -4256,7 +4208,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 
     public void requestCardsPacketReceived(final Connection conn, final String deckName, final int numCards)
     {
-        if (m_netStatus != NETSTATE_HOST)
+        if (m_netStatus != NetStatus.HOSTING)
         {
             // this shouldn't happen
             throw new IllegalStateException("Non-host had a call to requestCardsPacketReceived");
@@ -4294,7 +4246,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doRotatePog(id, newAngle);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             send(PacketManager.makeRotatePogPacket(id, newAngle));
@@ -4305,7 +4257,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         getGametableCanvas().doFlipPog(id, flipH, flipV);
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if we're the host, send it to the clients
             send(PacketManager.makeFlipPogPacket(id, flipH, flipV));
@@ -4493,6 +4445,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     	root.appendChild(privateEl);
     	m_gametableCanvas.getPrivateMap().serialize(privateEl);
 
+    	storeLockedElementsToXML(doc, root);
       storeGridToXML(doc, root);
       	
     	// Hook for modules to add elements to save file
@@ -4531,13 +4484,38 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 			}
 
     }
+        
+    /**
+     * Store locked element list
+     * @param doc
+     * @param root
+     */
+    private void storeLockedElementsToXML(Document doc, Element root)
+    {
+    	List<MapElement> elements = m_gametableCanvas.getlockedMapElementInstances();
+    	if (elements.size() == 0)
+    		return;
+    	
+    	Element listEl = doc.createElement("locked");
+    	for (MapElement el : elements)
+    	{
+    		listEl.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(el.getId().numeric())));
+    	}
+    	
+    	root.appendChild(listEl);
+    }
 
+    /**
+     * Store grid information
+     * @param doc
+     * @param root
+     */
 		private void storeGridToXML(Document doc, Element root)
 		{
 			// grid 
     	Element gridEl = doc.createElement("grid");
     	gridEl.setAttribute("modeid", String.valueOf(getGametableCanvas().getGridModeId()));
-    	root.appendChild(gridEl); // TODO load
+    	root.appendChild(gridEl);
       
     	// grid background
     	Element bkEl = doc.createElement("background");
@@ -4555,65 +4533,6 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     public GroupManager getActiveGroupManager()
     {
     	 return getGametableCanvas().getActiveMap().getGroupManager();
-    }
-
-    private void saveStateBinary(final GameTableMap mapToSave, final File file)
-    {
-        // save out all our data. The best way to do this is with packets, cause they're
-        // already designed to pass data around.
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final DataOutputStream dos = new DataOutputStream(baos);
-
-        try
-        {
-            final byte[] linesPacket = PacketManager.makeLinesPacket(getGametableCanvas().getPublicMap().getLines(), -1, -1);
-            dos.writeInt(linesPacket.length);
-            dos.write(linesPacket);
-
-            // pogs
-            for (MapElement pog : mapToSave.getMapElements())
-            {
-                final byte[] pogsPacket = PacketManager.makeAddPogPacket(pog);
-                dos.writeInt(pogsPacket.length);
-                dos.write(pogsPacket);
-            }
-
-            // grid state
-            final byte gridModePacket[] = PacketManager.makeGridModePacket(getGametableCanvas().getGridModeId());
-            dos.writeInt(gridModePacket.length);
-            dos.write(gridModePacket);
-
-            // bgstate
-            byte bgState[];
-            if (m_gametableCanvas.m_backgroundTypeMapElement && m_gametableCanvas.m_bg_elementType != null)
-            {
-            	bgState = PacketManager.makeBGColPacket(m_gametableCanvas.m_bg_elementType);
-            }
-            else
-            {
-            	bgState = PacketManager.makeBGColPacket(m_gametableCanvas.cur_bg_col);
-            }
-            
-
-            dos.writeInt(bgState.length);
-            dos.write(bgState);            
-            
-            final byte[] saveFileData = baos.toByteArray();
-            final FileOutputStream output = new FileOutputStream(file);
-            final DataOutputStream fileOut = new DataOutputStream(output);
-            fileOut.writeInt(COMM_VERSION);
-            fileOut.writeInt(saveFileData.length);
-            fileOut.write(saveFileData);
-            output.close();
-            fileOut.close();
-            baos.close();
-            dos.close();
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-            // failed to save. give up
-        }
     }
 
     /**
@@ -4734,7 +4653,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
 
     public void textPacketReceived(final String text)
     {
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if you're the host, push to all players
             postMessage(text);
@@ -4748,7 +4667,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     
     public void mechanicsPacketReceived(final String text)
     {
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             // if you're the host, push to all players
             postMechanics(text);
@@ -4836,7 +4755,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
             m_typingPlayerNames.remove(playerName);
         }
 
-        if (m_netStatus == NETSTATE_HOST)
+        if (m_netStatus == NetStatus.HOSTING)
         {
             send(PacketManager.makeTypingPacket(playerName, typing));
         }
@@ -4883,21 +4802,21 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
     {
         switch (m_netStatus)
         {
-            case NETSTATE_NONE:
+            case DISCONNECTED:
                 m_status.setText(" " + lang.DISCONNECTED);
                 m_actionLoadMap.setEnabled(true);
                 m_actionLoadPrivateMap.setEnabled(true);
                 m_actionLoadPublicMap.setEnabled(true);
                 break;
 
-            case NETSTATE_JOINED:
+            case CONNECTED:
                 m_status.setText(" " + lang.CONNECTED + ": ");
                 m_actionLoadMap.setEnabled(false);
                 m_actionLoadPrivateMap.setEnabled(true);
                 m_actionLoadPublicMap.setEnabled(false);
                 break;
 
-            case NETSTATE_HOST:
+            case HOSTING:
                 m_status.setText(" " + lang.HOSTING + ": ");
                 m_actionLoadMap.setEnabled(true);
                 m_actionLoadPrivateMap.setEnabled(true);
@@ -4912,7 +4831,7 @@ private void loadMap(boolean loadPublic, boolean loadPrivate)
                 break;
         }
 
-        if (m_netStatus != NETSTATE_NONE)
+        if (m_netStatus != NetStatus.DISCONNECTED)
         {
             m_status.setText(m_status.getText() + m_players.size() + (m_players.size() == 1 ? " player" : " players")
                 + " " + lang.CONNECTED);

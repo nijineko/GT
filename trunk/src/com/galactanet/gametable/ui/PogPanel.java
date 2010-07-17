@@ -26,6 +26,7 @@ import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementTypeLibrary;
+import com.galactanet.gametable.ui.GametableFrame.NetStatus;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -834,7 +835,7 @@ public class PogPanel extends JPanel
                         if(e.getButton() == MouseEvent.BUTTON3) {
                             // Only do this on Private Maps, or if not in a network game as this would cause problems
                             // with no easy solutions atm.
-                            if((GametableFrame.getGametableFrame().getNetStatus() == GametableFrame.NETSTATE_NONE) ||
+                            if((GametableFrame.getGametableFrame().getNetStatus() == NetStatus.DISCONNECTED) ||
                               (!GametableFrame.getGametableFrame().getGametableCanvas().isPublicMap())) {
                                 // Only set to mark on unknown pogs, or other pogs if one is marked
                                 m_tomarkPog = node;
