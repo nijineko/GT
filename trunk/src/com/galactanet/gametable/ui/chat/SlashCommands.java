@@ -41,8 +41,6 @@ public class SlashCommands
 	{
 		if (m_masterCommandDirty)
 		{
-System.out.println("sorting");
-
 			Collections.sort(m_masterCommands);
 			m_masterCommandDirty = false;
 		}
