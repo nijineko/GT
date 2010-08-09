@@ -5,6 +5,7 @@
 
 package com.galactanet.gametable.ui;
 
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Rectangle;
 
@@ -13,11 +14,21 @@ import javax.swing.JTabbedPane;
 
 /**
  * PogWindow is the tabbed pane that holds the Pog Library, Active Pog and Macros tabs.
- *
+ 
  * @author Eric Maziade
  */
 public class PogWindow extends JTabbedPane
 {
+	/**
+	 * Add a tab to this window
+	 * @param component
+	 * @param title
+	 */
+	public void addTab(Component component, String title)
+	{
+		add(component, title);
+	}
+	
     /**
      * @return true if pog window is currently docked
      */

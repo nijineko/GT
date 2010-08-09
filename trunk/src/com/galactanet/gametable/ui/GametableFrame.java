@@ -36,20 +36,21 @@ import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.deck.CardModule;
 import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.data.deck.DeckData;
-import com.galactanet.gametable.data.dicemacro.DiceMacro;
-import com.galactanet.gametable.data.dicemacro.DiceMacroSaxHandler;
 import com.galactanet.gametable.data.net.*;
 import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
 import com.galactanet.gametable.data.prefs.Preferences;
-import com.galactanet.gametable.module.ModuleIF;
-import com.galactanet.gametable.module.ModuleSaveIF;
+import com.galactanet.gametable.module.Module;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
 import com.galactanet.gametable.util.*;
+import com.gametable.plugins.ActivePogs.ActivePogsModule;
 import com.maziade.tools.XMLUtils;
 import com.maziade.tools.XMLUtils.XMLOutputProperties;
+import com.plugins.dicemacro.DiceMacro;
+import com.plugins.dicemacro.DiceMacroModule;
+import com.plugins.dicemacro.DiceMacroSaxHandler;
 
 /*
  * The main Gametable Frame class.
@@ -223,6 +224,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private static final long     serialVersionUID         = -1997597054204909759L;
 
     /**
+     * TODO #Plugins Might be nice if it returned an interface to clean up API for plugins
      * @return The global GametableFrame instance.
      */
     public static GametableFrame getGametableFrame()
@@ -231,7 +233,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     }
 
     // Language variables
-    public Language                 lang                    = new Language(GametableApp.LANGUAGE);
+    private Language                 m_languageResource                    = new Language(GametableApp.LANGUAGE);
     
     public double                   grid_multiplier         = 5.0;
     public String                   grid_unit               = "ft";
@@ -270,7 +272,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      * Added variables below in order to accomodate grid unit multiplier
      */
     JTextField                      m_gridunitmultiplier;
-    private final JCheckBoxMenuItem m_hexGridModeMenuItem    = new JCheckBoxMenuItem(lang.MAP_GRID_HEX);
+    private final JCheckBoxMenuItem m_hexGridModeMenuItem    = new JCheckBoxMenuItem(getLanguageResource().MAP_GRID_HEX);
 
     private JMenuItem               m_hostMenuItem;
     public String                   m_ipAddress              = DEFAULT_SERVER;
@@ -296,7 +298,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
     // the id that will be assigned to the change made
     public int                      m_nextStateId;
-    private final JCheckBoxMenuItem m_noGridModeMenuItem     = new JCheckBoxMenuItem(lang.MAP_GRID_NONE);
+    private final JCheckBoxMenuItem m_noGridModeMenuItem     = new JCheckBoxMenuItem(getLanguageResource().MAP_GRID_NONE);
 
     public String                   m_password               = DEFAULT_PASSWORD;
     public String                   m_playerName             = System.getProperty("user.name");
@@ -314,9 +316,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     public int                      m_port                   = DEFAULT_PORT;
     private final Preferences       m_preferences            = new Preferences();
 
-    private final JCheckBox         m_showNamesCheckbox      = new JCheckBox(lang.SHOW_POG_NAMES);
-    private final JCheckBox         m_randomRotate           = new JCheckBox(lang.RANDOM_ROTATE);   //#randomrotate
-    private final JCheckBoxMenuItem m_squareGridModeMenuItem = new JCheckBoxMenuItem(lang.MAP_GRID_SQUARE);
+    private final JCheckBox         m_showNamesCheckbox      = new JCheckBox(getLanguageResource().SHOW_POG_NAMES);
+    private final JCheckBox         m_randomRotate           = new JCheckBox(getLanguageResource().RANDOM_ROTATE);   //#randomrotate
+    private final JCheckBoxMenuItem m_squareGridModeMenuItem = new JCheckBoxMenuItem(getLanguageResource().MAP_GRID_SQUARE);
     
 
     
@@ -345,8 +347,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private final JSplitPane        m_mapPogSplitPane        = new JSplitPane();    // Split between Pog pane and map pane
     private final PogWindow         m_pogsTabbedPane         = new PogWindow();   // The Pog pane is tabbed
     private PogPanel                m_pogPanel               = null;                // one tab is the Pog Panel
-    protected ActivePogsPanel         m_activePogsPanel        = null;                // another tab is the Active Pogs Panel
-    private MacroPanel              m_macroPanel             = null;                // the last tab is the macro panel
+    
+    public MacroPanel              m_macroPanel             = null;                // the last tab is the macro panel
 
     private final JSplitPane        m_mapChatSplitPane       = new JSplitPane();    // The map pane is really a split between the map and the chat
                                                                                     // and the chat pane
@@ -409,7 +411,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             // Repaint the canvas
             getGametableCanvas().repaint();
             // Notify other players
-            postSystemMessage(getMyPlayer().getPlayerName() + lang.MAP_GRID_CHANGE);
+            postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().MAP_GRID_CHANGE);
         }
         else if (e.getSource() == m_squareGridModeMenuItem)
         {
@@ -423,7 +425,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             // Repaint the canvas
             getGametableCanvas().repaint();
             // Notify other players
-            postSystemMessage(getMyPlayer().getPlayerName() + lang.MAP_GRID_CHANGE);
+            postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().MAP_GRID_CHANGE);
         }
         else if (e.getSource() == m_hexGridModeMenuItem)
         {
@@ -437,7 +439,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             // Repaint the canvas
             getGametableCanvas().repaint();
             // Notify other players
-            postSystemMessage(getMyPlayer().getPlayerName() + lang.MAP_GRID_CHANGE);
+            postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().MAP_GRID_CHANGE);
         }
     }
 
@@ -461,8 +463,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             {
                 // Confirm that the macro will be replaced
                 final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
-                    lang.MACRO_EXISTS_1 + name + lang.MACRO_EXISTS_2
-                        + macro + lang.MACRO_EXISTS_3, lang.MACRO_REPLACE);
+                    getLanguageResource().MACRO_EXISTS_1 + name + getLanguageResource().MACRO_EXISTS_2
+                        + macro + getLanguageResource().MACRO_EXISTS_3, getLanguageResource().MACRO_REPLACE);
                 if (result == UtilityFunctions.YES)
                 {
                     addMacro(name, macro, parent);
@@ -497,7 +499,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         boolean res = newMacro.init(macro, name, parent); // initializes the macro with its name and code
         if (!res) // if the macro creation failed, log the error and exit
         {
-            m_chatPanel.logAlertMessage(lang.MACRO_ERROR);
+            m_chatPanel.logAlertMessage(getLanguageResource().MACRO_ERROR);
             return;
         }
         addMacro(newMacro); //add the macro to the collection
@@ -628,7 +630,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_netStatus != NetStatus.HOSTING)
         {
-            throw new IllegalStateException(lang.CONFIRM_HOST_FAIL);
+            throw new IllegalStateException(getLanguageResource().CONFIRM_HOST_FAIL);
         }
     }
 
@@ -655,7 +657,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         if (m_netStatus == NetStatus.CONNECTED) // if we were connected before
         {
             // we lost our connection to the host
-            m_chatPanel.logAlertMessage(lang.CONNECTION_LOST);
+            m_chatPanel.logAlertMessage(getLanguageResource().CONNECTION_LOST);
             disconnect(); // do any disconnection processing
 
             m_netStatus = NetStatus.DISCONNECTED; // change the status to reflect we are not connected
@@ -670,11 +672,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             m_players.remove(dead);
             sendCastInfo(); //send updated list of players
             // notify other users
-            postSystemMessage(dead.getPlayerName() + lang.CONNECTION_LEFT);
+            postSystemMessage(dead.getPlayerName() + getLanguageResource().CONNECTION_LEFT);
         }
         else // if we didn't find the player then the connection failed while login in
         {
-            postAlertMessage(lang.CONNECTION_REJECTED);
+            postAlertMessage(getLanguageResource().CONNECTION_REJECTED);
         }
     }
 
@@ -703,7 +705,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // otherwise log the error and exit
         if (m_netStatus == NetStatus.DISCONNECTED)
         {
-            m_chatPanel.logAlertMessage(lang.DECK_NOT_CONNECTED);
+            m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_CONNECTED);
             return;
         }
 
@@ -722,7 +724,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         {
             if (m_netStatus != NetStatus.HOSTING) // verify that we are the host of the network game
             {
-                m_chatPanel.logAlertMessage(lang.DECK_NOT_HOST_CREATE);
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_HOST_CREATE);
                 return;
             }
 
@@ -751,7 +753,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             // if the name is already in use, puke out an error
             if (getDeck(deckName) != null)
             {
-                m_chatPanel.logAlertMessage(lang.DECK_ALREADY_EXISTS + " '" + deckName + "'.");
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_ALREADY_EXISTS + " '" + deckName + "'.");
                 return;
             }
 
@@ -762,7 +764,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
             if (!result)
             {
-                m_chatPanel.logAlertMessage(lang.DECK_ERROR_CREATE);
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_ERROR_CREATE);
                 return;
             }
 
@@ -773,14 +775,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
             // alert all players that this deck has been created
             sendDeckList();
-            postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.DECK_CREATE_SUCCESS_1 + " " + deckFileName + " " + lang.DECK_CREATE_SUCCESS_2 + " " + deckName);
+            postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().DECK_CREATE_SUCCESS_1 + " " + deckFileName + " " + getLanguageResource().DECK_CREATE_SUCCESS_2 + " " + deckName);
 
         }
         else if (command.equals("destroy")) // remove a deck
         {
             if (m_netStatus != NetStatus.HOSTING)
             {
-                m_chatPanel.logAlertMessage(lang.DECK_NOT_HOST_DESTROY);
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_HOST_DESTROY);
                 return;
             }
 
@@ -803,19 +805,19 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
                 // tell the players
                 clearDeck(deckName);
                 sendDeckList();
-                postSystemMessage(getMyPlayer().getPlayerName() + lang.DECK_DESTROY + deckName);
+                postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().DECK_DESTROY + deckName);
             }
             else
             {
                 // we couldn't find a deck with that name
-                m_chatPanel.logAlertMessage(lang.DECK_NONE + " '" + deckName + "'.");
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NONE + " '" + deckName + "'.");
             }
         }
         else if (command.equals("shuffle")) // shuffle the deck
         {
             if (m_netStatus != NetStatus.HOSTING) // only if you are the host
             {
-                m_chatPanel.logAlertMessage(lang.DECK_NOT_HOST_SHUFFLE);
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_HOST_SHUFFLE);
                 return;
             }
 
@@ -834,7 +836,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             if (deck == null)
             {
                 // and report the error if not found
-                m_chatPanel.logAlertMessage(lang.DECK_NONE+ " '" + deckName + "'.");
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NONE+ " '" + deckName + "'.");
                 return;
             }
 
@@ -843,23 +845,23 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
                 // collect and shuffle all the cards in the deck.
                 clearDeck(deckName); // let the other players know about the demise of those cards
                 deck.shuffleAll();
-                postSystemMessage(getMyPlayer().getPlayerName() + lang.DECK_CARDS_COLLECT_ALL_1 + deckName
-                    + lang.DECK_CARDS_COLLECT_ALL_2);
-                postSystemMessage(deckName + " " + lang.DECK_HAS + " " + deck.cardsRemaining() + " " + lang.DECK_CARDS + ".");
+                postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().DECK_CARDS_COLLECT_ALL_1 + deckName
+                    + getLanguageResource().DECK_CARDS_COLLECT_ALL_2);
+                postSystemMessage(deckName + " " + getLanguageResource().DECK_HAS + " " + deck.cardsRemaining() + " " + getLanguageResource().DECK_CARDS + ".");
             }
             else if (operation.equals("discards"))
             {
                 // shuffle only the cards in the discard pile.
                 deck.shuffle();
-                postSystemMessage(getMyPlayer().getPlayerName() + lang.DECK_SHUFFLE + deckName
-                    + " " + lang.DECK+ ".");
-                postSystemMessage(deckName + lang.DECK_HAS + deck.cardsRemaining() + " " + lang.DECK_CARDS + ".");
+                postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().DECK_SHUFFLE + deckName
+                    + " " + getLanguageResource().DECK+ ".");
+                postSystemMessage(deckName + getLanguageResource().DECK_HAS + deck.cardsRemaining() + " " + getLanguageResource().DECK_CARDS + ".");
             }
             else
             {
                 // the shuffle operation is illegal
                 m_chatPanel.logAlertMessage("'" + operation
-                    + "' " + lang.DECK_SHUFFLE_INVALID);
+                    + "' " + getLanguageResource().DECK_SHUFFLE_INVALID);
                 return;
             }
         }
@@ -881,7 +883,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             if (deck == null)
             {
                 // that deck doesn't exist
-                m_chatPanel.logAlertMessage(lang.DECK_NONE + " '" + deckName + "'.");
+                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NONE + " '" + deckName + "'.");
                 return;
             }
 
@@ -906,7 +908,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
                 {
                     // it's ok not to specify a number of cards to draw. It's not
                     // ok to put garbage in that field
-                    m_chatPanel.logAlertMessage("'" + words[3] + "' " + lang.DECK_CARDS_INVALID_NUMBER);
+                    m_chatPanel.logAlertMessage("'" + words[3] + "' " + getLanguageResource().DECK_CARDS_INVALID_NUMBER);
                 }
             }
 
@@ -916,12 +918,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         {
             if (m_cards.size() == 0)
             {
-                m_chatPanel.logSystemMessage(lang.DECK_HAND_EMPTY);
+                m_chatPanel.logSystemMessage(getLanguageResource().DECK_HAND_EMPTY);
                 return;
             }
 
             
-            m_chatPanel.logSystemMessage(lang.DECK_YOU_HAVE + " " + m_cards.size() + " " + lang.DECK_CARDS + ":");
+            m_chatPanel.logSystemMessage(getLanguageResource().DECK_YOU_HAVE + " " + m_cards.size() + " " + getLanguageResource().DECK_CARDS + ":");
             
             for (int i = 0; i < m_cards.size(); i++) // for each card
             {
@@ -980,7 +982,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
                 catch (final Exception e)
                 {
                     // they put in some illegal value for the param
-                    m_chatPanel.logAlertMessage(lang.DECK_CARD_NONE + " '" + param + "'.");
+                    m_chatPanel.logAlertMessage(getLanguageResource().DECK_CARD_NONE + " '" + param + "'.");
                     return;
                 }
                 discards = new Card[1];
@@ -998,11 +1000,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             // so either a host of a joiner is safe to use this code:
             if (m_decks.size() == 0)
             {
-                m_chatPanel.logSystemMessage(lang.DECK_NO_DECKS);
+                m_chatPanel.logSystemMessage(getLanguageResource().DECK_NO_DECKS);
                 return;
             }
 
-            m_chatPanel.logSystemMessage(lang.DECK_THERE_ARE + " " + m_decks.size() + " " + lang.DECK_DECKS);
+            m_chatPanel.logSystemMessage(getLanguageResource().DECK_THERE_ARE + " " + m_decks.size() + " " + getLanguageResource().DECK_DECKS);
             for (int i = 0; i < m_decks.size(); i++)
             {
                 final Deck deck = m_decks.get(i);
@@ -1025,7 +1027,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // if we're the host, this is a packet we should never get
         if (m_netStatus == NetStatus.HOSTING)
         {
-            throw new IllegalStateException(lang.DECK_ERROR_HOST_DECKLIST);
+            throw new IllegalStateException(getLanguageResource().DECK_ERROR_HOST_DECKLIST);
         }
 
         // set up out bogus decks to have the appropriate names
@@ -1082,7 +1084,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_netStatus == NetStatus.DISCONNECTED)
         {
-            m_chatPanel.logAlertMessage(lang.CONNECTION_NO_DISCONNECT);
+            m_chatPanel.logAlertMessage(getLanguageResource().CONNECTION_NO_DISCONNECT);
             return;
         }
 
@@ -1109,7 +1111,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         PacketSourceState.endHostDump();
 
         m_netStatus = NetStatus.DISCONNECTED;
-        m_chatPanel.logSystemMessage(lang.DISCONNECTED);
+        m_chatPanel.logSystemMessage(getLanguageResource().DISCONNECTED);
         updateStatus();
     }
 
@@ -1129,7 +1131,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // only the host should get this
         if (m_netStatus != NetStatus.HOSTING)
         {
-            throw new IllegalStateException(lang.DECK_ERROR_DODISCARD);
+            throw new IllegalStateException(getLanguageResource().DECK_ERROR_DODISCARD);
         }
 
         // tell the decks about the discarded cards
@@ -1154,11 +1156,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // tell everyone about the cards that got discarded
         if (discards.length == 1)
         {
-            postSystemMessage(playerName + " " + lang.DECK_DISCARDS + ": " + discards[0].getCardName());
+            postSystemMessage(playerName + " " + getLanguageResource().DECK_DISCARDS + ": " + discards[0].getCardName());
         }
         else
         {
-            postSystemMessage(playerName + " " + lang.DECK_DISCARDS + " " + discards.length + " " + lang.DECK_CARDS);
+            postSystemMessage(playerName + " " + getLanguageResource().DECK_DISCARDS + " " + discards.length + " " + getLanguageResource().DECK_CARDS);
             for (int i = 0; i < discards.length; i++)
             {
                 postSystemMessage("---" + discards[i].getCardName());
@@ -1289,7 +1291,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getAboutMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.ABOUT); // creates a menu item with the "About" label
+        final JMenuItem item = new JMenuItem(getLanguageResource().ABOUT); // creates a menu item with the "About" label
         item.setAccelerator(KeyStroke.getKeyStroke("F1")); // assign a shortcut
         item.addActionListener(new ActionListener() // when the user selects it this is what happens
         {
@@ -1297,8 +1299,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             {
                 // show the about message
                 UtilityFunctions.msgBox(GametableFrame.this, GametableApp.VERSION
-                    + " " + lang.ABOUT2 + "\n"
-                    + lang.ABOUT3, lang.VERSION);
+                    + " " + getLanguageResource().ABOUT2 + "\n"
+                    + getLanguageResource().ABOUT3, getLanguageResource().VERSION);
             }
         });
         return item;
@@ -1310,7 +1312,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getAddDiceMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MACRO_ADD);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_ADD);
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -1367,7 +1369,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         if (deck.cardsRemaining() == 0)
         {
             // no more cards in the deck, alert them
-            postSystemMessage(deckName + " " + lang.DECK_OUT_OF_CARDS);
+            postSystemMessage(deckName + " " + getLanguageResource().DECK_OUT_OF_CARDS);
         }
 
         return ret;
@@ -1384,14 +1386,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getClearMapMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MAP_CLEAR);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MAP_CLEAR);
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
             {
                 // confirm the erase operation
                 final int res = UtilityFunctions.yesNoDialog(GametableFrame.this,
-                    lang.MAP_CLEAR_WARNING, lang.MAP_CLEAR);
+                    getLanguageResource().MAP_CLEAR_WARNING, getLanguageResource().MAP_CLEAR);
                 if (res == UtilityFunctions.YES)
                 {
                     eraseAllPogs();
@@ -1448,15 +1450,15 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getDeleteDiceMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MACRO_DELETE);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_DELETE);
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
             {
                 final Object[] list = m_macroMap.values().toArray();
                 // give them a list of macros they can delete
-                final Object sel = JOptionPane.showInputDialog(GametableFrame.this, lang.MACRO_DELETE_INFO,
-                    lang.MACRO_DELETE, JOptionPane.PLAIN_MESSAGE, null, list, list[0]);
+                final Object sel = JOptionPane.showInputDialog(GametableFrame.this, getLanguageResource().MACRO_DELETE_INFO,
+                    getLanguageResource().MACRO_DELETE, JOptionPane.PLAIN_MESSAGE, null, list, list[0]);
                 if (sel != null)
                 {
                     removeMacro((DiceMacro)sel);
@@ -1472,7 +1474,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenu getDiceMenu()
     {
-        final JMenu menu = new JMenu(lang.DICE);
+        final JMenu menu = new JMenu(getLanguageResource().DICE);
         menu.add(getAddDiceMenuItem());
         menu.add(getDeleteDiceMenuItem());
         menu.add(getLoadDiceMenuItem());
@@ -1489,7 +1491,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_disconnectMenuItem == null)
         {
-            final JMenuItem item = new JMenuItem(lang.DISCONNECT);
+            final JMenuItem item = new JMenuItem(getLanguageResource().DISCONNECT);
             item.addActionListener(new ActionListener()
             {
                 public void actionPerformed(final ActionEvent e)
@@ -1510,7 +1512,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
     	// todo Add File->New
     	
-      final JMenu menu = new JMenu(lang.FILE);
+      final JMenu menu = new JMenu(getLanguageResource().FILE);
 
   		JMenuItem item = new JMenuItem(m_actionLoadMap);			
       item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
@@ -1546,7 +1548,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenu getGridModeMenu()
     {
-        final JMenu menu = new JMenu(lang.MAP_GRID_MODE);
+        final JMenu menu = new JMenu(getLanguageResource().MAP_GRID_MODE);
         menu.add(m_noGridModeMenuItem);
         menu.add(m_squareGridModeMenuItem);
         menu.add(m_hexGridModeMenuItem);
@@ -1560,7 +1562,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenu getHelpMenu()
     {
-        final JMenu menu = new JMenu(lang.HELP);
+        final JMenu menu = new JMenu(getLanguageResource().HELP);
         menu.add(getAboutMenuItem());
         
         /*
@@ -1586,7 +1588,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_hostMenuItem == null)
         {
-            final JMenuItem item = new JMenuItem(lang.HOST);
+            final JMenuItem item = new JMenuItem(getLanguageResource().HOST);
             item.addActionListener(new ActionListener()
             {
                 public void actionPerformed(final ActionEvent e)
@@ -1608,7 +1610,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_joinMenuItem == null)
         {
-            final JMenuItem item = new JMenuItem(lang.JOIN);
+            final JMenuItem item = new JMenuItem(getLanguageResource().JOIN);
             item.addActionListener(new ActionListener()
             {
                 public void actionPerformed(final ActionEvent e)
@@ -1627,7 +1629,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getListPlayersMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.LIST_PLAYERS);
+        final JMenuItem item = new JMenuItem(getLanguageResource().LIST_PLAYERS);
         item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " W"));
         item.addActionListener(new ActionListener()
         {
@@ -1641,7 +1643,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
     private JMenuItem getLoadDiceMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MACRO_LOAD);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_LOAD);
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -1654,7 +1656,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
     private JMenu getWindowMenu()
     {
-        final JMenu menu = new JMenu(lang.WINDOW);
+        final JMenu menu = new JMenu(getLanguageResource().WINDOW);
 
         menu.add(getPogWindowMenuItem());
         menu.add(getChatWindowMenuItem());
@@ -1703,13 +1705,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenu getMapMenu()
     {
-        final JMenu menu = new JMenu(lang.MAP);
+        final JMenu menu = new JMenu(getLanguageResource().MAP);
         menu.add(getClearMapMenuItem());
         menu.add(getRecenterAllPlayersMenuItem());
         menu.add(getGridModeMenu());
         menu.add(getTogglePrivateMapMenuItem());
         menu.add(getExportMapMenuItem());
-        JMenu cbgitem = new JMenu(lang.MAP_BG_CHANGE);
+        JMenu cbgitem = new JMenu(getLanguageResource().MAP_BG_CHANGE);
         
         for (BackgroundColor color : BackgroundColor.values())
         	cbgitem.add(getChangeBGMenuItem(color));
@@ -1732,7 +1734,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getExportMapMenuItem()
     {
-        JMenuItem item = new JMenuItem(lang.MAP_EXPORT);
+        JMenuItem item = new JMenuItem(getLanguageResource().MAP_EXPORT);
         item.addActionListener(new ActionListener() {
            /*
              * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
@@ -1747,7 +1749,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     }
 
     private JMenuItem getLoadPogMenuItem() {
-        JMenuItem item = new JMenuItem(lang.POG_LOAD);
+        JMenuItem item = new JMenuItem(getLanguageResource().POG_LOAD);
         item.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e)
             {
@@ -1761,8 +1763,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private JMenuItem getLockMenuItem(final boolean lock)
     {
         String str;
-        if(lock) str = lang.MAP_LOCK_ALL;
-        else str = lang.MAP_UNLOCK_ALL;
+        if(lock) str = getLanguageResource().MAP_LOCK_ALL;
+        else str = getLanguageResource().MAP_UNLOCK_ALL;
         final JMenuItem item = new JMenuItem(str);
         item.addActionListener(new ActionListener() {           
             public void actionPerformed(ActionEvent e)
@@ -1789,7 +1791,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
         catch (IOException e)
         {
-            JOptionPane.showMessageDialog(this, e.getMessage(), lang.MAP_SAVE_IMG_FAIL, JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, e.getMessage(), getLanguageResource().MAP_SAVE_IMG_FAIL, JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
@@ -1801,7 +1803,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private File getMapExportFile()
     {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle(lang.MAP_SAVE_IMG);  // no external resource for text
+        chooser.setDialogTitle(getLanguageResource().MAP_SAVE_IMG);  // no external resource for text
         if (m_mapExportSaveFolder != null)
         {
             chooser.setSelectedFile(m_mapExportSaveFolder);
@@ -1847,8 +1849,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         if (out.exists())
         {
             if (JOptionPane.showConfirmDialog(this,
-                lang.MAP_SAVE_OVERWRITE + " " + out.getName() + "?",
-                lang.MAP_SAVE_EXISTS,
+                getLanguageResource().MAP_SAVE_OVERWRITE + " " + out.getName() + "?",
+                getLanguageResource().MAP_SAVE_EXISTS,
                 JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
             {
                 return null;
@@ -1858,8 +1860,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         if (out.exists() && !out.canWrite())
         {
             JOptionPane.showMessageDialog(this,
-                lang.MAP_SAVE_NO_ACCESS+ " " + out.getName(),
-                lang.MAP_SAVE_FILE_FAIL,
+                getLanguageResource().MAP_SAVE_NO_ACCESS+ " " + out.getName(),
+                getLanguageResource().MAP_SAVE_FILE_FAIL,
                 JOptionPane.ERROR_MESSAGE);
 
             return null;
@@ -1923,7 +1925,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenu getNetworkMenu()
     {
-        final JMenu menu = new JMenu(lang.NETWORK);
+        final JMenu menu = new JMenu(getLanguageResource().NETWORK);
         menu.add(getListPlayersMenuItem());
         menu.add(getHostMenuItem());
         menu.add(getJoinMenuItem());
@@ -1949,7 +1951,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
 		private void loadMap(boolean loadPublic, boolean loadPrivate)
 		{
-			final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
+			final File openFile = UtilityFunctions.doFileOpenDialog(getLanguageResource().OPEN, "xml", true);
 		
 			if (openFile != null)
 			{
@@ -2154,7 +2156,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getQuitMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.QUIT);
+        final JMenuItem item = new JMenuItem(getLanguageResource().QUIT);
         item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " Q"));
         item.addActionListener(new ActionListener()
         {
@@ -2179,7 +2181,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getPogWindowMenuItem()
     {
-        final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.POG_WINDOW_DOCK);
+        final JCheckBoxMenuItem item = new JCheckBoxMenuItem(getLanguageResource().POG_WINDOW_DOCK);
         item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " P"));
         if (!m_pogsTabbedPane.isDocked())
             item.setState(true);
@@ -2239,7 +2241,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getChatWindowMenuItem()
     {
-        final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.CHAT_WINDOW_DOCK);
+        final JCheckBoxMenuItem item = new JCheckBoxMenuItem(getLanguageResource().CHAT_WINDOW_DOCK);
         item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " L"));
 
         if (!m_chatPanel.isDocked())
@@ -2260,7 +2262,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     
     private JMenuItem getMechanicsToggle()
     {
-        final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.MECHANICS_WINDOW_USE);
+        final JCheckBoxMenuItem item = new JCheckBoxMenuItem(getLanguageResource().MECHANICS_WINDOW_USE);
         item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " M"));
         if (m_chatPanel.getUseMechanicsLog())
             item.setState(true);
@@ -2304,14 +2306,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getRecenterAllPlayersMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MAP_CENTER_PLAYERS);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MAP_CENTER_PLAYERS);
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
             {
                 // confirm the operation
                 final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
-                    lang.MAP_CENTER_PLAYERS_WARN, lang.MAP_CENTER);
+                    getLanguageResource().MAP_CENTER_PLAYERS_WARN, getLanguageResource().MAP_CENTER);
                 if (result == UtilityFunctions.YES)
                 {
                     // get our view center
@@ -2321,7 +2323,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
                     // convert to model coordinates
                     final MapCoordinates modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
                     getGametableCanvas().recenterView(modelCenter, m_gametableCanvas.getZoomLevel());
-                    postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.MAP_CENTER_DONE);
+                    postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_CENTER_DONE);
                 }
             }
         });
@@ -2391,7 +2393,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getSaveAsDiceMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MACRO_SAVE_AS);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_SAVE_AS);
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -2408,13 +2410,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public JMenuItem getSaveAsMapMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MAP_SAVE_AS);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MAP_SAVE_AS);
         item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " shift pressed S"));
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
             {
-            	m_actingFilePublic = UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "xml", true);
+            	m_actingFilePublic = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
             	if (m_actingFilePublic != null)
             		saveToXML(m_actingFilePublic);
 
@@ -2450,7 +2452,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getSaveDiceMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MACRO_SAVE);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_SAVE);
         item.addActionListener(new ActionListener()
         {
             public void actionPerformed(final ActionEvent e)
@@ -2474,7 +2476,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public JMenuItem getSaveMapMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.MAP_SAVE);
+        final JMenuItem item = new JMenuItem(getLanguageResource().MAP_SAVE);
         item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed S"));
         item.addActionListener(new ActionListener()
         {
@@ -2484,7 +2486,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             public void actionPerformed(final ActionEvent e)
             {
             	if (m_actingFilePublic == null)
-                  m_actingFilePublic = UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "xml", true);
+                  m_actingFilePublic = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
             	
             	if (m_actingFilePublic != null)
             		saveToXML(m_actingFilePublic);
@@ -2529,7 +2531,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private JMenuItem getScanForPogsMenuItem()
     {
-        final JMenuItem item = new JMenuItem(lang.POG_SCAN);
+        final JMenuItem item = new JMenuItem(getLanguageResource().POG_SCAN);
         item.setAccelerator(KeyStroke.getKeyStroke("F5"));
         item.addActionListener(new ActionListener()
         {
@@ -2550,7 +2552,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_togglePrivateMapMenuItem == null)
         {
-            final JCheckBoxMenuItem item = new JCheckBoxMenuItem(lang.MAP_PRIVATE_EDIT);
+            final JCheckBoxMenuItem item = new JCheckBoxMenuItem(getLanguageResource().MAP_PRIVATE_EDIT);
             item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " F"));
             item.addActionListener(new ActionListener()
             {
@@ -2659,12 +2661,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_netStatus == NetStatus.HOSTING) // if we are already the host
         {
-            m_chatPanel.logAlertMessage(lang.HOST_ERROR_HOST);
+            m_chatPanel.logAlertMessage(getLanguageResource().HOST_ERROR_HOST);
             return;
         }
         if (m_netStatus == NetStatus.CONNECTED) // if we are connected to a game and not hosting
         {
-            m_chatPanel.logAlertMessage(lang.HOST_ERROR_JOIN);
+            m_chatPanel.logAlertMessage(getLanguageResource().HOST_ERROR_JOIN);
             return;
         }
 
@@ -2695,7 +2697,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         final String message = "Hosting on port: " + m_port;
         m_chatPanel.logSystemMessage(message);
 
-        m_chatPanel.logMechanics("<a href=\"http://www.whatismyip.com\">" + lang.IP_CHECK + "</a> (" + lang.IP_CHECK2 + ")");
+        m_chatPanel.logMechanics("<a href=\"http://www.whatismyip.com\">" + getLanguageResource().IP_CHECK + "</a> (" + getLanguageResource().IP_CHECK2 + ")");
 
         Log.log(Log.NET, message);
 
@@ -2714,7 +2716,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void hostThreadFailed()
     {
-        m_chatPanel.logAlertMessage(lang.HOST_ERROR_FAIL);
+        m_chatPanel.logAlertMessage(getLanguageResource().HOST_ERROR_FAIL);
         m_networkThread.interrupt();
         m_networkThread = null;
         disconnect();
@@ -2731,8 +2733,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     	ImageCache.startCacheDaemon();
     	buildActions();
     	
-    	// todo Automated module loading mechanism
+    	// todo #Plugins Automated module loading mechanism
     	registerModule(new CardModule());
+    	registerModule(new DiceMacroModule());
+    	registerModule(ActivePogsModule.getModule());
     	
         if (DEBUG_FOCUS) // if debugging
         {
@@ -2863,15 +2867,16 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         m_pogLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_pogLibrary, new File("underlays"), Layer.UNDERLAY));
 
         // pogWindow
-
         m_pogPanel = new PogPanel(m_pogLibrary, getGametableCanvas());
-        m_pogsTabbedPane.add(m_pogPanel, lang.POG_LIBRARY);
-        m_activePogsPanel = new ActivePogsPanel();
-        m_pogsTabbedPane.add(m_activePogsPanel, lang.POG_ACTIVE);
+        m_pogsTabbedPane.addTab(m_pogPanel, getLanguageResource().POG_LIBRARY);
         
-        m_pogsTabbedPane.add(m_macroPanel, lang.DICE_MACROS);
+        for (Module module : g_modules)
+        {
+        	// todo #Plugins consider abstracting "PogsTabbedPane" through an interface. 
+        	module.onInitializeUI();        	
+        }
+        
         m_pogsTabbedPane.setFocusable(false);
-
         m_canvasPane.setBorder(new CompoundBorder(new BevelBorder(BevelBorder.LOWERED), new EmptyBorder(1, 1, 1, 1)));
         m_canvasPane.add(getGametableCanvas(), BorderLayout.CENTER);
         m_mapChatSplitPane.add(m_canvasPane, JSplitPane.TOP);
@@ -3131,7 +3136,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
         catch (final IOException ioe)
         {
-            Log.log(Log.SYS, lang.TOOLBAR_FAIL);
+            Log.log(Log.SYS, getLanguageResource().TOOLBAR_FAIL);
             Log.log(Log.SYS, ioe);
         }
     }
@@ -3143,12 +3148,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (m_netStatus == NetStatus.HOSTING) // we can't join if we're hosting
         {
-            m_chatPanel.logAlertMessage(lang.JOIN_ERROR_HOST);
+            m_chatPanel.logAlertMessage(getLanguageResource().JOIN_ERROR_HOST);
             return;
         }
         if (m_netStatus == NetStatus.CONNECTED) // we can't join if we are already connected
         {
-            m_chatPanel.logAlertMessage(lang.JOIN_ERROR_JOIN);
+            m_chatPanel.logAlertMessage(getLanguageResource().JOIN_ERROR_JOIN);
             return;
         }
 
@@ -3192,7 +3197,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             // and now we're ready to pay attention
             m_netStatus = NetStatus.CONNECTED;
 
-            m_chatPanel.logSystemMessage(lang.JOINED);
+            m_chatPanel.logSystemMessage(getLanguageResource().JOINED);
 
             m_hostMenuItem.setEnabled(false); // disable the host menu item
             m_joinMenuItem.setEnabled(false); // disable the join menu item
@@ -3202,7 +3207,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         catch (final Exception ex)
         {
             Log.log(Log.SYS, ex);
-            m_chatPanel.logAlertMessage(lang.CONNECT_FAIL);
+            m_chatPanel.logAlertMessage(getLanguageResource().CONNECT_FAIL);
             setTitle(GametableApp.VERSION);
             PacketSourceState.endHostDump();
         }
@@ -3251,7 +3256,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     public void loadMacros()
     {
-        final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
+        final File openFile = UtilityFunctions.doFileOpenDialog(getLanguageResource().OPEN, "xml", true);
 
         if (openFile == null)
         {
@@ -3260,7 +3265,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
 
         final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
-            lang.MACRO_LOAD_WARN, lang.MACRO_LOAD_CONFIRM);
+            getLanguageResource().MACRO_LOAD_WARN, getLanguageResource().MACRO_LOAD_CONFIRM);
         if (result != UtilityFunctions.YES)
         {
             return;
@@ -3273,7 +3278,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             try
             {
                 loadMacros(m_actingFileMacros);
-                m_chatPanel.logSystemMessage(lang.MACRO_LOAD_DONE + " " + m_actingFileMacros);
+                m_chatPanel.logSystemMessage(getLanguageResource().MACRO_LOAD_DONE + " " + m_actingFileMacros);
             }
             catch (final SAXException saxe)
             {
@@ -3349,7 +3354,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     }*/
     
     public void loadPog() {
-        final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, ".pog", true);
+        final File openFile = UtilityFunctions.doFileOpenDialog(getLanguageResource().OPEN, ".pog", true);
 
         if (openFile == null) { // they cancelled out of the open
             return;
@@ -3549,16 +3554,15 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		    	
 		    	if (modulesEl != null)
 		    	{
-			    	for (ModuleIF module : g_modules)
+			    	for (Module module : g_modules)
 			    	{
-			    		if (module instanceof ModuleSaveIF)
+			    		if (module.canSaveToXML())
 			    		{
 			    			Element moduleEl = XMLUtils.findFirstChildElement(modulesEl, "module", "name", module.getModuleName());
 			    			
 			    			if (moduleEl != null)
-			    			{
-			    				ModuleSaveIF save = (ModuleSaveIF)module;
-			    				save.loadFromXML(moduleEl, converter);
+			    			{			    				
+			    				module.loadFromXML(moduleEl, converter);
 			    			}
 			    		}    	
 			    	}
@@ -3653,7 +3657,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             if (ver != COMM_VERSION)
             {
                 // wrong version
-                throw new IOException(lang.MAP_OPEN_BAD_VERSION);
+                throw new IOException(getLanguageResource().MAP_OPEN_BAD_VERSION);
             }
 
             final int len = infile.readInt();
@@ -3720,11 +3724,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         if(priv || (m_netStatus == NetStatus.DISCONNECTED))
         {
             lockMap(mapToLock, lock);
-            if(lock) m_chatPanel.logMechanics(lang.MAP_LOCK_ALL_DONE);
-            else m_chatPanel.logMechanics(lang.MAP_UNLOCK_ALL_DONE);
+            if(lock) m_chatPanel.logMechanics(getLanguageResource().MAP_LOCK_ALL_DONE);
+            else m_chatPanel.logMechanics(getLanguageResource().MAP_UNLOCK_ALL_DONE);
         } else {
-            if(lock) postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.MAP_LOCK_ALL_DONE2);
-            else postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.MAP_UNLOCK_ALL_DONE2);           
+            if(lock) postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_LOCK_ALL_DONE2);
+            else postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_UNLOCK_ALL_DONE2);           
             send(PacketManager.makeLockAllPogPacket(lock));
         }       
     }
@@ -3821,7 +3825,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         m_nextPlayerId++;
 
         // tell everyone about the new guy
-        postSystemMessage(player.getPlayerName() + " " + lang.PLAYER_JOINED);
+        postSystemMessage(player.getPlayerName() + " " + getLanguageResource().PLAYER_JOINED);
         addPlayer(player);
 
         sendCastInfo();
@@ -3863,7 +3867,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     }
     
     /** *************************************************************************************
-     * 
      * @param id
      * @param size
      */
@@ -3873,15 +3876,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         if (m_netStatus == NetStatus.HOSTING)
         {
             m_networkThread.send(PacketManager.makePogLayerPacket(id, layer));
-        }
-    }
-
-    public void pogReorderPacketReceived(final Map<MapElementID, Long> changes)
-    {
-    	m_activePogsPanel.reorderPogs(changes, false);
-        if (m_netStatus == NetStatus.HOSTING)
-        {
-            m_networkThread.send(PacketManager.makePogReorderPacket(changes));
         }
     }
 
@@ -4093,7 +4087,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         for (int i = 0; i < cards.length; i++)
         {
             m_cards.add(cards[i]);
-            final String toPost = lang.DECK_DREW + " " + cards[i].getCardName() + " (" + cards[i].getDeckName() + ")";
+            final String toPost = getLanguageResource().DECK_DREW + " " + cards[i].getCardName() + " (" + cards[i].getDeckName() + ")";
             m_chatPanel.logSystemMessage(toPost);
         }
 
@@ -4109,12 +4103,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // tell everyone that you drew some cards
         if (cards.length == 1)
         {
-            postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.DECK_DRAW_PLAYER + " " + cards[0].getDeckName() + " " + lang.DECK);
+            postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().DECK_DRAW_PLAYER + " " + cards[0].getDeckName() + " " + getLanguageResource().DECK);
         }
         else
         {
-            postSystemMessage(getMyPlayer().getPlayerName() + " " + lang.DECK_DRAWS + " " + cards.length + " " + lang.DECK_DRAWS2 + " "
-                + cards[0].getDeckName() + " " + lang.DECK + ".");
+            postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().DECK_DRAWS + " " + cards.length + " " + getLanguageResource().DECK_DRAWS2 + " "
+                + cards[0].getDeckName() + " " + getLanguageResource().DECK + ".");
         }
 
     }
@@ -4127,14 +4121,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         {
             m_networkThread.send(PacketManager.makeRecenterPacket(modelPoint, zoom));
         }
-    }
-
-    /**
-     * Reacquires pogs and then refreshes the pog list.
-     */
-    public void refreshActivePogList()
-    {
-        m_activePogsPanel.refresh();
     }
 
     /**
@@ -4155,13 +4141,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         {
             case REJECT_INVALID_PASSWORD:
             {
-                m_chatPanel.logAlertMessage(lang.JOIN_BAD_PASS);
+                m_chatPanel.logAlertMessage(getLanguageResource().JOIN_BAD_PASS);
             }
             break;
 
             case REJECT_VERSION_MISMATCH:
             {
-                m_chatPanel.logAlertMessage(lang.JOIN_BAD_VERSION);
+                m_chatPanel.logAlertMessage(getLanguageResource().JOIN_BAD_VERSION);
             }
             break;
         }
@@ -4308,7 +4294,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     public void saveMacros()
     {
         final File oldFile = m_actingFileMacros;
-        m_actingFileMacros = UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "xml", true);
+        m_actingFileMacros = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
         if (m_actingFileMacros == null)
         {
             m_actingFileMacros = oldFile;
@@ -4318,7 +4304,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         try
         {
             saveMacros(m_actingFileMacros);
-            m_chatPanel.logSystemMessage(lang.MACRO_SAVE_DONE + " " + m_actingFileMacros.getPath());
+            m_chatPanel.logSystemMessage(getLanguageResource().MACRO_SAVE_DONE + " " + m_actingFileMacros.getPath());
         }
         catch (final IOException ioe)
         {
@@ -4451,16 +4437,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     	// Hook for modules to add elements to save file
     	Element modulesEl = doc.createElement("modules");
     	
-    	for (ModuleIF module : g_modules)
+    	for (Module module : g_modules)
     	{
-    		if (module instanceof ModuleSaveIF)
+    		if (module.canSaveToXML())
     		{
-  				ModuleSaveIF save = (ModuleSaveIF)module;
-  				
     			Element moduleEl = doc.createElement("module");
     			moduleEl.setAttribute("name", module.getModuleName());
     			
-    			if (save.saveToXML(moduleEl))
+    			if (module.saveToXML(moduleEl))
     				modulesEl.appendChild(moduleEl);
     		}    	
     	}
@@ -4474,6 +4458,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			{
     		XMLOutputProperties props = new XMLOutputProperties();
     		props.indentXML = false;
+    		props.encoding = "UTF-8";
     		XMLUtils.saveDocument(file, doc, props);
 			}
 			catch (IOException e)
@@ -4636,7 +4621,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
         if (target.getId() == getMyPlayer().getId())
         {
-            m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + lang.TELL_SELF + " " + END_PRIVATE_MESSAGE_FONT + text);
+            m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + getLanguageResource().TELL_SELF + " " + END_PRIVATE_MESSAGE_FONT + text);
             return;
         }
 
@@ -4647,7 +4632,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
         // and when you post a private message, you get told about it in your
         // own chat log
-        m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + lang.TELL + " " + UtilityFunctions.emitUserLink(toName) + ": "
+        m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + getLanguageResource().TELL + " " + UtilityFunctions.emitUserLink(toName) + ": "
             + END_PRIVATE_MESSAGE_FONT + text);
     }
 
@@ -4728,19 +4713,23 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     public void toggleLayer()
     {
         // toggle the map we're on
-        if (getGametableCanvas().isPublicMap())
-        {
-            getGametableCanvas().setActiveMap(getGametableCanvas().getPrivateMap());
-        }
-        else
-        {
-            getGametableCanvas().setActiveMap(getGametableCanvas().getPublicMap());
-        }
+    	boolean publicMap = getGametableCanvas().isPublicMap(); 
+      if (publicMap)
+      {
+          getGametableCanvas().setActiveMap(getGametableCanvas().getPrivateMap());
+      }
+      else
+      {
+          getGametableCanvas().setActiveMap(getGametableCanvas().getPublicMap());
+      }
 
         // if they toggled the layer, whatever tool they're using is cancelled
         getToolManager().cancelToolAction();
         getGametableCanvas().requestFocus();
-        refreshActivePogList();
+        
+        for (Module module : g_modules)
+        	module.onToggleActiveMap(!publicMap);
+        
         repaint();
     }
 
@@ -4803,28 +4792,28 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         switch (m_netStatus)
         {
             case DISCONNECTED:
-                m_status.setText(" " + lang.DISCONNECTED);
+                m_status.setText(" " + getLanguageResource().DISCONNECTED);
                 m_actionLoadMap.setEnabled(true);
                 m_actionLoadPrivateMap.setEnabled(true);
                 m_actionLoadPublicMap.setEnabled(true);
                 break;
 
             case CONNECTED:
-                m_status.setText(" " + lang.CONNECTED + ": ");
+                m_status.setText(" " + getLanguageResource().CONNECTED + ": ");
                 m_actionLoadMap.setEnabled(false);
                 m_actionLoadPrivateMap.setEnabled(true);
                 m_actionLoadPublicMap.setEnabled(false);
                 break;
 
             case HOSTING:
-                m_status.setText(" " + lang.HOSTING + ": ");
+                m_status.setText(" " + getLanguageResource().HOSTING + ": ");
                 m_actionLoadMap.setEnabled(true);
                 m_actionLoadPrivateMap.setEnabled(true);
                 m_actionLoadPublicMap.setEnabled(true);
                 break;
 
             default:
-                m_status.setText(" " + lang.UNKNOWN_STATE + " ");
+                m_status.setText(" " + getLanguageResource().UNKNOWN_STATE + " ");
                 m_actionLoadMap.setEnabled(false);
                 m_actionLoadPrivateMap.setEnabled(true);
                 m_actionLoadPublicMap.setEnabled(false);
@@ -4834,7 +4823,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         if (m_netStatus != NetStatus.DISCONNECTED)
         {
             m_status.setText(m_status.getText() + m_players.size() + (m_players.size() == 1 ? " player" : " players")
-                + " " + lang.CONNECTED);
+                + " " + getLanguageResource().CONNECTED);
             switch (m_typingPlayerNames.size())
             {
                 case 0:
@@ -4844,13 +4833,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
                 case 1:
                 {
-                    m_status.setText(m_status.getText() + m_typingPlayerNames.get(0) + " " + lang.IS_TYPING);
+                    m_status.setText(m_status.getText() + m_typingPlayerNames.get(0) + " " + getLanguageResource().IS_TYPING);
                 }
                 break;
 
                 case 2:
                 {
-                    m_status.setText(m_status.getText() + m_typingPlayerNames.get(0) + " " + lang.AND + " " + m_typingPlayerNames.get(1) + " " + lang.ARE_TYPING);
+                    m_status.setText(m_status.getText() + m_typingPlayerNames.get(0) + " " + getLanguageResource().AND + " " + m_typingPlayerNames.get(1) + " " + getLanguageResource().ARE_TYPING);
                 }
                 break;
 
@@ -4860,7 +4849,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
                     {
                         m_status.setText(m_status.getText() + m_typingPlayerNames.get(i) + ", ");
                     }
-                    m_status.setText(m_status.getText() + " " + lang.AND + " " + m_typingPlayerNames.get(m_typingPlayerNames.size() - 1) + " " + lang.ARE_TYPING);
+                    m_status.setText(m_status.getText() + " " + getLanguageResource().AND + " " + m_typingPlayerNames.get(m_typingPlayerNames.size() - 1) + " " + getLanguageResource().ARE_TYPING);
                 }
             }
         }
@@ -4902,7 +4891,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      * Register a new module with GameTable
      * @param module
      */
-    public static void registerModule(ModuleIF module)
+    public static void registerModule(Module module)
     {
     	g_modules.remove(module);
     	g_modules.add(module);
@@ -4913,7 +4902,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      */
     private void buildActions()
     {
-	    m_actionLoadMap = new AbstractAction(lang.MAP_OPEN) {				
+	    m_actionLoadMap = new AbstractAction(getLanguageResource().MAP_OPEN) {				
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
@@ -4937,10 +4926,28 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 				}
 			};
     }
+
+		/**
+		 * @return Returns the lang.
+		 */
+		public Language getLanguageResource()
+		{
+			return m_languageResource;
+		}
 		
-    private javax.swing.Action m_actionLoadMap;
+		/**
+		 * 
+		 * @return
+		 */
+		public PogWindow getTabbedPane()
+		{
+			return m_pogsTabbedPane;
+		}
+
+		private javax.swing.Action m_actionLoadMap;
     private javax.swing.Action m_actionLoadPrivateMap;
     private javax.swing.Action m_actionLoadPublicMap;
     
-    private static List<ModuleIF> g_modules = new ArrayList<ModuleIF>();
+    private static List<Module> g_modules = new ArrayList<Module>();
+    
 }

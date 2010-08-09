@@ -23,8 +23,8 @@ import javax.swing.tree.TreePath;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.data.MapElementTypeLibrary;
 import com.galactanet.gametable.ui.GametableFrame.NetStatus;
 import com.galactanet.gametable.util.ImageCache;

@@ -21,6 +21,7 @@ import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.gametable.plugins.ActivePogs.ActivePogsModule;
 import com.maziade.tools.XMLUtils;
 
 
@@ -2234,7 +2235,7 @@ public class PacketManager
             }
 
             // tell the model
-            GametableFrame.getGametableFrame().pogReorderPacketReceived(changes);
+            ActivePogsModule.getModule().pogReorderPacketReceived(changes);
         }
         catch (final IOException ex)
         {

@@ -22,7 +22,6 @@ import org.w3c.dom.Element;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.data.net.PacketSourceState;
 import com.galactanet.gametable.ui.MapElementRendererIF;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
@@ -436,16 +435,16 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 * Gets an attribute value
 	 * 
 	 * @param name Name of the attribute to look for
-	 * @return Value or null, if not fould
+	 * @return Value or null, if not found
 	 */
-	public String getAttribute(final String name)
+	public String getAttribute(String name)
 	{
-		final String normalizedName = UtilityFunctions.normalizeName(name);
-		final Attribute a = m_attributes.get(normalizedName);
+		String normalizedName = UtilityFunctions.normalizeName(name);
+		Attribute a = m_attributes.get(normalizedName);
+		
 		if (a == null)
-		{
 			return null;
-		}
+		
 		return a.value;
 	}
 
@@ -670,6 +669,9 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	{
 		final String normalizedName = UtilityFunctions.normalizeName(name);
 		m_attributes.remove(normalizedName);
+		
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onAttributeChanged(this, name, null, null);
 	}
 
 	/**
@@ -709,9 +711,14 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 */
 	public void setAttribute(final String name, final String value)
 	{
+		String old = getAttribute(name);
+		
 		final String normalizedName = UtilityFunctions.normalizeName(name);
+		
 		m_attributes.put(normalizedName, new Attribute(name, value));
-		displayPogDataChange();
+		
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onAttributeChanged(this, name, value, old);
 	}
 
 	/**
@@ -769,11 +776,15 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	/**
 	 * Set the element's assigned layer
 	 * 
-	 * @param layer layer to chagne this element to
+	 * @param layer Layer to change this element to
 	 */
 	public void setLayer(final Layer layer)
 	{
+		Layer old = layer;
 		m_layer = layer;
+
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onLayerChanged(this, layer, old);
 	}
 
 	/**
@@ -799,10 +810,12 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 */
 	public void setName(String name)
 	{
+		String old = m_name;
 		m_name = name;
 		m_nameNormalized = UtilityFunctions.normalizeName(m_name);
 
-		// @revise trigger listener
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onNameChanged(this, name, old);
 	}
 
 	/**
@@ -853,28 +866,6 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 		}
 
 		dos.writeInt(m_layer.ordinal());
-	}
-
-	/**
-	 * Called to turn own display the attributes that have changed
-	 * 
-	 * @revise trigger listeners instead - the view should pop the information overlay, not the model
-	 */
-	private void displayPogDataChange()
-	{
-		// we don't do this if the game is receiving inital data.
-		if (PacketSourceState.isHostDumping())
-		{
-			return;
-		}
-
-		// we also don't do this if the game is loading a file from disk.
-		if (PacketSourceState.isFileLoading())
-		{
-			return;
-		}
-
-		m_bTextChangeNotifying = true;
 	}
 
 	/**
@@ -1024,4 +1015,29 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 		
 		parent.appendChild(values);				
 	}
+	
+	/**
+   * Adds a MapElementListenerIF to this element
+   * @param listener Listener to call when something changes within the map
+   */
+  public void addListener(MapElementListenerIF listener)
+  {
+  	m_listeners.remove(listener);
+  	m_listeners.add(listener);
+  }
+  
+  /**
+   * Removes a listener from this element
+   * @param listener Listener to remove
+   * @return True if listener was found and removed
+   */
+  public boolean removeListener(MapElementListenerIF listener)
+  {
+  	return m_listeners.remove(listener);
+  }
+
+  /**
+   * List of map element listeners
+   */
+  private List<MapElementListenerIF> m_listeners = new ArrayList<MapElementListenerIF>();
 }

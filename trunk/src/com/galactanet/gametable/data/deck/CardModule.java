@@ -29,8 +29,7 @@ import org.w3c.dom.Element;
 
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.data.XMLSerializeConverter;
-import com.galactanet.gametable.module.ModuleIF;
-import com.galactanet.gametable.module.ModuleSaveIF;
+import com.galactanet.gametable.module.Module;
 import com.galactanet.gametable.util.UtilityFunctions;
 import com.maziade.tools.XMLUtils;
 
@@ -40,7 +39,7 @@ import com.maziade.tools.XMLUtils;
  * 
  * @author Eric Maziade
  */
-public class CardModule implements ModuleIF, ModuleSaveIF
+public class CardModule extends Module
 {
 	/**
 	 * 
@@ -77,6 +76,15 @@ public class CardModule implements ModuleIF, ModuleSaveIF
 				Card.g_cardMap.put(id, card);
 			}
 		}
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.module.Module#canSaveToXML()
+	 */
+	@Override
+	public boolean canSaveToXML()
+	{
+		return true;
 	}
 	
 	/*
