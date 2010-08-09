@@ -102,6 +102,8 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 		m_mapElementsUnmodifiable = Collections.unmodifiableList(m_mapElements);
 		
 		m_groupManager = new GroupManager();
+		
+		m_elementListener = new MapElementAdapterOmni();
 	}
 
 	/**
@@ -134,6 +136,8 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	{
 		m_mapElements.add(mapElement);
 		
+		mapElement.addListener(m_elementListener);
+		
 		for (GameTableMapListenerIF listener : m_listeners)
 			listener.onMapElementInstanceAdded(this, mapElement);
 	}
@@ -162,6 +166,9 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	 */
 	public void clearMapElementInstances()
 	{
+		for (MapElement element : m_mapElements)
+			element.removeListener(m_elementListener);
+		
 		m_mapElements.clear();
 		
 		for (GameTableMapListenerIF listener : m_listeners)
@@ -175,19 +182,20 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
   public void deserialize(Element parent, XMLSerializeConverter converter)
   {
   	Element elements = XMLUtils.getFirstChildElementByTagName(parent, "elements");
-  	m_mapElements.clear();
+  	
+  	clearMap();
+  	
   	for (Element xmEl : XMLUtils.getChildElementsByTagName(elements, "element"))
   	{
   		MapElement el = new MapElement(xmEl, converter);
-  		m_mapElements.add(el);
+  		addMapElementInstance(el);    	
   	}
   	
   	elements = XMLUtils.getFirstChildElementByTagName(parent, "lines");
-  	m_lines.clear();
   	for (Element xmLine : XMLUtils.getChildElementsByTagName(elements, "line"))
   	{
   		LineSegment ls = new LineSegment(xmLine);
-  		m_lines.add(ls);
+  		addLineSegment(ls);
   	}
   	
   	Element groupsEl = XMLUtils.getFirstChildElementByTagName(parent, "groups");
@@ -405,6 +413,8 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	{
 		m_mapElements.remove(mapElement);
 		
+		mapElement.removeListener(m_elementListener);
+		
 		for (GameTableMapListenerIF listener : m_listeners)
 			listener.onMapElementInstanceRemoved(this, mapElement);
 	}
@@ -416,7 +426,7 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	 */
 	public void removeMapElementInstances(List<MapElement> instances)
 	{
-		for (MapElement instance : instances)
+		for (MapElement instance : instances)			
 			removeMapElementInstance(instance);
 	}
   
@@ -476,5 +486,26 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 		}
 
 		return null;
-	} 
+	}
+	
+	/**
+   * Adds a MapElementListenerIF to this element
+   * @param listener Listener to call when something changes within the map
+   */
+  public void addMapElementListener(MapElementListenerIF listener)
+  {
+  	m_elementListener.addListener(listener);
+  }
+  
+  /**
+   * Removes a listener from this element
+   * @param listener Listener to remove
+   * @return True if listener was found and removed
+   */
+  public boolean removeMapElementListener(MapElementListenerIF listener)
+  {
+  	return m_elementListener.removeListener(listener);
+  }
+	
+	private final MapElementAdapterOmni m_elementListener;
 }

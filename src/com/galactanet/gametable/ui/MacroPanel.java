@@ -18,9 +18,9 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.MatteBorder;
 
 import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.data.dicemacro.DiceMacro;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.plugins.dicemacro.DiceMacro;
 
 
 

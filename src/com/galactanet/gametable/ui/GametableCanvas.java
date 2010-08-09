@@ -578,7 +578,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     public void addCardPog(final MapElement toAdd)
     {
         m_privateMap.addMapElementInstance(toAdd);
-        m_gametableFrame.refreshActivePogList();
+        // m_gametableFrame.refreshActivePogList();
         repaint();
     }
     
@@ -711,7 +711,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             map = m_publicMap;
         }
         map.addMapElementInstance(toAdd);
-        m_gametableFrame.refreshActivePogList();
         repaint();
     }
 
@@ -842,7 +841,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
                 m_gametableFrame.discardCards(new Card[] {c});
         }
         
-        m_gametableFrame.refreshActivePogList();
         repaint();
     }
 
@@ -986,12 +984,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             }
         }
 
-        m_gametableFrame.refreshActivePogList();
         repaint();
     }
     
     /** **********************************************************************************************
-     * 
      * @param id
      * @param layer
      */
@@ -1004,8 +1000,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
         
         pog.setLayer(layer);
-        
-        GametableFrame.getGametableFrame().m_activePogsPanel.resetOrderPogList();
         
         repaint();
     }
@@ -2192,7 +2186,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         removeCardPogsForCards(m_privateMap, discards);
         removeCardPogsForCards(m_publicMap, discards);
 
-        m_gametableFrame.refreshActivePogList();
+        //m_gametableFrame.refreshActivePogList();
         repaint();
     }
     
@@ -2390,7 +2384,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
     }
     
     /** **********************************************************************************************
-     * 
      * @param id
      * @param size
      */
@@ -2403,7 +2396,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         } else {
             doSetPogLayer(id, layer);
         }
-        m_gametableFrame.refreshActivePogList();
     }
     
 

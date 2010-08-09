@@ -12,9 +12,9 @@ import java.util.List;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.data.dicemacro.DiceMacro;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.plugins.dicemacro.DiceMacro;
 
 
 public class SlashCommands

@@ -1,5 +1,5 @@
 /*
- * GTModuleIF.java
+ * ModuleIF.java
  *
  * @created 2010-07-07
  *
@@ -26,25 +26,49 @@ import org.w3c.dom.Element;
 
 import com.galactanet.gametable.data.XMLSerializeConverter;
 
+
 /**
- * If this interface is implemented in a module, it is expected to be able to load & save information to XML and from XML save file 
+ * Base abstract class for modules
  *
  * @author Eric Maziade
  */
-public interface ModuleSaveIF
+public abstract class Module
 {
+	/**
+	 * Get a unique identifier for the module.  Usually the complete base class name for the module.
+	 * @return String
+	 */
+	public abstract String getModuleName();
+	
+	/**
+	 * Initialize the user interface - this is the opportunity to add custom UI to the environment.
+	 */
+	public void onInitializeUI() {}
+	
+	/**
+	 * Notifies that the interface has switched to or from public map
+	 * @param publicMap true if we have switched to public map
+	 */
+	public void onToggleActiveMap(boolean publicMap) {}
+	
 	/**
 	 * Load from an XML DOM node
 	 * @param node An XML node located by the engine.
 	 * @param converter to convert stored MapElementIDs to actual map element IDs
 	 */
-	public void loadFromXML(Element node, XMLSerializeConverter converter);
+	public void loadFromXML(Element node, XMLSerializeConverter converter) {}
 	
 	/**
 	 * Save to an XML DOM node
 	 * @param node An XML node created by the engine.  Data can be added to the node, but the node's attributes should not be modified by modules.
 	 * @return false if There is nothing to save (node will be discarded)
 	 */
-	public boolean saveToXML(Element node);
+	public boolean saveToXML(Element node) { return false; }
+	
+	/**
+	 * Verifies if this module can load and save to XML (save and load will not be called if this returns false)
+	 */
+	public boolean canSaveToXML() { return false; }
 	
 }
+

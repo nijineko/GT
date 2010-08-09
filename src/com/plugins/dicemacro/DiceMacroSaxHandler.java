@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.data.dicemacro;
+package com.plugins.dicemacro;
 
 import java.util.ArrayList;
 import java.util.Collections;

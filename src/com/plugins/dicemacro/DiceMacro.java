@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.data.dicemacro;
+package com.plugins.dicemacro;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
