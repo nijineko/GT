@@ -20,13 +20,9 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
@@ -45,12 +41,10 @@ import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
 import com.galactanet.gametable.util.*;
-import com.gametable.plugins.ActivePogs.ActivePogsModule;
 import com.maziade.tools.XMLUtils;
 import com.maziade.tools.XMLUtils.XMLOutputProperties;
-import com.plugins.dicemacro.DiceMacro;
+import com.plugins.activepogs.ActivePogsModule;
 import com.plugins.dicemacro.DiceMacroModule;
-import com.plugins.dicemacro.DiceMacroSaxHandler;
 
 /*
  * The main Gametable Frame class.
@@ -242,9 +236,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     // NULL if unset.
     private static File             m_mapExportSaveFolder   = new File("./saves");
 
-    // files for the public map, the private map, and the die macros
-    public File                     m_actingFileMacros;
-//    public File                     m_actingFilePrivate;
     public File                     m_actingFilePublic;
 
     
@@ -280,11 +271,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private long                    m_lastPingTime           = 0;
 
     private long                    m_lastTickTime           = 0;
-    private final Map<String, DiceMacro>               m_macroMap               = new TreeMap<String, DiceMacro>();
-    
-    
- 
-   
 
     // which player I am
     private int                     m_myPlayerIndex;
@@ -347,8 +333,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private final JSplitPane        m_mapPogSplitPane        = new JSplitPane();    // Split between Pog pane and map pane
     private final PogWindow         m_pogsTabbedPane         = new PogWindow();   // The Pog pane is tabbed
     private PogPanel                m_pogPanel               = null;                // one tab is the Pog Panel
-    
-    public MacroPanel              m_macroPanel             = null;                // the last tab is the macro panel
 
     private final JSplitPane        m_mapChatSplitPane       = new JSplitPane();    // The map pane is really a split between the map and the chat
                                                                                     // and the chat pane
@@ -443,79 +427,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
     }
 
-    /**
-     * Invokes the addDieMacro dialog process.
-     */
-    public void addDieMacro()
-    {
-        // Create and display add macro dialog
-        final NewMacroDialog dialog = new NewMacroDialog();
-        dialog.setVisible(true);
-
-        // If the user accepted the dialog (closed with Ok)
-        if (dialog.isAccepted())
-        {
-            // extract the macro from the controls and add it
-            final String name = dialog.getMacroName();
-            final String parent = dialog.getMacroParent();
-            final String macro = dialog.getMacroDefinition();
-            if (getMacro(name) != null) // if there is a macro with that name
-            {
-                // Confirm that the macro will be replaced
-                final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
-                    getLanguageResource().MACRO_EXISTS_1 + name + getLanguageResource().MACRO_EXISTS_2
-                        + macro + getLanguageResource().MACRO_EXISTS_3, getLanguageResource().MACRO_REPLACE);
-                if (result == UtilityFunctions.YES)
-                {
-                    addMacro(name, macro, parent);
-                }
-            }
-            else // if there is no macro with that name, then add it.
-            {
-                addMacro(name, macro, parent);
-            }
-        }
-    }
 
     // --- Menus ---
 
-    /**
-     * adds a macro and refresh the list of available macros in the screen
-     */
-    public void addMacro(final DiceMacro dm)
-    {
-        addMacroForced(dm); // adds the macro to the collection of macros
-        m_macroPanel.refreshMacroList(); // refresh the display of macro list
-    }
+  
 
-    /**
-     * creates and adds a macro, given its name and code
-     * @param name name of the macro
-     * @param macro macro content, the code of the macro
-     */
-    public void addMacro(final String name, final String macro, final String parent)
-    {
-        final DiceMacro newMacro = new DiceMacro(); // creates a macro object
-        boolean res = newMacro.init(macro, name, parent); // initializes the macro with its name and code
-        if (!res) // if the macro creation failed, log the error and exit
-        {
-            m_chatPanel.logAlertMessage(getLanguageResource().MACRO_ERROR);
-            return;
-        }
-        addMacro(newMacro); //add the macro to the collection
-    }
-
-    /**
-     * adds a macro to the collection, replacing any macro with the same name
-     * @param macro macro being added
-     */
-    private void addMacroForced(final DiceMacro macro)
-    {
-        removeMacroForced(macro.getName()); // remove any macro with the same name
-        m_macroMap.put(UtilityFunctions.normalizeName(macro.getName()), macro); // store the macro in the macro map making
-                                                                                // sure conforms to java identifier rules, this is
-                                                                                // it eliminates special characters from the name
-    }
 
     /**
      * adds a player to the player list
@@ -524,7 +440,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     public void addPlayer(final Player player)
     {
         m_players.add(player);
-        m_macroPanel.init_sendTo();
+        
+        for (Module module : g_modules)
+        	module.onPlayerAdded(player);
+        
+        // TODO Chat panel as plugin
         m_chatPanel.init_sendTo();
     }
 
@@ -1264,26 +1184,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         getGametableCanvas().doErase(r, bColorSpecific, color, authorID, stateId);
     }
 
-    /**
-     * return a macro by name. If not found, then create a new one
-     * @param term name of the macro to return
-     * @return an existing macro or a newly created one if not found
-     */
-    public DiceMacro findMacro(final String term)
-    {
-        final String name = UtilityFunctions.normalizeName(term); // remove special characters from the name
-        DiceMacro macro = getMacro(name);
-        if (macro == null) // if no macro by that name
-        {
-            macro = new DiceMacro(); // create a new macro
-            if (!macro.init(term, null, null)) // assign the name to it, but no macro code
-            {
-                macro = null; // if something went wrong, return null
-            }
-        }
-
-        return macro;
-    }
 
     /**
      * creates the "About" menu item
@@ -1306,22 +1206,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         return item;
     }
 
-    /**
-     * creates the "Add macro" menu item
-     * @return the menu item
-     */
-    private JMenuItem getAddDiceMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_ADD);
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(final ActionEvent e)
-            {
-                addDieMacro(); // this calls the function to add a new macro
-            }
-        });
-        return item;
-    }
 
     /**
      * get a number of cards from a deck
@@ -1444,43 +1328,28 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         return -1;
     }
 
-    /**
-     * creates the menu item "Delete macro"
-     * @return the new menu item
-     */
-    private JMenuItem getDeleteDiceMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_DELETE);
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(final ActionEvent e)
-            {
-                final Object[] list = m_macroMap.values().toArray();
-                // give them a list of macros they can delete
-                final Object sel = JOptionPane.showInputDialog(GametableFrame.this, getLanguageResource().MACRO_DELETE_INFO,
-                    getLanguageResource().MACRO_DELETE, JOptionPane.PLAIN_MESSAGE, null, list, list[0]);
-                if (sel != null)
-                {
-                    removeMacro((DiceMacro)sel);
-                }
-            }
-        });
-        return item;
-    }
-
+    
     /** 
-     * creates the "Dice" menu 
+     * creates the "Modules" menu 
      * @return the new menu
      */
-    private JMenu getDiceMenu()
+    private JMenu getModulesMenu()
     {
-        final JMenu menu = new JMenu(getLanguageResource().DICE);
-        menu.add(getAddDiceMenuItem());
-        menu.add(getDeleteDiceMenuItem());
-        menu.add(getLoadDiceMenuItem());
-        menu.add(getSaveDiceMenuItem());
-        menu.add(getSaveAsDiceMenuItem());
-        return menu;
+    	JMenu modulesMenu = null;
+    	
+    	for (Module module : g_modules)
+    	{
+    		JMenu menu = module.getModuleMenu();
+    		if (menu != null)
+    		{
+    			if (modulesMenu == null)
+    				modulesMenu = new JMenu("Modules");
+    			
+    			modulesMenu.add(menu);
+    		}
+    	}
+    	
+    	return modulesMenu;
     }
 
     /**
@@ -1641,19 +1510,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         return item;
     }
 
-    private JMenuItem getLoadDiceMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_LOAD);
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(final ActionEvent e)
-            {
-                loadMacros();
-            }
-        });
-        return item;
-    }
-
     private JMenu getWindowMenu()
     {
         final JMenu menu = new JMenu(getLanguageResource().WINDOW);
@@ -1667,19 +1523,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         return menu;
     }
 
-    public DiceMacro getMacro(final String name)
-    {
-        final String realName = UtilityFunctions.normalizeName(name);
-        return m_macroMap.get(realName);
-    }
-
-    /**
-     * @return Gets the list of macros.
-     */
-    public Collection<DiceMacro> getMacros()
-    {
-        return Collections.unmodifiableCollection(m_macroMap.values());
-    }
 
     /**
      * Builds and returns the main menu bar
@@ -1692,7 +1535,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         menuBar.add(getNetworkMenu());
         menuBar.add(getMapMenu());
         menuBar.add(getGroupingMenu()); //#grouping
-        menuBar.add(getDiceMenu());
+        
+        JMenu menu = getModulesMenu();
+        if (menu != null)
+        	menuBar.add(menu);
+        
         menuBar.add(getWindowMenu());
         menuBar.add(getHelpMenu());
 
@@ -2387,23 +2234,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         return item;
     }
 
-    /**
-     * builds and return the "Save macro as" menu item
-     * @return a menu item
-     */
-    private JMenuItem getSaveAsDiceMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_SAVE_AS);
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(final ActionEvent e)
-            {
-                saveMacros();
-            }
-        });
-        return item;
-    }
-
+ 
     /**
      * builds and returns the "Save map as" menu item
      * @return the menu item
@@ -2446,29 +2277,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         return item;
     }
 
-    /**
-     * builds and returns the "save macros" menu item
-     * @return the menu item
-     */
-    private JMenuItem getSaveDiceMenuItem()
-    {
-        final JMenuItem item = new JMenuItem(getLanguageResource().MACRO_SAVE);
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(final ActionEvent e)
-            {
-                try
-                {
-                    saveMacros(m_actingFileMacros);
-                }
-                catch (final IOException ioe)
-                {
-                    Log.log(Log.SYS, ioe);
-                }
-            }
-        });
-        return item;
-    }
 
     /**
      * builds and returns the "save map" menu item
@@ -2595,21 +2403,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
         repaint(); // repaint the canvas
     }
-
-    /**
-     * handles the reception of a "grm" packet
-     * @param grmFile
-     */
-    public void grmPacketReceived(final byte grmFile[])
-    {
-        // only the host should ever get this packet. If a joiner gets it
-        // for some reason, it should ignore it.
-        // if we're offline, then sure, go ahead and load
-        if (m_netStatus != NetStatus.CONNECTED)
-        {
-            loadStateFromRawFileData(grmFile);
-        }
-    }
     
     /** *************************************************************************************
      * 
@@ -2731,11 +2524,15 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     private void initialize() throws IOException
     {
     	ImageCache.startCacheDaemon();
+    	
     	buildActions();
     	
+    	SlashCommands.registerDefaultChatCommands();
+    	
     	// todo #Plugins Automated module loading mechanism
+    	
     	registerModule(new CardModule());
-    	registerModule(new DiceMacroModule());
+    	registerModule(DiceMacroModule.getModule());
     	registerModule(ActivePogsModule.getModule());
     	
         if (DEBUG_FOCUS) // if debugging
@@ -2754,16 +2551,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
             });
         }
-
-        // Configure macro panel
-        m_macroPanel = new MacroPanel();
                 
         // Configure chat panel
         m_chatPanel = new ChatPanel();
         m_textEntry = m_chatPanel.getTextEntry();
-
-        // Load frame preferences
-        loadPrefs();
  
         setContentPane(new JPanel(new BorderLayout())); // Set the main UI object with a Border Layout
         setDefaultCloseOperation(EXIT_ON_CLOSE);        // Ensure app ends with this frame is closed
@@ -2913,9 +2704,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         addPlayer(new Player(m_playerName, m_characterName, -1));
         m_myPlayerIndex = 0;
 
-        m_macroPanel.init_sendTo();
-        m_chatPanel.init_sendTo();
-        
         m_colorCombo.addActionListener(this);
         updateGridModeMenu();
 
@@ -3057,6 +2845,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 //        });
 
         initializeExecutorThread();
+        
+        // Load frame preferences
+        loadPrefs();
     }
 
 		private File getAutoSaveXMLFile()
@@ -3251,108 +3042,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         validate();
     }
     
-    /**
-     * Pops up a dialog to load macros from a file.
-     */
-    public void loadMacros()
-    {
-        final File openFile = UtilityFunctions.doFileOpenDialog(getLanguageResource().OPEN, "xml", true);
 
-        if (openFile == null)
-        {
-            // they cancelled out of the open
-            return;
-        }
 
-        final int result = UtilityFunctions.yesNoDialog(GametableFrame.this,
-            getLanguageResource().MACRO_LOAD_WARN, getLanguageResource().MACRO_LOAD_CONFIRM);
-        if (result != UtilityFunctions.YES)
-        {
-            return;
-        }
 
-        m_actingFileMacros = openFile;
-        if (m_actingFileMacros != null)
-        {
-            // actually do the load if we're the host or offline
-            try
-            {
-                loadMacros(m_actingFileMacros);
-                m_chatPanel.logSystemMessage(getLanguageResource().MACRO_LOAD_DONE + " " + m_actingFileMacros);
-            }
-            catch (final SAXException saxe)
-            {
-                Log.log(Log.SYS, saxe);
-            }
-        }
-    }
-
-    /**
-     * Loads macros from the given file, if possible.
-     * 
-     * @param file File to load macros from.
-     * @throws SAXException If an error occurs.
-     */
-    public void loadMacros(final File file) throws SAXException
-    {
-        try
-        {
-            // macros are contained in an XML document that will be parsed using a SAXParser
-            // the SAXParser generates events for XML tags as it founds them.
-            final SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-            final DiceMacroSaxHandler handler = new DiceMacroSaxHandler();
-            parser.parse(file, handler);
-            // we are done parsing the file. The handler contains all the macros, ready to be added to the macro map
-            // clear the state
-            m_macroMap.clear();
-            for (DiceMacro macro : handler.getMacros())
-            {
-                addMacro(macro);
-            }
-        }
-        catch (final IOException ioe)
-        {
-            throw new SAXException(ioe);
-        }
-        catch (final ParserConfigurationException pce)
-        {
-            throw new SAXException(pce);
-        }
-
-        m_macroPanel.refreshMacroList(); // displays the macro list
-    }
-
-    /**
-     * Loads a Pog from a File onto the current map (private or public)
-     */
-     /*
-    public void loadPog() {
-        final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, ".pog", true);
-
-        if (openFile == null) { // they cancelled out of the open
-            return;
-        }  
-        try {
-            final FileInputStream infile = new FileInputStream(openFile);
-            final DataInputStream dis = new DataInputStream(infile);
-            final Pog nPog = new Pog(dis);
-            final boolean priv = !(getGametableCanvas().isPublicMap());
-              
-            nPog.setId(-1); // let host assign id if we are joined
-            if (nPog.isUnknown()) { // we need this image
-                PacketManager.requestPogImage(null, nPog);
-            }
-            if ((m_netStatus == NetStatus.DISCONNECTED) || priv)  {
-                nPog.assignUniqueId();
-                addPogPacketReceived(nPog, !priv);
-            } else 
-                send(PacketManager.makeAddPogPacket(nPog));
-        }
-        catch (final IOException ex1) {
-            Log.log(Log.SYS, ex1);
-        }
-    }*/
-    
     public void loadPog() {
         final File openFile = UtilityFunctions.doFileOpenDialog(getLanguageResource().OPEN, ".pog", true);
 
@@ -3392,21 +3084,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             getGametableCanvas().setPrimaryScroll(getGametableCanvas().getPublicMap(), 0,0);
             getGametableCanvas().setZoomLevel(0);
             applyWindowInfo();
-            addMacro("d20", "d20", null);
+            
             m_showNamesCheckbox.setSelected(false);
             m_randomRotate.setSelected(false); //#randomrotate
-            m_actingFileMacros = new File("macros.xml");
-            try
-            {
-                if (m_actingFileMacros.exists())
-                {
-                    loadMacros(m_actingFileMacros);
-                }
-            }
-            catch (final SAXException se)
-            {
-                Log.log(Log.SYS, se);
-            }
+            
+            for (Module module : g_modules)
+            	module.onLoadPreferencesCompleted();
+
             return;
         }
 
@@ -3434,12 +3118,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             m_mapChatSplitPane.setDividerLocation(prefDis.readInt());
             m_mapPogSplitPane.setDividerLocation(prefDis.readInt());
 
-            m_actingFileMacros = new File(prefDis.readUTF());
             m_showNamesCheckbox.setSelected(prefDis.readBoolean());
 
             // new divider locations
             m_chatPanel.setChatSplitPaneDivider(prefDis.readInt());            
             m_chatPanel.setUseMechanicsLog(prefDis.readBoolean());
+            
+            for (Module module : g_modules)
+            	module.onLoadPreferences(prefDis);
             
             prefDis.close();
             prefFile.close();
@@ -3452,18 +3138,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         {
             Log.log(Log.SYS, ex1);
         }
-
-        try
-        {
-            if (m_actingFileMacros.exists())
-            {
-                loadMacros(m_actingFileMacros);
-            }
-        }
-        catch (final SAXException se)
-        {
-            Log.log(Log.SYS, se);
-        }
+        
+        for (Module module : g_modules)
+        	module.onLoadPreferencesCompleted();
     }
 
     public void loadState(final byte saveFileData[])
@@ -3639,55 +3316,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 				}
 			}
 		}
-
-    private void loadBinaryState(final File file)
-    {
-        if (!file.exists())
-        {
-            return;
-        }
-
-        try
-        {
-            final FileInputStream input = new FileInputStream(file);
-            final DataInputStream infile = new DataInputStream(input);
-
-            // get the big hunk o data
-            final int ver = infile.readInt();
-            if (ver != COMM_VERSION)
-            {
-                // wrong version
-                throw new IOException(getLanguageResource().MAP_OPEN_BAD_VERSION);
-            }
-
-            final int len = infile.readInt();
-            final byte[] saveFileData = new byte[len];
-            infile.read(saveFileData);
-
-            PacketSourceState.beginFileLoad();
-            loadState(saveFileData);
-            PacketSourceState.endFileLoad();
-
-            input.close();
-            infile.close();
-        }
-        catch (final FileNotFoundException ex)
-        {
-            Log.log(Log.SYS, ex);
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-        }
-    }
-
-    public void loadStateFromRawFileData(final byte rawFileData[])
-    {
-        final byte saveFileData[] = new byte[rawFileData.length - 8]; // a new array that lacks the first
-        // int
-        System.arraycopy(rawFileData, 8, saveFileData, 0, saveFileData.length);
-        loadState(saveFileData);
-    }
 
     public void lockPogPacketReceived(final MapElementID id, final boolean newLock)
     {
@@ -4154,32 +3782,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         disconnect();
     }
 
-    public void removeMacro(final DiceMacro dm)
-    {
-        removeMacroForced(dm);
-        m_macroPanel.refreshMacroList();
-    }
-
-    public void removeMacro(final String name)
-    {
-        removeMacroForced(name);
-        m_macroPanel.refreshMacroList();
-    }
-
-    private void removeMacroForced(final DiceMacro macro)
-    {
-        final String name = UtilityFunctions.normalizeName(macro.getName());
-        m_macroMap.remove(name);
-    }
-
-    private void removeMacroForced(final String name)
-    {
-        final DiceMacro macro = getMacro(name);
-        if (macro != null)
-        {
-            removeMacroForced(macro);
-        }
-    }
 
     public void removePogsPacketReceived(final MapElementID ids[])
     {
@@ -4291,39 +3893,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         savePrefs();
     }
 
-    public void saveMacros()
-    {
-        final File oldFile = m_actingFileMacros;
-        m_actingFileMacros = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
-        if (m_actingFileMacros == null)
-        {
-            m_actingFileMacros = oldFile;
-            return;
-        }
-
-        try
-        {
-            saveMacros(m_actingFileMacros);
-            m_chatPanel.logSystemMessage(getLanguageResource().MACRO_SAVE_DONE + " " + m_actingFileMacros.getPath());
-        }
-        catch (final IOException ioe)
-        {
-            Log.log(Log.SYS, ioe);
-        }
-    }
-
-    public void saveMacros(final File file) throws IOException
-    {
-        final XmlSerializer out = new XmlSerializer();
-        out.startDocument(new BufferedWriter(new FileWriter(file)));
-        out.startElement(DiceMacroSaxHandler.ELEMENT_DICE_MACROS);
-        for (DiceMacro macro : m_macroMap.values())
-        {
-            macro.serialize(out);
-        }
-        out.endElement();
-        out.endDocument();
-    }
 
     /** 
      * @param file
@@ -4383,7 +3952,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             prefDos.writeInt(m_mapChatSplitPane.getDividerLocation());
             prefDos.writeInt(m_mapPogSplitPane.getDividerLocation());
 
-            prefDos.writeUTF(m_actingFileMacros.getAbsolutePath());
             prefDos.writeBoolean(m_showNamesCheckbox.isSelected());
 
             // new divider location
@@ -4391,10 +3959,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             
             prefDos.writeBoolean(m_chatPanel.getUseMechanicsLog());
             
+            for (Module module : g_modules)
+            	module.onSavePreferences(prefDos);
+            
             prefDos.close();
             prefFile.close();
 
-            saveMacros(m_actingFileMacros);
+            for (Module module : g_modules)
+            	module.onSavePreferencesCompleted();
         }
         catch (final FileNotFoundException ex1)
         {
