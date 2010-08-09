@@ -2,7 +2,7 @@
  * ActivePogsPanel.java: GameTable is in the Public Domain.
  */
 
-package com.gametable.plugins.ActivePogs;
+package com.plugins.activepogs;
 
 import java.awt.*;
 import java.awt.event.*;

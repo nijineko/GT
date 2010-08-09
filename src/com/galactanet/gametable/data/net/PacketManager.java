@@ -21,8 +21,8 @@ import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
-import com.gametable.plugins.ActivePogs.ActivePogsModule;
 import com.maziade.tools.XMLUtils;
+import com.plugins.activepogs.ActivePogsModule;
 
 
 
