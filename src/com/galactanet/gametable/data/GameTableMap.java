@@ -166,13 +166,20 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	 */
 	public void clearMapElementInstances()
 	{
-		for (MapElement element : m_mapElements)
-			element.removeListener(m_elementListener);
+		ArrayList<MapElement> mapElements = new ArrayList<MapElement>(m_mapElements);
 		
 		m_mapElements.clear();
 		
 		for (GameTableMapListenerIF listener : m_listeners)
 			listener.onMapElementInstancesCleared(this);
+
+		for (MapElement element : mapElements)
+		{
+			for (GameTableMapListenerIF listener : m_listeners)
+				listener.onMapElementInstanceRemoved(this, element, true);
+
+			element.removeListener(m_elementListener);
+		}
 	}
 
 	/*
@@ -416,7 +423,7 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 		mapElement.removeListener(m_elementListener);
 		
 		for (GameTableMapListenerIF listener : m_listeners)
-			listener.onMapElementInstanceRemoved(this, mapElement);
+			listener.onMapElementInstanceRemoved(this, mapElement, false);
 	}
   
   /**

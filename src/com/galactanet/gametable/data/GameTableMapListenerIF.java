@@ -39,7 +39,7 @@ public interface GameTableMapListenerIF
 	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement);
 	
 	/**
-	 * Called when all map element instances have been removed in one call
+	 * Called when all map element instances have been removed in one call (onMapElementInstanceRemoved will also be called for individual items)
 	 * @param map The triggering map
 	 */
 	public void onMapElementInstancesCleared(GameTableMap map);
@@ -48,7 +48,9 @@ public interface GameTableMapListenerIF
 	 * Called when a map element instance has been removed from the map
 	 * @param map The triggering map
 	 * @param mapElement The map element that has been removed
+	 * @param clearingMap Set to true if this instance is removed because of a call to 'clearElementInstances'.  
+	 * Allows to optimize by doing batch process through another listener when possible (onMapElementInstancesCleared will be called first) 
 	 */
-	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement);
+	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap);
 
 }

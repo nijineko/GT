@@ -61,7 +61,7 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 				}
 				else if (oldLayer == Layer.POG)
 				{
-					onMapElementInstanceRemoved(m_map, element);
+					onMapElementInstanceRemoved(m_map, element, false);
 				}
 			}
 			
@@ -145,14 +145,17 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
 	 */
 	@Override
-	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement)
+	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
 	{
-		MapElementNode node = findElementNode(mapElement);
-		
-		if (node != null)
+		if (!clearingMap)
 		{
-			m_sortIDs.remove(mapElement.getId());
-			removeNodeFromParent(node);
+			MapElementNode node = findElementNode(mapElement);
+			
+			if (node != null)
+			{
+				m_sortIDs.remove(mapElement.getId());
+				removeNodeFromParent(node);
+			}
 		}
 	}
 	

@@ -94,7 +94,6 @@ public class SlashCommands
 	public static synchronized void registerDefaultChatCommands()
 	{
 		registerChatCommand(new ClearLog());
-		registerChatCommand(new Deck()); // TODO Move deck to plugin
 		registerChatCommand(new Emote());
 		registerChatCommand(new EmoteAs());
 		registerChatCommand(new Goto());

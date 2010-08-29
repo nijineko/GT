@@ -435,7 +435,7 @@ public class PointerTool extends NullTool
                     if ((modifierMask & MODIFIER_CTRL) == 0) // not holding control
                     {
                         // remove the pogs that we moved
-                        m_canvas.removePog(pog.getId(), false);
+                        m_canvas.removePog(pog.getId());
                     }
                 }
             });

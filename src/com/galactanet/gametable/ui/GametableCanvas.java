@@ -29,7 +29,6 @@ import javax.swing.text.JTextComponent;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.data.deck.Card;
 import com.galactanet.gametable.data.grid.HexGridMode;
 import com.galactanet.gametable.data.grid.SquareGridMode;
 import com.galactanet.gametable.data.net.PacketManager;
@@ -192,13 +191,16 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		{
 			GameTableMapListenerIF mapListener = new GameTableMapAdapter() {
 				/*
-				 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElementInstance)
+				 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement, boolean)
 				 */
 				@Override
-				public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement)
+				public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
 				{
-					selectMapElementInstance(mapElement, map == m_publicMap, false);
-					highlightMapElementInstance(mapElement, false);					
+					if (!clearingMap)
+					{
+						selectMapElementInstance(mapElement, map == m_publicMap, false);
+						highlightMapElementInstance(mapElement, false);
+					}
 				}
 				
 				/*
@@ -816,13 +818,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             smoothScrollTo(newModelPoint);
         }
     }
-
-    public void doRemovePog(final MapElementID id)
-    {
-    	doRemovePog(id, false);
-    }
     
-    public void doRemovePog(final MapElementID id, boolean discardCard)
+    public void doRemovePog(final MapElementID id)
     {
         final MapElement toRemove = getActiveMap().getMapElement(id);
         if (toRemove != null)
@@ -834,90 +831,24 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
             getActiveMap().removeMapElementInstance(toRemove);
         }
         
-        if (discardCard)
-        {
-        	Card c = Card.getCard(toRemove);
-        	if (c != null)
-                m_gametableFrame.discardCards(new Card[] {c});
-        }
-        
         repaint();
     }
 
-    public void doRemovePogs(final MapElementID[] ids, final boolean bDiscardCards)
+    public void doRemovePogs(final MapElementID[] ids)
     {
-        // make a list of all the pogs that are cards
-        final List<Card> cardsList = new ArrayList<Card>();
-
-        if (bDiscardCards)
-        {
-            for (MapElementID i: ids)
-            {
-                final MapElement toRemove = getActiveMap().getMapElement(i);
-                final Card card = Card.getCard(toRemove);
-                if (card != null)
-                {
-                    cardsList.add(card);
-                }
-            }
-        }
-
         // remove all the offending pogs
         for (int i = 0; i < ids.length; i++)
         {
             doRemovePog(ids[i]);
         }
-
-        if (bDiscardCards)
-        {
-            // now remove the offending cards
-            if (cardsList.size() > 0)
-            {
-                final Card cards[] = new Card[cardsList.size()];
-                for (int i = 0; i < cards.length; i++)
-                {
-                    cards[i] = cardsList.get(i);
-                }
-                m_gametableFrame.discardCards(cards);
-            }
-        }
     }
     
-    public void doRemovePogs(List<MapElement> pogs, final boolean bDiscardCards)
+    public void doRemovePogs(List<MapElement> pogs)
     {
-        // make a list of all the pogs that are cards
-        final List<Card> cardsList = new ArrayList<Card>();
-
-        if (bDiscardCards)
-        {
-            for (MapElement toRemove : pogs)
-            {
-            	final Card card = Card.getCard(toRemove);
-                if (card != null)
-                {
-                    cardsList.add(card);
-                }
-            }
-        }
-
         // remove all the offending pogs
         for (MapElement pog : pogs.toArray(new MapElement[0]))	// convert to array to avoid comodification
         {
             doRemovePog(pog.getId());
-        }
-
-        if (bDiscardCards)
-        {
-            // now remove the offending cards
-            if (cardsList.size() > 0)
-            {
-                final Card cards[] = new Card[cardsList.size()];
-                for (int i = 0; i < cards.length; i++)
-                {
-                    cards[i] = cardsList.get(i);
-                }
-                m_gametableFrame.discardCards(cards);
-            }
         }
     }
 
@@ -2180,55 +2111,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         }
     }
 
-    public void removeCardPogsForCards(final Card discards[])
-    {
-        // distribute this to each layer
-        removeCardPogsForCards(m_privateMap, discards);
-        removeCardPogsForCards(m_publicMap, discards);
-
-        //m_gametableFrame.refreshActivePogList();
-        repaint();
-    }
-    
-  	/**
-  	 * Remove pogs linked to cards
-  	 * 
-  	 * @revise move to Card Module
-  	 * @param discards
-  	 */
-  	private void removeCardPogsForCards(GameTableMap map, final Card discards[])
-  	{
-  		final List<MapElement> removeList = new ArrayList<MapElement>();
-
-  		for (MapElement pog : map.getMapElements())
-  		{
-  			final Card pogCard = Card.getCard(pog);
-  			if (pogCard != null)
-  			{
-  				// this is a card pog. Is it out of the discards?
-  				for (int j = 0; j < discards.length; j++)
-  				{
-  					if (pogCard.equals(discards[j]))
-  					{
-  						// it's the pog for this card
-  						removeList.add(pog);
-  					}
-  				}
-  			}
-  		}
-
-  		// remove any offending pogs
-  		map.removeMapElementInstances(removeList);
-  	}
-
     public void removePog(final MapElementID id)
     {
-        removePog(id, true);
-    }
-
-    public void removePog(final MapElementID id, final boolean bDiscardCards)
-    {
-    	doRemovePogs(new MapElementID[] {id}, bDiscardCards);
+    	doRemovePogs(new MapElementID[] {id});
     }
 
     /*
@@ -2239,7 +2124,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
         return m_gametableFrame.getNetStatus();
     }
 
-    public void removePogs(final MapElementID ids[], final boolean bDiscardCards)
+    public void removePogs(final MapElementID ids[])
     {
         if (isPublicMap())
         {
@@ -2247,16 +2132,16 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
             if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
-                doRemovePogs(ids, bDiscardCards);
+                doRemovePogs(ids);
             }
         }
         else
         {
-            doRemovePogs(ids, bDiscardCards);
+            doRemovePogs(ids);
         }
     }
     
-    public void removePogs(List<MapElement> pogs, final boolean bDiscardCards)
+    public void removePogs(List<MapElement> pogs)
     {
         if (isPublicMap())
         {
@@ -2264,12 +2149,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
             if (m_gametableFrame.getNetStatus() != NetStatus.CONNECTED)
             {
-                doRemovePogs(pogs, bDiscardCards);
+                doRemovePogs(pogs);
             }
         }
         else
         {
-            doRemovePogs(pogs, bDiscardCards);
+            doRemovePogs(pogs);
         }
     }
 
