@@ -146,7 +146,7 @@ public class ActivePogsModule  extends Module implements GameTableMapListenerIF
    * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
    */
   @Override
-  public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement)
+  public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
   {
   }
   

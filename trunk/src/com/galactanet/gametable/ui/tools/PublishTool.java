@@ -166,7 +166,7 @@ public class PublishTool extends NullTool
                 {
                     if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
-                        m_canvas.removePog(pog.getId(), false);	// this would cause concurrent modifications if we used the returned list directly 
+                        m_canvas.removePog(pog.getId());	// this would cause concurrent modifications if we used the returned list directly 
                     }
                 }
 

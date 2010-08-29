@@ -1,7 +1,7 @@
 /*
- * Deck.java
+ * GameTableFrameAdapter.java
  *
- * @created 2010-08-08
+ * @created 2010-08-29
  *
  * Copyright (C) 1999-2010 Open Source Game Table Project
  * 
@@ -20,33 +20,34 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.chat.commands;
+package com.galactanet.gametable.ui;
 
-import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.chat.SlashCommand;
+import com.galactanet.gametable.data.Player;
 
 /**
- * todo: comment
+ * Clean encapsulation of GameTableFrameListener (utility class)
  *
  * @author Eric Maziade
  */
-public class Deck extends SlashCommand
+public class GameTableFrameAdapter implements GameTableFrameListener
 {
-	/**
-	 * Constructor 
+	/*
+	 * @see com.galactanet.gametable.ui.GameTableFrameListener#onHostingStarted()
 	 */
-	public Deck()
+	@Override
+	public void onHostingStarted()
 	{
-		super("deck", "Various deck actions. type /deck for more details");		
+		// todo Auto-generated method stub
+		
 	}
 	
 	/*
-	 * @see com.galactanet.gametable.ui.chat.SlashCommand#processCommand(java.lang.String[], java.lang.String)
+	 * @see com.galactanet.gametable.ui.GameTableFrameListener#onPlayerJoined(com.galactanet.gametable.data.Player)
 	 */
 	@Override
-	public String processCommand(String[] words, String text)
+	public void onPlayerJoined(Player player)
 	{
-		GametableFrame.getGametableFrame().deckCommand(words); // deck commands. there are many
-		return null;
+		// todo Auto-generated method stub
+		
 	}
 }

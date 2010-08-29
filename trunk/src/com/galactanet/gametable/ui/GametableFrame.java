@@ -28,10 +28,6 @@ import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.Group.Action;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.data.deck.Card;
-import com.galactanet.gametable.data.deck.CardModule;
-import com.galactanet.gametable.data.deck.Deck;
-import com.galactanet.gametable.data.deck.DeckData;
 import com.galactanet.gametable.data.net.*;
 import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
 import com.galactanet.gametable.data.prefs.Preferences;
@@ -44,6 +40,7 @@ import com.galactanet.gametable.util.*;
 import com.maziade.tools.XMLUtils;
 import com.maziade.tools.XMLUtils.XMLOutputProperties;
 import com.plugins.activepogs.ActivePogsModule;
+import com.plugins.cards.CardModule;
 import com.plugins.dicemacro.DiceMacroModule;
 
 /*
@@ -241,16 +238,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     
     private boolean                 m_bMaximized;   // Is the frame maximized?
 
-    // all the cards you have
-    private final List<Card>              m_cards                  = new ArrayList<Card>();
     public String                   m_characterName          = DEFAULT_CHARACTER_NAME; // The character name
     
     
 
 
-
-    // only valid if this client is the host
-    private final List<Deck>              m_decks                  = new ArrayList<Deck>(); // List of decks
 
     private JMenuItem               m_disconnectMenuItem;
 
@@ -515,32 +507,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             send(PacketManager.makeBGColPacket(color));
         }
     }
-    
-    /**
-     * clear all cards of a given deck
-     * @param deckName name of the deck whose cards will be deleted
-     */
-    public void clearDeck(final String deckName)
-    {
-        // if you're the host, send out the packet to tell everyone to
-        // clear their decks. If you're a joiner, don't. Either way
-        // clear out your own hand of the offending cards
-        if (m_netStatus == NetStatus.HOSTING)
-        {
-            send(PacketManager.makeClearDeckPacket(deckName));
-        }
-
-        for (int i = 0; i < m_cards.size(); i++) //for each card
-        {
-            final Card card = m_cards.get(i);
-            if (card.getDeckName().equals(deckName)) // if it belongs to the deck to erase
-            {
-                // this card has to go.
-                m_cards.remove(i); // remove the card
-                i--; // to keep up with the changed list
-            }
-        }
-    }
 
     /**
      * grumpy function that throws an exception if we are not the host of a network game
@@ -614,388 +580,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
             send(PacketManager.makeAddPogPacket(nPog));
         }
     }
-    
-    /**
-     * interprets and execute the deck commands
-     * @param words array of words in the deck command
-     */
-    public void deckCommand(final String[] words)
-    {
-        // we need to be in a network game to issue deck commands
-        // otherwise log the error and exit
-        if (m_netStatus == NetStatus.DISCONNECTED)
-        {
-            m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_CONNECTED);
-            return;
-        }
-
-        // words[0] will be "/deck". IF it weren't we wouldn't be here.
-        if (words.length < 2)
-        {
-            // they just said "/deck". give them the help text and return
-            showDeckUsage();
-            return;
-        }
-
-        final String command = words[1]; // since words[0] is the word "deck" we are interested in the
-                                         // next word, that's why we take words[1]
-
-        if (command.equals("create")) // create a new deck
-        {
-            if (m_netStatus != NetStatus.HOSTING) // verify that we are the host of the network game
-            {
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_HOST_CREATE);
-                return;
-            }
-
-            // create a new deck.
-            if (words.length < 3) // we were expecting the deck name
-            {
-                // not enough parameters
-                showDeckUsage();
-                return;
-            }
-
-            final String deckFileName = words[2];
-            String deckName;
-            if (words.length == 3)
-            {
-                // they specified the deck, but not a name. So we
-                // name it after the type
-                deckName = deckFileName;
-            }
-            else
-            {
-                // they specified a name
-                deckName = words[3];
-            }
-
-            // if the name is already in use, puke out an error
-            if (getDeck(deckName) != null)
-            {
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_ALREADY_EXISTS + " '" + deckName + "'.");
-                return;
-            }
-
-            // create the deck stored in an xml file
-            final DeckData dd = new DeckData();
-            final File deckFile = new File("decks" + File.separator + deckFileName + ".xml");
-            boolean result = dd.init(deckFile);
-
-            if (!result)
-            {
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_ERROR_CREATE);
-                return;
-            }
-
-            // create a deck and add it
-            final Deck deck = new Deck();
-            deck.init(dd, 0, deckName);
-            m_decks.add(deck);
-
-            // alert all players that this deck has been created
-            sendDeckList();
-            postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().DECK_CREATE_SUCCESS_1 + " " + deckFileName + " " + getLanguageResource().DECK_CREATE_SUCCESS_2 + " " + deckName);
-
-        }
-        else if (command.equals("destroy")) // remove a deck
-        {
-            if (m_netStatus != NetStatus.HOSTING)
-            {
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_HOST_DESTROY);
-                return;
-            }
-
-            if (words.length < 3)
-            {
-                // they didn't specify a deck
-                showDeckUsage();
-                return;
-            }
-
-            // remove the deck named words[2]
-            final String deckName = words[2];
-            final int toRemoveIdx = getDeckIdx(deckName); // get the position of the deck in the deck list
-
-            if (toRemoveIdx != -1) // if we found the deck
-            {
-                // we can successfully destroy the deck
-                m_decks.remove(toRemoveIdx);
-
-                // tell the players
-                clearDeck(deckName);
-                sendDeckList();
-                postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().DECK_DESTROY + deckName);
-            }
-            else
-            {
-                // we couldn't find a deck with that name
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NONE + " '" + deckName + "'.");
-            }
-        }
-        else if (command.equals("shuffle")) // shuffle the deck
-        {
-            if (m_netStatus != NetStatus.HOSTING) // only if you are the host
-            {
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NOT_HOST_SHUFFLE);
-                return;
-            }
-
-            if (words.length < 4)
-            {
-                // not enough parameters
-                showDeckUsage();
-                return;
-            }
-
-            final String deckName = words[2];
-            final String operation = words[3];
-
-            // first get the deck
-            final Deck deck = getDeck(deckName);
-            if (deck == null)
-            {
-                // and report the error if not found
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NONE+ " '" + deckName + "'.");
-                return;
-            }
-
-            if (operation.equals("all"))
-            {
-                // collect and shuffle all the cards in the deck.
-                clearDeck(deckName); // let the other players know about the demise of those cards
-                deck.shuffleAll();
-                postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().DECK_CARDS_COLLECT_ALL_1 + deckName
-                    + getLanguageResource().DECK_CARDS_COLLECT_ALL_2);
-                postSystemMessage(deckName + " " + getLanguageResource().DECK_HAS + " " + deck.cardsRemaining() + " " + getLanguageResource().DECK_CARDS + ".");
-            }
-            else if (operation.equals("discards"))
-            {
-                // shuffle only the cards in the discard pile.
-                deck.shuffle();
-                postSystemMessage(getMyPlayer().getPlayerName() + getLanguageResource().DECK_SHUFFLE + deckName
-                    + " " + getLanguageResource().DECK+ ".");
-                postSystemMessage(deckName + getLanguageResource().DECK_HAS + deck.cardsRemaining() + " " + getLanguageResource().DECK_CARDS + ".");
-            }
-            else
-            {
-                // the shuffle operation is illegal
-                m_chatPanel.logAlertMessage("'" + operation
-                    + "' " + getLanguageResource().DECK_SHUFFLE_INVALID);
-                return;
-            }
-        }
-        else if (command.equals("draw")) // draw a card from the deck
-        {
-            // before chesking net status we check to see if the draw command was
-            // legally done
-            if (words.length < 3)
-            {
-                // not enough parameters
-                showDeckUsage();
-                return;
-            }
-
-            // ensure that desired deck exists -- this will work even if we're not the
-            // host. Because we'll have "dummy" decks in place to track the names
-            final String deckName = words[2];
-            final Deck deck = getDeck(deckName);
-            if (deck == null)
-            {
-                // that deck doesn't exist
-                m_chatPanel.logAlertMessage(getLanguageResource().DECK_NONE + " '" + deckName + "'.");
-                return;
-            }
-
-            int numToDraw = 1;
-            // they optionally can specify a number of cards to draw
-            if (words.length >= 4)
-            {
-                // numToDrawStr is never used.
-                // String numToDrawStr = words[3];
-
-                // note the number of cards to draw
-                try
-                {
-                    numToDraw = Integer.parseInt(words[3]);
-                    if (numToDraw <= 0)
-                    {
-                        // not allowed
-                        throw new Exception();
-                    }
-                }
-                catch (final Exception e)
-                {
-                    // it's ok not to specify a number of cards to draw. It's not
-                    // ok to put garbage in that field
-                    m_chatPanel.logAlertMessage("'" + words[3] + "' " + getLanguageResource().DECK_CARDS_INVALID_NUMBER);
-                }
-            }
-
-            drawCards(deckName, numToDraw);
-        }
-        else if (command.equals("hand")) // this shows the cards in our hand
-        {
-            if (m_cards.size() == 0)
-            {
-                m_chatPanel.logSystemMessage(getLanguageResource().DECK_HAND_EMPTY);
-                return;
-            }
-
-            
-            m_chatPanel.logSystemMessage(getLanguageResource().DECK_YOU_HAVE + " " + m_cards.size() + " " + getLanguageResource().DECK_CARDS + ":");
-            
-            for (int i = 0; i < m_cards.size(); i++) // for each card
-            {
-                final int cardIdx = i + 1;
-                final Card card = m_cards.get(i); // get the card
-                // craft a message
-                final String toPost = "" + cardIdx + ": " + card.getCardName() + " (" + card.getDeckName() + ")";
-                // log the message
-                m_chatPanel.logSystemMessage(toPost);
-            }
-        }
-        else if (command.equals("discard")) // discard a card
-        {
-            // discard the nth card from your hand
-            // 1-indexed
-            if (words.length < 3)
-            {
-                // note enough parameters
-                showDeckUsage();
-                return;
-            }
-
-            final String param = words[2];
-
-            // the parameter can be "all" or a number
-            Card discards[];
-            if (param.equals("all"))
-            {
-                // discard all cards
-                discards = new Card[m_cards.size()];
-
-                for (int i = 0; i < discards.length; i++)
-                {
-                    discards[i] = m_cards.get(i);
-                }
-            }
-            else
-            {
-                // discard the specified card
-                int idx = -1;
-                try
-                {
-                    idx = Integer.parseInt(param);
-                    idx--; // make it 0-indexed
-
-                    if (idx < 0) // we can't discard a card with a negative index
-                    {
-                        throw new Exception();
-                    }
-
-                    if (idx >= m_cards.size()) // we can't discard a card higher than what we have
-                    {
-                        throw new Exception();
-                    }
-                }
-                catch (final Exception e)
-                {
-                    // they put in some illegal value for the param
-                    m_chatPanel.logAlertMessage(getLanguageResource().DECK_CARD_NONE + " '" + param + "'.");
-                    return;
-                }
-                discards = new Card[1];
-                discards[0] = m_cards.get(idx);
-            }
-
-            // now we have the discards[] filled with the cards to be
-            // removed
-            discardCards(discards);
-        }
-        else if (command.equals("decklist"))
-        {
-            // list off the decks
-            // we keep "dummy" decks for joiners,
-            // so either a host of a joiner is safe to use this code:
-            if (m_decks.size() == 0)
-            {
-                m_chatPanel.logSystemMessage(getLanguageResource().DECK_NO_DECKS);
-                return;
-            }
-
-            m_chatPanel.logSystemMessage(getLanguageResource().DECK_THERE_ARE + " " + m_decks.size() + " " + getLanguageResource().DECK_DECKS);
-            for (int i = 0; i < m_decks.size(); i++)
-            {
-                final Deck deck = m_decks.get(i);
-                m_chatPanel.logSystemMessage("---" + deck.m_name);
-            }
-        }
-        else
-        {
-            // they selected a deck command that doesn't exist
-            showDeckUsage();
-        }
-    }
-
-    /**
-     * handles the reception of a list of decks
-     * @param deckNames array of string with the names of decks received
-     */
-    public void deckListPacketReceived(final String[] deckNames)
-    {
-        // if we're the host, this is a packet we should never get
-        if (m_netStatus == NetStatus.HOSTING)
-        {
-            throw new IllegalStateException(getLanguageResource().DECK_ERROR_HOST_DECKLIST);
-        }
-
-        // set up out bogus decks to have the appropriate names
-        m_decks.clear();
-
-        for (int i = 0; i < deckNames.length; i++)
-        {
-            final Deck bogusDeck = new Deck();
-            bogusDeck.initPlaceholderDeck(deckNames[i]);
-            m_decks.add(bogusDeck);
-        }
-    }
-
-    /**
-     * remove cards from our deck
-     * @param discards array of cards to discard
-     */
-    public void discardCards(final Card discards[])
-    {
-        if (m_netStatus == NetStatus.CONNECTED)
-        {
-            // if we are not the host we have bogus decks, so we send a package to
-            // notify of the discards. It will be processed by the host
-            send(PacketManager.makeDiscardCardsPacket(getMyPlayer().getPlayerName(), discards));
-        }
-        else if (m_netStatus == NetStatus.HOSTING)
-        {
-            // we are the host, so we can process the discard of the cards
-            doDiscardCards(getMyPlayer().getPlayerName(), discards);
-        }
-
-        // and in either case, we remove the cards from ourselves.
-        // @revise This is an expensive algorithm, it would be better to get to the card to remove directly by index or something like that.
-        for (int i = 0; i < m_cards.size(); i++) // for each card we have
-        {
-            final Card handCard = m_cards.get(i); 
-            for (int j = 0; j < discards.length; j++) // compare with each card to discard
-            {
-                if (handCard.equals(discards[j])) // if they are the same
-                {
-                    // we need to dump this card
-                    m_cards.remove(i);
-                    i--; // to keep up with the iteration
-                    break;
-                }
-            }
-        }
-    }
 
     /**
      * disconnect from the network game, if connected
@@ -1035,93 +619,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         updateStatus();
     }
 
-    /**
-     * discards cards from a deck
-     * @param playerName who is discarding the cards
-     * @param discards array of cards to discard
-     */
-    public void doDiscardCards(final String playerName, final Card discards[])
-    {
-        if (discards.length == 0) // nothing to discard
-        {
-            // this shouldn't happen, but let's not freak out.
-            return;
-        }
-
-        // only the host should get this
-        if (m_netStatus != NetStatus.HOSTING)
-        {
-            throw new IllegalStateException(getLanguageResource().DECK_ERROR_DODISCARD);
-        }
-
-        // tell the decks about the discarded cards
-        for (int i = 0; i < discards.length; i++)
-        {
-            final String deckName = discards[i].getDeckName();
-            final Deck deck = getDeck(deckName);
-            if (deck == null)
-            {
-                // don't panic. Just ignore it. It probably means
-                // a player discarded a card right as the host deleted the deck
-            }
-            else
-            {
-                deck.discard(discards[i]);
-            }
-        }
-
-        // finally, remove any card pogs that are hanging around based on these cards
-        m_gametableCanvas.removeCardPogsForCards(discards);
-
-        // tell everyone about the cards that got discarded
-        if (discards.length == 1)
-        {
-            postSystemMessage(playerName + " " + getLanguageResource().DECK_DISCARDS + ": " + discards[0].getCardName());
-        }
-        else
-        {
-            postSystemMessage(playerName + " " + getLanguageResource().DECK_DISCARDS + " " + discards.length + " " + getLanguageResource().DECK_CARDS);
-            for (int i = 0; i < discards.length; i++)
-            {
-                postSystemMessage("---" + discards[i].getCardName());
-            }
-        }
-    }
-
-    /**
-     * draw cards from a deck. Non-host players request it from the host. The
-     * host is the one that actually draws from the deck
-     * @param deckName deck to draw cards from
-     * @param numToDraw how many cards are requested
-     */
-    public void drawCards(final String deckName, final int numToDraw)
-    {
-        if (m_netStatus == NetStatus.CONNECTED)
-        {
-            // joiners send a request for cards
-            send(PacketManager.makeRequestCardsPacket(deckName, numToDraw));
-            return;
-        }
-
-        // if we're here, we're the host. So we simply draw the cards
-        // and give it to ourselves.
-        final Card drawnCards[] = getCards(deckName, numToDraw);
-        if (drawnCards != null)
-        {
-            receiveCards(drawnCards);
-
-            // also, we need to add the desired cards to our own private layer
-            for (int i = 0; i < drawnCards.length; i++)
-            {
-                final MapElement cardPog = makeCardPog(drawnCards[i]);
-                if (cardPog != null)
-                {
-                    // add this pog card to our own private layer
-                    m_gametableCanvas.addCardPog(cardPog);
-                }
-            }
-        }
-    }
 
     /**
      * erases everything from the game canvas
@@ -1157,7 +654,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     {
       // make an int array of all the IDs
     	List<MapElement> pogs = getGametableCanvas().getActiveMap().getMapElements();
-      getGametableCanvas().removePogs(pogs, true);
+      getGametableCanvas().removePogs(pogs);
     }
 
     /**
@@ -1207,58 +704,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     }
 
 
-    /**
-     * get a number of cards from a deck
-     * @param deckName name of the deck to draw from
-     * @param num number of cards to draw
-     * @return array with the cards drawn
-     */
-    public Card[] getCards(final String deckName, final int num)
-    {
-        int numCards = num;
-
-        // get the deck
-        final Deck deck = getDeck(deckName);
-        if (deck == null)
-        {
-            // the deck doesn't exist. There are various ways this could happen,
-            // mostly due to split-second race conditions where the host deletes the deck while
-            // a card request was incoming. We just return null in this edge case.
-            return null;
-        }
-
-        if (numCards <= 0)
-        {
-            // invalid
-            throw new IllegalArgumentException("drawCards: " + numCards);
-        }
-
-        // We can't draw more cards than there are
-        final int remain = deck.cardsRemaining();
-        if (numCards > remain)
-        {
-            numCards = remain;
-        }
-
-        // make the return value
-        final Card ret[] = new Card[numCards];
-
-        // draw the cards
-        for (int i = 0; i < numCards; i++)
-        {
-            ret[i] = deck.drawCard();
-        }
-
-        // now that the cards are drawn, check the deck status
-        if (deck.cardsRemaining() == 0)
-        {
-            // no more cards in the deck, alert them
-            postSystemMessage(deckName + " " + getLanguageResource().DECK_OUT_OF_CARDS);
-        }
-
-        return ret;
-    }
-
     public ChatPanel getChatPanel()
     {
         return m_chatPanel;
@@ -1288,44 +733,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         });
 
         return item;
-    }
-
-    /**
-     * gets a deck by name or null if it doesn't exist
-     * @param name name of the deck to get
-     * @return the requested deck or null if it doesn't exist
-     */
-    public Deck getDeck(final String name)
-    {
-        final int idx = getDeckIdx(name);
-        if (idx == -1)
-        {
-            return null;
-        }
-        // Doesn't get here if idx == -1; no need for else
-        // else
-        {
-            final Deck d = m_decks.get(idx);
-            return d;
-        }
-    }
-
-    /**
-     * gets the position in the list of decks of a deck with a given name or -1 if not found
-     * @param name name of the deck to locate
-     * @return the position of the deck in the list or -1 if not found
-     */
-    public int getDeckIdx(final String name)
-    {
-        for (int i = 0; i < m_decks.size(); i++)
-        {
-            final Deck d = m_decks.get(i);
-            if (d.m_name.equals(name))
-            {
-                return i;
-            }
-        }
-        return -1;
     }
 
     
@@ -1982,7 +1389,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     }
 
     /**
-     * @return The deck panel.
+     * @return The pog window
      */
     public JFrame getPogWindow()
     {
@@ -2189,7 +1596,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         {
             public void actionPerformed(final ActionEvent e)
             {   
-                getGametableCanvas().removePogs(getGametableCanvas().getSelectedMapElementInstances(), false);
+                getGametableCanvas().removePogs(getGametableCanvas().getSelectedMapElementInstances());
             }
         });
 
@@ -2499,9 +1906,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         m_disconnectMenuItem.setEnabled(true); // enable the disconnect menu item
         setTitle(GametableApp.VERSION + " - " + me.getCharacterName());
 
-        // also, all decks clear
-        m_decks.clear();
-        m_cards.clear();
+        for (GameTableFrameListener listener : m_listeners)
+        	listener.onHostingStarted();
     }
 
     /**
@@ -2531,7 +1937,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     	
     	// todo #Plugins Automated module loading mechanism
     	
-    	registerModule(new CardModule());
+    	registerModule(CardModule.getModule());
     	registerModule(DiceMacroModule.getModule());
     	registerModule(ActivePogsModule.getModule());
     	
@@ -3370,32 +2776,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         PacketSourceState.endHostDump();
     }
 
-    // makes a card pog out of the sent in card
-    @Deprecated
-    public MapElement makeCardPog(final Card card)
-    {
-        // there might not be a pog associated with this card
-        if (card.getCardFile().length() == 0)
-        {
-            return null;
-        }
-
-        final MapElementTypeIF newPogType = getPogLibrary().getElementType("pogs" + File.separator + card.getCardFile());
-
-        // there could be a problem with the deck definition. It's an easy mistake
-        // to make. So rather than freak out, we just return null.
-        if (newPogType == null)
-        {
-            return null;
-        }
-
-        final MapElement newPog = new MapElement(newPogType);
-
-        // make it a card pog
-        Card.setCard(newPog, card);
-        return newPog;
-    }
-
     public void movePogPacketReceived(final MapElementID id, MapCoordinates newPos)
     {
         getGametableCanvas().doMovePog(id, newPos);
@@ -3480,8 +2860,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         // let them know we're done sending them data from the login
         send(PacketManager.makeLoginCompletePacket(), player);
 
-        // tell them the decks that are in play
-        sendDeckList();
+        for (GameTableFrameListener listener : m_listeners)
+        	listener.onPlayerJoined(player);                
     }
 
     public void pogDataPacketReceived(final MapElementID id, final String s, final Map<String, String> toAdd, final Set<String> toDelete)
@@ -3703,43 +3083,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
       refreshPogList();
     }
 
-    public void receiveCards(final Card cards[])
-    {
-        if (cards.length == 0)
-        {
-            // drew 0 cards. Ignore.
-            return;
-        }
-
-        // all of these cards get added to your hand
-        for (int i = 0; i < cards.length; i++)
-        {
-            m_cards.add(cards[i]);
-            final String toPost = getLanguageResource().DECK_DREW + " " + cards[i].getCardName() + " (" + cards[i].getDeckName() + ")";
-            m_chatPanel.logSystemMessage(toPost);
-        }
-
-        // make sure we're on the private layer
-        if (m_gametableCanvas.getActiveMap() != m_gametableCanvas.getPrivateMap())
-        {
-            // we call toggleLayer rather than setActiveMap because
-            // toggleLayer cleanly deals with drags in action and other
-            // interrupted actions.
-            toggleLayer();
-        }
-
-        // tell everyone that you drew some cards
-        if (cards.length == 1)
-        {
-            postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().DECK_DRAW_PLAYER + " " + cards[0].getDeckName() + " " + getLanguageResource().DECK);
-        }
-        else
-        {
-            postSystemMessage(getMyPlayer().getPlayerName() + " " + getLanguageResource().DECK_DRAWS + " " + cards.length + " " + getLanguageResource().DECK_DRAWS2 + " "
-                + cards[0].getDeckName() + " " + getLanguageResource().DECK + ".");
-        }
-
-    }
 
     public void recenterPacketReceived(MapCoordinates modelPoint, final int zoom)
     {
@@ -3785,7 +3128,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
     public void removePogsPacketReceived(final MapElementID ids[])
     {
-        getGametableCanvas().doRemovePogs(ids, false);
+        getGametableCanvas().doRemovePogs(ids);
 
         if (m_netStatus == NetStatus.HOSTING)
         {
@@ -3794,41 +3137,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
     }
 
-    public void requestCardsPacketReceived(final Connection conn, final String deckName, final int numCards)
-    {
-        if (m_netStatus != NetStatus.HOSTING)
-        {
-            // this shouldn't happen
-            throw new IllegalStateException("Non-host had a call to requestCardsPacketReceived");
-        }
-        // the player at conn wants some cards
-        final Card cards[] = getCards(deckName, numCards);
-
-        if (cards == null)
-        {
-            // there was a problem. Probably a race-condition thaty caused a
-            // card request to get in after a deck was deleted. Just ignore this
-            // packet.
-            return;
-        }
-
-        // send that player his cards
-        send(PacketManager.makeReceiveCardsPacket(cards), conn);
-
-        // also, we need to send that player the pogs for each of those cards
-        for (int i = 0; i < cards.length; i++)
-        {
-            final MapElement newPog = makeCardPog(cards[i]);
-
-            if (newPog != null)
-            {
-                // make a pog packet, saying this pog should go to the PRIVATE LAYER,
-                // then send it to that player. Note that we don't add it to
-                // our own layer.
-                send(PacketManager.makeAddPogPacket(newPog, false), conn);
-            }
-        }
-    }
 
     public void rotatePogPacketReceived(final MapElementID id, final double newAngle)
     {
@@ -4139,10 +3447,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
         }
     }
 
-    void sendDeckList()
-    {
-        send(PacketManager.makeDeckListPacket(m_decks));
-    }
 
     public void setToolSelected(final int toolId)
     {
@@ -4161,19 +3465,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
     public boolean shouldRotatePogs() {
         return m_randomRotate.isSelected();        
     }
-    
-    public void showDeckUsage()
-    {
-        m_chatPanel.logSystemMessage("/deck usage: ");
-        m_chatPanel.logSystemMessage("---/deck create [decktype] [deckname]: create a new deck. [decktype] is the name of a deck in the decks directory. It will be named [deckname]");
-        m_chatPanel.logSystemMessage("---/deck destroy [deckname]: remove the specified deck from the session.");
-        m_chatPanel.logSystemMessage("---/deck shuffle [deckname] ['all' or 'discards']: shuffle cards back in to the deck.");
-        m_chatPanel.logSystemMessage("---/deck draw [deckname] [number]: draw [number] cards from the specified deck.");
-        m_chatPanel.logSystemMessage("---/deck hand [deckname]: List off the cards (and their ids) you have from the specified deck.");
-        m_chatPanel.logSystemMessage("---/deck /discard [cardID]: Discard a card. A card's ID can be seen by using /hand.");
-        m_chatPanel.logSystemMessage("---/deck /discard all: Discard all cards that you have.");
-        m_chatPanel.logSystemMessage("---/deck decklist: Lists all the decks in play.");
-    }
+
 
     public void startTellTo(final String name)
     {
@@ -4515,6 +3807,29 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		{
 			return m_pogsTabbedPane;
 		}
+		
+
+		/**
+	   * Adds a GameTableFrameListener to this map
+	   * @param listener Listener to call 
+	   */
+	  public void addListener(GameTableFrameListener listener)
+	  {
+	  	m_listeners.remove(listener);
+	  	m_listeners.add(listener);
+	  }
+	  
+	  /**
+	   * Removes a listener from this map
+	   * @param listener Listener to remove
+	   * @return True if listener was found and removed
+	   */
+	  public boolean removeListener(GameTableFrameListener listener)
+	  {
+	  	return m_listeners.remove(listener);
+	  }
+	  
+	  private List<GameTableFrameListener> m_listeners = new ArrayList<GameTableFrameListener>();
 
 		private javax.swing.Action m_actionLoadMap;
     private javax.swing.Action m_actionLoadPrivateMap;

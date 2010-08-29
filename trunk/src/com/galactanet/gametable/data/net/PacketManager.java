@@ -15,14 +15,15 @@ import org.w3c.dom.Element;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.Group.Action;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.data.deck.Card;
-import com.galactanet.gametable.data.deck.Deck;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 import com.maziade.tools.XMLUtils;
 import com.plugins.activepogs.ActivePogsModule;
+import com.plugins.cards.Card;
+import com.plugins.cards.CardModule;
+import com.plugins.cards.Deck;
 
 
 
@@ -1537,7 +1538,7 @@ public class PacketManager
             final String deckName = dis.readUTF();
 
             // tell the model
-            GametableFrame.getGametableFrame().clearDeck(deckName);
+            CardModule.getModule().clearDeck(deckName);
         }
         catch (final IOException ex)
         {
@@ -1560,7 +1561,7 @@ public class PacketManager
             }
 
             // tell the model
-            GametableFrame.getGametableFrame().deckListPacketReceived(deckNames);
+            CardModule.getModule().deckListPacketReceived(deckNames);
         }
         catch (final IOException ex)
         {
@@ -1589,7 +1590,7 @@ public class PacketManager
             }
 
             // tell the model
-            GametableFrame.getGametableFrame().doDiscardCards(playerName, cards);
+            CardModule.getModule().doDiscardCards(playerName, cards);
         }
         catch (final IOException ex)
         {
@@ -2336,7 +2337,7 @@ public class PacketManager
             }
 
             // tell the model
-            GametableFrame.getGametableFrame().receiveCards(cards);
+            CardModule.getModule().receiveCards(cards);
         }
         catch (final IOException ex)
         {
@@ -2415,7 +2416,7 @@ public class PacketManager
             final int numCards = dis.readInt();
 
             // tell the model
-            GametableFrame.getGametableFrame().requestCardsPacketReceived(conn, deckName, numCards);
+            CardModule.getModule().requestCardsPacketReceived(conn, deckName, numCards);
         }
         catch (final IOException ex)
         {

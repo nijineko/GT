@@ -3,7 +3,7 @@
  */
 
 
-package com.galactanet.gametable.data.deck;
+package com.plugins.cards;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
