@@ -117,7 +117,7 @@ public class Roll extends SlashCommand
 		}
 		else
 		{
-			GametableFrame.getGametableFrame().getChatPanel().logMechanics("<b><font color=\"#880000\">Error in Macro String.</font></b>");
+			GametableFrame.getGametableFrame().sendMechanicsMessageLocal("<b><font color=\"#880000\">Error in Macro String.</font></b>");
 		}
 
 		return null;

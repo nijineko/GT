@@ -24,7 +24,6 @@ public class Language
     public String CONNECTION_LEFT;
     public String CONNECTION_LOST;
     public String CONNECTION_REJECTED;
-    public String CONNECTION_NO_DISCONNECT;
     public String CONFIRM_HOST_FAIL;
     public String DISCONNECTED;
     public String HOST_ERROR_HOST;
@@ -240,8 +239,6 @@ public class Language
             CONNECTION_LOST = value;
         } else if (name.equals("CONNECTION_REJECTED")){
             CONNECTION_REJECTED = value;
-        } else if (name.equals("CONNECTION_NO_DISCONNECT")){
-            CONNECTION_NO_DISCONNECT = value;
         } else if (name.equals("CONFIRM_HOST_FAIL")){
             CONFIRM_HOST_FAIL = value;
         } else if (name.equals("DISCONNECTED")){

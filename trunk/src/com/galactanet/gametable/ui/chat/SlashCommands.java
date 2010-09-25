@@ -10,6 +10,7 @@ import java.util.*;
 
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.chat.commands.*;
+import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
  * Handles chat window's slash commands
@@ -59,7 +60,8 @@ public class SlashCommands
 			return;
 		
 		// get the command
-		final String[] words = text.split("\\s");
+		final String[] words = UtilityFunctions.breakIntoWords(text, true, true);
+		//final String[] words = text.split("\\s");
 		if (words.length == 0)
 			return;
 

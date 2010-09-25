@@ -107,7 +107,7 @@ public class CircleTool extends NullTool
             // redrawing takes too long.
             // m_penAsset.smooth();
             java.util.List<LineSegment> lines = m_penAsset.getLineSegments();
-            m_canvas.addLineSegments(lines);
+            m_canvas.getActiveMap().addLineSegments(lines);
         }
         endAction();
     }

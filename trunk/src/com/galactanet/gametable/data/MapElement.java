@@ -22,6 +22,7 @@ import org.w3c.dom.Element;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
+import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.ui.MapElementRendererIF;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
@@ -367,7 +368,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 		if (res != 0)
 			return res;
 
-		return getId().compareTo(pog.getId());
+		return getID().compareTo(pog.getID());
 	}
 
 	/**
@@ -418,7 +419,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 			return true;
 
 		final MapElement pog = (MapElement) obj;
-		return pog.getId().equals(m_id);
+		return pog.getID().equals(m_id);
 	}
 
 	/**
@@ -539,7 +540,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	 * 
 	 * @return Unique Element ID
 	 */
-	public MapElementID getId()
+	public MapElementID getID()
 	{
 		return m_id;
 	}
@@ -682,6 +683,8 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	public void setAngle(final double angle)
 	{
 		m_angle = angle;
+		
+		// TODO !Trigger listeners
 		reinitializeHitMap();
 	}
 
@@ -757,7 +760,10 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 
 		m_faceSizeScale = targetDimension / maxDimension;
 		m_faceSize = faceSize;
+		
 		reinitializeHitMap();
+		
+		// TODO Trigger listeners
 	}
 
 	/**
@@ -801,6 +807,8 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 		m_mapElementType = newParent;
 
 		reinitializeHitMap();
+		
+		// TODO Trigger listener!
 	}
 
 	/**
@@ -817,15 +825,36 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 		for (MapElementListenerIF listener : m_listeners)
 			listener.onNameChanged(this, name, old);
 	}
+	
+	/**
+	 * Change the position of this element
+	 * 
+	 * @param pos Map position
+	 */
+	public void setPosition(final MapCoordinates pos)
+	{
+		setPosition(pos, null);
+	}
 
 	/**
 	 * Change the position of this element
 	 * 
-	 * @param pos
+	 * @param pos Map position
+	 * @param netEvent Network event detail, if the change has been triggered by a network call
 	 */
-	public void setPosition(final MapCoordinates pos)
+	public void setPosition(final MapCoordinates pos, NetworkEvent netEvent)
 	{
-		m_position = pos;
+		if (pos == null)
+			throw new IllegalArgumentException("Cannot set null position for a MapElement");
+		
+		if (!m_position.equals(pos))
+		{
+			MapCoordinates old = m_position;
+			m_position = pos;
+			
+			for (MapElementListenerIF listener : m_listeners)
+				listener.onPositionChanged(this, m_position, old, netEvent);
+		}
 	}
 
 	/*
@@ -834,7 +863,7 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 	@Override
 	public String toString()
 	{
-		return "[" + getId() + ":" + getName() + " pos: " + getPosition() + " face-size: " + getFaceSize() + "]";
+		return "[" + getID() + ":" + getName() + " pos: " + getPosition() + " face-size: " + getFaceSize() + "]";
 	}
 
 	/**

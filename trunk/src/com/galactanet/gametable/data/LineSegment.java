@@ -191,9 +191,9 @@ public class LineSegment implements MapElementRendererIF, XMLSerializeIF
      * Returns line segments representing this segment cropped by the box specified by the given coordinates
      * @param start Point defining a rectangle
      * @param end	Point defining a rectangle
-     * @return Array of line segments
+     * @return List of line segments
      */
-    public LineSegment[] crop(final MapCoordinates start, final MapCoordinates end)
+    public List<LineSegment> crop(final MapCoordinates start, final MapCoordinates end)
     {
         final Rectangle r = new Rectangle();
         int x = start.x;
@@ -279,13 +279,7 @@ public class LineSegment implements MapElementRendererIF, XMLSerializeIF
             return null;
         }
 
-        final Object[] objArray = returnLines.toArray();
-        final LineSegment[] ret = new LineSegment[objArray.length];
-        for (int i = 0; i < objArray.length; i++)
-        {
-            ret[i] = (LineSegment)(objArray[i]);
-        }
-        return ret;
+        return returnLines;
     }
 
     /*

@@ -119,11 +119,11 @@ public class PublishTool extends NullTool
                     final MapElement newPog = new MapElement(pog);
 
                     m_canvas.setActiveMap(m_to);
-                    m_canvas.addPog(newPog);
+                    m_to.addMapElement(newPog);
                     
                     if (m_canvas.isLocked(pog))
                     {
-                        m_canvas.lockMapElementInstance(newPog, true);
+                        m_canvas.lockMapElement(newPog, true);
                     }
                     
                     m_canvas.setActiveMap(m_from);
@@ -145,10 +145,8 @@ public class PublishTool extends NullTool
                 }
             }
 
-            m_canvas.setActiveMap(m_to);
-            m_canvas.addLineSegments(lineList);
-            m_canvas.setActiveMap(m_from);
-
+            m_to.addLineSegments(lineList);
+            
             boolean bDeleteFromPrivate = false;
             if ((modifierMask & MODIFIER_CTRL) == 0) // not holding control
             {
@@ -166,13 +164,13 @@ public class PublishTool extends NullTool
                 {
                     if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                     {
-                        m_canvas.removePog(pog.getId());	// this would cause concurrent modifications if we used the returned list directly 
+                        m_canvas.removeMapElement(pog.getID());	// this would cause concurrent modifications if we used the returned list directly 
                     }
                 }
 
                 // remove the line segments
                 final MapRectangle eraseRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
-                m_canvas.erase(eraseRect, false, -1);
+                m_canvas.getActiveMap().eraseLineSegments(eraseRect, false, -1);
             }
         }
         endAction();

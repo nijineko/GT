@@ -29,16 +29,17 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.net.Connection;
-import com.galactanet.gametable.data.net.PacketManager;
 import com.galactanet.gametable.module.Module;
+import com.galactanet.gametable.net.NetworkConnectionIF;
+import com.galactanet.gametable.net.NetworkModuleIF;
+import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.GameTableFrameAdapter;
 import com.galactanet.gametable.ui.GameTableFrameListener;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.GametableFrame.NetStatus;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
+import com.galactanet.gametable.ui.net.NetAddMapElement;
 import com.galactanet.gametable.util.UtilityFunctions;
 import com.maziade.messages.MessageDefinition;
 import com.maziade.messages.MessageID;
@@ -100,16 +101,6 @@ public class CardModule extends Module implements MessageListener
 	 */
 	public void clearDeck(final String deckName)
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-
-		// if you're the host, send out the packet to tell everyone to
-		// clear their decks. If you're a joiner, don't. Either way
-		// clear out your own hand of the offending cards
-		if (frame.getNetStatus() == NetStatus.HOSTING)
-		{
-			frame.send(PacketManager.makeClearDeckPacket(deckName));
-		}
-
 		for (int i = 0; i < m_cards.size(); i++) // for each card
 		{
 			final Card card = m_cards.get(i);
@@ -132,7 +123,7 @@ public class CardModule extends Module implements MessageListener
 		GametableFrame frame = GametableFrame.getGametableFrame();
 
 		// if we're the host, this is a packet we should never get
-		if (frame.getNetStatus() == NetStatus.HOSTING)
+		if (frame.getNetworkStatus() == NetworkStatus.HOSTING)
 		{
 			throw new IllegalStateException(frame.getLanguageResource().DECK_ERROR_HOST_DECKLIST);
 		}
@@ -165,7 +156,7 @@ public class CardModule extends Module implements MessageListener
 		GametableFrame frame = GametableFrame.getGametableFrame();
 
 		// only the host should get this
-		if (frame.getNetStatus() != NetStatus.HOSTING)
+		if (frame.getNetworkStatus() != NetworkStatus.HOSTING)
 		{
 			throw new IllegalStateException(frame.getLanguageResource().DECK_ERROR_DODISCARD);
 		}
@@ -192,15 +183,15 @@ public class CardModule extends Module implements MessageListener
 		// tell everyone about the cards that got discarded
 		if (discards.length == 1)
 		{
-			frame.postSystemMessage(playerName + " " + frame.getLanguageResource().DECK_DISCARDS + ": " + discards[0].getCardName());
+			frame.sendSystemMessageBroadcast(playerName + " " + frame.getLanguageResource().DECK_DISCARDS + ": " + discards[0].getCardName());
 		}
 		else
 		{
-			frame.postSystemMessage(playerName + " " + frame.getLanguageResource().DECK_DISCARDS + " " + discards.length + " "
+			frame.sendSystemMessageBroadcast(playerName + " " + frame.getLanguageResource().DECK_DISCARDS + " " + discards.length + " "
 					+ frame.getLanguageResource().DECK_CARDS);
 			for (int i = 0; i < discards.length; i++)
 			{
-				frame.postSystemMessage("---" + discards[i].getCardName());
+				frame.sendSystemMessageBroadcast("---" + discards[i].getCardName());
 			}
 		}
 	}
@@ -265,7 +256,7 @@ public class CardModule extends Module implements MessageListener
 		if (deck.cardsRemaining() == 0)
 		{
 			// no more cards in the deck, alert them
-			frame.postSystemMessage(deckName + " " + frame.getLanguageResource().DECK_OUT_OF_CARDS);
+			frame.sendSystemMessageBroadcast(deckName + " " + frame.getLanguageResource().DECK_OUT_OF_CARDS);
 		}
 
 		return ret;
@@ -349,11 +340,18 @@ public class CardModule extends Module implements MessageListener
 	public void onInitializeUI()
 	{
 		super.onInitializeUI();
+		
+		GametableFrame frame = GametableFrame.getGametableFrame();
+		NetworkModuleIF network = frame.getNetworkModule();
+		GametableCanvas canvas = frame.getGametableCanvas();
+		
+		network.registerMessageType(new NetClearDeck());
+		network.registerMessageType(new NetDiscardCards());
+		network.registerMessageType(new NetReceiveCards());
+		network.registerMessageType(new NetRequestCards());
+		network.registerMessageType(new NetSendDeckList());
 
 		SlashCommands.registerChatCommand(new DeckCommand());
-
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		GametableCanvas canvas = frame.getGametableCanvas();
 
 		GameTableMap publicMap = canvas.getPublicMap();
 		GameTableMap privateMap = canvas.getPrivateMap();
@@ -435,22 +433,22 @@ public class CardModule extends Module implements MessageListener
 		// tell everyone that you drew some cards
 		if (cards.length == 1)
 		{
-			frame.postSystemMessage(frame.getMyPlayer().getPlayerName() + " " + frame.getLanguageResource().DECK_DRAW_PLAYER + " " + cards[0].getDeckName()
+			frame.sendSystemMessageBroadcast(frame.getMyPlayer().getPlayerName() + " " + frame.getLanguageResource().DECK_DRAW_PLAYER + " " + cards[0].getDeckName()
 					+ " " + frame.getLanguageResource().DECK);
 		}
 		else
 		{
-			frame.postSystemMessage(frame.getMyPlayer().getPlayerName() + " " + frame.getLanguageResource().DECK_DRAWS + " " + cards.length + " "
+			frame.sendSystemMessageBroadcast(frame.getMyPlayer().getPlayerName() + " " + frame.getLanguageResource().DECK_DRAWS + " " + cards.length + " "
 					+ frame.getLanguageResource().DECK_DRAWS2 + " " + cards[0].getDeckName() + " " + frame.getLanguageResource().DECK + ".");
 		}
 
 	}
 
-	public void requestCardsPacketReceived(final Connection conn, final String deckName, final int numCards)
+	public void requestCardsPacketReceived(final NetworkConnectionIF conn, final String deckName, final int numCards)
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();
 
-		if (frame.getNetStatus() != NetStatus.HOSTING)
+		if (frame.getNetworkStatus() != NetworkStatus.HOSTING)
 		{
 			// this shouldn't happen
 			throw new IllegalStateException("Non-host had a call to requestCardsPacketReceived");
@@ -467,7 +465,7 @@ public class CardModule extends Module implements MessageListener
 		}
 
 		// send that player his cards
-		frame.send(PacketManager.makeReceiveCardsPacket(cards), conn);
+		frame.send(NetReceiveCards.makePacket(cards), conn);
 
 		// also, we need to send that player the pogs for each of those cards
 		for (int i = 0; i < cards.length; i++)
@@ -479,7 +477,7 @@ public class CardModule extends Module implements MessageListener
 				// make a pog packet, saying this pog should go to the PRIVATE LAYER,
 				// then send it to that player. Note that we don't add it to
 				// our own layer.
-				frame.send(PacketManager.makeAddPogPacket(newPog, false), conn);
+				frame.send(NetAddMapElement.makePacket(newPog, false), conn);
 			}
 		}
 	}
@@ -518,7 +516,7 @@ public class CardModule extends Module implements MessageListener
 
 		// we need to be in a network game to issue deck commands
 		// otherwise log the error and exit
-		if (frame.getNetStatus() == NetStatus.DISCONNECTED)
+		if (frame.getNetworkStatus() == NetworkStatus.DISCONNECTED)
 		{
 			m_chatPanel.logAlertMessage(frame.getLanguageResource().DECK_NOT_CONNECTED);
 			return;
@@ -537,7 +535,7 @@ public class CardModule extends Module implements MessageListener
 
 		if (command.equals("create")) // create a new deck
 		{
-			if (frame.getNetStatus() != NetStatus.HOSTING) // verify that we are the host of the network game
+			if (frame.getNetworkStatus() != NetworkStatus.HOSTING) // verify that we are the host of the network game
 			{
 				m_chatPanel.logAlertMessage(frame.getLanguageResource().DECK_NOT_HOST_CREATE);
 				return;
@@ -590,13 +588,13 @@ public class CardModule extends Module implements MessageListener
 
 			// alert all players that this deck has been created
 			sendDeckList();
-			frame.postSystemMessage(frame.getMyPlayer().getPlayerName() + " " + frame.getLanguageResource().DECK_CREATE_SUCCESS_1 + " " + deckFileName
+			frame.sendSystemMessageBroadcast(frame.getMyPlayer().getPlayerName() + " " + frame.getLanguageResource().DECK_CREATE_SUCCESS_1 + " " + deckFileName
 					+ " " + frame.getLanguageResource().DECK_CREATE_SUCCESS_2 + " " + deckName);
 
 		}
 		else if (command.equals("destroy")) // remove a deck
 		{
-			if (frame.getNetStatus() != NetStatus.HOSTING)
+			if (frame.getNetworkStatus() != NetworkStatus.HOSTING)
 			{
 				m_chatPanel.logAlertMessage(frame.getLanguageResource().DECK_NOT_HOST_DESTROY);
 				return;
@@ -621,7 +619,7 @@ public class CardModule extends Module implements MessageListener
 				// tell the players
 				clearDeck(deckName);
 				sendDeckList();
-				frame.postSystemMessage(frame.getMyPlayer().getPlayerName() + frame.getLanguageResource().DECK_DESTROY + deckName);
+				frame.sendSystemMessageBroadcast(frame.getMyPlayer().getPlayerName() + frame.getLanguageResource().DECK_DESTROY + deckName);
 			}
 			else
 			{
@@ -631,7 +629,7 @@ public class CardModule extends Module implements MessageListener
 		}
 		else if (command.equals("shuffle")) // shuffle the deck
 		{
-			if (frame.getNetStatus() != NetStatus.HOSTING) // only if you are the host
+			if (frame.getNetworkStatus() != NetworkStatus.HOSTING) // only if you are the host
 			{
 				m_chatPanel.logAlertMessage(frame.getLanguageResource().DECK_NOT_HOST_SHUFFLE);
 				return;
@@ -661,18 +659,18 @@ public class CardModule extends Module implements MessageListener
 				// collect and shuffle all the cards in the deck.
 				clearDeck(deckName); // let the other players know about the demise of those cards
 				deck.shuffleAll();
-				frame.postSystemMessage(frame.getMyPlayer().getPlayerName() + frame.getLanguageResource().DECK_CARDS_COLLECT_ALL_1 + deckName
+				frame.sendSystemMessageBroadcast(frame.getMyPlayer().getPlayerName() + frame.getLanguageResource().DECK_CARDS_COLLECT_ALL_1 + deckName
 						+ frame.getLanguageResource().DECK_CARDS_COLLECT_ALL_2);
-				frame.postSystemMessage(deckName + " " + frame.getLanguageResource().DECK_HAS + " " + deck.cardsRemaining() + " "
+				frame.sendSystemMessageBroadcast(deckName + " " + frame.getLanguageResource().DECK_HAS + " " + deck.cardsRemaining() + " "
 						+ frame.getLanguageResource().DECK_CARDS + ".");
 			}
 			else if (operation.equals("discards"))
 			{
 				// shuffle only the cards in the discard pile.
 				deck.shuffle();
-				frame.postSystemMessage(frame.getMyPlayer().getPlayerName() + frame.getLanguageResource().DECK_SHUFFLE + deckName + " "
+				frame.sendSystemMessageBroadcast(frame.getMyPlayer().getPlayerName() + frame.getLanguageResource().DECK_SHUFFLE + deckName + " "
 						+ frame.getLanguageResource().DECK + ".");
-				frame.postSystemMessage(deckName + frame.getLanguageResource().DECK_HAS + deck.cardsRemaining() + " "
+				frame.sendSystemMessageBroadcast(deckName + frame.getLanguageResource().DECK_HAS + deck.cardsRemaining() + " "
 						+ frame.getLanguageResource().DECK_CARDS + ".");
 			}
 			else
@@ -861,13 +859,13 @@ public class CardModule extends Module implements MessageListener
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();
 
-		if (frame.getNetStatus() == NetStatus.CONNECTED)
+		if (frame.getNetworkStatus() == NetworkStatus.CONNECTED)
 		{
 			// if we are not the host we have bogus decks, so we send a package to
 			// notify of the discards. It will be processed by the host
-			frame.send(PacketManager.makeDiscardCardsPacket(frame.getMyPlayer().getPlayerName(), discards));
+			frame.sendBroadcast(NetDiscardCards.makePacket(frame.getMyPlayer().getPlayerName(), discards));
 		}
-		else if (frame.getNetStatus() == NetStatus.HOSTING)
+		else if (frame.getNetworkStatus() == NetworkStatus.HOSTING)
 		{
 			// we are the host, so we can process the discard of the cards
 			doDiscardCards(frame.getMyPlayer().getPlayerName(), discards);
@@ -925,10 +923,10 @@ public class CardModule extends Module implements MessageListener
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();
 
-		if (frame.getNetStatus() == NetStatus.CONNECTED)
+		if (frame.getNetworkStatus() == NetworkStatus.CONNECTED)
 		{
 			// joiners send a request for cards
-			frame.send(PacketManager.makeRequestCardsPacket(deckName, numToDraw));
+			frame.sendBroadcast(NetRequestCards.makePacket(deckName, numToDraw));
 			return;
 		}
 
@@ -1040,7 +1038,7 @@ public class CardModule extends Module implements MessageListener
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();
 
-		frame.send(PacketManager.makeDeckListPacket(m_decks));
+		frame.sendBroadcast(NetSendDeckList.makePacket(m_decks));
 	}
 
 }

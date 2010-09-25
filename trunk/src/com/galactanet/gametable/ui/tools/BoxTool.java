@@ -108,7 +108,7 @@ public class BoxTool extends NullTool
             lines.add(right);
             lines.add(bottom);
 
-            m_canvas.addLineSegments(lines);
+            m_canvas.getActiveMap().addLineSegments(lines);
         }
         endAction();
     }

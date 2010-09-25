@@ -148,7 +148,7 @@ public class PrivateMessageDialog extends JDialog implements FocusListener
                 final Player player = GametableFrame.getGametableFrame().getPlayers().get(i);
                 if (player.hasName(toName))
                 {
-                    m_pmToID = player.getId();
+                    m_pmToID = player.getID();
                     break;
                 }
             }

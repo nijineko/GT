@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
+import com.galactanet.gametable.net.NetworkEvent;
 
 /**
  * A specialized listener adpater that only dispatches to registered listeners.
@@ -88,4 +89,14 @@ public class MapElementAdapterOmni implements MapElementListenerIF
    * List of map element listeners
    */
   private List<MapElementListenerIF> m_listeners = new ArrayList<MapElementListenerIF>();
+  
+  /*
+   * @see com.galactanet.gametable.data.MapElementListenerIF#onPositionChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.net.NetworkEvent)
+   */
+  @Override
+  public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent)
+  {
+  	for (MapElementListenerIF listener : m_listeners)
+			listener.onPositionChanged(element, newPosition, oldPosition, netEvent);
+  }  
 }

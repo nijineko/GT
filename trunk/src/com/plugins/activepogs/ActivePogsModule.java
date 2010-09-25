@@ -26,13 +26,11 @@ import java.util.Map;
 
 import org.w3c.dom.Element;
 
-import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.net.PacketManager;
+import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.data.XMLSerializeConverter;
 import com.galactanet.gametable.module.Module;
-import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.PogWindow;
-import com.galactanet.gametable.ui.GametableFrame.NetStatus;
 
 /**
  * todo: comment
@@ -41,7 +39,7 @@ import com.galactanet.gametable.ui.GametableFrame.NetStatus;
  * 
  * #GT-AUDIT ActivePogsModule
  */
-public class ActivePogsModule  extends Module implements GameTableMapListenerIF
+public class ActivePogsModule  extends Module 
 {
 	/**
 	 * 
@@ -74,14 +72,9 @@ public class ActivePogsModule  extends Module implements GameTableMapListenerIF
 	public void onInitializeUI()
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();		
-		GametableCanvas canvas = frame.getGametableCanvas();
 		PogWindow panelBar = frame.getTabbedPane();
 		
-		GameTableMap map = canvas.getPublicMap();
-		map.addListener(this);
-		
-		map = canvas.getPrivateMap();
-		map.addListener(this);
+		frame.getNetworkModule().registerMessageType(NetSetMapElementOrder.getMessageType());
 		
 		g_activePogsPanel = new ActivePogsPanel();
     panelBar.addTab(g_activePogsPanel, frame.getLanguageResource().POG_ACTIVE);    
@@ -123,41 +116,10 @@ public class ActivePogsModule  extends Module implements GameTableMapListenerIF
 	/**
 	 * @param changes
 	 */
-  public void pogReorderPacketReceived(final Map<MapElementID, Long> changes)
+  protected void pogReorderPacketReceived(final Map<MapElementID, Long> changes)
   {
   	g_activePogsPanel.reorderElements(changes, false);
-  	GametableFrame frame = GametableFrame.getGametableFrame();
-  	
-  	if (frame.getNetStatus() == NetStatus.HOSTING)
-    {
-  		frame.send(PacketManager.makePogReorderPacket(changes));
-    }
   }
-  
-  /*
-   * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
-   */
-  @Override
-  public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement)
-  {
-  }
-  
-  /*
-   * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
-   */
-  @Override
-  public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
-  {
-  }
-  
-  /*
-   * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstancesCleared(com.galactanet.gametable.data.GameTableMap)
-   */
-  @Override
-  public void onMapElementInstancesCleared(GameTableMap map)
-  {
-  }
-  	
   
   /*
    * @see com.galactanet.gametable.module.ModuleIF#onToggleActiveMap(boolean)
@@ -168,6 +130,6 @@ public class ActivePogsModule  extends Module implements GameTableMapListenerIF
   	g_activePogsPanel.showPublicMap(publicMap);
   }
 
-	private static ActivePogsPanel g_activePogsPanel;
+  private static ActivePogsPanel g_activePogsPanel;
 	private static ActivePogsModule g_module = null;
 }

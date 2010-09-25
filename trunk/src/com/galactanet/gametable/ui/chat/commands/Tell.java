@@ -25,6 +25,7 @@ package com.galactanet.gametable.ui.chat.commands;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.chat.SlashCommand;
+import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
  * todo: comment
@@ -69,7 +70,10 @@ public class Tell extends SlashCommand
     }
 
     // they have a legitimate /tell or /send
-    final String toName = words[1];
+    String toName = UtilityFunctions.unquote(words[1]);
+    
+    // Unquote first name, if quoted
+    
 
     // see if there is a player or character with that name
     // and note the "proper" name for them (which is their player name)

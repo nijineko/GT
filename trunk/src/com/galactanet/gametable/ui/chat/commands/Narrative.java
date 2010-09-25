@@ -24,6 +24,7 @@ package com.galactanet.gametable.ui.chat.commands;
 
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.chat.SlashCommand;
+import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
  * todo: comment
@@ -65,7 +66,7 @@ public class Narrative extends SlashCommand
 	        "Note: Underscore characters in the name you specify will be turned into spaces"; 
     }
 		
-    final StringBuffer speakerName = new StringBuffer(words[1]);
+		final StringBuffer speakerName = new StringBuffer(UtilityFunctions.unquote(words[1]));
 
     for (int i = 0; i < speakerName.length(); i++)
     {
@@ -88,7 +89,7 @@ public class Narrative extends SlashCommand
     
     toPost.append(" " + Emote.END_EMOTE_MESSAGE_FONT + toSay);
     
-    GametableFrame.getGametableFrame().postMessage(toPost.toString());    
+    GametableFrame.getGametableFrame().sendChatMessageBroadcast(toPost.toString());    
     
     return null;
 	}

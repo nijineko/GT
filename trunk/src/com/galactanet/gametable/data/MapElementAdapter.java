@@ -23,6 +23,7 @@
 package com.galactanet.gametable.data;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
+import com.galactanet.gametable.net.NetworkEvent;
 
 /**
  * todo: comment
@@ -48,4 +49,10 @@ public class MapElementAdapter implements MapElementListenerIF
 	 */
 	@Override
 	public void onNameChanged(MapElement element, String newName, String oldName) {}
+	
+	/*
+	 * @see com.galactanet.gametable.data.MapElementListenerIF#onPositionChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.net.NetworkEvent)
+	 */
+	@Override
+	public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent) {}
 }

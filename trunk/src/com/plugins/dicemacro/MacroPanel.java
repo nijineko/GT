@@ -131,7 +131,7 @@ public class MacroPanel extends JPanel
 
 			case SEMIPRIVATE:
 			case SEMIPRIVATE_TO:
-				GametableFrame.getGametableFrame().postMessage(
+				GametableFrame.getGametableFrame().sendChatMessageBroadcast(
 						GametableFrame.DIEROLL_MESSAGE_FONT + UtilityFunctions.emitUserLink(GametableFrame.getGametableFrame().getMyPlayer().getCharacterName())
 								+ " is rolling dice..." + GametableFrame.END_DIEROLL_MESSAGE_FONT);
 				macro.doMacro(true);

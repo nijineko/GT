@@ -351,9 +351,9 @@ public class DiceMacro
 		final List<Result> result = roll();
 
 		if (priv)
-			GametableFrame.getGametableFrame().getChatPanel().logMechanics(generateOutputString(null, result, getName()));
+			GametableFrame.getGametableFrame().sendMechanicsMessageLocal(generateOutputString(null, result, getName()));
 		else
-			GametableFrame.getGametableFrame().postMechanics(generateOutputString(name, result, getName()));
+			GametableFrame.getGametableFrame().sendMechanicsMessageBroadcast(generateOutputString(name, result, getName()));
 	}
 
 	public List<Result> runMacro()
@@ -785,7 +785,7 @@ public class DiceMacro
 	{
 		final String fromName = GametableFrame.getGametableFrame().getMyPlayer().getCharacterName();
 		final String msg = UtilityFunctions.emitUserLink(fromName) + " privately rolled: " + outputString.toString();
-		GametableFrame.getGametableFrame().postPrivMechanics(who, msg);
+		GametableFrame.getGametableFrame().sendMechanicsMessage(who, msg);
 	}
 
 	public void serialize(final XmlSerializer out) throws IOException

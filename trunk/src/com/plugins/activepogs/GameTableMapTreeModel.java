@@ -32,13 +32,14 @@ import javax.swing.tree.DefaultTreeModel;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
+import com.galactanet.gametable.net.NetworkEvent;
 
 /**
  * todo: comment
  *
  * @author Eric Maziade
  */
-public class GameTableMapTreeModel extends DefaultTreeModel implements GameTableMapListenerIF
+public class GameTableMapTreeModel extends DefaultTreeModel
 {
 	/**
 	 * Constructor
@@ -57,11 +58,11 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 			{
 				if (newLayer == Layer.POG)
 				{
-					onMapElementInstanceAdded(m_map, element);
+					m_gameTableMapListener.onMapElementInstanceAdded(m_map, element, null);
 				}
 				else if (oldLayer == Layer.POG)
 				{
-					onMapElementInstanceRemoved(m_map, element, false);
+					m_gameTableMapListener.onMapElementInstanceRemoved(m_map, element, false);
 				}
 			}
 			
@@ -93,7 +94,9 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 		
 		m_map = map;
 		m_sortIDs = sortIDMap;
-		m_map.addListener(this);
+		m_gameTableMapListener = new GameTableMapListener();
+		m_map.addListener(m_gameTableMapListener);
+		
 		m_map.addMapElementListener(listener);
 		m_rootNode = (DefaultMutableTreeNode)getRoot();
 		
@@ -126,46 +129,6 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 		}
 
 		return null;
-	}
-	
-	/*
-	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
-	 */
-	@Override
-	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement)
-	{
-		if (mapElement.getLayer() == Layer.POG)
-		{
-			MapElementNode node = new MapElementNode(mapElement);
-			this.insertNodeInto(node, m_rootNode, getChildCount(m_rootNode));
-		}
-	}
-	
-	/*
-	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
-	 */
-	@Override
-	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
-	{
-		if (!clearingMap)
-		{
-			MapElementNode node = findElementNode(mapElement);
-			
-			if (node != null)
-			{
-				m_sortIDs.remove(mapElement.getId());
-				removeNodeFromParent(node);
-			}
-		}
-	}
-	
-	/*
-	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstancesCleared(com.galactanet.gametable.data.GameTableMap)
-	 */
-	@Override
-	public void onMapElementInstancesCleared(GameTableMap map)
-	{
-		m_rootNode.removeAllChildren();		
 	}
 	
 	/**
@@ -213,7 +176,7 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 		for (int i=0; i < m_rootNode.getChildCount(); i++)
 		{
 			MapElementNode node = (MapElementNode)m_rootNode.getChildAt(i);
-			m_sortIDs.put(node.getMapElement().getId(), (long)i);
+			m_sortIDs.put(node.getMapElement().getID(), (long)i);
 		}
 	}
 	
@@ -228,7 +191,7 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 		{
 			MapElementNode node = (MapElementNode)m_rootNode.getChildAt(i);
 			
-			Long sortID = m_sortIDs.get(node.getMapElement().getId());
+			Long sortID = m_sortIDs.get(node.getMapElement().getID());
 			if (sortID == null)
 				sortID = (long)i;
 			
@@ -246,7 +209,56 @@ public class GameTableMapTreeModel extends DefaultTreeModel implements GameTable
 			//m_rootNode.add(node);
 	}
 	
+	/**
+	 * Map listener
+	 *
+	 * @author Eric Maziade
+	 */
+	private class GameTableMapListener extends GameTableMapAdapter
+	{
+		/*
+		 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
+		 */
+		@Override
+		public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent)
+		{
+			if (mapElement.getLayer() == Layer.POG)
+			{
+				MapElementNode node = new MapElementNode(mapElement);
+				GameTableMapTreeModel.this.insertNodeInto(node, m_rootNode, getChildCount(m_rootNode));
+			}
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
+		 */
+		@Override
+		public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
+		{
+			if (!clearingMap)
+			{
+				MapElementNode node = findElementNode(mapElement);
+				
+				if (node != null)
+				{
+					m_sortIDs.remove(mapElement.getID());
+					removeNodeFromParent(node);
+				}
+			}
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstancesCleared(com.galactanet.gametable.data.GameTableMap)
+		 */
+		@Override
+		public void onMapElementInstancesCleared(GameTableMap map)
+		{
+			m_rootNode.removeAllChildren();		
+		}
+	}
+	
 	private final GameTableMap m_map;
 	private final Map<MapElementID, Long> m_sortIDs;
 	private DefaultMutableTreeNode m_rootNode;
+	private GameTableMapListenerIF m_gameTableMapListener;
 }

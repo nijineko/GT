@@ -26,10 +26,9 @@ import org.w3c.dom.Element;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.net.PacketManager;
+import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.GametableFrame.NetStatus;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
@@ -409,8 +408,8 @@ public class ActivePogsPanel extends JPanel
 
 		if (notifyNetwork && frame.getGametableCanvas().isPublicMap())
 		{
-			frame.send(PacketManager.makePogReorderPacket(changes));
-			if (frame.getNetStatus() != NetStatus.CONNECTED)
+			frame.sendBroadcast(NetSetMapElementOrder.makePacket(changes));
+			if (frame.getNetworkStatus() != NetworkStatus.CONNECTED)
 			{
 				reorderElements(changes);
 			}
@@ -804,25 +803,25 @@ public class ActivePogsPanel extends JPanel
 							targetElement = model.get(targetIndex);
 						}
 						
-						changes.put(sourceElement.getId(), m_elementSortIDs.get(targetElement.getId()));
+						changes.put(sourceElement.getID(), m_elementSortIDs.get(targetElement.getID()));
 						for (int i = sourceIndex + 1; i <= targetIndex; ++i)
 						{
 							final MapElement a = model.get(i);
 							final MapElement b = model.get(i - 1);
 
-							changes.put(a.getId(), m_elementSortIDs.get(b.getId()));
+							changes.put(a.getID(), m_elementSortIDs.get(b.getID()));
 						}
 					}
 					else
 					{
 						// Moving a pog up in the list
-						changes.put(sourceElement.getId(), m_elementSortIDs.get(targetElement.getId()));
+						changes.put(sourceElement.getID(), m_elementSortIDs.get(targetElement.getID()));
 						for (int i = targetIndex; i < sourceIndex; ++i)
 						{
 							final MapElement a = model.get(i);
 							final MapElement b = model.get(i + 1);
 
-							changes.put(a.getId(), m_elementSortIDs.get(b.getId()));
+							changes.put(a.getID(), m_elementSortIDs.get(b.getID()));
 						}
 					}
 

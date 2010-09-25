@@ -141,7 +141,7 @@ public class ChatPanel extends JPanel
 
     public void logAlertMessage(final String text)
     {
-        logMechanics(ALERT_MESSAGE_FONT + text + END_ALERT_MESSAGE_FONT);
+        addMechanicsMessage(ALERT_MESSAGE_FONT + text + END_ALERT_MESSAGE_FONT);
     }
 
     public void logMessage(final String text)
@@ -149,10 +149,16 @@ public class ChatPanel extends JPanel
         m_chatLog.addText(text);
     }
 
-    public void logMechanics(final String text)
+    /**
+     * Add a message to the mechanics window
+     * @param message message to show
+     */
+    public void addMechanicsMessage(final String message)
     {
-        if(m_useMechanicsLog) m_mechanicsLog.addText(text);
-        else logMessage(text);
+        if (m_useMechanicsLog) 
+        	m_mechanicsLog.addText(message);
+        else 
+        	logMessage(message);
     }
 
     public void logPrivateMessage(final String fromName, final String toName, final String text)
@@ -168,7 +174,7 @@ public class ChatPanel extends JPanel
 
     public void logSystemMessage(final String text)
     {
-        logMechanics(SYSTEM_MESSAGE_FONT + text + END_SYSTEM_MESSAGE_FONT);
+        addMechanicsMessage(SYSTEM_MESSAGE_FONT + text + END_SYSTEM_MESSAGE_FONT);
     }
 
     public boolean openPrivChatWindowDialog()
