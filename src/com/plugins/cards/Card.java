@@ -261,7 +261,7 @@ public class Card
     {    	
     	if (card == null)
     	{
-    		g_cardMap.remove(mapElement.getId());
+    		g_cardMap.remove(mapElement.getID());
     		return;
     	}
 
@@ -290,7 +290,7 @@ public class Card
     		// note the card info. We copy it, so we aren't affected
     		// by future changes to this card instance.
 
-    		g_cardMap.put(mapElement.getId(), card.makeCopy());
+    		g_cardMap.put(mapElement.getID(), card.makeCopy());
     }
     /**
      * Get card instance associated with MapElementInstance
@@ -299,7 +299,7 @@ public class Card
      */
     public static Card getCard(MapElement mapElement)
     {
-    	return g_cardMap.get(mapElement.getId());
+    	return g_cardMap.get(mapElement.getID());
     }
     
     /**

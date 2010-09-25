@@ -82,7 +82,7 @@ public class PenTool extends NullTool
         {
             m_penAsset.smooth();
             List<LineSegment> lines = m_penAsset.getLineSegments();
-            m_canvas.addLineSegments(lines);            
+            m_canvas.getActiveMap().addLineSegments(lines);
         }
         
         endAction();

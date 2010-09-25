@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.util.UtilityFunctions;
 import com.maziade.tools.XMLUtils;
 
@@ -110,11 +111,135 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	 * Adds a line segment to the map
 	 * 
 	 * @param ls line segment to add
+	 * @param netEvent network event or null
+	 */
+	public void addLineSegment(LineSegment ls, NetworkEvent netEvent)
+	{
+		m_lines.add(ls);
+		
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onLineSegmentAdded(this, ls, false, netEvent);
+	}
+	
+	/**
+	 * Adds a line segment to the map
+	 * 
+	 * @param ls line segment to add
 	 */
 	public void addLineSegment(LineSegment ls)
 	{
-		m_lines.add(ls);		
-		// @revise trigger listener (add line)
+		addLineSegment(ls, null);
+	}
+	
+	/**
+	 * Adds multiple line segments to the map
+	 * 
+	 * @param ls line segment to add
+	 * @param netEvent network event or null
+	 */
+	public void addLineSegments(List<LineSegment> lines, NetworkEvent netEvent)
+	{
+		m_lines.addAll(lines);
+		
+		// Batch listener first
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onLineSegmentsAdded(this, lines, netEvent);
+		
+		// 'Macro' listeners second
+		for (LineSegment line : lines)
+		{
+			for (GameTableMapListenerIF listener : m_listeners)
+				listener.onLineSegmentAdded(this, line, false, netEvent);
+		}
+	}
+	
+	/**
+	 * Adds multiple line segments to the map
+	 * 
+	 * @param ls line segment to add
+	 */
+	public void addLineSegments(List<LineSegment> lines)
+	{
+		addLineSegments(lines, null);
+	}
+	
+	/**
+	 * Erase part of the map
+	 * 
+	 * @param rect Rectangular region of the map to erase
+	 * @param colorSpecific If true, will erase line segments of matching color
+	 * @param color Color of the line segments to erase (if colorSpecific is true)
+	 */
+	public void eraseLineSegments(final MapRectangle rect, boolean colorSpecific, final int color)
+	{
+		eraseLineSegments(rect, colorSpecific, color, null);
+	}
+	
+	/**
+	 * Erase part of the map
+	 * 
+	 * @param rect Rectangular region of the map to erase
+	 * @param colorSpecific If true, will erase line segments of matching color
+	 * @param color Color of the line segments to erase (if colorSpecific is true)
+	 * @param netEvent Network event.  Null if the change is not caused by responding to a network message.
+	 */
+	public void eraseLineSegments(final MapRectangle rect, boolean colorSpecific, final int color, NetworkEvent netEvent)
+	{
+		final MapCoordinates modelStart = rect.topLeft;
+		final MapCoordinates modelEnd = new MapCoordinates(modelStart.x + rect.width, modelStart.y + rect.height);
+
+		boolean modified = false;
+		final ArrayList<LineSegment> survivingLines = new ArrayList<LineSegment>();
+
+		for (LineSegment ls : getLines())
+		{
+			if (!colorSpecific || (ls.getColor().getRGB() == color))
+			{
+				// we are the color being erased, or we're in erase all mode
+				final List<LineSegment> result = ls.crop(modelStart, modelEnd);
+
+				if (result != null)
+				{
+					// No change if result contains only original line
+					if (result.size() ==1 && result.contains(ls))
+					{
+						survivingLines.add(ls);
+						continue;
+					}
+						
+					// this line segment is still alive
+					for(LineSegment line : result)
+						survivingLines.add(line);
+					
+					modified = true;
+				}
+				else
+					modified = true;
+			}
+			else
+			{
+				// we are not affected by this erasing because we aren't the color being erased.
+				survivingLines.add(ls);
+			}
+		}
+		
+		// No modifications are to be applied, let's leave without causing reactions.
+		if (!modified)
+			return;
+		
+		// If all lines were removed, go through the more efficient 'clear all lines' way.
+		if (survivingLines.size() == 0)
+		{
+			clearLineSegments(netEvent);
+			return;			
+		}
+
+		// Replace all lines with surviving lines
+		m_lines.clear();
+		m_lines.addAll(survivingLines);
+
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onEraseLineSegments(this, rect, colorSpecific, color, netEvent);
 	}
 
 	/**
@@ -123,23 +248,34 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
    */
   public void addListener(GameTableMapListenerIF listener)
   {
-  	m_listeners.remove(listener);
-  	m_listeners.add(listener);
+  	if (!m_listeners.contains(listener))
+  		m_listeners.add(listener);
   }
+  
+  /**
+	 * Adds an element instance to the map
+	 * 
+	 * @param mapElement Element to add to the map
+	 */
+	public void addMapElement(MapElement mapElement)
+	{
+		addMapElement(mapElement, null);
+	}
 
 	/**
 	 * Adds an element instance to the map
 	 * 
 	 * @param mapElement Element to add to the map
+	 * @param netEvent Network event that triggered the operation or null
 	 */
-	public void addMapElementInstance(MapElement mapElement)
+	public void addMapElement(MapElement mapElement, NetworkEvent netEvent)
 	{
 		m_mapElements.add(mapElement);
 		
 		mapElement.addListener(m_elementListener);
 		
 		for (GameTableMapListenerIF listener : m_listeners)
-			listener.onMapElementInstanceAdded(this, mapElement);
+			listener.onMapElementInstanceAdded(this, mapElement, netEvent);
 	}
 	
 	/**
@@ -151,14 +287,25 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 		clearLineSegments();
 		clearMapElementInstances();		
 	}
-
+	
 	/**
 	 * Remove all lines from the map
 	 */
 	public void clearLineSegments()
 	{
+		clearLineSegments(null);
+	}
+
+	/**
+	 * Remove all lines from the map
+	 * @param netEvent Network event that triggered the operation.  Null if non-network related.
+	 */
+	public void clearLineSegments(NetworkEvent netEvent)
+	{
 		m_lines.clear();
-		// @revise trigger listeners (clear lines)
+
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onClearLineSegments(this, netEvent);
 	}
 	
   /**
@@ -195,7 +342,7 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
   	for (Element xmEl : XMLUtils.getChildElementsByTagName(elements, "element"))
   	{
   		MapElement el = new MapElement(xmEl, converter);
-  		addMapElementInstance(el);    	
+  		addMapElement(el);    	
   	}
   	
   	elements = XMLUtils.getFirstChildElementByTagName(parent, "lines");
@@ -277,7 +424,7 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	{
 		for (MapElement mapElement : m_mapElements)
 		{
-			if (mapElement.getId().equals(id))
+			if (mapElement.getID().equals(id))
 				return mapElement;
 		}
 

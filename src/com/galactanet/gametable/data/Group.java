@@ -37,28 +37,6 @@ import javax.naming.InvalidNameException;
  */
 public class Group
 {
-	public enum Action
-	{
-		ADD, DELETE, NEW, REMOVE, RENAME;
-
-		/**
-		 * Get ActionType from ordinal value
-		 * 
-		 * @param ord
-		 * @return
-		 */
-		public static Action fromOrdinal(int ord)
-		{
-			for (Action t : Action.values())
-			{
-				if (t.ordinal() == ord)
-					return t;
-			}
-
-			return null;
-		}
-	}
-
 	/**
 	 * Group name
 	 */
@@ -83,44 +61,21 @@ public class Group
 		m_manager = manager;
 		m_name = groupName;
 	}
-
+	
 	/**
 	 * Removes this group from the group list
 	 */
 	public void deleteGroup()
 	{
-		deleteGroup(true);
-	}
-	
-	/**
-	 * Removes this group from the group list
-	 * @param network true to send command over network
-	 */
-	public void deleteGroup(boolean network)
-	{
 		removeAllElements();
-		m_manager.removeGroup(getName());
-		
-		if (network)
-			m_manager.send(Action.DELETE, this, null);
-	}
-	
-	
-	/**
-	 * Add an element to this group
-	 * @param element Map Element Instance to add
-	 */
-	public void addElement(final MapElement element)
-	{
-		addElement(element, true);
+		m_manager.removeGroup(this);
 	}
 
 	/**
 	 * Add an element to this group
 	 * @param element Map Element Instance to add
-	 * @param network If true, send network message 
 	 */
-	protected void addElement(final MapElement element, boolean network)
+	public void addElement(final MapElement element)
 	{
 		if (element == null)
 			return;
@@ -134,9 +89,7 @@ public class Group
 		if (group != this)
 		{		
 			m_elements.add(element);
-			m_manager.registerElement(element.getId(), this);
-			
-			m_manager.send(Action.ADD, group, element.getId());
+			m_manager.registerElement(element.getID(), this);
 		}
 	}
 	
@@ -146,18 +99,8 @@ public class Group
 	 */
 	public void addElements(List<MapElement> elements)
 	{
-		addElements(elements, true);
-	}
-	
-	/**
-	 * Add elements to this group
-	 * @param elements List of elements to add
-	 * @param network If true, send network message
-	 */
-	protected void addElements(List<MapElement> elements, boolean network)
-	{
 		for (MapElement element : elements)
-			addElement(element, network);
+			addElement(element);
 	}
 
 	/**
@@ -182,7 +125,7 @@ public class Group
 	 * Return unmodifiable, synchronized list of elements in this group
 	 * @return List of elements (never null)
 	 */
-	public List<MapElement> getElements()
+	public List<MapElement> getMapElements()
 	{
 		if (m_elementsUnmodifiable == null)
 			m_elementsUnmodifiable = Collections.unmodifiableList(m_elements);
@@ -197,7 +140,7 @@ public class Group
 	{
 		for (MapElement element : m_elements)
 		{
-			m_manager.unregisterElement(element.getId());
+			m_manager.unregisterElement(element.getID(), this);
 		}			
 		
 		m_elements.clear();
@@ -220,10 +163,7 @@ public class Group
 	protected void removeElement(final MapElement element, boolean network)
 	{
 		m_elements.remove(element);
-		m_manager.unregisterElement(element.getId());
-		
-		if (network)
-			m_manager.send(Action.REMOVE, this, element.getId());
+		m_manager.unregisterElement(element.getID(), this);
 	}
 	
 	/**
@@ -257,15 +197,9 @@ public class Group
 				throw new InvalidNameException(groupName + " already in use");
 
 			String oldName = m_name;
-			
-			if (m_name != null)
-				m_manager.removeGroup(m_name);
-			
 			m_name = groupName;
 			
-			m_manager.addGroup(this);
-			
-			m_manager.sendRename(this, oldName, m_name);
+			m_manager.renameGroup(this, oldName);
 	}
 
 	@Override

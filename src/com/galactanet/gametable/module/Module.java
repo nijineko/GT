@@ -88,6 +88,12 @@ public abstract class Module
 	public void onPlayerAdded(Player newPlayer) {}
 	
 	/**
+	 * Called by the system when a new player is removed from the session
+	 * @param oldPlayer Newly removed player
+	 */
+	public void onPlayerRemoved(Player oldPlayer) {}
+	
+	/**
 	 * Called after the preference file has been stored to disk.
 	 * Certain modules might want to keep their own preferences. 
 	 */

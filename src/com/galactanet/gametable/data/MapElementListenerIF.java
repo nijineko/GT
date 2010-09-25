@@ -23,6 +23,7 @@
 package com.galactanet.gametable.data;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
+import com.galactanet.gametable.net.NetworkEvent;
 
 /**
  * todo: comment
@@ -55,4 +56,13 @@ public interface MapElementListenerIF
 	 * @param oldValue Old value (if null, the attribute has been added)
 	 */
 	public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue);
+	
+	/**
+	 * Name has changed
+	 * @param element Element that has changed
+	 * @param newPosition new position
+	 * @param oldPosition old position
+	 * @param netEvent Triggering network event or null
+	 */
+	public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent);
 }

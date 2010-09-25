@@ -17,7 +17,11 @@
  */
 package com.galactanet.gametable.data;
 
-import com.galactanet.gametable.data.net.Connection;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.galactanet.gametable.net.NetworkConnectionIF;
+import com.galactanet.gametable.net.NetworkEvent;
 
 /**
  * This class holds 'player' information. A player is a participant in a networked session.
@@ -36,7 +40,7 @@ public class Player
 	/**
 	 * The network connection
 	 */
-	private Connection			m_connection;
+	private NetworkConnectionIF			m_connection;
 
 	/**
 	 * Holds display name
@@ -79,12 +83,15 @@ public class Player
 	 * @param playerName Name of the player (cannot be set once changed)
 	 * @param characterName Name of the player's character
 	 * @param id Unique id
+	 * @param localPlayer true if this is the local player instance
 	 */
-	public Player(final String playerName, final String characterName, final int id)
+	public Player(final String playerName, final String characterName, final int id, final boolean localPlayer)
 	{
 		m_playerName = playerName;
 		m_characterName = characterName;
 		m_id = id;
+		
+		m_localPlayer = localPlayer;
 	}
 
 	/**
@@ -98,7 +105,7 @@ public class Player
 	/**
 	 * @return The network connection.
 	 */
-	public Connection getConnection()
+	public NetworkConnectionIF getConnection()
 	{
 		return m_connection;
 	}
@@ -106,7 +113,7 @@ public class Player
 	/**
 	 * @return The player's unique ID
 	 */
-	public int getId()
+	public int getID()
 	{
 		return m_id;
 	}
@@ -153,6 +160,23 @@ public class Player
 
 		return false;
 	}
+	
+	/**
+	 * @return True if this is the local (non-remote) player
+	 */
+	public boolean isLocalPlayer()
+	{
+		return m_localPlayer;
+	}
+	
+	/**
+	 * Sets whether this player is to be considered the local (non-remote) player
+	 * @param localPlayer
+	 */
+	public void setLocalPlayer(boolean localPlayer)
+	{
+		m_localPlayer = localPlayer;
+	}
 
 	/**
 	 * @return True if this player is the game's host
@@ -190,7 +214,7 @@ public class Player
 	 * 
 	 * @param conn The connection to set.
 	 */
-	public void setConnection(final Connection conn)
+	public void setConnection(final NetworkConnectionIF conn)
 	{
 		m_connection = conn;
 	}
@@ -200,7 +224,7 @@ public class Player
 	 * 
 	 * @param hostPlayer True to set this host as player
 	 */
-	public void setHostPlayer(final boolean hostPlayer)
+	public void setIsHostPlayer(final boolean hostPlayer)
 	{
 		m_hostPlayer = hostPlayer;
 	}
@@ -214,27 +238,38 @@ public class Player
 	{
 		m_id = id;
 	}
+	
+	/**
+	 * Set this player's status as pointing
+	 * 
+	 * @param pointing True to mark the player as currently pointing
+	 * @param modelPos Location pointed to by the player.  Null for no change.
+	 */
+	public void setPointing(final boolean pointing, final MapCoordinates modelPos)
+	{
+		setPointing(pointing, modelPos, null);
+	}	
 
 	/**
 	 * Set this player's status as pointing
 	 * 
 	 * @param pointing True to mark the player as currently pointing
+	 * @param modelPos Location pointed to by the player.  Null for no change.
+	 * @parma netEvent Network event information or null
 	 */
-	public void setPointing(final boolean pointing)
+	public void setPointing(final boolean pointing, final MapCoordinates modelPos, NetworkEvent netEvent)
 	{
 		m_pointing = pointing;
-	}
-
-	/**
-	 * Sets the location where this player is currently pointing
-	 * 
-	 * @param modelPos Location pointed to by the player
-	 */
-	public void setPointingLocation(final MapCoordinates modelPos)
-	{
-		m_pointingLocationPrev = m_pointingLocation;
-		m_pointingLocation = modelPos;
-	}
+		
+		if (modelPos != null)
+		{
+			m_pointingLocationPrev = m_pointingLocation;
+			m_pointingLocation = modelPos;
+		}
+		
+		for (PlayerListenerIF listener : m_listeners)
+			listener.onPointingLocationChanged(this, pointing, modelPos, netEvent);
+	}	
 
 	/**
 	 * Returns string representation of this player
@@ -263,5 +298,27 @@ public class Player
 
 		return m_displayName;
 	}
+	
+	/**
+   * Adds a listener to this player
+   * @param listener Listener to call when something changes within the player
+   */
+  public void addPlayerListener(PlayerListenerIF listener)
+  {
+  	m_listeners.add(listener);
+  }
+  
+  /**
+   * Removes a listener from this player
+   * @param listener Listener to remove
+   * @return True if listener was found and removed
+   */
+  public boolean removePlayerListener(PlayerListenerIF listener)
+  {
+  	return m_listeners.remove(listener);
+  }
+	
+	private final List<PlayerListenerIF> m_listeners = new ArrayList<PlayerListenerIF>();
+	private boolean m_localPlayer;
 
 }

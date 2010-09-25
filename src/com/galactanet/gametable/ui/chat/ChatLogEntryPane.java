@@ -13,10 +13,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-import javax.swing.AbstractAction;
-import javax.swing.JComponent;
-import javax.swing.JEditorPane;
-import javax.swing.KeyStroke;
+import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
@@ -24,8 +21,9 @@ import javax.swing.text.*;
 import javax.swing.text.AbstractDocument.LeafElement;
 import javax.swing.text.html.HTMLDocument;
 
-import com.galactanet.gametable.data.net.PacketManager;
+import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.net.NetSendTypingFlag;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -161,10 +159,9 @@ public class ChatLogEntryPane extends JEditorPane
     // --- Constructors ----------------------------------------------------------------------------------------------
 
     private boolean              ignoreCaret     = false;
+    private boolean								m_lastTyping 	 = false;
     
     private GametableFrame       frame           = null;
-
-    private boolean              lastTypedSent   = false;
 
     private boolean              spaceTyped      = false;
 
@@ -341,13 +338,19 @@ public class ChatLogEntryPane extends JEditorPane
                     toolbar.updateStyles();
                 }
                 spaceTyped = false;
-                // Send a typing packet. Caret position anywhere other than 1 means we're typing.
-                // @revise Find a better way to detect we're typing?
-                if (lastTypedSent != (e.getDot() != 1))
+                
+                if (frame.getNetworkStatus() != NetworkStatus.DISCONNECTED)
                 {
-                    frame.send(PacketManager.makeTypingPacket(frame.getMyPlayer().getPlayerName(), e.getDot() != 1));
-                    lastTypedSent = (e.getDot() != 1);
+	                boolean typing = (getText().length() > 0);
+	                
+	                if (typing != m_lastTyping)
+	                {
+	                	frame.sendBroadcast(NetSendTypingFlag.makePacket(frame.getMyPlayer(), typing));
+	                	m_lastTyping = typing;
+	                }
                 }
+                else
+                	m_lastTyping = false;
             }
         });
 

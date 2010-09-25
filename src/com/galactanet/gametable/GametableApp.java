@@ -6,6 +6,7 @@
 package com.galactanet.gametable;
 
 import java.awt.Toolkit;
+import java.io.File;
 import java.util.Properties;
 
 import javax.swing.UIManager;
@@ -23,20 +24,21 @@ import com.galactanet.gametable.util.Log;
  */
 public class GametableApp
 {
+	public static File USER_FILES_PATH;
     /**
      * Name of the networking log file
      */
-    private static final String NET_LOG_FILE  = "logs/gt.net.log";
+    private static final String NET_LOG_FILE  = "logs" + File.separator + "gt.net.log";
     
     /**
      * Name of the play log file
      */
-    private static final String PLAY_LOG_FILE = "logs/gt.play.html";
+    private static final String PLAY_LOG_FILE = "logs" + File.separator + "gt.play.html";
     
     /**
      * Name of the system log file
      */
-    private static final String SYS_LOG_FILE  = "logs/gt.sys.log";
+    private static final String SYS_LOG_FILE  = "logs" + File.separator + "gt.sys.log";
     
     /**
      * String to describe gametable's chat version
@@ -64,17 +66,26 @@ public class GametableApp
     {
         try
         {
+        	if (args.length > 0)
+        		USER_FILES_PATH = new File(args[0]);
+        	else
+        		USER_FILES_PATH = new File(".").getCanonicalFile();
+        	
+        	if (!USER_FILES_PATH.exists())
+        		USER_FILES_PATH.mkdirs();
+        	
         	GametableApp.setProperty(PROPERTY_ICON_SIZE, 32);
 
 					System.setProperty("java.protocol.handler.pkgs", "com.galactanet.gametable.ui.handler"); // Register the package as a protocol handler
 					
-					Log.initializeLog(Log.SYS, SYS_LOG_FILE);           // Initialize system log
-					Log.initializeLog(Log.NET, NET_LOG_FILE);           // Initialize network log
-					Log.initializeLog(Log.PLAY, PLAY_LOG_FILE);         // Initialize play log
+					Log.initializeLog(Log.SYS, new File(USER_FILES_PATH, SYS_LOG_FILE).getCanonicalPath());           // Initialize system log
+					Log.initializeLog(Log.NET, new File(USER_FILES_PATH, NET_LOG_FILE).getCanonicalPath());           // Initialize network log
+					Log.initializeLog(Log.PLAY, new File(USER_FILES_PATH, PLAY_LOG_FILE).getCanonicalPath());         // Initialize play log
+					
 					Log.log(Log.SYS, VERSION);                          // Write the version name to the system log
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());    // Set the Look and Feel
 					Toolkit.getDefaultToolkit().setDynamicLayout(true); // Turns dynamic layout on
-					new GametableFrame().setVisible(true);              // Creates an instance of the main UI object and shows it.
+					GametableFrame.getGametableFrame().setVisible(true);              // Creates an instance of the main UI object and shows it.
                                                                 // The app won't end until the main frame is closed
         }
         catch (final Throwable t)

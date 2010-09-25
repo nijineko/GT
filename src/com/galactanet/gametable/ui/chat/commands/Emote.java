@@ -76,7 +76,7 @@ public class Emote extends SlashCommand
        " " + emote + 
        END_EMOTE_MESSAGE_FONT;
      
-     GametableFrame.getGametableFrame().postMessage(toPost);
+     GametableFrame.getGametableFrame().sendChatMessageBroadcast(toPost);
      
      return null;
 	}

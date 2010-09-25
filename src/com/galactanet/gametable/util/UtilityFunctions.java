@@ -11,6 +11,8 @@ import java.lang.reflect.Method;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import javax.swing.JFileChooser;
@@ -820,6 +822,86 @@ public class UtilityFunctions
     	return s1.equals(s2);
     }
     
+    /**
+     * If this string is quoted, remove the quotes
+     * @param s
+     * @return
+     */
+    public static String unquote(String s)
+    {
+        if (s.length() > 1 && s.startsWith("\"") && s.endsWith("\""))
+            s = s.substring(1, s.length() - 1);
+        
+        return s;
+    }
+    
+    /**
+     * Break a given string into words
+     * @param line line to break
+     * @param allowQuoting Keep quoted string pieces together (ignore spaces)
+     * @param allowEscaping Keep escaped characters as literals
+     * @return Array of words
+     */
+    public static String[] breakIntoWords(final String line, boolean allowQuoting, boolean allowEscaping)
+    {        
+        boolean quoting = false;
+        boolean escaping = false;
+        StringBuffer word = new StringBuffer();        
+        final List<String> words = new ArrayList<String>();
+        
+        for (int i = 0; i < line.length(); i++)
+        {
+            char c = line.charAt(i);
+            if (escaping)
+            {
+                word.append(c);
+                escaping = false;
+                continue;
+            }
+            
+            switch(c)
+            {
+            case '"':
+                if (allowQuoting)
+                    quoting = !quoting;
+                
+                word.append(c);
+                break;
+                
+            case '\\':
+                if (allowEscaping)
+                    escaping = true;
+                else
+                    word.append(c);
+                break;
+                
+            case ' ':
+            case '\t':
+                if (quoting)
+                  word.append(c);
+                else
+                {
+                  words.add(word.toString());
+                  word.setLength(0);
+                }
+                break;
+                
+            default:
+                word.append(c);
+                break;
+            
+            }
+        }
+        
+        if (word.length() > 0)
+            words.add(word.toString());
+        
+        if (words.size() == 0)
+            return null;
+        
+        return words.toArray(new String[words.size()]);
+    }
+    
     
     /**
      * Parse float value from string and handles number format exception  
@@ -883,4 +965,19 @@ public class UtilityFunctions
 				return defaultVal;
 			}	
 		}
+    
+    /**
+     * Converts bytes to int
+     * @param data data buffer
+     * @param startIndex start index
+     * @return integer
+     * @throws EOFException If the buffer is too small to read an integer
+     */
+    public static int toInt(byte data[], int startIndex) throws EOFException
+    {
+    	if (data.length < startIndex + 4)
+    		throw new EOFException();
+    	
+      return ((data[startIndex] << 24) + (data[startIndex + 1]<< 16) + (data[startIndex + 2] << 8) + (data[startIndex + 3] << 0));
+    }
 }

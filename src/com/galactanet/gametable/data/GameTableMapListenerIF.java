@@ -22,6 +22,10 @@
 
 package com.galactanet.gametable.data;
 
+import java.util.List;
+
+import com.galactanet.gametable.net.NetworkEvent;
+
 /**
  * Listener interface to receive GameTableMap notifications
  *
@@ -35,8 +39,9 @@ public interface GameTableMapListenerIF
 	 * Called when a map element instance has been added to the map
 	 * @param map The triggering map
 	 * @param mapElement The map element that has been added
+	 * @param netEvent Network event information that triggered the event or null
 	 */
-	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement);
+	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent);
 	
 	/**
 	 * Called when all map element instances have been removed in one call (onMapElementInstanceRemoved will also be called for individual items)
@@ -52,5 +57,39 @@ public interface GameTableMapListenerIF
 	 * Allows to optimize by doing batch process through another listener when possible (onMapElementInstancesCleared will be called first) 
 	 */
 	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap);
-
+	
+	/**
+	 * Called when a line segment has been added to the map
+	 * @param map The triggering map
+	 * @param lineSegment The segment that has been added
+	 * @param batch If true, this method has been triggered as part of an 'onLineSegmentsAdded' call 
+	 * @param netEvent If non-null, contains information about the network event that triggered the change.
+	 * Allows to optimize by doing batch process through another listener when possible (onLineSegmentsAdded will be called first)
+	 */
+	public void onLineSegmentAdded(GameTableMap map, LineSegment lineSegment, boolean batch, NetworkEvent netEvent);
+	
+	/**
+	 * Called when multiple line segments have been added to the map in a single call (single segment method will also be called)
+	 * @param map The triggering map
+	 * @param lineSegments The list of segment that have been added
+	 * @param netEvent If non-null, contains information about the network event that triggered the change.
+	 */
+	public void onLineSegmentsAdded(GameTableMap map, List<LineSegment> lineSegments, NetworkEvent netEvent);
+	
+	/**
+	 * An erase operation has been applied on the map.  All lines in the map might have been impacted.
+	 * @param map The triggering map
+	 * @param rect Rectangular region of the map to erase
+	 * @param colorSpecific If true, will erase line segments of matching color
+	 * @param color Color of the line segments to erase (if colorSpecific is true)
+	 * @param netEvent If non-null, contains information about the network event that triggered the change.
+	 */
+	public void onEraseLineSegments(GameTableMap map, MapRectangle rect, boolean colorSpecific, int color, NetworkEvent netEvent);
+	
+	/**
+	 * All lines were cleared from a given map
+	 * @param map The triggering map
+	 * @param netEvent If non-null, contains information about the network event that triggered the change.
+	 */
+	public void onClearLineSegments(GameTableMap map, NetworkEvent netEvent);
 }

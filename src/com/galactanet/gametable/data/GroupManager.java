@@ -21,16 +21,9 @@ package com.galactanet.gametable.data;
 import java.util.*;
 import java.util.Map.Entry;
 
-import javax.naming.InvalidNameException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.galactanet.gametable.data.Group.Action;
-import com.galactanet.gametable.data.net.PacketManager;
-import com.galactanet.gametable.data.net.PacketSourceState;
-import com.galactanet.gametable.ui.GametableCanvas;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 import com.maziade.tools.XMLUtils;
 
@@ -66,7 +59,9 @@ public class GroupManager
 		for (Group g : m_groups.values())
 		{
 			g.removeAllElements();
-			send(Action.DELETE, g, null);
+			
+			for (GroupManagerListenerIF listener : m_listeners)
+				listener.onRemoveGroup(g);
 		}
 
 		m_groups.clear();
@@ -85,7 +80,9 @@ public class GroupManager
 			if (g.getElementCount() == 0)
 			{
 				iter.remove();
-				send(Action.DELETE, g, null);
+				
+				for (GroupManagerListenerIF listener : m_listeners)
+					listener.onRemoveGroup(g);
 			}
 		}
 	}
@@ -147,7 +144,7 @@ public class GroupManager
 	 */
 	public Group getGroup(MapElement element)
 	{
-		return m_elements.get(element.getId());
+		return m_elements.get(element.getID());
 	}
 
 	/**
@@ -210,69 +207,6 @@ public class GroupManager
 	}
 
 	/**
-	 * Handle a received network communication packet
-	 * 
-	 * @param action Action to process
-	 * @param groupName Name of affected group
-	 * @param elementID Element unique ID
-	 */
-	public void packetReceived(Action action, final String groupName, final MapElementID elementID)
-	{
-		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
-		final MapElement element = map.getMapElement(elementID);
-
-		Group group = getGroup(groupName, action == Action.NEW);
-		if (group == null)
-			return;
-
-		switch (action)
-		{
-		case ADD:
-			group.addElement(element, false); // Do not send network packet, as we are reacting to a received packet
-			break;
-
-		case REMOVE:
-			group.removeElement(element, false); // Do not send network packet, as we are reacting to a received packet
-			break;
-
-		case DELETE:
-			group.deleteGroup(false); // Do not send network packet, as we are reacting to a received packet
-			break;
-
-		case RENAME:
-			// handled through another method return
-
-		case NEW:
-			// do nothing
-			break;
-		}
-	}
-
-	/**
-	 * Handle a received network communication packet
-	 * 
-	 * @param action Action to process
-	 * @param groupName Name of affected group
-	 * @param elementID Element unique ID
-	 */
-	public void renamePacketReceived(final String groupName, final String newGroupName)
-	{
-		Group g = getGroup(groupName);
-
-		if (g != null)
-		{
-			try
-			{
-				g.setName(newGroupName, false);
-			}
-			catch (InvalidNameException e)
-			{
-				Log.log(Log.PLAY, e.getMessage());
-			}
-		}
-	}
-
-	/**
 	 * Store information from your component from inside parent element
 	 * 
 	 * @param parent Parent element, as populated by calling thread. You can add custom XML data as children.
@@ -290,55 +224,35 @@ public class GroupManager
 			Element elementsEl = doc.createElement("elements");
 			groupEl.appendChild(elementsEl);
 
-			for (MapElement element : group.getElements())
+			for (MapElement element : group.getMapElements())
 			{
-				elementsEl.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(element.getId().numeric())));
+				elementsEl.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(element.getID().numeric())));
 			}
 
 			parent.appendChild(groupEl);
 		}
 	}
-
+	
 	/**
-	 * Send a network packet
-	 * 
-	 * @param action Network action to perform
-	 * @param groupName Name of the affected group
-	 * @param elementID Unique element ID, if the action is related to an element.
+	 * Register a group manager listener
+	 * @param listener Listener to add
 	 */
-	protected void send(Action action, final Group group, final MapElementID elementID)
+	public void addListener(GroupManagerListenerIF listener)
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		GametableCanvas canvas = frame.getGametableCanvas();
-
-		// Make sure we are not processing the packet
-		// Ignore if editing the protected map (publish action will handle networking when needed)
-		if (canvas.isPublicMap() && !PacketSourceState.isNetPacketProcessing())
-		{
-			final int player = frame.getMyPlayerId();
-			frame.send(PacketManager.makeGroupPacket(action, group == null ? "" : group.getName(), elementID, player));
-		}
+		if (!m_listeners.contains(listener))
+			m_listeners.add(listener);
+	}
+	
+	/**
+	 * Remove a listener from the manager
+	 * @param listener listener to remove
+	 * @return true if removed, false if not found
+	 */
+	public boolean removeListener(GroupManagerListenerIF listener)
+	{
+		return m_listeners.remove(listener);
 	}
 
-	/**
-	 * Send a network packet
-	 * 
-	 * @param group group
-	 * @param newName new name
-	 */
-	protected void sendRename(final Group group, String oldName, String newName)
-	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		GametableCanvas canvas = frame.getGametableCanvas();
-
-		// Make sure we are not processing the packet
-		// Ignore if editing the protected map (publish action will handle networking when needed)
-		if (canvas.isPublicMap() && !PacketSourceState.isNetPacketProcessing())
-		{
-			final int player = frame.getMyPlayerId();
-			frame.send(PacketManager.makeRenameGroupPacket(oldName, newName, player));
-		}
-	}
 	
 	/**
 	 * Add a group to the list of groups.  Should be used only by Group Object
@@ -353,9 +267,25 @@ public class GroupManager
 	 * Remove a group from the list of groups.  Should be used only by Group Object
 	 * @param groupName
 	 */
-	protected void removeGroup(String groupName)
+	protected void removeGroup(Group group)
 	{
-		m_groups.remove(groupName);
+		removeGroup(group, false);
+	}
+	
+	/**
+	 * Remove a group from the list of groups.
+	 * @param groupName
+	 * @param silent true not to trigger listeners
+	 */
+	private void removeGroup(Group group, boolean silent)
+	{
+		m_groups.remove(group.getName());
+		
+		if (!silent)
+		{
+			for (GroupManagerListenerIF listener : m_listeners)
+				listener.onRemoveGroup(group);
+		}
 	}
 	
 	/**
@@ -366,18 +296,44 @@ public class GroupManager
 	protected void registerElement(MapElementID mapElementID, Group group)
 	{
 		m_elements.put(mapElementID, group);
+
+		for (GroupManagerListenerIF listener : m_listeners)
+			listener.onAddMapElementToGroup(group, mapElementID);
 	}
 	
 	/**
 	 * Unregisters an element for fast mapping of group / element. Should be used only by Group object
 	 * @param mapElementID Map Element ID
+	 * @param group Group we're removing from
 	 */
-	protected void unregisterElement(MapElementID mapElementID)
+	protected void unregisterElement(MapElementID mapElementID, Group group)
 	{
 		m_elements.remove(mapElementID);
+		
+		for (GroupManagerListenerIF listener : m_listeners)
+			listener.onRemoveMapElementFromGroup(group, mapElementID);		
 	}
 	
-	
+	/**
+	 * Changes the name of a group.  Should be used only by Group object
+	 * @param group Group to rename
+	 * @param oldName Previous group name
+	 */
+	protected void renameGroup(Group group, String oldName)
+	{
+		if (oldName != null)
+			m_groups.remove(oldName);
+		
+		m_groups.put(group.getName(), group);
 
+		for (GroupManagerListenerIF listener : m_listeners)
+			listener.onGroupRename(group, oldName);
+	}
+
+	/**
+	 * Registered GroupManagerListeners
+	 */
+	private List<GroupManagerListenerIF> m_listeners = new ArrayList<GroupManagerListenerIF>();
+	
 	// TODO grab onto listeners to auto-remove
 }

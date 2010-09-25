@@ -22,6 +22,10 @@
 
 package com.galactanet.gametable.data;
 
+import java.util.List;
+
+import com.galactanet.gametable.net.NetworkEvent;
+
 /**
  * Adapter class to facilitate nameless implementations of the listener
  *
@@ -36,9 +40,7 @@ public class GameTableMapAdapter implements GameTableMapListenerIF
 	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElementInstance)
 	 */
 	@Override
-	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement)
-	{
-	}
+	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent) {}
 
 	/*
 	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement, boolean)
@@ -53,6 +55,38 @@ public class GameTableMapAdapter implements GameTableMapListenerIF
 	 */
 	@Override
 	public void onMapElementInstancesCleared(GameTableMap map)
+	{
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onLineSegmentAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.LineSegment, boolean)
+	 */
+	@Override
+	public void onLineSegmentAdded(GameTableMap map, LineSegment lineSegment, boolean batch, NetworkEvent netEvent)
+	{
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onLineSegmentsAdded(com.galactanet.gametable.data.GameTableMap, java.util.List)
+	 */
+	@Override
+	public void onLineSegmentsAdded(GameTableMap map, List<LineSegment> lineSegments, NetworkEvent netEvent)
+	{
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onLineSegmentsCropped(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapRectangle, boolean, int, com.galactanet.gametable.net.NetworkEvent)
+	 */
+	@Override
+	public void onEraseLineSegments(GameTableMap map, MapRectangle rect, boolean colorSpecific, int color, NetworkEvent netEvent)
+	{
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onClearLineSegments(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.net.NetworkEvent)
+	 */
+	@Override
+	public void onClearLineSegments(GameTableMap map, NetworkEvent netEvent)
 	{
 	}
 }

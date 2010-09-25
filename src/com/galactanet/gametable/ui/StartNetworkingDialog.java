@@ -16,6 +16,7 @@ import java.awt.event.FocusListener;
 
 import javax.swing.*;
 
+import com.galactanet.gametable.net.NetworkParametersPanel;
 import com.galactanet.gametable.util.Log;
 
 
@@ -27,30 +28,25 @@ import com.galactanet.gametable.util.Log;
  * 
  * #GT-AUDIT JoinDialog
  */
-public class JoinDialog extends JDialog implements FocusListener
+public class StartNetworkingDialog extends JDialog implements FocusListener
 {
     /**
      * 
      */
     private static final long serialVersionUID  = -7877135247158193423L;
-    JLabel                    jLabel1           = new JLabel();
     JLabel                    jLabel2           = new JLabel();
     JLabel                    jLabel3           = new JLabel();
-    JLabel                    jLabel4           = new JLabel();
     boolean                   m_bAccepted;
     JButton                   m_cancel          = new JButton();
     JTextField                m_charNameEntry   = new JTextField();
-    JLabel                    m_enterHostLabel  = new JLabel();
     CardLayout                m_hostPanelLayout = new CardLayout(0, 0);
     JPanel                    m_hostPanel       = new JPanel(m_hostPanelLayout);
 
-    JButton                   m_ok              = new JButton();
-    JTextField                m_passwordEntry   = new JTextField();
+    JButton                   m_ok              = new JButton();    
     JTextField                m_plrNameEntry    = new JTextField();
-    JTextField                m_portEntry       = new JTextField();
-    JTextField                m_textEntry       = new JTextField();
 
-    public JoinDialog()
+
+    public StartNetworkingDialog()
     {
         try
         {
@@ -84,18 +80,6 @@ public class JoinDialog extends JDialog implements FocusListener
     {
     }
 
-    private void getPort()
-    {
-        try
-        {
-            GametableFrame.getGametableFrame().m_port = Integer.parseInt(m_portEntry.getText());
-        }
-        catch (final NumberFormatException ex)
-        {
-            GametableFrame.getGametableFrame().m_port = GametableFrame.DEFAULT_PORT;
-        }
-    }
-
     private void initialize()
     {
         setModal(true);
@@ -109,14 +93,20 @@ public class JoinDialog extends JDialog implements FocusListener
              */
             public void actionPerformed(final ActionEvent e)
             {
+              if (m_networkPanel != null)
+              {
+              	if (!m_networkPanel.validateValues())
+              		return;
+              }
+              		              
                 m_bAccepted = true;
 
                 // update the default names
-                GametableFrame.getGametableFrame().m_characterName = m_charNameEntry.getText();
-                GametableFrame.getGametableFrame().m_playerName = m_plrNameEntry.getText();
-                GametableFrame.getGametableFrame().m_ipAddress = m_textEntry.getText();
-                GametableFrame.getGametableFrame().m_password = m_passwordEntry.getText();
-                getPort();
+                m_frame.m_characterName = m_charNameEntry.getText();
+                m_frame.m_playerName = m_plrNameEntry.getText();
+                
+                if (m_networkPanel != null)
+                	m_networkPanel.processValues();
 
                 dispose();
             }
@@ -134,12 +124,10 @@ public class JoinDialog extends JDialog implements FocusListener
             }
         });
 
-        m_enterHostLabel.setText("Enter Host Address");
-
+        
         jLabel2.setText("Player Name:");
         jLabel3.setText("Char Name:");
-        jLabel1.setText("Port:");
-        jLabel4.setText("Password:");
+
 
         final int PADDING = 5;
 
@@ -169,32 +157,23 @@ public class JoinDialog extends JDialog implements FocusListener
         outerBox.add(Box.createVerticalStrut(PADDING * 2));
 
         outerBox.add(m_hostPanel);
-
+        m_networkPanel = m_frame.getNetworkModule().getParametersPanel();
+        m_networkPanel.setDefautValues();
+        
         nextBox = Box.createVerticalBox();
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        panel.add(m_enterHostLabel);
-        nextBox.add(panel);
-        nextBox.add(Box.createVerticalStrut(PADDING));
-        panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        panel.add(m_textEntry);
-        nextBox.add(panel);
+        nextBox.add(m_networkPanel );
         m_hostPanel.add(nextBox, "join");
-
-        panel = new JPanel();
+        
+        
+        JPanel panel = new JPanel();
         m_hostPanel.add(panel, "host");
 
         outerBox.add(Box.createVerticalStrut(PADDING * 2));
 
         nextBox = Box.createHorizontalBox();
         outerBox.add(nextBox);
-        nextBox.add(jLabel4);
-        nextBox.add(Box.createHorizontalStrut(PADDING));
-        nextBox.add(m_passwordEntry);
-        nextBox.add(Box.createHorizontalStrut(PADDING * 2));
-        nextBox.add(jLabel1);
-        nextBox.add(Box.createHorizontalStrut(PADDING));
-        nextBox.add(m_portEntry);
-
+// TODO ?? host / join?
+        
         outerBox.add(Box.createVerticalStrut(PADDING * 3));
         outerBox.add(Box.createVerticalGlue());
 
@@ -207,23 +186,14 @@ public class JoinDialog extends JDialog implements FocusListener
         outerBox.add(Box.createVerticalStrut(PADDING));
 
         // set default values
-        m_charNameEntry.setText(GametableFrame.getGametableFrame().m_characterName);
-        m_plrNameEntry.setText(GametableFrame.getGametableFrame().m_playerName);
-        m_textEntry.setText(GametableFrame.getGametableFrame().m_ipAddress);
-        m_portEntry.setText(String.valueOf(GametableFrame.getGametableFrame().m_port));
-        m_passwordEntry.setText(GametableFrame.getGametableFrame().m_password);
+        m_charNameEntry.setText(m_frame.m_characterName);
+        m_plrNameEntry.setText(m_frame.m_playerName);
 
         // we want to know if any of those text entry areas get focus
-        m_textEntry.addFocusListener(this);
-        m_textEntry.setPreferredSize(new Dimension(250, m_textEntry.getPreferredSize().height));
         m_plrNameEntry.addFocusListener(this);
         m_plrNameEntry.setPreferredSize(new Dimension(150, m_plrNameEntry.getPreferredSize().height));
         m_charNameEntry.addFocusListener(this);
         m_charNameEntry.setPreferredSize(new Dimension(150, m_charNameEntry.getPreferredSize().height));
-        m_portEntry.addFocusListener(this);
-        m_portEntry.setPreferredSize(new Dimension(60, m_portEntry.getPreferredSize().height));
-        m_passwordEntry.addFocusListener(this);
-        m_passwordEntry.setPreferredSize(new Dimension(75, m_passwordEntry.getPreferredSize().height));
 
         setUpForJoinDlg();
     }
@@ -239,4 +209,7 @@ public class JoinDialog extends JDialog implements FocusListener
         m_hostPanelLayout.show(m_hostPanel, "join");
         setTitle("Join a game");
     }
+    
+    private NetworkParametersPanel m_networkPanel = null; 
+    private final GametableFrame m_frame = GametableFrame.getGametableFrame();
 }
