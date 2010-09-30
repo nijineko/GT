@@ -4,9 +4,7 @@
 
 package com.plugins.dicemacro;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.Writer;
+import java.io.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -102,10 +100,10 @@ public class XmlSerializer
 		tagStack.add(0, name);
 	}
 
-	public void startDocument(final Writer w) throws IOException
+	public void startDocument(File file) throws IOException
 	{
-		out = w;
-		out.write("<?xml version=\"1.0\"?>");
+		out = new OutputStreamWriter(new FileOutputStream (file), "UTF-8");
+		out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		tagStack.clear();
 	}
 

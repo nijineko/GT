@@ -171,10 +171,10 @@ public class NetLoadMap implements NetworkMessageTypeIF
 		Document mapDocument = XMLUtils.parseXMLDocument(new StringReader(xml), null);
 
 		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
-		map.clearMap();
+		map.clearMap(event);
 
 		LoadMapSerializeConverter converter = new LoadMapSerializeConverter();
-		map.deserialize(mapDocument.getDocumentElement(), converter);
+		map.deserialize(mapDocument.getDocumentElement(), converter, event);
 
 		GametableFrame.getGametableFrame().repaint();
 	}

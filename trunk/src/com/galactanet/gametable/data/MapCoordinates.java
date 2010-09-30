@@ -24,8 +24,6 @@ package com.galactanet.gametable.data;
 
 import org.w3c.dom.Element;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import com.maziade.tools.XMLUtils;
 
 
@@ -36,7 +34,7 @@ import com.maziade.tools.XMLUtils;
  * 
  * @audited by themaze75
  */
-public class MapCoordinates implements XMLSerializeIF
+public class MapCoordinates
 {
 	public static final MapCoordinates ORIGIN = new MapCoordinates(0, 0);
 	
@@ -127,20 +125,10 @@ public class MapCoordinates implements XMLSerializeIF
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 	
-	/*
-   * @see com.galactanet.gametable.data.XMLSerializeIF#deserialize(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter)
-   */
-  @Override
-  public void deserialize(Element parent, XMLSerializeConverter converter)
-	{
-		// Use constructor instead
-		throw new NotImplementedException();		
-	}
-	
-	/*
-	 * @see com.galactanet.gametable.data.XMLSerializer#serialize(org.w3c.dom.Element)
+  /**
+	 * Store information from your component from inside parent element 
+	 * @param parent Parent element, as populated by calling thread.  You can add custom XML data as children.
 	 */
-	@Override
 	public void serialize(Element parent)
 	{
 		Element el = parent.getOwnerDocument().createElement("loc");

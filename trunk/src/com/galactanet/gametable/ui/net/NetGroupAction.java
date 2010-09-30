@@ -33,7 +33,7 @@ import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Broadcast an action on group
+ * Broadcast an action on a group
  *
  * @author Eric Maziade
  */
@@ -146,60 +146,40 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#processData(com.galactanet.gametable.data.net.Connection, java.io.DataInputStream)
 	 */
 	@Override
-	public synchronized void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
+	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		try
-		{
-			g_processing = true;
-			
-			final int actionOrd = dis.readInt();
-	    Action action = Action.fromOrdinal(actionOrd);
-	    
-	    final String group = dis.readUTF();
-	    MapElementID pog = null;
-	    
-	    String newGroupName = null;
-	    
-	    if (action == Action.RENAME)
-	    {
-	    	newGroupName = dis.readUTF(); 
-	    }
-	    else
-	    {            
-	    	long pogID = dis.readLong();
-	    	pog = MapElementID.fromNumeric(pogID);
-	    }
-	    
-	    final int playerID = dis.readInt();
-	    GametableFrame frame = GametableFrame.getGametableFrame();
-	    
-	    if (frame.getMyPlayerId() == playerID)
-	    	return;
-	    
-	    // TODO #Networking this sends me through a loop...
-	    
-	    if (pog != null)
-	    {
-	    	handleActionNetworkMessage(action, group, pog);
-	    }
-	    else
-	    {
-	    	handleRenameNetworkMessage(group, newGroupName);
-	    }
-		}
-		finally
-		{
-			g_processing = false;
-		}
-	}
-	
-	/**
-	 * Checks whether we are currently processing data
-	 * @return
-	 */
-	public static boolean isProcessing()
-	{
-		return g_processing;
+		final int actionOrd = dis.readInt();
+    Action action = Action.fromOrdinal(actionOrd);
+    
+    final String group = dis.readUTF();
+    MapElementID mapElementID = null;
+    
+    String newGroupName = null;
+    
+    if (action == Action.RENAME)
+    {
+    	newGroupName = dis.readUTF(); 
+    }
+    else
+    {            
+    	long mapElement = dis.readLong();
+    	mapElementID = MapElementID.fromNumeric(mapElement);
+    }
+    
+    final int playerID = dis.readInt();
+    GametableFrame frame = GametableFrame.getGametableFrame();
+    
+    if (frame.getMyPlayerId() == playerID)
+    	return;
+    
+    if (mapElementID != null)
+    {
+    	handleActionNetworkMessage(action, group, mapElementID, event);
+    }
+    else
+    {
+    	handleRenameNetworkMessage(group, newGroupName, event);
+    }
 	}
 
 	/**
@@ -208,8 +188,9 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 * @param action Action to process
 	 * @param groupName Name of affected group
 	 * @param elementID Element unique ID
+	 * @param netEvent Source Network Event
 	 */
-	private void handleActionNetworkMessage(Action action, final String groupName, final MapElementID elementID)
+	private void handleActionNetworkMessage(Action action, final String groupName, final MapElementID elementID, NetworkEvent netEvent)
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();		
 		GameTableMap map = frame.getGametableCanvas().getPublicMap();
@@ -217,22 +198,22 @@ public class NetGroupAction implements NetworkMessageTypeIF
 		
 		final MapElement element = map.getMapElement(elementID);
 
-		Group group = manager.getGroup(groupName, action == Action.NEW);
+		Group group = manager.getGroup(groupName, action == Action.NEW || action == Action.ADD_ELEMENT);
 		if (group == null)
 			return;
 
 		switch (action)
 		{
 		case ADD_ELEMENT:
-			group.addElement(element);
+			group.addElement(element, netEvent);
 			break;
 
 		case REMOVE_ELEMENT:
-			group.removeElement(element);
+			group.removeElement(element, netEvent);
 			break;
 
 		case DELETE:
-			group.deleteGroup();
+			group.deleteGroup(netEvent);
 			break;
 
 		case RENAME:
@@ -250,8 +231,9 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 * @param action Action to process
 	 * @param groupName Name of affected group
 	 * @param elementID Element unique ID
+	 * @param netEvent Source Network Event
 	 */
-	private void handleRenameNetworkMessage(final String groupName, final String newGroupName)
+	private void handleRenameNetworkMessage(final String groupName, final String newGroupName, NetworkEvent netEvent)
 	{
 		GametableFrame frame = GametableFrame.getGametableFrame();		
 		GroupManager manager = frame.getPublicGroupManager();
@@ -262,7 +244,7 @@ public class NetGroupAction implements NetworkMessageTypeIF
 		{
 			try
 			{
-				g.setName(newGroupName, false);
+				g.setName(newGroupName, netEvent);
 			}
 			catch (InvalidNameException e)
 			{
@@ -302,7 +284,6 @@ public class NetGroupAction implements NetworkMessageTypeIF
 		g_id = id;		
 	}
 	
-	private static boolean g_processing = false;
 	private static int g_id = 0;
 	private static String g_name = null;	
 }
