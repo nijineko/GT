@@ -24,11 +24,13 @@ import java.util.Map.Entry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.util.Log;
 import com.maziade.tools.XMLUtils;
 
 /**
  * todo: comment
+ * TODO #Groups Send group composition when initiating a network session
  * 
  * @author Eric Maziade
  */
@@ -50,27 +52,46 @@ public class GroupManager
 	protected GroupManager()
 	{
 	}
-
+	
 	/**
 	 * Removes all groups from the list
 	 */
 	public void deleteAllGroups()
 	{
+		deleteAllGroups(null);
+	}
+		
+
+	/**
+	 * Removes all groups from the list
+	 * @param netEvent Source network event or null
+	 */
+	public void deleteAllGroups(NetworkEvent netEvent)
+	{
 		for (Group g : m_groups.values())
 		{
-			g.removeAllElements();
+			g.removeAllElements(netEvent);
 			
 			for (GroupManagerListenerIF listener : m_listeners)
-				listener.onRemoveGroup(g);
+				listener.onRemoveGroup(g, netEvent);
 		}
 
 		m_groups.clear();
 	}
-
+	
 	/**
 	 * Removes all empty groups from the list
 	 */
 	public void deleteEmptyGroups()
+	{
+		deleteEmptyGroups(null);
+	}
+
+	/**
+	 * Removes all empty groups from the list
+	 * @param netEvent Source network event or null
+	 */
+	public void deleteEmptyGroups(NetworkEvent netEvent)
 	{
 		Iterator<Entry<String, Group>> iter = m_groups.entrySet().iterator();
 		while (iter.hasNext())
@@ -82,7 +103,7 @@ public class GroupManager
 				iter.remove();
 				
 				for (GroupManagerListenerIF listener : m_listeners)
-					listener.onRemoveGroup(g);
+					listener.onRemoveGroup(g, netEvent);
 			}
 		}
 	}
@@ -93,8 +114,9 @@ public class GroupManager
 	 * @param parent Parent element, as restored from calling thread
 	 * @param converter Converts saved IDs to map IDs
 	 * @param repository Interface to get map element instances from
+	 * @param netEvent Source network event or null
 	 */
-	public void deserializeGroups(Element parent, XMLSerializeConverter converter, MapElementRepositoryIF repository)
+	public void deserializeGroups(Element parent, XMLSerializeConverter converter, MapElementRepositoryIF repository, NetworkEvent netEvent)
 	{
 		m_groups.clear();
 		m_elements.clear();
@@ -131,7 +153,7 @@ public class GroupManager
 					}
 				}
 
-				group.addElements(elements);
+				group.addElements(elements, netEvent);
 			}
 		}
 	}
@@ -264,62 +286,57 @@ public class GroupManager
 	}
 	
 	/**
-	 * Remove a group from the list of groups.  Should be used only by Group Object
-	 * @param groupName
-	 */
-	protected void removeGroup(Group group)
-	{
-		removeGroup(group, false);
-	}
-	
-	/**
 	 * Remove a group from the list of groups.
 	 * @param groupName
 	 * @param silent true not to trigger listeners
+	 * @param netEvent Source network event or null 
 	 */
-	private void removeGroup(Group group, boolean silent)
+	protected void removeGroup(Group group, boolean silent, NetworkEvent netEvent)
 	{
 		m_groups.remove(group.getName());
 		
 		if (!silent)
 		{
 			for (GroupManagerListenerIF listener : m_listeners)
-				listener.onRemoveGroup(group);
+				listener.onRemoveGroup(group, netEvent);
 		}
 	}
 	
 	/**
 	 * Register an element for fast mapping of group / element. Should be used only by Group object
-	 * @param mapElementID Map Element ID
+	 * @param mapElementID Map Element ID	 * 
 	 * @param group Group
+	 * @param netEvent Source network event or null
 	 */
-	protected void registerElement(MapElementID mapElementID, Group group)
+	protected void registerElement(MapElementID mapElementID, Group group, NetworkEvent netEvent)
 	{
 		m_elements.put(mapElementID, group);
 
 		for (GroupManagerListenerIF listener : m_listeners)
-			listener.onAddMapElementToGroup(group, mapElementID);
+			listener.onAddMapElementToGroup(group, mapElementID, netEvent);
 	}
 	
 	/**
 	 * Unregisters an element for fast mapping of group / element. Should be used only by Group object
 	 * @param mapElementID Map Element ID
 	 * @param group Group we're removing from
+	 * @param netEvent Source network event or null
 	 */
-	protected void unregisterElement(MapElementID mapElementID, Group group)
+	protected void unregisterElement(MapElementID mapElementID, Group group, NetworkEvent netEvent)
 	{
 		m_elements.remove(mapElementID);
 		
 		for (GroupManagerListenerIF listener : m_listeners)
-			listener.onRemoveMapElementFromGroup(group, mapElementID);		
+			listener.onRemoveMapElementFromGroup(group, mapElementID, netEvent);		
 	}
 	
 	/**
 	 * Changes the name of a group.  Should be used only by Group object
 	 * @param group Group to rename
 	 * @param oldName Previous group name
+	 * @param netEvent Source Network Event
 	 */
-	protected void renameGroup(Group group, String oldName)
+	protected void renameGroup(Group group, String oldName, NetworkEvent netEvent)
 	{
 		if (oldName != null)
 			m_groups.remove(oldName);
@@ -327,7 +344,7 @@ public class GroupManager
 		m_groups.put(group.getName(), group);
 
 		for (GroupManagerListenerIF listener : m_listeners)
-			listener.onGroupRename(group, oldName);
+			listener.onGroupRename(group, oldName, netEvent);
 	}
 
 	/**

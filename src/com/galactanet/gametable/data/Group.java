@@ -28,6 +28,8 @@ import java.util.List;
 
 import javax.naming.InvalidNameException;
 
+import com.galactanet.gametable.net.NetworkEvent;
+
 /**
  * MapElement group integration
  *
@@ -67,15 +69,25 @@ public class Group
 	 */
 	public void deleteGroup()
 	{
-		removeAllElements();
-		m_manager.removeGroup(this);
+		deleteGroup(null);
+	}
+	
+	/**
+	 * Removes this group from the group list
+	 * @param netEvent Source network event or null
+	 */
+	public void deleteGroup(NetworkEvent netEvent)
+	{
+		removeAllElements(netEvent);
+		m_manager.removeGroup(this, false, netEvent);
 	}
 
 	/**
 	 * Add an element to this group
 	 * @param element Map Element Instance to add
+	 * @param netEvent Source network event or null
 	 */
-	public void addElement(final MapElement element)
+	public void addElement(final MapElement element, NetworkEvent netEvent)
 	{
 		if (element == null)
 			return;
@@ -84,12 +96,12 @@ public class Group
 		Group group = m_manager.getGroup(element);
 		
 		if (group != null && group != this)
-			group.removeElement(element);
+			group.removeElement(element, netEvent);
 		
 		if (group != this)
 		{		
 			m_elements.add(element);
-			m_manager.registerElement(element.getID(), this);
+			m_manager.registerElement(element.getID(), this, netEvent);
 		}
 	}
 	
@@ -99,8 +111,18 @@ public class Group
 	 */
 	public void addElements(List<MapElement> elements)
 	{
+		addElements(elements, null);
+	}
+	
+	/**
+	 * Add elements to this group
+	 * @param elements List of elements to add
+	 * @param netEvent Source network event or null
+	 */
+	public void addElements(List<MapElement> elements, NetworkEvent netEvent)
+	{
 		for (MapElement element : elements)
-			addElement(element);
+			addElement(element, netEvent);
 	}
 
 	/**
@@ -135,12 +157,13 @@ public class Group
 
 	/**
 	 * Remove all element from this group
+	 * @param netEvent Source network event or null
 	 */
-	public void removeAllElements()
+	public void removeAllElements(NetworkEvent netEvent)
 	{
 		for (MapElement element : m_elements)
 		{
-			m_manager.unregisterElement(element.getID(), this);
+			m_manager.unregisterElement(element.getID(), this, netEvent);
 		}			
 		
 		m_elements.clear();
@@ -152,37 +175,27 @@ public class Group
 	 */
 	public void removeElement(final MapElement element)
 	{
-		removeElement(element, true);
+		removeElement(element, null);
 	}
 
 	/**
 	 * Remove map element from this list
 	 * @param element element to remove
-	 * @param network true to send operation over network
+	 * @param netEvent Source network event or null
 	 */
-	protected void removeElement(final MapElement element, boolean network)
+	public void removeElement(final MapElement element, NetworkEvent netEvent)
 	{
 		m_elements.remove(element);
-		m_manager.unregisterElement(element.getID(), this);
+		m_manager.unregisterElement(element.getID(), this, netEvent);
 	}
 	
 	/**
 	 * Change this group's name
 	 * @param groupName New name for the group to rename - the new group name must be unique
+	 * @param netEvent Source Network Event
 	 * @throws InvalidNameException if newGroupName is already in use
 	 */
-	public void setName(final String groupName) throws InvalidNameException
-	{
-		setName(groupName, true);
-	}
-
-	/**
-	 * Change this group's name
-	 * @param groupName New name for the group to rename - the new group name must be unique
-	 * @param network Send message over network
-	 * @throws InvalidNameException if newGroupName is already in use
-	 */
-	public void setName(final String groupName, boolean network) throws InvalidNameException
+	public void setName(final String groupName, NetworkEvent netEvent) throws InvalidNameException
 	{
 			if (groupName == null)
 				return;
@@ -199,7 +212,7 @@ public class Group
 			String oldName = m_name;
 			m_name = groupName;
 			
-			m_manager.renameGroup(this, oldName);
+			m_manager.renameGroup(this, oldName, netEvent);
 	}
 
 	@Override

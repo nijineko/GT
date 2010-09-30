@@ -224,7 +224,7 @@ public class DiceMacroModule extends Module
 	private void saveMacros(final File file) throws IOException
 	{
 		final XmlSerializer out = new XmlSerializer();
-		out.startDocument(new BufferedWriter(new FileWriter(file)));
+		out.startDocument(file);
 		out.startElement(DiceMacroSaxHandler.ELEMENT_DICE_MACROS);
 		for (DiceMacro macro : m_macroMap.values())
 		{

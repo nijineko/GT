@@ -22,6 +22,8 @@
 
 package com.galactanet.gametable.data;
 
+import com.galactanet.gametable.net.NetworkEvent;
+
 /**
  * todo: comment
  *
@@ -32,27 +34,31 @@ public interface GroupManagerListenerIF
 	/**
 	 * Called when a group is removed from the list of groups
 	 * @param group Newly removed group
+	 * @param netEvent Source Network Event
 	 */
-	public void onRemoveGroup(Group group);
+	public void onRemoveGroup(Group group, NetworkEvent netEvent);
 	
 	/**
 	 * Called when an element is added to a group
 	 * @param group Group the element is added to
 	 * @param mapElementID ID of the element
+	 * @param netEvent Source Network Event
 	 */
-	public void onAddMapElementToGroup(Group group, MapElementID mapElementID);
+	public void onAddMapElementToGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent);
 	
 	/**
 	 * Called when an element is removed from a group
 	 * @param group Group the element removed from
 	 * @param mapElementID ID of the element
+	 * @param netEvent Source Network Event
 	 */
-	public void onRemoveMapElementFromGroup(Group group, MapElementID mapElementID);
+	public void onRemoveMapElementFromGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent);
 
 	/**
 	 * Called when a group's name is changed
 	 * @param group Group that has changed name
 	 * @param oldGroupName Previous name for the group
+	 * @param netEvent Source Network Event
 	 */
-	public void onGroupRename(Group group, String oldGroupName);
+	public void onGroupRename(Group group, String oldGroupName, NetworkEvent netEvent);
 }

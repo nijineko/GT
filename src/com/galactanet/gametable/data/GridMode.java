@@ -64,7 +64,7 @@ public class GridMode
 		int dx = x2 - x1;
 		int dy = y2 - y1;
 
-		return Math.sqrt(Math.pow(dx * getDistanceMultplierX(), 2) * Math.pow(dy * getDistanceMultplierY(), 2));
+		return Math.sqrt(Math.pow(dx * getDistanceMultplierX(), 2) + Math.pow(dy * getDistanceMultplierY(), 2));
 	}
 
 	/**

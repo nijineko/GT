@@ -19,8 +19,6 @@ import java.util.Map.Entry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.ui.MapElementRendererIF;
@@ -36,7 +34,7 @@ import com.maziade.tools.XMLUtils;
  * 
  * @audited by themaze75
  */
-public class MapElement implements Comparable<MapElement>, XMLSerializeIF
+public class MapElement implements Comparable<MapElement>
 {
 	/**
 	 * TODO Attribute system to be replaced by more flexible properties system
@@ -995,20 +993,10 @@ public class MapElement implements Comparable<MapElement>, XMLSerializeIF
 		}
 	}
 	
-	/*
-   * @see com.galactanet.gametable.data.XMLSerializeIF#deserialize(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter)
-   */
-  @Override
-  public void deserialize(Element parent, XMLSerializeConverter converter)
-  {
-		// Use constructor instead
-		throw new NotImplementedException();
-	}
-	
-	/*
-	 * @see com.galactanet.gametable.data.XMLSerializer#serialize(org.w3c.dom.Element)
+  /**
+	 * Store information from your component from inside parent element 
+	 * @param parent Parent element, as populated by calling thread.  You can add custom XML data as children.
 	 */
-	@Override
 	public void serialize(Element parent)
 	{
 		Document doc = parent.getOwnerDocument();

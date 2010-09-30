@@ -1143,13 +1143,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			if (loadPublic)
 			{
 				Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
-				m_gametableCanvas.getPublicMap().deserialize(publicEl, converter);
+				m_gametableCanvas.getPublicMap().deserialize(publicEl, converter, null);
 			}
 
 			if (loadPrivate)
 			{
 				Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
-				m_gametableCanvas.getPrivateMap().deserialize(privateEl, converter);
+				m_gametableCanvas.getPrivateMap().deserialize(privateEl, converter, null);
 			}
 
 			if (loadPublic && loadPrivate)
@@ -2229,12 +2229,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 				if (all == 1)
 				{
 					getActiveGroupManager().deleteEmptyGroups();
-					// TODO #Network broadcast?
 				}
 				if (all == 2)
 				{
 					getActiveGroupManager().deleteAllGroups();
-					// TODO #Network broadcast?
 				}
 				else
 				{
@@ -3254,7 +3252,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetClearLineSegments.getMessageType());
 		m_networkModule.registerMessageType(NetEraseLineSegments.getMessageType());
 		// NetFlipMapElement
-		// NetGroupAction
+		m_networkModule.registerMessageType(NetGroupAction.getMessageType());
 		// NetLoadMap
 		// NetLockMapElement
 		m_networkModule.registerMessageType(NetLoginComplete.getMessageType());
@@ -3621,28 +3619,31 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	private class GroupManagerListener implements GroupManagerListenerIF
 	{		
 		@Override
-		public void onRemoveMapElementFromGroup(Group group, MapElementID mapElementID)
+		public void onRemoveMapElementFromGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent)
 		{
-			// TODO #Networking Listners will be called when we handle a received message... we don't want to re-broadcast if the source is not user action 
-			
+			// We don't want to re-broadcast if the source is not user action
+			if (netEvent == null)			
 				send(Action.REMOVE_ELEMENT, group, mapElementID);
 		}
 		
 		@Override
-		public void onRemoveGroup(Group group)
+		public void onRemoveGroup(Group group, NetworkEvent netEvent)
 		{
+			if (netEvent == null)
 				send(Action.DELETE, group, null);
 		}
 		
 		@Override
-		public void onGroupRename(Group group, String oldGroupName)
+		public void onGroupRename(Group group, String oldGroupName, NetworkEvent netEvent)
 		{
+			if (netEvent == null)
 				sendRename(group, oldGroupName, group.getName());
 		}
 		
 		@Override
-		public void onAddMapElementToGroup(Group group, MapElementID mapElementID)
+		public void onAddMapElementToGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent)
 		{
+			if (netEvent == null)
 				send(Action.ADD_ELEMENT, group, mapElementID);
 		}
 
@@ -3653,13 +3654,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		 * @param groupName Name of the affected group
 		 * @param elementID Unique element ID, if the action is related to an element.
 		 */
-		protected void send(NetGroupAction.Action action, final Group group, final MapElementID elementID)
+		private void send(NetGroupAction.Action action, final Group group, final MapElementID elementID)
 		{
-			if (getNetworkStatus() != NetworkStatus.CONNECTED)
-				return;
-			
-			// We're not triggering a network call while we're already processing one
-			if (NetGroupAction.isProcessing())
+			if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
 				return;
 			
 			GametableCanvas canvas = getGametableCanvas();
@@ -3679,13 +3676,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		 * @param group group
 		 * @param newName new name
 		 */
-		protected void sendRename(final Group group, String oldName, String newName)
+		private void sendRename(final Group group, String oldName, String newName)
 		{
-			if (getNetworkStatus() != NetworkStatus.CONNECTED)
-				return;
-			
-			// We're not triggering a network call while we're already processing one
-			if (NetGroupAction.isProcessing())
+			if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
 				return;
 			
 			GametableCanvas canvas = getGametableCanvas();

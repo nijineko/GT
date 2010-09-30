@@ -37,7 +37,7 @@ import com.maziade.tools.XMLUtils;
  * @audited by themaze75
  * 
  */
-public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
+public class GameTableMap implements MapElementRepositoryIF
 {
 	/**
 	 * Every 'square' is divided into this number of units
@@ -280,12 +280,13 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	
 	/**
 	 * Clear this map of all data
+	 * @param netEvent Source network event or null
 	 */
-	public void clearMap()
+	public void clearMap(NetworkEvent netEvent)
 	{
-		getGroupManager().deleteAllGroups();
-		clearLineSegments();
-		clearMapElementInstances();		
+		getGroupManager().deleteAllGroups(netEvent);
+		clearLineSegments(netEvent);
+		clearMapElementInstances(netEvent);		
 	}
 	
 	/**
@@ -313,6 +314,15 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 	 */
 	public void clearMapElementInstances()
 	{
+		clearMapElementInstances(null);
+	}
+	
+  /**
+	 * Remove all elements from the map
+	 * @param netEvent Source network event or null
+	 */
+	public void clearMapElementInstances(NetworkEvent netEvent)
+	{
 		ArrayList<MapElement> mapElements = new ArrayList<MapElement>(m_mapElements);
 		
 		m_mapElements.clear();
@@ -329,15 +339,17 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 		}
 	}
 
-	/*
-	 * @see com.galactanet.gametable.data.XMLSerializeIF#deserialize(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter)
+	/**
+	 * Restore information from your component from within supplied parent element
+	 * @param parent Parent element, as restored from calling thread
+	 * @param converter Converter interface to convert saved element IDs to loaded element IDs
+	 * @param netEvent Source network event or null
 	 */
-  @Override  
-  public void deserialize(Element parent, XMLSerializeConverter converter)
+  public void deserialize(Element parent, XMLSerializeConverter converter, NetworkEvent netEvent)
   {
   	Element elements = XMLUtils.getFirstChildElementByTagName(parent, "elements");
   	
-  	clearMap();
+  	clearMap(netEvent);
   	
   	for (Element xmEl : XMLUtils.getChildElementsByTagName(elements, "element"))
   	{
@@ -353,7 +365,7 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
   	}
   	
   	Element groupsEl = XMLUtils.getFirstChildElementByTagName(parent, "groups");
-  	m_groupManager.deserializeGroups(groupsEl, converter, this);
+  	m_groupManager.deserializeGroups(groupsEl, converter, this, netEvent);
   }
 
 	/**
@@ -584,10 +596,10 @@ public class GameTableMap implements XMLSerializeIF, MapElementRepositoryIF
 			removeMapElementInstance(instance);
 	}
   
-  /*
-   * @see com.galactanet.gametable.data.XMLSerializer#serialize(org.w3c.dom.Element)
-   */
-  @Override
+	/**
+	 * Store information from your component from inside parent element 
+	 * @param parent Parent element, as populated by calling thread.  You can add custom XML data as children.
+	 */
   public void serialize(Element parent)
   {
   	Document doc = parent.getOwnerDocument();
