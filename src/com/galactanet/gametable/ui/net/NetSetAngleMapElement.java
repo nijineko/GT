@@ -30,16 +30,16 @@ import com.galactanet.gametable.util.Log;
 /**
  * Network message requesting that a map element be rotated
  */
-public class NetRotateMapElement implements NetworkMessageTypeIF
+public class NetSetAngleMapElement implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetRotateMapElement getMessageType()
+	public static NetSetAngleMapElement getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetRotateMapElement();
+			g_messageType = new NetSetAngleMapElement();
 		
 		return g_messageType;
 	}
@@ -47,7 +47,7 @@ public class NetRotateMapElement implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetRotateMapElement g_messageType = null;
+	private static NetSetAngleMapElement g_messageType = null;
 	
 /**
 	 * Create a network data packet requesting that a map element be rotated
@@ -89,7 +89,7 @@ public class NetRotateMapElement implements NetworkMessageTypeIF
 
 		MapElement mapElement = GametableFrame.getGametableFrame().getMapElement(mapElementID);
 		if (mapElement != null)
-			mapElement.setAngle(angle);
+			mapElement.setAngle(angle, event);
 	}
 
 	/*

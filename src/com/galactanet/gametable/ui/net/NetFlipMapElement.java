@@ -25,14 +25,15 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
 import com.galactanet.gametable.util.Log;
 
 /**
- * todo: comment
- *
+ * Sends a request to flip a map element 
  * @author Eric Maziade
  */
 public class NetFlipMapElement implements NetworkMessageTypeIF
@@ -88,14 +89,22 @@ public class NetFlipMapElement implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final int pid = dis.readInt();            
+		final long pid = dis.readLong();            
     MapElementID id = MapElementID.fromNumeric(pid);
     
     final boolean flipH = dis.readBoolean();
     final boolean flipV = dis.readBoolean();
     
-    final GametableFrame frame = GametableFrame.getGametableFrame();
-    frame.getGametableCanvas().doFlipPog(id, flipH, flipV);    
+    GametableFrame frame = GametableFrame.getGametableFrame();
+    MapElement mapElement = frame.getGameTableMap(GameTableMapType.PUBLIC).getMapElement(id);
+    
+		if (mapElement == null)
+		{
+			Log.log(Log.NET, "Cannot flip because element " + id + " not found");
+			return;
+		}
+		
+		mapElement.setFlip(flipH, flipV, event);        
 	}
 	
 	/*

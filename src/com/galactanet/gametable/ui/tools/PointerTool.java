@@ -658,7 +658,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 0);
+					m_menuPog.setAngle(0);
 				}
 			});
 			rotateMenu.add(item);
@@ -667,7 +667,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 60);
+					m_menuPog.setAngle(60);
 				}
 			});
 			rotateMenu.add(item);
@@ -676,7 +676,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 90);
+					m_menuPog.setAngle(90);
 				}
 			});
 
@@ -685,7 +685,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 120);
+					m_menuPog.setAngle(120);
 				}
 			});
 			rotateMenu.add(item);
@@ -694,7 +694,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 180);
+					m_menuPog.setAngle(180);
 				}
 			});
 			rotateMenu.add(item);
@@ -703,7 +703,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 240);
+					m_menuPog.setAngle(240);
 				}
 			});
 			rotateMenu.add(item);
@@ -712,7 +712,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 270);
+					m_menuPog.setAngle(270);
 				}
 			});
 			rotateMenu.add(item);
@@ -721,7 +721,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.rotatePog(m_menuPog.getID(), 300);
+					m_menuPog.setAngle(300);
 				}
 			});
 			rotateMenu.add(item);
@@ -733,7 +733,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.flipPog(m_menuPog.getID(), false, false);
+					m_menuPog.setFlip(false, false);
 				}
 			});
 			flipMenu.add(item);
@@ -742,7 +742,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.flipPog(m_menuPog.getID(), m_menuPog.getFlipH(), !m_menuPog.getFlipV());
+					m_menuPog.setFlip(m_menuPog.getFlipH(), !m_menuPog.getFlipV());
 				}
 			});
 			flipMenu.add(item);
@@ -751,7 +751,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.flipPog(m_menuPog.getID(), !m_menuPog.getFlipH(), m_menuPog.getFlipV());
+					m_menuPog.setFlip(!m_menuPog.getFlipH(), m_menuPog.getFlipV());
 				}
 			});
 			flipMenu.add(item);

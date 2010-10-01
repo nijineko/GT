@@ -741,6 +741,28 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 		return el;
 	}
+	
+	/**
+	 * Get the requested GameTableMap instance
+	 * @param type active, private or public map
+	 * @return GameTableMap
+	 */
+	public GameTableMap getGameTableMap(GameTableMapType type)
+	{
+		switch (type)
+		{
+		case ACTIVE:
+			return m_gametableCanvas.getActiveMap();
+			
+		case PRIVATE:
+			return m_gametableCanvas.getPrivateMap();
+			
+		case PUBLIC:
+			return m_gametableCanvas.getPublicMap();
+		}
+		
+		throw new IllegalArgumentException("There is no map of type " + type);
+	}
 
 	/**
 	 * @return The player representing this client.
@@ -3251,7 +3273,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetAddMapElement.getMessageType());
 		m_networkModule.registerMessageType(NetClearLineSegments.getMessageType());
 		m_networkModule.registerMessageType(NetEraseLineSegments.getMessageType());
-		// NetFlipMapElement
+		m_networkModule.registerMessageType(NetFlipMapElement.getMessageType());
 		m_networkModule.registerMessageType(NetGroupAction.getMessageType());
 		// NetLoadMap
 		// NetLockMapElement
@@ -3261,7 +3283,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetRecenterMap.getMessageType());
 		// NetRemoveMapElement
 		// NetRequestImage
-		// NetRotateMapElement
+		m_networkModule.registerMessageType(NetSetAngleMapElement.getMessageType());
 		m_networkModule.registerMessageType(NetSendChatText.getMessageType());
 		// NetSendImage
 		m_networkModule.registerMessageType(NetSendMechanicsText.getMessageType());	
@@ -3768,4 +3790,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 * Instance of network message handling class
 	 */
 	private NetworkResponder m_networkResponder;
+	
+	public static enum GameTableMapType { PUBLIC, PRIVATE, ACTIVE }
 }

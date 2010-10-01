@@ -434,6 +434,9 @@ public class GameTableMap implements MapElementRepositoryIF
 	@Override
 	public MapElement getMapElement(final MapElementID id)
 	{
+		if (id == null)
+			return null;
+		
 		for (MapElement mapElement : m_mapElements)
 		{
 			if (mapElement.getID().equals(id))

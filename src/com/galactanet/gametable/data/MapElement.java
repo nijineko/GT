@@ -672,7 +672,7 @@ public class MapElement implements Comparable<MapElement>
 		for (MapElementListenerIF listener : m_listeners)
 			listener.onAttributeChanged(this, name, null, null);
 	}
-
+	
 	/**
 	 * Set the display angle for this element
 	 * 
@@ -680,10 +680,22 @@ public class MapElement implements Comparable<MapElement>
 	 */
 	public void setAngle(final double angle)
 	{
+		setAngle(angle, null);
+	}
+
+	/**
+	 * Set the display angle for this element
+	 * 
+	 * @param angle Angle, in degrees
+	 * @param netEvent Network event that triggered the operation or null
+	 */
+	public void setAngle(final double angle, NetworkEvent netEvent)
+	{
 		m_angle = angle;
-		
-		// TODO !Trigger listeners
 		reinitializeHitMap();
+		
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onAngleChanged(this, netEvent);
 	}
 
 	/**
@@ -695,10 +707,29 @@ public class MapElement implements Comparable<MapElement>
 	 */
 	public void setAngleFlip(final double angle, final boolean flipH, final boolean flipV)
 	{
+		boolean angleChanged = m_angle != angle;
+		boolean flipChanged = m_flipH != flipH || m_flipV != flipV;
+		
+		if (!angleChanged && !flipChanged)
+			return;
+		
 		m_flipH = flipH;
 		m_flipV = flipV;
 		m_angle = angle;
 		reinitializeHitMap();
+		
+		if (angleChanged)
+		{
+			for (MapElementListenerIF listener : m_listeners)
+				listener.onAngleChanged(this, null);
+		}
+		
+		if (flipChanged)
+		{
+			for (MapElementListenerIF listener : m_listeners)
+				listener.onFlipChanged(this, null);			
+		}
+
 	}
 
 	/**
@@ -763,6 +794,23 @@ public class MapElement implements Comparable<MapElement>
 		
 		// TODO Trigger listeners
 	}
+	
+	/**
+	 * Set both flip settings in one single call
+	 * 
+	 * @param flipH true to flip horizontally
+	 * @param flipV false to flip vertically
+	 * @param netEvent Network event that triggered the operation or null
+	 */
+	public void setFlip(final boolean flipH, final boolean flipV, NetworkEvent netEvent)
+	{
+		m_flipH = flipH;
+		m_flipV = flipV;
+		reinitializeHitMap();
+		
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onFlipChanged(this, netEvent);
+	}
 
 	/**
 	 * Set both flip settings in one single call
@@ -772,9 +820,7 @@ public class MapElement implements Comparable<MapElement>
 	 */
 	public void setFlip(final boolean flipH, final boolean flipV)
 	{
-		m_flipH = flipH;
-		m_flipV = flipV;
-		reinitializeHitMap();
+		setFlip(flipH, flipV, null);
 	}
 
 	/**
