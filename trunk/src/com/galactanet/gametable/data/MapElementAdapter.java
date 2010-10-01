@@ -55,4 +55,16 @@ public class MapElementAdapter implements MapElementListenerIF
 	 */
 	@Override
 	public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent) {}
+	
+	/*
+	 * @see com.galactanet.gametable.data.MapElementListenerIF#onFlipChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+	 */
+	@Override
+	public void onFlipChanged(MapElement element, NetworkEvent netEvent) {}
+	
+	/*
+	 * @see com.galactanet.gametable.data.MapElementListenerIF#onAngleChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+	 */
+	@Override
+	public void onAngleChanged(MapElement element, NetworkEvent netEvent) {}	
 }

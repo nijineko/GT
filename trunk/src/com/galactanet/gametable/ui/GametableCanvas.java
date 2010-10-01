@@ -657,30 +657,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	public void doRotatePog(final MapElementID id, final double newAngle)
-	{
-		final MapElement toRotate = getActiveMap().getMapElement(id);
-		if (toRotate != null)
-			toRotate.setAngle(newAngle);
-	}
-
-	public void doFlipPog(final MapElementID id, final boolean flipH, final boolean flipV)
-	{
-		final MapElement toFlip = getActiveMap().getMapElement(id);
-		if (toFlip == null)
-		{
-			return;
-		}
-
-		toFlip.setFlip(flipH, flipV);
-
-		// this pog moves to the end of the array
-		getActiveMap().removeMapElementInstance(toFlip);
-		getActiveMap().addMapElement(toFlip);
-
-		repaint();
-	}
-
 	public void doSetPogData(final MapElementID id, final String s, final Map<String, String> toAdd, final Set<String> toDelete)
 	{
 		final MapElement pog = getActiveMap().getMapElement(id);
@@ -1924,40 +1900,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	public void rotatePog(final MapElementID id, final double newAngle)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetRotateMapElement.makePacket(id, newAngle));
-
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				doRotatePog(id, newAngle);
-			}
-		}
-		else
-		{
-			doRotatePog(id, newAngle);
-		}
-	}
-
-	public void flipPog(final MapElementID id, final boolean flipH, final boolean flipV)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetFlipMapElement.makePacket(id, flipH, flipV));
-
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				doFlipPog(id, flipH, flipV);
-			}
-		}
-		else
-		{
-			doFlipPog(id, flipH, flipV);
-		}
-	}
-
 	public void scrollMapTo(MapCoordinates modelPoint)
 	{
 		final Point target = modelToDraw(modelPoint);
@@ -2613,6 +2555,38 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				// Broadcast only if we're not triggered by a network event
 				if (shouldPropagateChanges(netEvent))
 					m_frame.sendBroadcast(NetSetMapElementPosition.makePacket(element.getID(), newPosition));
+			}
+
+			repaint();
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onFlipChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onFlipChanged(MapElement element, NetworkEvent netEvent)
+		{
+			if (m_listenToPublicMap)
+			{
+				// Broadcast only if we're not triggered by a network event
+				if (shouldPropagateChanges(netEvent))
+					m_frame.sendBroadcast(NetFlipMapElement.makePacket(element.getID(), element.getFlipH(), element.getFlipV()));
+			}
+
+			repaint();
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onAngleChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onAngleChanged(MapElement element, NetworkEvent netEvent)
+		{
+			if (m_listenToPublicMap)
+			{
+				// Broadcast only if we're not triggered by a network event
+				if (shouldPropagateChanges(netEvent))
+					m_frame.sendBroadcast(NetSetAngleMapElement.makePacket(element.getID(), element.getAngle()));
 			}
 
 			repaint();

@@ -26,7 +26,7 @@ import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.net.NetworkEvent;
 
 /**
- * todo: comment
+ * Interface allowing to react to changes within an element
  *
  * @author Eric Maziade
  */
@@ -65,4 +65,18 @@ public interface MapElementListenerIF
 	 * @param netEvent Triggering network event or null
 	 */
 	public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent);
+	
+	/**
+	 * Flip state has changed
+	 * @param element Element that has changed
+	 * @param netEvent Triggering network event or null
+	 */
+	public void onFlipChanged(MapElement element, NetworkEvent netEvent);
+	
+	/**
+	 * Angle state has changed
+	 * @param element Element that has changed
+	 * @param netEvent Triggering network event or null
+	 */
+	public void onAngleChanged(MapElement element, NetworkEvent netEvent);
 }

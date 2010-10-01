@@ -99,4 +99,24 @@ public class MapElementAdapterOmni implements MapElementListenerIF
   	for (MapElementListenerIF listener : m_listeners)
 			listener.onPositionChanged(element, newPosition, oldPosition, netEvent);
   }  
+  
+  /*
+   * @see com.galactanet.gametable.data.MapElementListenerIF#onFlipChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+   */
+  @Override
+  public void onFlipChanged(MapElement element, NetworkEvent netEvent)
+  {
+  	for (MapElementListenerIF listener : m_listeners)
+			listener.onFlipChanged(element, netEvent);  	
+  }
+  
+  /*
+   * @see com.galactanet.gametable.data.MapElementListenerIF#onAngleChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+   */
+  @Override
+  public void onAngleChanged(MapElement element, NetworkEvent netEvent)
+  {
+  	for (MapElementListenerIF listener : m_listeners)
+			listener.onAngleChanged(element, netEvent);  	
+  }
 }
