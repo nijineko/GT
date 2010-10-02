@@ -100,7 +100,7 @@ public class NetEraseLineSegments implements NetworkMessageTypeIF
     final int color = dis.readInt();
 
 		// erase the lines
-		GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap().eraseLineSegments(r, bColorSpecific, color, event);
+		GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap().removeLineSegments(r, bColorSpecific, color, event);
 	}
 	
 	/*

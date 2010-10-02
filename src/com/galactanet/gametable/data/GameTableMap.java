@@ -170,9 +170,9 @@ public class GameTableMap implements MapElementRepositoryIF
 	 * @param colorSpecific If true, will erase line segments of matching color
 	 * @param color Color of the line segments to erase (if colorSpecific is true)
 	 */
-	public void eraseLineSegments(final MapRectangle rect, boolean colorSpecific, final int color)
+	public void removeLineSegments(final MapRectangle rect, boolean colorSpecific, final int color)
 	{
-		eraseLineSegments(rect, colorSpecific, color, null);
+		removeLineSegments(rect, colorSpecific, color, null);
 	}
 	
 	/**
@@ -183,7 +183,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	 * @param color Color of the line segments to erase (if colorSpecific is true)
 	 * @param netEvent Network event.  Null if the change is not caused by responding to a network message.
 	 */
-	public void eraseLineSegments(final MapRectangle rect, boolean colorSpecific, final int color, NetworkEvent netEvent)
+	public void removeLineSegments(final MapRectangle rect, boolean colorSpecific, final int color, NetworkEvent netEvent)
 	{
 		final MapCoordinates modelStart = rect.topLeft;
 		final MapCoordinates modelEnd = new MapCoordinates(modelStart.x + rect.width, modelStart.y + rect.height);
@@ -230,7 +230,7 @@ public class GameTableMap implements MapElementRepositoryIF
 		// If all lines were removed, go through the more efficient 'clear all lines' way.
 		if (survivingLines.size() == 0)
 		{
-			clearLineSegments(netEvent);
+			removeLineSegments(netEvent);
 			return;			
 		}
 
@@ -275,7 +275,15 @@ public class GameTableMap implements MapElementRepositoryIF
 		mapElement.addListener(m_elementListener);
 		
 		for (GameTableMapListenerIF listener : m_listeners)
-			listener.onMapElementInstanceAdded(this, mapElement, netEvent);
+			listener.onMapElementAdded(this, mapElement, netEvent);
+	}
+	
+	/**
+	 * Clear this map of all data
+	 */
+	public void clearMap()	
+	{
+		clearMap(null);
 	}
 	
 	/**
@@ -285,23 +293,23 @@ public class GameTableMap implements MapElementRepositoryIF
 	public void clearMap(NetworkEvent netEvent)
 	{
 		getGroupManager().deleteAllGroups(netEvent);
-		clearLineSegments(netEvent);
-		clearMapElementInstances(netEvent);		
+		removeLineSegments(netEvent);
+		removeMapElements(netEvent);		
 	}
 	
 	/**
 	 * Remove all lines from the map
 	 */
-	public void clearLineSegments()
+	public void removeLineSegments()
 	{
-		clearLineSegments(null);
+		removeLineSegments((NetworkEvent)null);
 	}
 
 	/**
 	 * Remove all lines from the map
 	 * @param netEvent Network event that triggered the operation.  Null if non-network related.
 	 */
-	public void clearLineSegments(NetworkEvent netEvent)
+	public void removeLineSegments(NetworkEvent netEvent)
 	{
 		m_lines.clear();
 
@@ -312,28 +320,28 @@ public class GameTableMap implements MapElementRepositoryIF
   /**
 	 * Remove all elements from the map
 	 */
-	public void clearMapElementInstances()
+	public void removeMapElements()
 	{
-		clearMapElementInstances(null);
+		removeMapElements((NetworkEvent)null);
 	}
 	
   /**
 	 * Remove all elements from the map
 	 * @param netEvent Source network event or null
 	 */
-	public void clearMapElementInstances(NetworkEvent netEvent)
+	public void removeMapElements(NetworkEvent netEvent)
 	{
 		ArrayList<MapElement> mapElements = new ArrayList<MapElement>(m_mapElements);
 		
 		m_mapElements.clear();
 		
 		for (GameTableMapListenerIF listener : m_listeners)
-			listener.onMapElementInstancesCleared(this);
+			listener.onMapElementsCleared(this, netEvent);
 
 		for (MapElement element : mapElements)
 		{
 			for (GameTableMapListenerIF listener : m_listeners)
-				listener.onMapElementInstanceRemoved(this, element, true);
+				listener.onMapElementRemoved(this, element, true, netEvent);
 
 			element.removeListener(m_elementListener);
 		}
@@ -345,7 +353,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	 * @param converter Converter interface to convert saved element IDs to loaded element IDs
 	 * @param netEvent Source network event or null
 	 */
-  public void deserialize(Element parent, XMLSerializeConverter converter, NetworkEvent netEvent)
+  public void deserializeFromXML(Element parent, XMLSerializeConverter converter, NetworkEvent netEvent)
   {
   	Element elements = XMLUtils.getFirstChildElementByTagName(parent, "elements");
   	
@@ -516,7 +524,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	 */
 	public MapElement getMapElementByName(final String name)
 	{
-		return getMapElementInstancesByName(name, null);
+		return getMapElementsByName(name, null);
 	}
 
 	/**
@@ -538,7 +546,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	public List<MapElement> getMapElementsByName(String name)
 	{
 		List<MapElement> retVal = new ArrayList<MapElement>();
-		getMapElementInstancesByName(name, retVal);
+		getMapElementsByName(name, retVal);
 
 		return retVal;
 	}
@@ -575,35 +583,74 @@ public class GameTableMap implements MapElementRepositoryIF
   
   /**
 	 * Remove a given map element instance from the map
-	 * 
 	 * @param mapElement Map element instance to remove
 	 */
-	public void removeMapElementInstance(final MapElement mapElement)
+	public void removeMapElement(final MapElement mapElement)
+	{
+		removeMapElement(mapElement, null);
+	}
+  
+  /**
+	 * Remove a given map element instance from the map
+	 * 
+	 * @param mapElement Map element instance to remove
+	 * @param netEvent If non-null, contains information about the network event that triggered the change.
+	 */
+	public void removeMapElement(final MapElement mapElement, NetworkEvent netEvent)
 	{
 		m_mapElements.remove(mapElement);
 		
 		mapElement.removeListener(m_elementListener);
 		
 		for (GameTableMapListenerIF listener : m_listeners)
-			listener.onMapElementInstanceRemoved(this, mapElement, false);
+			listener.onMapElementRemoved(this, mapElement, false, netEvent);
+	}
+	
+	/**
+	 * Remove multiple element instances from the map
+	 * 
+	 * @param instances list of instances to remove
+	 */
+	public void removeMapElements(List<MapElement> instances)
+	{
+		removeMapElements(instances, null);
 	}
   
   /**
 	 * Remove multiple element instances from the map
 	 * 
-	 * @param instances list of instances to remove
+	 * @param mapElements list of instances to remove
+	 * @param netEvent If non-null, contains information about the network event that triggered the change.
 	 */
-	public void removeMapElementInstances(List<MapElement> instances)
+	public void removeMapElements(List<MapElement> mapElements, NetworkEvent netEvent)
 	{
-		for (MapElement instance : instances)			
-			removeMapElementInstance(instance);
+		// We'll create a copy of the list to prevent comodifications issues
+		List<MapElement> instances = new ArrayList<MapElement>(mapElements);
+		
+		// Remove
+		m_mapElements.removeAll(instances);			
+
+		// Clear listeners
+		for (MapElement mapElement : instances)
+			mapElement.removeListener(m_elementListener);		
+		
+		// Call "big" listener
+		for (GameTableMapListenerIF listener : m_listeners)
+			listener.onMapElementsRemoved(this, instances, netEvent);
+		
+		// Call "small" listeners with batch flag
+		for (MapElement mapElement : instances)
+		{
+			for (GameTableMapListenerIF listener : m_listeners)
+				listener.onMapElementRemoved(this, mapElement, true, netEvent);
+		}
 	}
   
 	/**
 	 * Store information from your component from inside parent element 
 	 * @param parent Parent element, as populated by calling thread.  You can add custom XML data as children.
 	 */
-  public void serialize(Element parent)
+  public void serializeToXML(Element parent)
   {
   	Document doc = parent.getOwnerDocument();
   	Element elements = doc.createElement("elements");  	
@@ -636,7 +683,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	 * @param mapElements if non-null, will be populated with all matching pogs
 	 * @return If mapElements is null, will return first matching insatnce
 	 */
-	private MapElement getMapElementInstancesByName(String name, List<MapElement> mapElements)
+	private MapElement getMapElementsByName(String name, List<MapElement> mapElements)
 	{
 		if (name == null || name.equals(""))
 			return null;

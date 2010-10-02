@@ -113,7 +113,7 @@ public class NetLoadMap implements NetworkMessageTypeIF
 			doc = XMLUtils.createDocument();
 			Element rootEl = doc.createElement("map");
 			doc.appendChild(rootEl);
-			map.serialize(rootEl);
+			map.serializeToXML(rootEl);
 		}
 		catch (IOException e)
 		{
@@ -174,7 +174,7 @@ public class NetLoadMap implements NetworkMessageTypeIF
 		map.clearMap(event);
 
 		LoadMapSerializeConverter converter = new LoadMapSerializeConverter();
-		map.deserialize(mapDocument.getDocumentElement(), converter, event);
+		map.deserializeFromXML(mapDocument.getDocumentElement(), converter, event);
 
 		GametableFrame.getGametableFrame().repaint();
 	}

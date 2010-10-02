@@ -83,7 +83,7 @@ public class NetClearLineSegments implements NetworkMessageTypeIF
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
 		// erase the lines
-		GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap().clearLineSegments(event);
+		GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap().removeLineSegments(event);
 	}
 	
 	/*

@@ -93,12 +93,12 @@ public class EraseTool extends NullTool
         {
             if (m_bEraseColor)
             {
-            	m_canvas.getActiveMap().eraseLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), true,
+            	m_canvas.getActiveMap().removeLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), true,
                     GametableFrame.getGametableFrame().m_drawColor.getRGB());
             }
             else
             {
-            	m_canvas.getActiveMap().eraseLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), false, 0);
+            	m_canvas.getActiveMap().removeLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), false, 0);
             }
         }
         endAction();

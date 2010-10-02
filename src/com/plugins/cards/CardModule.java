@@ -31,6 +31,7 @@ import org.w3c.dom.Element;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.module.Module;
 import com.galactanet.gametable.net.NetworkConnectionIF;
+import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.net.NetworkModuleIF;
 import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.GameTableFrameAdapter;
@@ -358,14 +359,11 @@ public class CardModule extends Module implements MessageListener
 
 		GameTableMapListenerIF listener = new GameTableMapAdapter() {
 			/*
-			 * @see
-			 * com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data
-			 * .GameTableMap, com.galactanet.gametable.data.MapElement, boolean)
+			 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement, boolean, com.galactanet.gametable.net.NetworkEvent)
 			 */
 			@Override
-			public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
+			public void onMapElementRemoved(GameTableMap map, MapElement mapElement, boolean batch, NetworkEvent netEvent)
 			{
-				super.onMapElementInstanceRemoved(map, mapElement, clearingMap);
 				discard(mapElement);
 			}
 		};
@@ -1015,7 +1013,7 @@ public class CardModule extends Module implements MessageListener
 		}
 
 		// remove any offending pogs
-		map.removeMapElementInstances(removeList);
+		map.removeMapElements(removeList);
 	}
 
 	private void showDeckUsage()
