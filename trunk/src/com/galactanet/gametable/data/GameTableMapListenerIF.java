@@ -41,30 +41,40 @@ public interface GameTableMapListenerIF
 	 * @param mapElement The map element that has been added
 	 * @param netEvent Network event information that triggered the event or null
 	 */
-	public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent);
+	public void onMapElementAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent);
 	
 	/**
 	 * Called when all map element instances have been removed in one call (onMapElementInstanceRemoved will also be called for individual items)
 	 * @param map The triggering map
+	 * @param netEvent Network event information that triggered the event or null
 	 */
-	public void onMapElementInstancesCleared(GameTableMap map);
+	public void onMapElementsCleared(GameTableMap map, NetworkEvent netEvent);
 	
 	/**
 	 * Called when a map element instance has been removed from the map
 	 * @param map The triggering map
 	 * @param mapElement The map element that has been removed
-	 * @param clearingMap Set to true if this instance is removed because of a call to 'clearElementInstances'.  
-	 * Allows to optimize by doing batch process through another listener when possible (onMapElementInstancesCleared will be called first) 
+	 * @param batch Set to true if this instance is removed because of a call to a method removing multiple mapElemtns (onMapElementInstancesCleared or onMapElementInstancesRemoved)  
+	 * Allows to optimize by doing batch process through another listener when possible (onMapElementInstancesCleared will be called first)
+	 * @param netEvent Network event information that triggered the event or null
 	 */
-	public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap);
+	public void onMapElementRemoved(GameTableMap map, MapElement mapElement, boolean batch, NetworkEvent netEvent);
+	
+	/**
+	 * Called when a batch of map element instances have been removed from the map. (onMapElementInstanceRemoved will also be called for individual items)
+	 * @param map The triggering map
+	 * @param mapElements The list of map elements that have been removed
+	 * @param netEvent Network event information that triggered the event or null
+	 */
+	public void onMapElementsRemoved(GameTableMap map, List<MapElement> mapElements, NetworkEvent netEvent);
 	
 	/**
 	 * Called when a line segment has been added to the map
 	 * @param map The triggering map
 	 * @param lineSegment The segment that has been added
-	 * @param batch If true, this method has been triggered as part of an 'onLineSegmentsAdded' call 
+	 * @param batch If true, this method has been triggered as part of an 'onLineSegmentsAdded' call
+	 * Allows to optimize by doing batch process through another listener when possible (onLineSegmentsAdded will be called first) 
 	 * @param netEvent If non-null, contains information about the network event that triggered the change.
-	 * Allows to optimize by doing batch process through another listener when possible (onLineSegmentsAdded will be called first)
 	 */
 	public void onLineSegmentAdded(GameTableMap map, LineSegment lineSegment, boolean batch, NetworkEvent netEvent);
 	

@@ -688,16 +688,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_chatPanel.logSystemMessage(getLanguageResource().DISCONNECTED);
 		updateStatus();
 	}
-
-	/**
-	 * erases everything from the game canvas
-	 */
-	public void eraseAll()
-	{
-		getGametableCanvas().getActiveMap().clearLineSegments();
-		eraseAllPogs();
-	}
-
+	
 	public GroupManager getActiveGroupManager()
 	{
 		return getGametableCanvas().getActiveMap().getGroupManager();
@@ -1064,8 +1055,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 				// reset game data
 				m_gametableCanvas.setScrollPosition(0, 0);
-				m_gametableCanvas.getPublicMap().clearMapElementInstances();
-				m_gametableCanvas.getPublicMap().clearLineSegments();
+				m_gametableCanvas.getPublicMap().clearMap(null);
 				
 				// Send player info to the host
 				send(NetSendPlayerInfo.makePacket(me, m_networkModule.getPassword()), conn);
@@ -1165,13 +1155,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			if (loadPublic)
 			{
 				Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
-				m_gametableCanvas.getPublicMap().deserialize(publicEl, converter, null);
+				m_gametableCanvas.getPublicMap().deserializeFromXML(publicEl, converter, null);
 			}
 
 			if (loadPrivate)
 			{
 				Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
-				m_gametableCanvas.getPrivateMap().deserialize(privateEl, converter, null);
+				m_gametableCanvas.getPrivateMap().deserializeFromXML(privateEl, converter, null);
 			}
 
 			if (loadPublic && loadPrivate)
@@ -1701,11 +1691,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 		Element publicEl = doc.createElement("public_map");
 		root.appendChild(publicEl);
-		m_gametableCanvas.getPublicMap().serialize(publicEl);
+		m_gametableCanvas.getPublicMap().serializeToXML(publicEl);
 
 		Element privateEl = doc.createElement("private_map");
 		root.appendChild(privateEl);
-		m_gametableCanvas.getPrivateMap().serialize(privateEl);
+		m_gametableCanvas.getPrivateMap().serializeToXML(privateEl);
 
 		storeLockedElementsToXML(doc, root);
 		storeGridToXML(doc, root);
@@ -2094,18 +2084,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	}
 
 	/**
-	 * erases all pogs, also clearing the array of active pogs
-	 * 
-	 * @revise move to MODEL.
-	 */
-	private void eraseAllPogs()
-	{
-		// make an int array of all the IDs
-		List<MapElement> pogs = getGametableCanvas().getActiveMap().getMapElements();
-		getGametableCanvas().removePogs(pogs);
-	}
-
-	/**
 	 * Export map to JPeg file
 	 */
 	private void exportMap()
@@ -2218,8 +2196,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 				final int res = UtilityFunctions.yesNoDialog(GametableFrame.this, getLanguageResource().MAP_CLEAR_WARNING, getLanguageResource().MAP_CLEAR);
 				if (res == UtilityFunctions.YES)
 				{
-					eraseAllPogs();
-					getGametableCanvas().getActiveMap().clearLineSegments();
+					GameTableMap map = m_gametableCanvas.getActiveMap();
+					map.clearMap(null);
 				}
 			}
 		});
@@ -2766,7 +2744,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
-				getGametableCanvas().removePogs(getGametableCanvas().getSelectedMapElementInstances());
+				m_gametableCanvas.getActiveMap().removeMapElements(m_gametableCanvas.getSelectedMapElementInstances());
 			}
 		});
 
@@ -2898,7 +2876,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 				for (MapElement pog : getGametableCanvas().getSelectedMapElementInstances())
 				{
 					to.addMapElement(pog);
-					map.removeMapElementInstance(pog);
+					map.removeMapElement(pog);
 					if (copy)
 					{
 						npog = new MapElement(pog);
@@ -3281,7 +3259,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetLoginRejected.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementPosition.getMessageType());
 		m_networkModule.registerMessageType(NetRecenterMap.getMessageType());
-		// NetRemoveMapElement
+		m_networkModule.registerMessageType(NetRemoveMapElement.getMessageType());
 		// NetRequestImage
 		m_networkModule.registerMessageType(NetSetAngleMapElement.getMessageType());
 		m_networkModule.registerMessageType(NetSendChatText.getMessageType());

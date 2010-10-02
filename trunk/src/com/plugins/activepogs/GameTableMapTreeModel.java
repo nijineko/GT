@@ -56,13 +56,15 @@ public class GameTableMapTreeModel extends DefaultTreeModel
 			@Override
 			public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer)
 			{
+				NetworkEvent netEvent = null;
+				
 				if (newLayer == Layer.POG)
 				{
-					m_gameTableMapListener.onMapElementInstanceAdded(m_map, element, null);
+					m_gameTableMapListener.onMapElementAdded(m_map, element, netEvent);
 				}
 				else if (oldLayer == Layer.POG)
 				{
-					m_gameTableMapListener.onMapElementInstanceRemoved(m_map, element, false);
+					m_gameTableMapListener.onMapElementRemoved(m_map, element, false, netEvent);
 				}
 			}
 			
@@ -220,7 +222,7 @@ public class GameTableMapTreeModel extends DefaultTreeModel
 		 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
 		 */
 		@Override
-		public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent)
+		public void onMapElementAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent)
 		{
 			if (mapElement.getLayer() == Layer.POG)
 			{
@@ -233,9 +235,9 @@ public class GameTableMapTreeModel extends DefaultTreeModel
 		 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstanceRemoved(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement)
 		 */
 		@Override
-		public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
+		public void onMapElementRemoved(GameTableMap map, MapElement mapElement, boolean batch, NetworkEvent netEvent)
 		{
-			if (!clearingMap)
+			if (!batch)
 			{
 				MapElementNode node = findElementNode(mapElement);
 				
@@ -248,10 +250,21 @@ public class GameTableMapTreeModel extends DefaultTreeModel
 		}
 		
 		/*
+		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstancesRemoved(com.galactanet.gametable.data.GameTableMap, java.util.List, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onMapElementsRemoved(GameTableMap map, List<MapElement> mapElements, NetworkEvent netEvent)
+		{
+			// Since there's no way to make this more efficient in batch, we'll send it back as non-batch
+			for (MapElement mapElement : mapElements)
+				onMapElementRemoved(map, mapElement, false, netEvent);
+		}
+		
+		/*
 		 * @see com.galactanet.gametable.data.GameTableMapListenerIF#onMapElementInstancesCleared(com.galactanet.gametable.data.GameTableMap)
 		 */
 		@Override
-		public void onMapElementInstancesCleared(GameTableMap map)
+		public void onMapElementsCleared(GameTableMap map, NetworkEvent netEvent)
 		{
 			m_rootNode.removeAllChildren();		
 		}

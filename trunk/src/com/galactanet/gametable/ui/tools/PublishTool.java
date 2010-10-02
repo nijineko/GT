@@ -160,17 +160,20 @@ public class PublishTool extends NullTool
             {
                 // remove the pogs that we moved
             	
+            	List<MapElement> items = new ArrayList<MapElement>();
             	for (MapElement pog : m_from.getMapElements().toArray(new MapElement[0]))	// converting list to array to avoid concurrent modifications
                 {
                     if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
-                    {
-                        m_canvas.removeMapElement(pog.getID());	// this would cause concurrent modifications if we used the returned list directly 
+                    {                    	
+                    	items.add(pog);
                     }
                 }
 
+            	m_canvas.getActiveMap().removeMapElements(items);
+
                 // remove the line segments
                 final MapRectangle eraseRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
-                m_canvas.getActiveMap().eraseLineSegments(eraseRect, false, -1);
+                m_canvas.getActiveMap().removeLineSegments(eraseRect, false, -1);
             }
         }
         endAction();

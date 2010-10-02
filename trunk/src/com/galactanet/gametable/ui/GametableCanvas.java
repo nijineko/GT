@@ -624,39 +624,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	public void doRemovePog(final MapElementID id)
-	{
-		final MapElement toRemove = getActiveMap().getMapElement(id);
-		if (toRemove != null)
-		{
-			Group g = getActiveMap().getGroupManager().getGroup(toRemove);
-			if (g != null)
-				g.removeElement(toRemove); // #grouping @revise automatic removal from group should be centralized in DATA
-
-			getActiveMap().removeMapElementInstance(toRemove);
-		}
-
-		repaint();
-	}
-
-	private void doRemovePogs(final MapElementID[] ids)
-	{
-		// remove all the offending pogs
-		for (int i = 0; i < ids.length; i++)
-		{
-			doRemovePog(ids[i]);
-		}
-	}
-
-	public void doRemovePogs(List<MapElement> pogs)
-	{
-		// remove all the offending pogs
-		for (MapElement pog : pogs.toArray(new MapElement[0])) // convert to array to avoid comodification
-		{
-			doRemovePog(pog.getID());
-		}
-	}
-
 	public void doSetPogData(final MapElementID id, final String s, final Map<String, String> toAdd, final Set<String> toDelete)
 	{
 		final MapElement pog = getActiveMap().getMapElement(id);
@@ -1853,51 +1820,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		setToolCursor(-1);
 	}
 
-	public void removeMapElement(final MapElementID id)
-	{
-		doRemovePogs(new MapElementID[] { id });
-	}
-
 	/*
 	 * Pass the ability to check NetStatus up the chain of object calls
 	 */
 	public NetworkStatus getNetworkStatus()
 	{
 		return m_frame.getNetworkStatus();
-	}
-
-	public void removePogs(final MapElementID ids[])
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetRemoveMapElements.makePacket(ids));
-
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				doRemovePogs(ids);
-			}
-		}
-		else
-		{
-			doRemovePogs(ids);
-		}
-	}
-
-	public void removePogs(List<MapElement> pogs)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetRemoveMapElements.makePacket(pogs));
-
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				doRemovePogs(pogs);
-			}
-		}
-		else
-		{
-			doRemovePogs(pogs);
-		}
 	}
 
 	public void scrollMapTo(MapCoordinates modelPoint)
@@ -2603,13 +2531,36 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		 * .GameTableMap, com.galactanet.gametable.data.MapElement, boolean)
 		 */
 		@Override
-		public void onMapElementInstanceRemoved(GameTableMap map, MapElement mapElement, boolean clearingMap)
+		public void onMapElementRemoved(GameTableMap map, MapElement mapElement, boolean batch, NetworkEvent netEvent)
 		{
-			if (!clearingMap)
+			if (!batch)
+			{
+				selectMapElementInstance(mapElement, map == m_publicMap, false);
+				highlightMapElementInstance(mapElement, false);
+				
+				if (shouldPropagateChanges(netEvent))
+					m_frame.sendBroadcast(NetRemoveMapElement.makePacket(mapElement));
+				
+				repaint();				
+			}
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstancesRemoved(com.galactanet.gametable.data.GameTableMap, java.util.List, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onMapElementsRemoved(GameTableMap map, List<MapElement> mapElements, NetworkEvent netEvent)
+		{
+			for (MapElement mapElement : mapElements)
 			{
 				selectMapElementInstance(mapElement, map == m_publicMap, false);
 				highlightMapElementInstance(mapElement, false);
 			}
+			
+			if (shouldPropagateChanges(netEvent) && mapElements.size() > 0)
+				m_frame.sendBroadcast(NetRemoveMapElement.makePacket(mapElements));
+			
+			repaint();
 		}
 
 		/*
@@ -2618,10 +2569,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		 * .GameTableMap)
 		 */
 		@Override
-		public void onMapElementInstancesCleared(GameTableMap map)
+		public void onMapElementsCleared(GameTableMap map, NetworkEvent netEvent)
 		{
 			unselectAllMapElementInstances(map == m_publicMap);
 			highlightAllMapElementInstances(false);
+			
+			if (shouldPropagateChanges(netEvent))
+				m_frame.sendBroadcast(NetRemoveMapElement.makeRemoveAllPacket());
+			
+			repaint();
 		}
 		
 		/*
@@ -2695,7 +2651,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
-		public void onMapElementInstanceAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent)
+		public void onMapElementAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent)
 		{
 			if (map.isPublicMap())
 			{

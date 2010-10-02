@@ -236,7 +236,7 @@ public class PointerTool extends NullTool
 					if (!m_canvas.isPointVisible(m_mousePosition))
 					{
 						// We moved outside canvas, consider the mapElement as removed
-						m_canvas.removeMapElement(m_grabbedMapElement.getID());
+						m_canvas.getActiveMap().removeMapElement(m_grabbedMapElement);
 					}
 					else
 					{
@@ -428,7 +428,7 @@ public class PointerTool extends NullTool
 					if ((modifierMask & MODIFIER_CTRL) == 0) // not holding control
 					{
 						// remove the pogs that we moved
-						m_canvas.removeMapElement(pog.getID());
+						m_canvas.getActiveMap().removeMapElement(pog);
 					}
 				}
 			});
