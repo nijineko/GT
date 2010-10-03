@@ -7,6 +7,8 @@ import java.util.List;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.ui.GametableCanvas;
+import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
 
 
 
@@ -19,6 +21,7 @@ import com.galactanet.gametable.ui.GametableCanvas;
  */
 public class PublishTool extends NullTool
 {
+		private final GametableFrame m_frame;
     private GametableCanvas m_canvas;
     private GameTableMap    m_from;
     private MapCoordinates           m_mouseAnchor;
@@ -35,6 +38,7 @@ public class PublishTool extends NullTool
      */
     public PublishTool()
     {
+    	m_frame = GametableFrame.getGametableFrame();
     }
 
     /*
@@ -113,7 +117,7 @@ public class PublishTool extends NullTool
             // first off, copy all the pogs/underlays over to the public layer
         	for (MapElement pog : m_from.getMapElements())
             {
-                if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
+                if (m_canvas.isHighlighted(pog) && (!m_frame.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
                     // this pog gets copied
                     final MapElement newPog = new MapElement(pog);
@@ -121,9 +125,9 @@ public class PublishTool extends NullTool
                     m_canvas.setActiveMap(m_to);
                     m_to.addMapElement(newPog);
                     
-                    if (m_canvas.isLocked(pog))
+                    if (m_frame.isMapElementLocked(pog))
                     {
-                        m_canvas.lockMapElement(newPog, true);
+                    	m_frame.lockMapElement(GameTableMapType.ACTIVE, newPog, true);
                     }
                     
                     m_canvas.setActiveMap(m_from);
@@ -163,7 +167,7 @@ public class PublishTool extends NullTool
             	List<MapElement> items = new ArrayList<MapElement>();
             	for (MapElement pog : m_from.getMapElements().toArray(new MapElement[0]))	// converting list to array to avoid concurrent modifications
                 {
-                    if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
+                    if (m_canvas.isHighlighted(pog) && (!m_frame.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                     {                    	
                     	items.add(pog);
                     }
@@ -232,7 +236,7 @@ public class PublishTool extends NullTool
             
             final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
-            if (selRect.intersects(pogRect) && (!m_canvas.isLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
+            if (selRect.intersects(pogRect) && (!m_frame.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
             {
             	m_canvas.highlightMapElementInstance(pog, true);
             }

@@ -400,6 +400,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	private GametableFrame()
 	{
 		g_gameTableFrame = this;
+		m_lockedElements = new SelectionHandler();
 		m_players = new ArrayList<Player>();
 		m_unmodifiablePlayers = Collections.unmodifiableList(m_players);
 		m_playerListener = new PlayerAdapter() {
@@ -1313,17 +1314,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	// return item;
 	// }
 
-
-	public void lockAllPogPacketReceived(final boolean lock)
-	{
-		getGametableCanvas().lockAllMapElements(true, lock);
-		
-		if (getNetworkStatus() == NetworkStatus.HOSTING)
-		{
-			sendBroadcast(NetLockMapElements.makeLockAllPacket(lock));
-		}
-	}
-
 	/**
 	 * A player just joined this hosted session.  Used by NetSendPlayerInfo.
 	 * @param sourceConnection Network source connection
@@ -2055,34 +2045,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			}
 		};
 	}
-
-	private void doLockMap(final boolean lock)
-	{
-		final GameTableMap mapToLock = m_gametableCanvas.getActiveMap();
-		boolean priv = true;
-		if (mapToLock == getGametableCanvas().getPublicMap())
-			priv = false;
-
-		if (priv || (getNetworkStatus() == NetworkStatus.DISCONNECTED))
-		{
-			getGametableCanvas().lockAllMapElements(!priv, lock);
-			
-			if (lock)
-				sendMechanicsMessageLocal(getLanguageResource().MAP_LOCK_ALL_DONE);
-			else
-				sendMechanicsMessageLocal(getLanguageResource().MAP_UNLOCK_ALL_DONE);
-		}
-		else
-		{
-			if (lock)
-				sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_LOCK_ALL_DONE2);
-			else
-				sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_UNLOCK_ALL_DONE2);
-			
-			sendBroadcast(NetLockMapElements.makeLockAllPacket(lock));
-		}
-	}
-
+	
 	/**
 	 * Export map to JPeg file
 	 */
@@ -2442,7 +2405,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e)
 			{
-				doLockMap(lock);
+				lockAllMapElements(GameTableMapType.ACTIVE, lock);
 			}
 		});
 
@@ -3254,7 +3217,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetFlipMapElement.getMessageType());
 		m_networkModule.registerMessageType(NetGroupAction.getMessageType());
 		// NetLoadMap
-		// NetLockMapElement
+		m_networkModule.registerMessageType(NetLockMapElements.getMessageType());
 		m_networkModule.registerMessageType(NetLoginComplete.getMessageType());
 		m_networkModule.registerMessageType(NetLoginRejected.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementPosition.getMessageType());
@@ -3432,7 +3395,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 */
 	private void loadLockedElementsFromXML(Element root, XMLSerializeConverter converter)
 	{
-		m_gametableCanvas.lockAllMapElements(m_gametableCanvas.isPublicMap(), false);
+		lockAllMapElements(GameTableMapType.ACTIVE, false, null);
 		Element listEl = XMLUtils.getFirstChildElementByTagName(root, "locked");
 		if (listEl == null)
 			return;
@@ -3445,7 +3408,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			{
 				MapElement mapEl = getMapElement(elID);
 				if (mapEl != null)
-					m_gametableCanvas.lockMapElement(mapEl, true);
+					lockMapElement(GameTableMapType.ACTIVE, mapEl, true, null);
 			}
 		}
 	}
@@ -3536,7 +3499,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 */
 	private void storeLockedElementsToXML(Document doc, Element root)
 	{
-		List<MapElement> elements = m_gametableCanvas.getlockedMapElementInstances();
+		List<MapElement> elements = m_lockedElements.getSelectedMapElements();
 		if (elements.size() == 0)
 			return;
 
@@ -3765,9 +3728,137 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	}
 	
 	/**
+	 * Lock specified all map elements from a given map
+	 * @param mapType Map on which to lock
+	 * @param lock True to lock, false to unlock
+	 */
+	public void lockAllMapElements(GameTableMapType mapType, boolean lock)
+	{
+		lockAllMapElements(mapType, lock, null);
+	}
+
+	/**
+	 * Lock specified all map elements from a given map
+	 * @param mapType Map on which to lock
+	 * @param lock True to lock, false to unlock
+	 * @param netEvent Network event that triggered the change or null
+	 */
+	public void lockAllMapElements(GameTableMapType mapType, boolean lock, NetworkEvent netEvent)
+	{
+		if (mapType.isPublic() && shouldPropagateChanges(netEvent))
+			sendBroadcast(NetLockMapElements.makeLockAllPacket(lock));
+		
+		GameTableMap map = getGameTableMap(mapType);
+		m_lockedElements.selectMapElements(map.getMapElements(), lock);
+		
+		if (netEvent == null && getNetworkStatus() != NetworkStatus.DISCONNECTED)
+		{
+			if (lock)
+				sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_LOCK_ALL_DONE2);
+			else
+				sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_UNLOCK_ALL_DONE2);
+		}
+		
+		repaint();
+	}
+	
+	/**
+	 * Lock specified map elements
+	 * @param mapElements Elements to lock
+	 * @param lock True to lock, false to unlock
+	 */
+	public void lockMapElements(GameTableMapType mapType, List<MapElement> mapElements, boolean lock)
+	{
+		lockMapElements(mapType, mapElements, lock, null);
+	}
+	
+	/**
+	 * Lock specified map elements
+	 * @param mapElements Elements to lock
+	 * @param lock True to lock, false to unlock
+	 * @param netEvent Network event that triggered the change or null
+	 */
+	public void lockMapElements(GameTableMapType mapType, List<MapElement> mapElements, boolean lock, NetworkEvent netEvent)
+	{
+		if (mapType.isPublic() && shouldPropagateChanges(netEvent))
+			sendBroadcast(NetLockMapElements.makePacket(mapElements, lock));
+		
+		m_lockedElements.selectMapElements(mapElements, lock);
+		
+		repaint();
+	}
+	
+	/**
+	 * Lock specified map elements
+	 * @param mapType Map on which to lock
+	 * @param mapElement Element to lock
+	 * @param lock True to lock, false to unlock
+	 */
+	public void lockMapElement(GameTableMapType mapType, MapElement mapElement, boolean lock)
+	{
+		lockMapElement(mapType, mapElement, lock, null);
+	}
+	
+	/**
+	 * Lock specified map elements
+	 * @param mapType Map on which to lock
+	 * @param mapElement Element to lock
+	 * @param lock True to lock, false to unlock
+	 * @param netEvent Network event that triggered the change or null
+	 */
+	public void lockMapElement(GameTableMapType mapType, MapElement mapElement, boolean lock, NetworkEvent netEvent)
+	{
+		if (mapType.isPublic() && shouldPropagateChanges(netEvent))
+			sendBroadcast(NetLockMapElements.makePacket(mapElement, lock));
+		
+		m_lockedElements.selectMapElement(mapElement, lock);
+		
+		repaint();
+}
+	
+	/**
+	 * Gets the list of locked element instances
+	 * 
+	 * @return The list of currently selected instances (unmodifiable). Never null.
+	 */
+	public List<MapElement> getLockedMapElements()
+	{
+		return m_lockedElements.getSelectedMapElements();
+	}
+
+	/**
+	 * Checks if a specific map element is marked as locked
+	 * 
+	 * @param mapElement Map element to lock
+	 * @return true if locked
+	 */
+	public boolean isMapElementLocked(MapElement mapElement)
+	{
+		return m_lockedElements.isSelected(mapElement);
+	}
+	
+	/**
 	 * Instance of network message handling class
 	 */
 	private NetworkResponder m_networkResponder;
 	
-	public static enum GameTableMapType { PUBLIC, PRIVATE, ACTIVE }
+	public static enum GameTableMapType { 
+		PUBLIC, PRIVATE, ACTIVE;
+		
+		public boolean isPublic()
+		{
+			if (this == PUBLIC)
+				return true;
+			
+			if (this == ACTIVE && getGametableFrame().m_gametableCanvas.isPublicMap())
+				return true;
+			
+			return false;
+		}
+	}
+	
+	/**
+	 * Holds data about which element is locked
+	 */
+	private SelectionHandler		m_lockedElements;
 }

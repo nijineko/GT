@@ -23,6 +23,7 @@ import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.SetPogAttributeDialog;
 import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
+import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
@@ -231,7 +232,7 @@ public class PointerTool extends NullTool
 			}
 			else
 			{
-				if (!m_canvas.isLocked(m_grabbedMapElement))
+				if (!m_frame.isMapElementLocked(m_grabbedMapElement))
 				{
 					if (!m_canvas.isPointVisible(m_mousePosition))
 					{
@@ -256,7 +257,7 @@ public class PointerTool extends NullTool
 	{
 		setSnapping(modifierMask);
 		m_mousePosition = modelPos;
-		if ((m_grabbedMapElement != null) && !m_canvas.isLocked(m_grabbedMapElement))
+		if ((m_grabbedMapElement != null) && !m_frame.isMapElementLocked(m_grabbedMapElement))
 		{
 			m_clicked = false;
 			if (m_snapping)
@@ -278,7 +279,7 @@ public class PointerTool extends NullTool
 			final MapCoordinates modelDelta = m_canvas.drawToModel(m_startMouse.x - mousePosition.x, m_startMouse.y - mousePosition.y);
 			m_canvas.scrollMapTo(m_startScroll.delta(modelDelta));
 		}
-		else if ((m_grabbedMapElement != null) && m_canvas.isLocked(m_grabbedMapElement))
+		else if ((m_grabbedMapElement != null) && m_frame.isMapElementLocked(m_grabbedMapElement))
 		{
 			m_clicked = false;
 		}
@@ -363,11 +364,11 @@ public class PointerTool extends NullTool
 		else
 		{
 			menu.add(new JMenuItem("Cancel"));
-			JMenuItem item = new JMenuItem(m_canvas.isLocked(m_menuPog) ? "Unlock" : "Lock");
+			JMenuItem item = new JMenuItem(m_frame.isMapElementLocked(m_menuPog) ? "Unlock" : "Lock");
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.lockPog(m_menuPog.getID(), !m_canvas.isLocked(m_menuPog));
+					m_frame.lockMapElement(GameTableMapType.ACTIVE, m_menuPog, !m_frame.isMapElementLocked(m_menuPog));
 					// System.out.println(m_menuPog.isLocked());
 				}
 			});
@@ -422,7 +423,7 @@ public class PointerTool extends NullTool
 					final MapElement newPog = new MapElement(pog);
 					m_canvas.setActiveMap(m_to);
 					m_to.addMapElement(newPog);
-					m_canvas.lockPog(newPog.getID(), m_canvas.isLocked(pog));
+					m_frame.lockMapElement(GameTableMapType.ACTIVE, newPog, m_frame.isMapElementLocked(pog));
 					m_canvas.setActiveMap(m_from);
 
 					if ((modifierMask & MODIFIER_CTRL) == 0) // not holding control

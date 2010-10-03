@@ -8,6 +8,7 @@ import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapRectangle;
 import com.galactanet.gametable.ui.GametableCanvas;
+import com.galactanet.gametable.ui.GametableFrame;
 
 /**
  * Map tool for erasing lines.
@@ -17,6 +18,7 @@ import com.galactanet.gametable.ui.GametableCanvas;
 public class SelectTool extends NullTool
 {
     private GametableCanvas m_canvas;
+    private final GametableFrame m_frame;
     private MapCoordinates           m_mouseAnchor;
     private MapCoordinates           m_mouseFloat;
 
@@ -25,6 +27,7 @@ public class SelectTool extends NullTool
      */
     public SelectTool()
     {
+    	m_frame = GametableFrame.getGametableFrame();
     }
 
     /*
@@ -33,7 +36,7 @@ public class SelectTool extends NullTool
     @Override
 		public void activate(final GametableCanvas canvas)
     {
-        m_canvas = canvas;
+        m_canvas = canvas;         
         m_mouseAnchor = null;
         m_mouseFloat = null;
     }
@@ -93,7 +96,7 @@ public class SelectTool extends NullTool
             
             for (MapElement pog : m_canvas.getActiveMap().getMapElements())
             {
-                if (m_canvas.isHighlighted(pog) && (!m_canvas.isLocked(pog) || bIgnoreLock)) {
+                if (m_canvas.isHighlighted(pog) && (!m_frame.isMapElementLocked(pog) || bIgnoreLock)) {
                     m_canvas.selectMapElementInstance(pog, true);
                 }                
             }
@@ -148,7 +151,7 @@ public class SelectTool extends NullTool
           
           final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
-            if (selRect.intersects(pogRect) && (!m_canvas.isLocked(pog) || bIgnoreLock))
+            if (selRect.intersects(pogRect) && (!m_frame.isMapElementLocked(pog) || bIgnoreLock))
             {
                 // this pog will be sent
             	m_canvas.highlightMapElementInstance(pog, true);

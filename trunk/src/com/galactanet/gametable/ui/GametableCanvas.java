@@ -140,8 +140,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	private SelectionHandler		m_selectionPublic;
 	private SelectionHandler		m_selectionPrivate;
-	private SelectionHandler		m_highlightedElements;
-	private SelectionHandler		m_lockedElements;
+	private SelectionHandler		m_highlightedElements;	
 
 	/**
 	 * This is the number of screen pixels that are used per model pixel. It's never less than 1
@@ -165,7 +164,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		m_selectionPublic = new SelectionHandler();
 		m_selectionPrivate = new SelectionHandler();
 		m_highlightedElements = new SelectionHandler();
-		m_lockedElements = new SelectionHandler();
 
 		setFocusable(true);
 		setRequestFocusEnabled(true);
@@ -1210,23 +1208,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 
 		return false;
-	}
-
-	public void lockPog(final MapElementID id, final boolean newLock)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetLockMapElements.makePacket(id, newLock));
-
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				lockMapElement(id, newLock);
-			}
-		}
-		else
-		{
-			lockMapElement(id, newLock);
-		}
 	}
 
 	/**
@@ -2290,7 +2271,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void selectMapElementInstance(MapElement mapElement, boolean publicMap, boolean select)
 	{
-		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstance(mapElement, select);
+		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElement(mapElement, select);
 	}
 
 	/**
@@ -2302,7 +2283,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void selectMapElementInstances(final List<MapElement> mapElements, boolean publicMap, boolean select)
 	{
-		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElementInstances(mapElements, select);
+		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElements(mapElements, select);
 	}
 
 	/**
@@ -2312,7 +2293,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void unselectAllMapElementInstances(boolean publicMap)
 	{
-		(publicMap ? m_selectionPublic : m_selectionPrivate).unselectAllMapElementInstances();
+		(publicMap ? m_selectionPublic : m_selectionPrivate).unselectAllMapElements();
 	}
 
 	/**
@@ -2323,7 +2304,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public List<MapElement> getSelectedMapElementInstances(boolean publicMap)
 	{
-		return (publicMap ? m_selectionPublic : m_selectionPrivate).getSelectedMapElementInstances();
+		return (publicMap ? m_selectionPublic : m_selectionPrivate).getSelectedMapElements();
 	}
 
 	/**
@@ -2334,7 +2315,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void highlightMapElementInstance(MapElement mapElement, boolean highlight)
 	{
-		m_highlightedElements.selectMapElementInstance(mapElement, highlight);
+		m_highlightedElements.selectMapElement(mapElement, highlight);
 		repaint();
 	}
 
@@ -2346,9 +2327,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	public void highlightAllMapElementInstances(boolean highlight)
 	{
 		if (highlight)
-			m_highlightedElements.selectMapElementInstances(getActiveMap().getMapElements(), highlight);
+			m_highlightedElements.selectMapElements(getActiveMap().getMapElements(), highlight);
 		else
-			m_highlightedElements.unselectAllMapElementInstances();
+			m_highlightedElements.unselectAllMapElements();
 
 		repaint();
 	}
@@ -2361,7 +2342,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void highlightMapElementInstances(List<MapElement> mapElements, boolean highlight)
 	{
-		m_highlightedElements.selectMapElementInstances(mapElements, highlight);
+		m_highlightedElements.selectMapElements(mapElements, highlight);
 		repaint();
 	}
 
@@ -2372,7 +2353,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public List<MapElement> getHighlightedMapElementInstances()
 	{
-		return m_highlightedElements.getSelectedMapElementInstances();
+		return m_highlightedElements.getSelectedMapElements();
 	}
 
 	/**
@@ -2385,82 +2366,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	{
 		return m_highlightedElements.isSelected(mapElement);
 	}
-
-	/**
-	 * Set an element as locked
-	 * 
-	 * @param mapElementID Map element to lock
-	 * @param lock true to lock, false to 'unlock'
-	 */
-	public void lockMapElement(final MapElementID mapElementID, final boolean lock)
-	{
-		final MapElement toLock = getActiveMap().getMapElement(mapElementID);
-		if (toLock == null)
-			return;
-
-		lockMapElement(toLock, lock);
-	}
-
-	/**
-	 * Set an element as locked
-	 * 
-	 * @param mapElement Map element to lock
-	 * @param lock true to lock, false to 'unlock'
-	 */
-	public void lockMapElement(MapElement mapElement, boolean lock)
-	{
-		m_lockedElements.selectMapElementInstance(mapElement, lock);
-		repaint();
-	}
-
-	/**
-	 * Lock all MapElements from the requested map
-	 * 
-	 * @param publicMap Map to lock or unlock from
-	 * @param lock True to lock, false to unlock
-	 */
-	public void lockAllMapElements(final boolean publicMap, final boolean lock)
-	{
-		final GameTableMap mapToLock = publicMap ? m_publicMap : m_privateMap;
-
-		m_lockedElements.selectMapElementInstances(mapToLock.getMapElements(), lock);
-
-		repaint();
-	}
-
-	/**
-	 * lock or 'unlock' a list of instances
-	 * 
-	 * @param mapElements list of instances to change lock status
-	 * @param lock true to lock, false to 'unlock'
-	 */
-	public void lockMapElements(List<MapElement> mapElements, boolean lock)
-	{
-		m_lockedElements.selectMapElementInstances(mapElements, lock);
-		repaint();
-	}
-
-	/**
-	 * Gets the list of locked element instances
-	 * 
-	 * @return The list of currently selected instances (unmodifiable). Never null.
-	 */
-	public List<MapElement> getlockedMapElementInstances()
-	{
-		return m_lockedElements.getSelectedMapElementInstances();
-	}
-
-	/**
-	 * Checks if a specific map element is marked as locked
-	 * 
-	 * @param mapElement Map element to lock
-	 * @return true if locked
-	 */
-	public boolean isLocked(MapElement mapElement)
-	{
-		return m_lockedElements.isSelected(mapElement);
-	}
-
+	
 	private class CanvasMapElementListener extends MapElementAdapter
 	{
 		/**
