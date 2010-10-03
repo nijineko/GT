@@ -24,10 +24,14 @@ package com.galactanet.gametable.ui.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -64,7 +68,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeLong(-1);
+      dos.writeInt(-1);
       dos.writeBoolean(lock);
 
 			return dos.toByteArray();
@@ -78,19 +82,48 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	
 	/**
 	 * Create a network message packet requesting to lock a single map element
-	 * @param mapElementID Map element to lock or unlock
+	 * @param mapElement Map element to lock or unlock
 	 * @param lock True to lock, false to unlock
 	 * @return data packet
 	 */
-	public static byte[] makePacket(final MapElementID mapElementID, final boolean lock)
+	public static byte[] makePacket(MapElement mapElement, final boolean lock)
+	{
+		try
+		{
+			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			DataPacketStream dos = module.createDataPacketStream(getMessageType());
+
+			dos.writeInt(1);
+      dos.writeBoolean(lock);
+      dos.writeLong(mapElement.getID().numeric());
+
+			return dos.toByteArray();
+		}
+		catch (final IOException ex)
+		{
+			Log.log(Log.SYS, ex);
+			return null;
+		}
+	}
+	
+	/**
+	 * Create a network message packet requesting to lock multiple map elements
+	 * @param mapElements List of map elements to lock or unlock
+	 * @param lock True to lock, false to unlock
+	 * @return data packet
+	 */
+	public static byte[] makePacket(List<MapElement> mapElements, final boolean lock)
 	{
 		try
 		{
 			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeLong(mapElementID.numeric());
-      dos.writeBoolean(lock);
+			dos.writeInt(mapElements.size());
+			dos.writeBoolean(lock);
+			
+			for (MapElement mapElement : mapElements)
+				dos.writeLong(mapElement.getID().numeric());
 
 			return dos.toByteArray();
 		}
@@ -107,21 +140,27 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		long id = dis.readLong();
+		long qty = dis.readInt();		
     boolean locked = dis.readBoolean();
-		
-		if (id > 0)
-		{
-	    MapElementID mapElementID = MapElementID.fromNumeric(id);
-	
-	    final GametableFrame frame = GametableFrame.getGametableFrame();
-	    frame.getGametableCanvas().lockMapElement(mapElementID, locked);
-		}
-		else
-		{
-			final GametableFrame frame = GametableFrame.getGametableFrame();
-			frame.getGametableCanvas().lockAllMapElements(true, locked);
-		}
+    
+    GametableFrame frame = GametableFrame.getGametableFrame();
+    
+    if (qty < 1)
+    {
+    	frame.lockAllMapElements(GameTableMapType.PUBLIC, locked, event);
+    	return;
+    }
+    
+    List<MapElement> mapElements = new ArrayList<MapElement>();
+    
+    for (int i = 0; i < qty; i++)
+    {
+    	MapElementID id = MapElementID.fromNumeric(dis.readLong());
+    	MapElement element = frame.getMapElement(id);
+    	mapElements.add(element);
+    }
+    
+    frame.lockMapElements(GameTableMapType.PUBLIC, mapElements, locked, event);
 	}
 	
 	/*

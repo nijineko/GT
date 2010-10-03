@@ -60,7 +60,7 @@ public class SelectionHandler
 	 * @param mapElement Instance to add to selection
 	 * @param select true to select, false to unselect
 	 */
-	public void selectMapElementInstance(MapElement mapElement, boolean select)
+	public void selectMapElement(MapElement mapElement, boolean select)
 	{
 		if (select)
 		{
@@ -78,7 +78,7 @@ public class SelectionHandler
 	 * @param mapElements List of instance to add to the selection
 	 * @param select true to select, false to unselect
 	 */
-	public void selectMapElementInstances(final List<MapElement> mapElements, boolean select)
+	public void selectMapElements(final List<MapElement> mapElements, boolean select)
 	{
 		if (select)
 		{
@@ -94,7 +94,7 @@ public class SelectionHandler
 	/**
 	 * Remove all instance from selection
 	 */
-	public void unselectAllMapElementInstances()
+	public void unselectAllMapElements()
 	{
 		m_selectedElements.clear();
 	}
@@ -104,7 +104,7 @@ public class SelectionHandler
 	 * 
 	 * @return The list of currently selected instances (unmodifiable). Never null.
 	 */
-	public List<MapElement> getSelectedMapElementInstances()
+	public List<MapElement> getSelectedMapElements()
 	{
 		return m_selectedElementsUnmodifiable;
 	}
