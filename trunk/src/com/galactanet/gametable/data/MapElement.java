@@ -228,11 +228,15 @@ public class MapElement implements Comparable<MapElement>
 		final MapElementTypeLibrary lib = MapElementTypeLibrary.getMasterLibrary();
 		String type_fqn = dis.readUTF();		
 		
+		// X, Y
 		final int x = dis.readInt();
 		final int y = dis.readInt();
 		m_position = new MapCoordinates(x, y);
+		
+		// SIZE
 		final int size = dis.readInt();
 
+		// ID
 		long id = dis.readLong();
 		
 		// If ID is already in use by another MapElement, we need to reassign it
@@ -242,9 +246,10 @@ public class MapElement implements Comparable<MapElement>
 		
 		m_id = MapElementID.fromNumeric(id);
 
+		// NAME
 		setName(dis.readUTF());
-		// boolean underlay =
-
+ 
+		// SCALE
 		try
 		{
 			m_faceSizeScale = dis.readFloat();
@@ -254,6 +259,7 @@ public class MapElement implements Comparable<MapElement>
 			m_faceSizeScale = 1f;
 		}
 
+		// ANGLE
 		try
 		{
 			m_angle = dis.readDouble();
@@ -262,6 +268,8 @@ public class MapElement implements Comparable<MapElement>
 		{
 			m_angle = 0.;
 		}
+		
+		// FLIPS
 		try
 		{
 			m_flipH = dis.readBoolean();
@@ -272,7 +280,18 @@ public class MapElement implements Comparable<MapElement>
 			m_flipH = false;
 			m_flipV = false;
 		}
+		
+		// ATTRIBUTE COUNT AND VALUES
+		int attributeCount = dis.readInt();
+		for (int i = 0; i < attributeCount; i++)
+		{
+			String name = dis.readUTF();
+			String value = dis.readUTF();
+			
+			setAttribute(name, value);
+		}
 
+		// LAYER TYPE
 		Layer layer;
 		try
 		{
@@ -284,6 +303,7 @@ public class MapElement implements Comparable<MapElement>
 			layer = Layer.UNDERLAY;
 		}
 
+		// POST PROCESSING
 		// special case pseudo-hack check
 		// through reasons unclear to me, sometimes a pog will get
 		// a size of around 2 billion. A more typical size would
@@ -658,19 +678,61 @@ public class MapElement implements Comparable<MapElement>
 		return true;
 		//return m_mapElement.getClass().equals(parent.getClass());
 	}
+	
+	/**
+	 * Remove an attribute from the element instance
+	 * @param name Name of the attribute to remove
+	 */
+	public void removeAttribute(final String name)
+	{
+		removeAttribute(name, null);
+	}
 
 	/**
 	 * Remove an attribute from the element instance
-	 * 
-	 * @param name
+	 * @param name Name of the attribute to remove
+	 * @param netEvent Network event that triggered the operation or null
 	 */
-	public void removeAttribute(final String name)
+	public void removeAttribute(final String name, NetworkEvent netEvent)
 	{
 		final String normalizedName = UtilityFunctions.normalizeName(name);
 		m_attributes.remove(normalizedName);
 		
 		for (MapElementListenerIF listener : m_listeners)
-			listener.onAttributeChanged(this, name, null, null);
+			listener.onAttributeChanged(this, name, null, null, false, netEvent);		
+	}
+	
+	/**
+	 * Remove multiple attributes from the element instance
+	 * @param names list of attribute names to remove
+	 */
+	public void removeAttributes(List<String> names)
+	{
+		removeAttributes(names, null);
+	}
+	
+	/**
+	 * Remove multiple attributes from the element instance
+	 * @param names list of attribute names to remove
+	 * @param netEvent Network event that triggered the operation or null
+	 */
+	public void removeAttributes(List<String> names, NetworkEvent netEvent)
+	{
+		Map<String, String> removeList = new HashMap<String, String>();
+		
+		for (String name : names)
+		{
+			removeList.put(name, null);
+			
+			final String normalizedName = UtilityFunctions.normalizeName(name);
+			m_attributes.remove(normalizedName);
+			
+			for (MapElementListenerIF listener : m_listeners)
+				listener.onAttributeChanged(this, name, null, null, true, netEvent);
+		}		
+		
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onAttributesChanged(this, removeList, netEvent);
 	}
 	
 	/**
@@ -731,7 +793,7 @@ public class MapElement implements Comparable<MapElement>
 		}
 
 	}
-
+	
 	/**
 	 * Set the value of a given attribute for this element. If the attribute does not exist, it is created
 	 * 
@@ -743,6 +805,21 @@ public class MapElement implements Comparable<MapElement>
 	 */
 	public void setAttribute(final String name, final String value)
 	{
+		setAttribute(name, value, null);
+	}
+
+	/**
+	 * Set the value of a given attribute for this element. If the attribute does not exist, it is created
+	 * 
+	 * @param name Description of the attribute
+	 * @param value Value for the attribute
+	 * @param netEvent Network event that triggered the operation or null
+	 * 
+	 * @revise Attributes should not be addressed by display name. this will most likely change when we implement with the
+	 *         properties package.
+	 */
+	public void setAttribute(final String name, final String value, NetworkEvent netEvent)
+	{
 		String old = getAttribute(name);
 		
 		final String normalizedName = UtilityFunctions.normalizeName(name);
@@ -750,7 +827,47 @@ public class MapElement implements Comparable<MapElement>
 		m_attributes.put(normalizedName, new Attribute(name, value));
 		
 		for (MapElementListenerIF listener : m_listeners)
-			listener.onAttributeChanged(this, name, value, old);
+			listener.onAttributeChanged(this, name, value, old, false, netEvent);
+	}
+	
+	/**
+	 * Set the value of a given attribute for this element. If the attribute does not exist, it is created
+	 * 
+	 * @param attributes Map of attribute names + values
+	 * 
+	 * @revise Attributes should not be addressed by display name. this will most likely change when we implement with the
+	 *         properties package.
+	 */
+	public void setAttributes(Map<String, String> attributes)
+	{
+		setAttributes(attributes, null);
+	}
+	
+	/**
+	 * Set the value of a given attribute for this element. If the attribute does not exist, it is created
+	 * 
+	 * @param attributes Map of attribute names + values
+	 * @param netEvent Network event that triggered the operation or null
+	 * 
+	 * @revise Attributes should not be addressed by display name. this will most likely change when we implement with the
+	 *         properties package.
+	 */
+	public void setAttributes(Map<String, String> attributes, NetworkEvent netEvent)
+	{
+		for (Entry<String, String> entry : attributes.entrySet())
+		{
+			Attribute attr = new Attribute(entry.getKey(), entry.getValue());
+			
+			String old = getAttribute(attr.name);
+			final String normalizedName = UtilityFunctions.normalizeName(attr.name);			
+			m_attributes.put(normalizedName, attr);
+			
+			for (MapElementListenerIF listener : m_listeners)
+				listener.onAttributeChanged(this, attr.name, attr.value, old, true, netEvent);
+		}
+		
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onAttributesChanged(this, attributes, netEvent);
 	}
 
 	/**
@@ -854,20 +971,31 @@ public class MapElement implements Comparable<MapElement>
 		
 		// TODO Trigger listener!
 	}
-
+	
 	/**
-	 * change the name of this element
+	 * Set the display name of this element
 	 * 
 	 * @param name New name
 	 */
 	public void setName(String name)
+	{
+		setName(name, null);
+	}
+
+	/**
+	 * Set the display name of this element
+	 * 
+	 * @param name New name
+	 * @param netEvent Network event that triggered the operation or null
+	 */
+	public void setName(String name, NetworkEvent netEvent)
 	{
 		String old = m_name;
 		m_name = name;
 		m_nameNormalized = UtilityFunctions.normalizeName(m_name);
 
 		for (MapElementListenerIF listener : m_listeners)
-			listener.onNameChanged(this, name, old);
+			listener.onNameChanged(this, name, old, netEvent);
 	}
 	
 	/**
@@ -920,24 +1048,36 @@ public class MapElement implements Comparable<MapElement>
 	{
 		dos.writeUTF(getMapElementType().getFullyQualifiedName());
 		
+		// X, Y
 		dos.writeInt(m_position.x);
 		dos.writeInt(m_position.y);
+		
+		// FACE
 		dos.writeInt(getMapElementType().getFaceSize());	// why? we have an internal float....
+		
+		// ID
 		dos.writeLong(m_id.numeric());
+		
+		// NAME
 		dos.writeUTF(m_name);
+		
+		// SCALE, ANGLE & FLIPS
 		dos.writeFloat(m_faceSizeScale);
 		dos.writeDouble(m_angle);
 		dos.writeBoolean(m_flipH);
 		dos.writeBoolean(m_flipV);
 	
+		// ATTRIBUTE COUNT
 		dos.writeInt(m_attributes.size());
 
+		// ATTRIBUTES
 		for (Attribute attribute : m_attributes.values())
 		{
 			dos.writeUTF(attribute.name);
 			dos.writeUTF(attribute.value);
 		}
 
+		// LAYER TYPE
 		dos.writeInt(m_layer.ordinal());
 	}
 

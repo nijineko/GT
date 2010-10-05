@@ -49,9 +49,7 @@ public class PointerTool extends NullTool
 
 		public void actionPerformed(final ActionEvent e)
 		{
-			final Set<String> toDelete = new HashSet<String>();
-			toDelete.add(key);
-			m_canvas.setMapElementData(m_menuPog.getID(), null, null, toDelete);
+			m_menuPog.removeAttribute(key);
 		}
 	}
 
@@ -77,16 +75,11 @@ public class PointerTool extends NullTool
 
 			final String name = dialog.getName();
 			final String value = dialog.getValue();
-			final Set<String> toDelete = new HashSet<String>();
-			toDelete.add(key);
 
-			final Map<String, String> toAdd = new HashMap<String, String>();
 			if ((name != null) && (name.length() > 0))
-			{
-				toAdd.put(name, value);
-			}
-
-			m_canvas.setMapElementData(m_menuPog.getID(), null, toAdd, toDelete);
+				m_menuPog.setAttribute(name, value);
+			
+			m_menuPog.removeAttribute(key);
 		}
 	}
 
@@ -443,7 +436,7 @@ public class PointerTool extends NullTool
 
 					if (s != null)
 					{
-						m_canvas.setMapElementData(m_menuPog.getID(), s, null, null);
+						m_menuPog.setName(s);
 					}
 
 				}
@@ -460,7 +453,7 @@ public class PointerTool extends NullTool
 					if (dialog.isConfirmed())
 					{
 						final Map<String, String> toAdd = dialog.getAttribs();
-						m_canvas.setMapElementData(m_menuPog.getID(), null, toAdd, null);
+						m_menuPog.setAttributes(toAdd);
 					}
 				}
 			});

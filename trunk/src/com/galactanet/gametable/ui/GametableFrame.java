@@ -1315,6 +1315,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	// }
 
 	/**
+	 * TODO #Network Move this to the private interface
 	 * A player just joined this hosted session.  Used by NetSendPlayerInfo.
 	 * @param sourceConnection Network source connection
 	 * @param player Player object
@@ -3233,7 +3234,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetSendTypingFlag.getMessageType(m_networkResponder));
 		m_networkModule.registerMessageType(NetSetBackground.getMessageType());
 		m_networkModule.registerMessageType(NetSetGridMode.getMessageType());
-		// NetSetMapElementData
+		m_networkModule.registerMessageType(NetSetMapElementData.getMessageType());
 		// NetSetMapElementLayer
 		// NetSetMapElementSize
 		// NetSetMapElementType

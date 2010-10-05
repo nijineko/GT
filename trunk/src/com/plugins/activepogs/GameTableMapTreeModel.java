@@ -72,7 +72,24 @@ public class GameTableMapTreeModel extends DefaultTreeModel
 			 * @see com.galactanet.gametable.data.MapElementAdapter#onAttributeChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String, java.lang.String)
 			 */
 			@Override
-			public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue)
+			public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue, boolean batch, NetworkEvent netEvent)
+			{
+				if (!batch)
+				{
+					MapElementNode node = findElementNode(element);
+					if (node != null)
+					{
+						node.rebuildAttributeNodes();
+						nodeStructureChanged(node);
+					}
+				}
+			}
+			
+			/*
+			 * @see com.galactanet.gametable.data.MapElementAdapter#onAttributesChanged(com.galactanet.gametable.data.MapElement, java.util.Map, com.galactanet.gametable.net.NetworkEvent)
+			 */
+			@Override
+			public void onAttributesChanged(MapElement element, Map<String, String> attributes, NetworkEvent netEvent)
 			{
 				MapElementNode node = findElementNode(element);
 				if (node != null)
@@ -86,7 +103,7 @@ public class GameTableMapTreeModel extends DefaultTreeModel
 			 * @see com.galactanet.gametable.data.MapElementAdapter#onNameChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String)
 			 */
 			@Override
-			public void onNameChanged(MapElement element, String newName, String oldName)
+			public void onNameChanged(MapElement element, String newName, String oldName, NetworkEvent netEvent)
 			{
 				MapElementNode node = findElementNode(element);
 				if (node != null)
