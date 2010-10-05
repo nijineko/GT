@@ -20,12 +20,10 @@ package com.galactanet.gametable.ui.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.Map.Entry;
 
+import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -33,6 +31,7 @@ import com.galactanet.gametable.util.Log;
 
 /**
  * Network messages requesting that map element data be set
+ * @auditedby themaze75
  */
 public class NetSetMapElementData implements NetworkMessageTypeIF
 {
@@ -57,25 +56,25 @@ public class NetSetMapElementData implements NetworkMessageTypeIF
 	/**
 	 * Build a map element message rename packet
 	 * 
-	 * @param mapElementID ID of the map element to set
+	 * @param mapElement Map element to change
 	 * @param mapElementName Name of the map element (null for no change)
 	 * @return data packet
 	 */
-	public static byte[] makeRenamePacket(MapElementID mapElementID, String mapElementName)
+	public static byte[] makeRenamePacket(MapElement mapElement, String mapElementName)
 	{
-		return makePacket(mapElementID, mapElementName, null, null);
+		return makePacket(mapElement, mapElementName, null, null);
 	}
 
 	/**
 	 * Build a map element message data packet
 	 * 
-	 * @param mapElementID ID of the map element to set
+	 * @param mapElement Map element to change
 	 * @param mapElementName Name of the map element (null for no change)
 	 * @param setAttributes List of attributes to set (null to set no elements)
 	 * @param removeAttributes List of attributes to remove (null to remove no elements)
 	 * @return Data packet
 	 */
-	public static byte[] makePacket(MapElementID mapElementID, String mapElementName, Map<String, String> setAttributes, Set<String> removeAttributes)
+	public static byte[] makePacket(MapElement mapElement, String mapElementName, Map<String, String> setAttributes, List<String> removeAttributes)
 	{
 		try
 		{
@@ -83,7 +82,7 @@ public class NetSetMapElementData implements NetworkMessageTypeIF
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			// Map element ID
-			dos.writeLong(mapElementID.numeric());
+			dos.writeLong(mapElement.getID().numeric());
 
 			// Map element name (first boolean decides if we set name)
 			if (mapElementName != null)
@@ -151,7 +150,7 @@ public class NetSetMapElementData implements NetworkMessageTypeIF
 			name = dis.readUTF();
 
 		// Delete list
-		final Set<String> removeAttributes = new HashSet<String>();
+		final List<String> removeAttributes = new ArrayList<String>();
 		final int numToDelete = dis.readInt();
 		for (int i = 0; i < numToDelete; i++)
 		{
@@ -168,9 +167,20 @@ public class NetSetMapElementData implements NetworkMessageTypeIF
 			
 			setAttributes.put(key, value);
 		}
-
-		// tell the model
-		GametableFrame.getGametableFrame().getGametableCanvas().doSetPogData(mapElementID, name, setAttributes, removeAttributes);
+		
+		// Tell the model
+		MapElement mapElement = GametableFrame.getGametableFrame().getMapElement(mapElementID);
+		if (mapElement != null)
+		{
+			if (name != null)
+				mapElement.setName(name, event);
+			
+			if (setAttributes.size() > 0)
+				mapElement.setAttributes(setAttributes, event);
+			
+			if (removeAttributes.size() > 0)
+				mapElement.removeAttributes(removeAttributes, event);
+		}
 	}
 
 	/*

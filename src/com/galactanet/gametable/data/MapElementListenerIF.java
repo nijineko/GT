@@ -22,6 +22,8 @@
 
 package com.galactanet.gametable.data;
 
+import java.util.Map;
+
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.net.NetworkEvent;
 
@@ -45,8 +47,9 @@ public interface MapElementListenerIF
 	 * @param element Element that has changed
 	 * @param newName new value
 	 * @param oldName old value
+	 * @param netEvent Triggering network event or null
 	 */
-	public void onNameChanged(MapElement element, String newName, String oldName);
+	public void onNameChanged(MapElement element, String newName, String oldName, NetworkEvent netEvent);
 	
 	/**
 	 * Attribute value changed
@@ -54,8 +57,18 @@ public interface MapElementListenerIF
 	 * @param attributeName Name of the attribute that changed
 	 * @param newValue New value (if null, the attribute has been removed)
 	 * @param oldValue Old value (if null, the attribute has been added)
+	 * @param batch True if this trigger is called as part of batch processing
+	 * @param netEvent Triggering network event or null
 	 */
-	public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue);
+	public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue, boolean batch, NetworkEvent netEvent);
+	
+	/**
+	 * Multiple attributes have changed (onAttributeChanged will also be called with the 'batch' parameter set to true
+	 * @param element Element that has changed
+	 * @param attributes List of attribute name + value pairs (value is null if the attribute has been removed)
+	 * @param netEvent Triggering network event or null
+	 */
+	public void onAttributesChanged(MapElement element, Map<String, String> attributes, NetworkEvent netEvent);
 	
 	/**
 	 * Name has changed

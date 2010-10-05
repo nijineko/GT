@@ -9,9 +9,10 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
@@ -620,38 +621,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		{
 			smoothScrollTo(newModelPoint);
 		}
-	}
-
-	public void doSetPogData(final MapElementID id, final String s, final Map<String, String> toAdd, final Set<String> toDelete)
-	{
-		final MapElement pog = getActiveMap().getMapElement(id);
-		if (pog == null)
-		{
-			return;
-		}
-
-		if (s != null)
-		{
-			pog.setName(s);
-		}
-
-		if (toDelete != null)
-		{
-			for (String key : toDelete)
-			{
-				pog.removeAttribute(key);
-			}
-		}
-
-		if (toAdd != null)
-		{
-			for (Entry<String, String> entry : toAdd.entrySet())
-			{
-				pog.setAttribute(entry.getKey(), entry.getValue());
-			}
-		}
-
-		repaint();
 	}
 
 	/**
@@ -1863,32 +1832,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	}
 
 	/**
-	 * Set map information for a map element
-	 * 
-	 * @param mapElementID ID of the map element to set
-	 * @param mapElementName Name of the map element (null for no change)
-	 * @param setAttributes List of attributes to set (null to set no elements)
-	 * @param removeAttributes List of attributes to remove (null to remove no elements)
-	 */
-	public void setMapElementData(MapElementID mapElementID, final String mapElementName, final Map<String, String> setAttributes,
-			final Set<String> removeAttributes)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetSetMapElementData.makePacket(mapElementID, mapElementName, setAttributes, removeAttributes));
-
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				doSetPogData(mapElementID, mapElementName, setAttributes, removeAttributes);
-			}
-		}
-		else
-		{
-			doSetPogData(mapElementID, mapElementName, setAttributes, removeAttributes);
-		}
-	}
-
-	/**
 	 * **********************************************************************************************
 	 * 
 	 * @param id
@@ -2423,6 +2366,96 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 					m_frame.sendBroadcast(NetSetAngleMapElement.makePacket(element.getID(), element.getAngle()));
 			}
 
+			repaint();
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onAttributeChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String, java.lang.String, boolean, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue, boolean batch, NetworkEvent netEvent)
+		{
+			if (!batch)
+			{
+				if (m_listenToPublicMap)
+				{
+					// Broadcast only if we're not triggered by a network event
+					if (shouldPropagateChanges(netEvent))
+					{
+						Map<String, String> add = null;
+						List<String> remove = null;
+						
+						if (newValue == null)
+						{
+							remove = new ArrayList<String>();
+							remove.add(attributeName);
+						}
+						else
+						{
+							add = new HashMap<String, String>();
+							add.put(attributeName, newValue);
+						}
+							
+						m_frame.sendBroadcast(NetSetMapElementData.makePacket(element, null, add, remove));
+					}
+				}
+					
+				repaint();
+			}
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onAttributesChanged(com.galactanet.gametable.data.MapElement, java.util.Map, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onAttributesChanged(MapElement element, Map<String, String> attributes, NetworkEvent netEvent)
+		{
+			if (m_listenToPublicMap)
+			{
+				// Broadcast only if we're not triggered by a network event
+				if (shouldPropagateChanges(netEvent))
+				{
+					Map<String, String> add = null;
+					List<String> remove = null;
+					
+					for (Entry<String, String> entry : attributes.entrySet())
+					{
+						if (entry.getValue() == null)
+						{
+							if (remove == null)
+								remove = new ArrayList<String>();
+							
+							remove.add(entry.getKey());
+						}
+						else
+						{
+							if (add == null)
+								add = new HashMap<String, String>();
+							
+							add.put(entry.getKey(), entry.getValue());
+						}
+					}
+						
+					m_frame.sendBroadcast(NetSetMapElementData.makePacket(element, null, add, remove));
+				}
+			}
+				
+			repaint();
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onNameChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onNameChanged(MapElement element, String newName, String oldName, NetworkEvent netEvent)
+		{
+			if (m_listenToPublicMap)
+			{
+				// Broadcast only if we're not triggered by a network event
+				if (shouldPropagateChanges(netEvent))
+					m_frame.sendBroadcast(NetSetMapElementData.makeRenamePacket(element, newName));
+			}
+				
 			repaint();
 		}
 		

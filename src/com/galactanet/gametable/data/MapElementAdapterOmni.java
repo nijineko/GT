@@ -24,6 +24,7 @@ package com.galactanet.gametable.data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.net.NetworkEvent;
@@ -40,12 +41,23 @@ public class MapElementAdapterOmni implements MapElementListenerIF
 	 * @see com.galactanet.gametable.data.MapElementListenerIF#onAttributeChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue)
+	public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue, boolean batch, NetworkEvent netEvent)
 	{
 		for (MapElementListenerIF listener : m_listeners)
-			listener.onAttributeChanged(element, attributeName, newValue, oldValue);
+			listener.onAttributeChanged(element, attributeName, newValue, oldValue, batch, netEvent);
 		
 	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.MapElementListenerIF#onAttributesChanged(com.galactanet.gametable.data.MapElement, java.util.Map, com.galactanet.gametable.net.NetworkEvent)
+	 */
+	@Override
+	public void onAttributesChanged(MapElement element, Map<String, String> attributes, NetworkEvent netEvent)
+	{
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onAttributesChanged(element, attributes, netEvent);		
+	}
+	
 	/*
 	 * @see com.galactanet.gametable.data.MapElementListenerIF#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer)
 	 */
@@ -59,10 +71,10 @@ public class MapElementAdapterOmni implements MapElementListenerIF
 	 * @see com.galactanet.gametable.data.MapElementListenerIF#onNameChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void onNameChanged(MapElement element, String newName, String oldName)
+	public void onNameChanged(MapElement element, String newName, String oldName, NetworkEvent netEvent)
 	{
 		for (MapElementListenerIF listener : m_listeners)
-			listener.onNameChanged(element, newName, oldName);
+			listener.onNameChanged(element, newName, oldName, netEvent);
 	}
 	
 	/**
