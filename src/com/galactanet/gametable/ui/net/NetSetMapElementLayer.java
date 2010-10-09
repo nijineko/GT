@@ -53,18 +53,18 @@ public class NetSetMapElementLayer implements NetworkMessageTypeIF
 /**
 	 * Build a message data packet requesting that a map element be set to a specific layer
 	 * 
-	 * @param mapElementID Id of the map element for which to change the layer
+	 * @param mapElement Map Element for which to change the layer
 	 * @param layer requested layer
 	 * @return data packet
 	 */
-	public static byte[] makePacket(MapElementID mapElementID, Layer layer)
+	public static byte[] makePacket(MapElement mapElement, Layer layer)
 	{
 		try
 		{
 			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
-			dos.writeLong(mapElementID.numeric());
+			dos.writeLong(mapElement.getID().numeric());
 			dos.writeInt(layer.ordinal());
 
 			return dos.toByteArray();
@@ -91,7 +91,7 @@ public class NetSetMapElementLayer implements NetworkMessageTypeIF
 		final MapElement mapElement = GametableFrame.getGametableFrame().getMapElement(mapElementID);
 		
 		if (mapElement != null)
-	    mapElement.setLayer(layer);
+	    mapElement.setLayer(layer, event);
 	}
 
 	/*

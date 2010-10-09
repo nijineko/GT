@@ -39,8 +39,9 @@ public interface MapElementListenerIF
 	 * @param element Element that has changed
 	 * @param newLayer new value
 	 * @param oldLayer old value
+	 * @param netEvent Triggering network event or null
 	 */
-	public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer);
+	public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent);
 	
 	/**
 	 * Name has changed

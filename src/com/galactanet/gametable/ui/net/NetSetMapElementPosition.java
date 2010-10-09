@@ -58,18 +58,18 @@ public class NetSetMapElementPosition implements NetworkMessageTypeIF
 	
 /**
 	 * Create a data packet requesting a map element be moved to specific coordinates
-	 * @param mapElementID Map Element's ID
+	 * @param mapElement Map Element
 	 * @param modelPos Map coordinates
 	 * @return data packet
 	 */
-	public static byte[] makePacket(final MapElementID mapElementID, MapCoordinates modelPos)
+	public static byte[] makePacket(final MapElement mapElement, MapCoordinates modelPos)
 	{
 		try
 		{
 			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeLong(mapElementID.numeric());
+      dos.writeLong(mapElement.getID().numeric());
       dos.writeInt(modelPos.x);
       dos.writeInt(modelPos.y);
 
