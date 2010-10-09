@@ -51,13 +51,11 @@ public class GameTableMapTreeModel extends DefaultTreeModel
 		
 		MapElementListenerIF listener = new MapElementAdapter() {
 			/*
-			 * @see com.galactanet.gametable.data.MapElementAdapter#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer)
+			 * @see com.galactanet.gametable.data.MapElementAdapter#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.net.NetworkEvent)
 			 */
 			@Override
-			public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer)
+			public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent)
 			{
-				NetworkEvent netEvent = null;
-				
 				if (newLayer == Layer.POG)
 				{
 					m_gameTableMapListener.onMapElementAdded(m_map, element, netEvent);

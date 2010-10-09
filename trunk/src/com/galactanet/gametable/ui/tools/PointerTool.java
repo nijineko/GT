@@ -520,7 +520,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogLayer(m_menuPog.getID(), Layer.UNDERLAY);
+					m_menuPog.setLayer(Layer.UNDERLAY);
 				}
 			});
 
@@ -532,7 +532,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogLayer(m_menuPog.getID(), Layer.OVERLAY);
+					m_menuPog.setLayer(Layer.OVERLAY);
 				}
 			});
 			if (layer == Layer.OVERLAY)
@@ -542,7 +542,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogLayer(m_menuPog.getID(), Layer.ENVIRONMENT);
+					m_menuPog.setLayer(Layer.ENVIRONMENT);
 				}
 			});
 			if (layer == Layer.ENVIRONMENT)
@@ -552,7 +552,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogLayer(m_menuPog.getID(), Layer.POG);
+					m_menuPog.setLayer(Layer.POG);
 				}
 			});
 			if (layer == Layer.POG)

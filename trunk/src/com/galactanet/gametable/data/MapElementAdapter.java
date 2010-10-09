@@ -47,10 +47,10 @@ public class MapElementAdapter implements MapElementListenerIF
 	public void onAttributesChanged(MapElement element, Map<String, String> attributes, NetworkEvent netEvent) {}
 	
 	/*
-	 * @see com.galactanet.gametable.data.MapElementListenerIF#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer)
+	 * @see com.galactanet.gametable.data.MapElementListenerIF#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.net.NetworkEvent)
 	 */
 	@Override
-	public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer) {}
+	public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent) {}
 	
 	/*
 	 * @see com.galactanet.gametable.data.MapElementListenerIF#onNameChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String, com.galactanet.gametable.net.NetworkEvent)

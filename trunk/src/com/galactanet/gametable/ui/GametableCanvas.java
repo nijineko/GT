@@ -623,21 +623,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	/**
-	 * Set map element layer
-	 * 
-	 * @param mapElementID ID of the map element for which to set the layer
-	 * @param layer 
-	 * 
-	 *          TODO ! Set listener on canvas to repaint when pog attributes trigger listeners (ex: layers)
-	 */
-	private void doSetPogLayer(final MapElementID mapElementID, final Layer layer)
-	{
-		final MapElement mapElement = getActiveMap().getMapElement(mapElementID);
-		if (mapElement != null)
-			mapElement.setLayer(layer);
-	}
-
 	public void doSetPogSize(final MapElementID id, final float size)
 	{
 		final MapElement pog = getActiveMap().getMapElement(id);
@@ -1831,26 +1816,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	/**
-	 * **********************************************************************************************
-	 * 
-	 * @param id
-	 * @param size
-	 */
-	public void setPogLayer(final MapElementID id, final Layer layer)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetSetMapElementLayer.makePacket(id, layer));
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-				doSetPogLayer(id, layer);
-		}
-		else
-		{
-			doSetPogLayer(id, layer);
-		}
-	}
-
 	public void setPogSize(final MapElementID id, final float size)
 	{
 		if (isPublicMap())
@@ -2331,7 +2296,23 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			{
 				// Broadcast only if we're not triggered by a network event
 				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetMapElementPosition.makePacket(element.getID(), newPosition));
+					m_frame.sendBroadcast(NetSetMapElementPosition.makePacket(element, newPosition));
+			}
+
+			repaint();
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent)
+		{
+			if (m_listenToPublicMap)
+			{
+				// Broadcast only if we're not triggered by a network event
+				if (shouldPropagateChanges(netEvent))
+					m_frame.sendBroadcast(NetSetMapElementLayer.makePacket(element, newLayer));
 			}
 
 			repaint();

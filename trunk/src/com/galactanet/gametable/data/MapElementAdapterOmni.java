@@ -59,13 +59,13 @@ public class MapElementAdapterOmni implements MapElementListenerIF
 	}
 	
 	/*
-	 * @see com.galactanet.gametable.data.MapElementListenerIF#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer)
+	 * @see com.galactanet.gametable.data.MapElementListenerIF#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.net.NetworkEvent)
 	 */
 	@Override
-	public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer)
+	public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent)
 	{
 		for (MapElementListenerIF listener : m_listeners)
-			listener.onLayerChanged(element, newLayer, oldLayer);
+			listener.onLayerChanged(element, newLayer, oldLayer, netEvent);
 	}
 	/*
 	 * @see com.galactanet.gametable.data.MapElementListenerIF#onNameChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String)

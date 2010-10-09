@@ -939,7 +939,7 @@ public class MapElement implements Comparable<MapElement>
 	{
 		setFlip(flipH, flipV, null);
 	}
-
+	
 	/**
 	 * Set the element's assigned layer
 	 * 
@@ -947,11 +947,25 @@ public class MapElement implements Comparable<MapElement>
 	 */
 	public void setLayer(final Layer layer)
 	{
+		setLayer(layer, null);
+	}
+
+	/**
+	 * Set the element's assigned layer
+	 * 
+	 * @param layer Layer to change this element to
+	 * @param netEvent Network event that triggered the operation or null
+	 */
+	public void setLayer(final Layer layer, NetworkEvent netEvent)
+	{
+		if (layer == m_layer)
+			return;
+		
 		Layer old = layer;
 		m_layer = layer;
 
 		for (MapElementListenerIF listener : m_listeners)
-			listener.onLayerChanged(this, layer, old);
+			listener.onLayerChanged(this, layer, old, netEvent);
 	}
 
 	/**

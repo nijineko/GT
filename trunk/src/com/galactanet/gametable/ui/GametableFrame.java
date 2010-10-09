@@ -3235,7 +3235,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetSetBackground.getMessageType());
 		m_networkModule.registerMessageType(NetSetGridMode.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementData.getMessageType());
-		// NetSetMapElementLayer
+		m_networkModule.registerMessageType(NetSetMapElementLayer.getMessageType());
 		// NetSetMapElementSize
 		// NetSetMapElementType
 		m_networkModule.registerMessageType(NetShowPointingMarker.getMessageType());
