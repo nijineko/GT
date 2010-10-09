@@ -623,17 +623,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	public void doSetPogSize(final MapElementID id, final float size)
-	{
-		final MapElement pog = getActiveMap().getMapElement(id);
-		if (pog == null)
-			return;
-
-		pog.setFaceSize(size);
-		snapPogToGrid(pog);
-		repaint();
-	}
-
 	private void doSetPogType(final MapElementID id, final MapElementID type)
 	{
 		final MapElement pog = getActiveMap().getMapElement(id);
@@ -1816,23 +1805,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	public void setPogSize(final MapElementID id, final float size)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetSetMapElementSize.makePacket(id, size));
-
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				doSetPogSize(id, size);
-			}
-		}
-		else
-		{
-			doSetPogSize(id, size);
-		}
-	}
-
 	/**
 	 * #grouping?
 	 */
@@ -1929,7 +1901,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		m_scrolling = true;
 	}
 
-	public void snapPogToGrid(final MapElement pog)
+	public void snapMapElementToGrid(final MapElement pog)
 	{
 		m_gridMode.snapPogToGrid(pog);
 	}
@@ -1991,7 +1963,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			// grabbedPog.setPosition(canvasModel.x - pogGrabOffset.x + adjustment.x, canvasModel.y - pogGrabOffset.y
 			// + adjustment.y);
 			grabbedPog.setPosition(new MapCoordinates(canvasModel.x - pogGrabOffset.x, canvasModel.y - pogGrabOffset.y));
-			snapPogToGrid(grabbedPog);
+			snapMapElementToGrid(grabbedPog);
 		}
 		else
 		{
@@ -2344,9 +2316,26 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			{
 				// Broadcast only if we're not triggered by a network event
 				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetAngleMapElement.makePacket(element.getID(), element.getAngle()));
+					m_frame.sendBroadcast(NetSetMapElementAngle.makePacket(element.getID(), element.getAngle()));
 			}
 
+			repaint();
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onFaceSizeChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent)
+		{
+			if (m_listenToPublicMap)
+			{
+				// Broadcast only if we're not triggered by a network event
+				if (shouldPropagateChanges(netEvent))
+					m_frame.sendBroadcast(NetSetMapElementSize.makePacket(element, element.getFaceSize()));
+			}
+
+			snapMapElementToGrid(element);
 			repaint();
 		}
 		

@@ -3225,7 +3225,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetRecenterMap.getMessageType());
 		m_networkModule.registerMessageType(NetRemoveMapElement.getMessageType());
 		// NetRequestImage
-		m_networkModule.registerMessageType(NetSetAngleMapElement.getMessageType());
+		m_networkModule.registerMessageType(NetSetMapElementAngle.getMessageType());
 		m_networkModule.registerMessageType(NetSendChatText.getMessageType());
 		// NetSendImage
 		m_networkModule.registerMessageType(NetSendMechanicsText.getMessageType());	
@@ -3236,7 +3236,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetSetGridMode.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementData.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementLayer.getMessageType());
-		// NetSetMapElementSize
+		m_networkModule.registerMessageType(NetSetMapElementSize.getMessageType());
 		// NetSetMapElementType
 		m_networkModule.registerMessageType(NetShowPointingMarker.getMessageType());
 		

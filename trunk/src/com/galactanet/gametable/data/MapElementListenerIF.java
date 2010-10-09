@@ -93,4 +93,11 @@ public interface MapElementListenerIF
 	 * @param netEvent Triggering network event or null
 	 */
 	public void onAngleChanged(MapElement element, NetworkEvent netEvent);
+	
+	/**
+	 * Face size has changed
+	 * @param element Element that has changed
+	 * @param netEvent Triggering network event or null
+	 */
+	public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent);
 }

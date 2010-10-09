@@ -21,13 +21,14 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
- * todo: comment
+ * Network message requesting a change of size for a map element
  * 
  * @author Eric Maziade
  */
@@ -51,15 +52,21 @@ public class NetSetMapElementSize implements NetworkMessageTypeIF
 	private static NetSetMapElementSize g_messageType = null;
 	
 
-	public static byte[] makePacket(MapElementID mapElementID, float size)
+	/**
+	 * Make a data packet for a size change request
+	 * @param mapElement Map element to change
+	 * @param faceSize size Face size in tiles
+	 * @return
+	 */
+	public static byte[] makePacket(MapElement mapElement, float faceSize)
 	{
 		try
 		{
 			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
-			dos.writeLong(mapElementID.numeric());
-			dos.writeFloat(size);
+			dos.writeLong(mapElement.getID().numeric());
+			dos.writeFloat(faceSize);
 
 			return dos.toByteArray();
 		}
@@ -80,10 +87,15 @@ public class NetSetMapElementSize implements NetworkMessageTypeIF
 		long id = dis.readLong();
 		MapElementID mapElementID = MapElementID.fromNumeric(id);
 		
-		final float size = dis.readFloat();
+		final float faceSize = dis.readFloat();
 
 		// tell the model
-		GametableFrame.getGametableFrame().getGametableCanvas().doSetPogSize(mapElementID, size);
+		MapElement mapElement = GametableFrame.getGametableFrame().getMapElement(mapElementID);
+		if (mapElement != null)
+		{
+			mapElement.setFaceSize(faceSize, event);
+			
+		}
 	}
 
 	/*

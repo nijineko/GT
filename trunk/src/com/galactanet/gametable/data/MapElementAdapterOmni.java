@@ -131,4 +131,14 @@ public class MapElementAdapterOmni implements MapElementListenerIF
   	for (MapElementListenerIF listener : m_listeners)
 			listener.onAngleChanged(element, netEvent);  	
   }
+  
+  /*
+   * @see com.galactanet.gametable.data.MapElementListenerIF#onFaceSizeChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+   */
+  @Override
+  public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent)
+  {
+  	for (MapElementListenerIF listener : m_listeners)
+			listener.onFaceSizeChanged(element, netEvent);
+  }
 }

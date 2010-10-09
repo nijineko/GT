@@ -103,7 +103,7 @@ public class MapElementRenderer implements MapElementRendererIF
 		final Point drawCoords = canvas == null ? new Point(0, 0) : canvas.modelToDraw(m_mapElement.getPosition());
 		final float scale = canvas == null ? 1 : (float) canvas.getSquareSize() / (float) GameTableMap.getBaseSquareSize();
 
-		drawScaled(g, drawCoords.x, drawCoords.y, scale * m_mapElement.getFaceSizeScale());
+		drawScaled(g, drawCoords.x, drawCoords.y, scale);
 
 		return true;
 	}
