@@ -75,4 +75,10 @@ public class MapElementAdapter implements MapElementListenerIF
 	 */
 	@Override
 	public void onAngleChanged(MapElement element, NetworkEvent netEvent) {}	
+	
+	/*
+	 * @see com.galactanet.gametable.data.MapElementListenerIF#onFaceSizeChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+	 */
+	@Override
+	public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent) {}
 }

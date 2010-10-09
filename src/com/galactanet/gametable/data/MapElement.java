@@ -166,8 +166,6 @@ public class MapElement implements Comparable<MapElement>
 		m_angle = UtilityFunctions.parseFloat(XMLUtils.getFirstChildElementContent(parent, "angle"), 0f);
 		m_name = XMLUtils.getFirstChildElementContent(parent, "name", "");
 		
-		setFaceSize(UtilityFunctions.parseFloat(XMLUtils.getFirstChildElementContent(parent, "facesize", "1"), 1f));
-		
 		String layerName = XMLUtils.getFirstChildElementContent(parent, "layer", Layer.UNDERLAY.name());
 		try
 		{
@@ -199,6 +197,8 @@ public class MapElement implements Comparable<MapElement>
 		}
 		
 		m_mapElementType = type;
+		
+		setFaceSize(UtilityFunctions.parseFloat(XMLUtils.getFirstChildElementContent(parent, "facesize", "1"), 1f));
 
 		// Load back values
 		Element values = XMLUtils.getFirstChildElementByTagName(parent, "values");
@@ -869,7 +869,7 @@ public class MapElement implements Comparable<MapElement>
 		for (MapElementListenerIF listener : m_listeners)
 			listener.onAttributesChanged(this, attributes, netEvent);
 	}
-
+	
 	/**
 	 * Set the number of tiles taken by a side of this element. The element image will be automatically rescaled to fit
 	 * the required number of tiles.
@@ -877,6 +877,18 @@ public class MapElement implements Comparable<MapElement>
 	 * @param faceSize Number of tiles.
 	 */
 	public void setFaceSize(final float faceSize)
+	{
+		setFaceSize(faceSize, null);
+	}
+
+	/**
+	 * Set the number of tiles taken by a side of this element. The element image will be automatically rescaled to fit
+	 * the required number of tiles.
+	 * 
+	 * @param faceSize Number of tiles. If <=0, will reset to its default size
+	 * @param netEvent Network event that triggered the operation or null
+	 */
+	public void setFaceSize(final float faceSize, NetworkEvent netEvent)
 	{
 		if (faceSize == m_faceSize)
 			return;
@@ -909,7 +921,8 @@ public class MapElement implements Comparable<MapElement>
 		
 		reinitializeHitMap();
 		
-		// TODO Trigger listeners
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onFaceSizeChanged(this, netEvent); 
 	}
 	
 	/**

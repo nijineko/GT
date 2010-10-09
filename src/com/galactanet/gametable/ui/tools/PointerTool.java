@@ -258,7 +258,7 @@ public class PointerTool extends NullTool
 				final Point adjustment = getSnapDragAdjustment(m_ghostPog);
 				m_ghostPog.setPosition(m_mousePosition.delta(m_grabOffset.x + adjustment.x, m_grabOffset.y + adjustment.y));
 
-				m_canvas.snapPogToGrid(m_ghostPog);
+				m_canvas.snapMapElementToGrid(m_ghostPog);
 			}
 			else
 			{
@@ -568,7 +568,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogSize(m_menuPog.getID(), -1);
+					m_menuPog.setFaceSize(-1);
 				}
 			});
 			sizeMenu.add(item);
@@ -584,7 +584,7 @@ public class PointerTool extends NullTool
 					{
 						final int is = Integer.parseInt(ns);
 						if (is >= 1)
-							m_canvas.setPogSize(m_menuPog.getID(), is);
+							m_menuPog.setFaceSize(is);
 					}
 				}
 			});
@@ -594,7 +594,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogSize(m_menuPog.getID(), 0.5f);
+					m_menuPog.setFaceSize( 0.5f);
 				}
 			});
 			sizeMenu.add(item);
@@ -603,7 +603,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogSize(m_menuPog.getID(), 1);
+					m_menuPog.setFaceSize( 1);
 				}
 			});
 			sizeMenu.add(item);
@@ -612,7 +612,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogSize(m_menuPog.getID(), 2);
+					m_menuPog.setFaceSize( 2);
 				}
 			});
 			sizeMenu.add(item);
@@ -621,7 +621,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogSize(m_menuPog.getID(), 3);
+					m_menuPog.setFaceSize( 3);
 				}
 			});
 			sizeMenu.add(item);
@@ -630,7 +630,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogSize(m_menuPog.getID(), 4);
+					m_menuPog.setFaceSize( 4);
 				}
 			});
 			sizeMenu.add(item);
@@ -639,7 +639,7 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_canvas.setPogSize(m_menuPog.getID(), 6);
+					m_menuPog.setFaceSize( 6);
 				}
 			});
 			sizeMenu.add(item);
