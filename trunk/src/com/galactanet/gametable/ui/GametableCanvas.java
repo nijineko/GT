@@ -623,19 +623,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	private void doSetPogType(final MapElementID id, final MapElementID type)
-	{
-		final MapElement pog = getActiveMap().getMapElement(id);
-		final MapElement tpog = getActiveMap().getMapElement(type);
-		if ((pog == null) || (tpog == null))
-		{
-			return;
-		}
-
-		pog.setElementType(tpog.getMapElementType());
-		repaint();
-	}
-
 	// topLeftX and topLeftY are the coordinates of where the
 	// top left of the map area is in whatever coordinate system g is set up to be
 	public void drawMatte(final Graphics g, final int topLeftX, final int topLeftY, final int width, final int height)
@@ -1371,7 +1358,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		{
 			if (pog.getMapElementType() == toReplace)
 			{
-				pog.setElementType(replaceWith);
+				pog.setMapElementType(replaceWith);
 			}
 		}
 	}
@@ -1805,25 +1792,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	/**
-	 * #grouping?
-	 */
-	public void setPogType(final MapElement pog, final MapElement type)
-	{
-		if (isPublicMap())
-		{
-			m_frame.sendBroadcast(NetSetMapElementType.makePacket(pog.getID(), type.getID()));
-			if (m_frame.getNetworkStatus() != NetworkStatus.CONNECTED)
-			{
-				doSetPogType(pog.getID(), type.getID());
-			}
-		}
-		else
-		{
-			doSetPogType(pog.getID(), type.getID());
-		}
-	}
-
 	/*
 	 * This function will set the scroll for all maps, keeping their relative offsets preserved. The x,y values sent in
 	 * will become the scroll values for the desired map. All others maps will preserve offsets from that.
@@ -1831,12 +1799,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	public void setPrimaryScroll(final GameTableMap mapToSet, final int x, final int y)
 	{
 		setScrollPosition(x, y);
-		setScrollPosition(x, y);
-		/*
-		 * int dx = x - mapToSet.getScrollX(); int dy = y - mapToSet.getScrollY(); m_publicMap.setScroll(dx +
-		 * mapToSet.getScrollX(), dy + mapToSet.getScrollY()); m_privateMap.setScroll(dx + mapToSet.getScrollX(), dy +
-		 * mapToSet.getScrollY());
-		 */
 	}
 
 	/**
@@ -2285,6 +2247,22 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				// Broadcast only if we're not triggered by a network event
 				if (shouldPropagateChanges(netEvent))
 					m_frame.sendBroadcast(NetSetMapElementLayer.makePacket(element, newLayer));
+			}
+
+			repaint();
+		}
+		
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onElementTypeChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onElementTypeChanged(MapElement element, NetworkEvent netEvent)
+		{
+			if (m_listenToPublicMap)
+			{
+				// Broadcast only if we're not triggered by a network event
+				if (shouldPropagateChanges(netEvent))
+					m_frame.sendBroadcast(NetSetMapElementType.makePacket(element, element.getMapElementType()));
 			}
 
 			repaint();

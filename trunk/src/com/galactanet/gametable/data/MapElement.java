@@ -189,7 +189,7 @@ public class MapElement implements Comparable<MapElement>
 
 		// Normalized type name
 		String fullyQualifiedTypeName = XMLUtils.getFirstChildElementContent(parent, "type");
-		MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getElementType(fullyQualifiedTypeName);
+		MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(fullyQualifiedTypeName);
 		
 		if (type == null)
 		{
@@ -316,7 +316,7 @@ public class MapElement implements Comparable<MapElement>
 
 		stopDisplayPogDataChange();
 
-		MapElementTypeIF type = lib.getElementType(type_fqn);
+		MapElementTypeIF type = lib.getMapElementType(type_fqn);
 		if (type == null)
 		{
 			type = lib.createPlaceholderType(type_fqn, size);
@@ -668,7 +668,7 @@ public class MapElement implements Comparable<MapElement>
 
 	/**
 	 * Verifies that a given element type is valid for this instance. Useful to check before calling
-	 * {@link #setElementType(MapElementTypeIF)}
+	 * {@link #setMapElementType(MapElementTypeIF)}
 	 * 
 	 * @param parent MapElement to test
 	 * @return True if valid
@@ -980,23 +980,38 @@ public class MapElement implements Comparable<MapElement>
 		for (MapElementListenerIF listener : m_listeners)
 			listener.onLayerChanged(this, layer, old, netEvent);
 	}
+	
+	/**
+	 * Change the instance's element type - effectively changing this element's picture
+	 * 
+	 * @param elementType New element type. Must be of same class as current element type.
+	 */
+	public void setMapElementType(MapElementTypeIF elementType)
+	{
+		setElementType(elementType, null);		
+	}
 
 	/**
 	 * Change the instance's element type - effectively changing this element's picture
 	 * 
-	 * @param newParent New parent element. Must be of same class as current parent.
+	 * @param elementType New element type. Must be of same class as current element type.
+	 * @param netEvent Network event that triggered the operation or null
 	 */
-	public void setElementType(MapElementTypeIF newParent)
+	public void setElementType(MapElementTypeIF elementType, NetworkEvent netEvent)
 	{
-		if (!isValidParent(newParent))
+		if (elementType == m_mapElementType)
+			return;
+		
+		if (!isValidParent(elementType))
 			throw new IllegalArgumentException("Invalid parent - cannot replace " + m_mapElementType.getClass().getName() + " by "
-					+ newParent.getClass().getName());
+					+ elementType.getClass().getName());		
 
-		m_mapElementType = newParent;
+		m_mapElementType = elementType;
 
 		reinitializeHitMap();
 		
-		// TODO Trigger listener!
+		for (MapElementListenerIF listener : m_listeners)
+			listener.onElementTypeChanged(this, netEvent);
 	}
 	
 	/**

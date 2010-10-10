@@ -23,6 +23,8 @@ import java.io.IOException;
 
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.data.MapElementTypeIF;
+import com.galactanet.gametable.data.MapElementTypeLibrary;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
@@ -53,19 +55,19 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 	 * Create a network data packet requesting that a map element changes type with the type used by another given map
 	 * element
 	 * 
-	 * @param mapElementID ID of the map element to change
+	 * @param mapElement Map Element to change
 	 * @param mapElementType ID of a map element using the type we want to use
 	 * @return data packet
 	 */
-	public static byte[] makePacket(final MapElementID mapElementID, final MapElementID mapElementType)
+	public static byte[] makePacket(final MapElement mapElement, final MapElementTypeIF mapElementType)
 	{
 		try
 		{
 			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
-			dos.writeLong(mapElementID.numeric());
-			dos.writeLong(mapElementType.numeric());
+			dos.writeLong(mapElement.getID().numeric());
+			dos.writeUTF(mapElementType.getFullyQualifiedName());
 
 			return dos.toByteArray();
 		}
@@ -83,18 +85,19 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		long id = dis.readLong();
-		MapElementID mapElementID = MapElementID.fromNumeric(id);
-
-		id = dis.readLong();
-		MapElementID mapElementTypeID = MapElementID.fromNumeric(id);
-
 		GametableFrame frame = GametableFrame.getGametableFrame();
+		MapElementTypeLibrary typeLib = frame.getMapElementTypeLibrary();
 		
-		final MapElement mapElement = frame.getMapElement(mapElementID);
-		final MapElement mapElementType = frame.getMapElement(mapElementTypeID);
+		MapElementID mapElementID = MapElementID.fromNumeric(dis.readLong());
+		MapElement mapElement = frame.getMapElement(mapElementID);
+
+		String typeFQN = dis.readUTF();		
+		MapElementTypeIF type = typeLib.getMapElementType(typeFQN);
 		
-		mapElement.setElementType(mapElementType.getMapElementType());
+		if (mapElement != null && type != null)
+		{
+			mapElement.setElementType(type, event);
+		}
 	}
 
 	/*

@@ -162,11 +162,11 @@ public class MapElementTypeLibrary
      * @param fullyQualifiedTypeName Unique type name
      * @return MapElementType or null, if none found
      */
-    public MapElementTypeIF getElementType(final String fullyQualifiedTypeName)
+    public MapElementTypeIF getMapElementType(final String fullyQualifiedTypeName)
     {
     	for (MapElementTypeLibrary library : m_childLibraries)
     	{
-    		MapElementTypeIF type = library.getElementType(fullyQualifiedTypeName);
+    		MapElementTypeIF type = library.getMapElementType(fullyQualifiedTypeName);
     		if (type != null)
     			return type;
     	}

@@ -100,4 +100,11 @@ public interface MapElementListenerIF
 	 * @param netEvent Triggering network event or null
 	 */
 	public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent);
+	
+	/**
+	 * Element type has changed
+	 * @param element Element that has changed
+	 * @param netEvent Triggering network event or null
+	 */
+	public void onElementTypeChanged(MapElement element, NetworkEvent netEvent);
 }

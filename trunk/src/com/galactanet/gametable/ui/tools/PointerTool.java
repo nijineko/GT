@@ -771,7 +771,7 @@ public class PointerTool extends NullTool
 					}
 
 					MapElement pog = pogs.get(0);
-					m_frame.getGametableCanvas().setPogType(m_menuPog, pog);
+					m_menuPog.setMapElementType(pog.getMapElementType());
 					m_canvas.unselectAllMapElementInstances();
 				}
 			});

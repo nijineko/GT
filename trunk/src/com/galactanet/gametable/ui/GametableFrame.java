@@ -868,7 +868,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	/**
 	 * @return The root pog library.
 	 */
-	public MapElementTypeLibrary getPogLibrary()
+	public MapElementTypeLibrary getMapElementTypeLibrary()
 	{
 		return m_pogLibrary;
 	}
@@ -3221,11 +3221,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetLockMapElements.getMessageType());
 		m_networkModule.registerMessageType(NetLoginComplete.getMessageType());
 		m_networkModule.registerMessageType(NetLoginRejected.getMessageType());
-		m_networkModule.registerMessageType(NetSetMapElementPosition.getMessageType());
 		m_networkModule.registerMessageType(NetRecenterMap.getMessageType());
 		m_networkModule.registerMessageType(NetRemoveMapElement.getMessageType());
 		// NetRequestImage
-		m_networkModule.registerMessageType(NetSetMapElementAngle.getMessageType());
 		m_networkModule.registerMessageType(NetSendChatText.getMessageType());
 		// NetSendImage
 		m_networkModule.registerMessageType(NetSendMechanicsText.getMessageType());	
@@ -3234,10 +3232,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetSendTypingFlag.getMessageType(m_networkResponder));
 		m_networkModule.registerMessageType(NetSetBackground.getMessageType());
 		m_networkModule.registerMessageType(NetSetGridMode.getMessageType());
+		m_networkModule.registerMessageType(NetSetMapElementAngle.getMessageType());
+		m_networkModule.registerMessageType(NetSetMapElementPosition.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementData.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementLayer.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementSize.getMessageType());
-		// NetSetMapElementType
+		m_networkModule.registerMessageType(NetSetMapElementType.getMessageType());
 		m_networkModule.registerMessageType(NetShowPointingMarker.getMessageType());
 		
 		
@@ -3360,7 +3360,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			// grid background
 			Element bkEl = XMLUtils.getFirstChildElementByTagName(gridEl, "background");
 			String typeFQN = bkEl.getAttribute("element_type");
-			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getElementType(typeFQN);
+			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(typeFQN);
 			if (type != null)
 			{
 				changeBackground(type, null);

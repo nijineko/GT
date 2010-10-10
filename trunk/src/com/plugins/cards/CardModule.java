@@ -959,7 +959,7 @@ public class CardModule extends Module implements MessageListener
 			return null;
 		}
 
-		final MapElementTypeIF newPogType = frame.getPogLibrary().getElementType("pogs" + File.separator + card.getCardFile());
+		final MapElementTypeIF newPogType = frame.getMapElementTypeLibrary().getMapElementType("pogs" + File.separator + card.getCardFile());
 
 		if (newPogType == null)
 		{
