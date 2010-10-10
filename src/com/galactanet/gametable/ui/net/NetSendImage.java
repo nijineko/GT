@@ -161,7 +161,7 @@ protected static byte[] makeImagePacket(String filename)
 			os.flush();
 			os.close();
 
-			final MapElementTypeIF pogType = GametableFrame.getGametableFrame().getPogLibrary().getElementType(filename);
+			final MapElementTypeIF pogType = GametableFrame.getGametableFrame().getMapElementTypeLibrary().getMapElementType(filename);
 			pogType.load();
 
 			// Tell the frame to refresh and the image list (so it gets discovered)

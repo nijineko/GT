@@ -119,7 +119,7 @@ public class NetSetBackground implements NetworkMessageTypeIF
 		if (iType == Type.ELEMENT_TYPE.ordinal())
 		{
 			String mapElementTypeFQN = dis.readUTF();
-			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getElementType(mapElementTypeFQN);
+			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(mapElementTypeFQN);
 			if (type != null)
 			{
 				GametableFrame.getGametableFrame().changeBackground(type, event);

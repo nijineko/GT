@@ -232,7 +232,7 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 		* @see com.galactanet.gametable.data.MapElementTypeLibrary#getElementType(java.lang.String)
 		*/
 		@Override
-		public MapElementTypeIF getElementType(String fullyQualifiedTypeName)
+		public MapElementTypeIF getMapElementType(String fullyQualifiedTypeName)
 		{
 			if (fullyQualifiedTypeName.startsWith(getFullyQualifiedName()))
 			{
@@ -241,7 +241,7 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 						return type;
 			}
 			
-			return super.getElementType(fullyQualifiedTypeName);
+			return super.getMapElementType(fullyQualifiedTypeName);
 		}
 
     /*
