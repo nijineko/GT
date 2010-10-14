@@ -19,6 +19,8 @@ package com.galactanet.gametable.data;
 
 import java.awt.Image;
 
+import com.galactanet.gametable.net.NetworkConnectionIF;
+
 /**
  * Holds static information shared by all MapElements - creates MapElementInstance for GameTableMap
  * 
@@ -92,11 +94,16 @@ public interface MapElementTypeIF
 	 * 
 	 * Mostly used in network communications to see if image transfer is required
 	 * 
-	 * @revise Generalize process for multiple MapElement classes
-	 * 
 	 * @return true If this Map Element has been fully loaded. See {@link #load()}
 	 */
 	public boolean isLoaded();
+
+	/**
+	 * If the data does not reside locally, now is the time to request it from the network
+	 * 
+	 * @param conn Network connection from which we can request data 
+	 */
+	public void loadDataFromNetwork(NetworkConnectionIF conn);
 
 	/**
 	 * Loads (or reloads) the MapElement

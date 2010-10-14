@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -128,10 +129,11 @@ public class NetAddMapElement implements NetworkMessageTypeIF
 			return;
 		}
 
-		// If map element is not loaded, we'll neet to request it 
-		if (!element.getMapElementType().isLoaded())
+		// If map element is not loaded, we'll need to request it
+		MapElementTypeIF type = element.getMapElementType();
+		if (!type.isLoaded())
 		{
-			NetRequestImage.requestMapElementImageFile(sourceConnection, element);
+			type.loadDataFromNetwork(sourceConnection);
 		}
 
 		// Have the model react

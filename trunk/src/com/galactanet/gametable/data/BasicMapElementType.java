@@ -19,12 +19,17 @@ package com.galactanet.gametable.data;
 
 import java.awt.Image;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.net.NetworkConnectionIF;
+import com.galactanet.gametable.ui.net.NetRequestFile;
+import com.galactanet.gametable.ui.net.NetRequestFile.FileRequestListenerIF;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
+import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
  * Holds static information shared by all MapElements - creates MapElementInstance for GameTableMap
@@ -111,7 +116,17 @@ public class BasicMapElementType implements MapElementTypeIF
 	/**
 	 * The name of the image file this element is using
 	 */
-	private final File		m_imageFile;
+	private File		m_imageFile;
+	
+	/**
+	 * Canonical image file path
+	 */
+	private String 	m_imageFileName;
+
+	/**
+	 * If non-null, this type is a placeholder for this image
+	 */
+	private String m_placeHolderFor;
 
 	/**
 	 * The layer type this Map Element is linked to
@@ -156,9 +171,19 @@ public class BasicMapElementType implements MapElementTypeIF
 			throw new IllegalArgumentException("Invalid layerType");
 		
 		m_imageFile = imageFile;
+		try
+		{
+			m_imageFileName = imageFile.getCanonicalPath();
+		}
+		catch (IOException e)
+		{
+			throw new IllegalArgumentException("Invalid file " + imageFile);
+		}
+		
 		m_layerType = layerType;
 		m_library = library;
 		m_faceSize = faceSize;
+		m_placeHolderFor = null;
 
 		//load();
 	}
@@ -168,17 +193,20 @@ public class BasicMapElementType implements MapElementTypeIF
 	 * 
 	 * @param library This type's parent library
 	 * @param faceSize Size of one of this element's face in map units
+	 * @param placeHolderFor Name of the image this type is a place holder for
 	 * @param layerType Layer type one such element is associated
 	 */
-	public BasicMapElementType(BasicMapElementTypeLibrary library, int faceSize, Layer layerType)
+	public BasicMapElementType(BasicMapElementTypeLibrary library, int faceSize, String placeHolderFor, Layer layerType)
 	{
 		if (layerType == null)
 			throw new IllegalArgumentException("Invalid layerType");
 
 		m_imageFile = new File("");
+		m_imageFileName = "";
 		m_layerType = layerType;
 		m_library = library;
 		m_faceSize = faceSize;
+		m_placeHolderFor = placeHolderFor;
 
 		loadPlaceholder();
 	}
@@ -230,7 +258,12 @@ public class BasicMapElementType implements MapElementTypeIF
 	public String getFullyQualifiedName()
 	{
 		if (m_fullyQualifiedName == null)
-			m_fullyQualifiedName = m_library.getFullyQualifiedName() + MapElementTypeLibrary.TYPE_SEPARATOR + m_imageFile.getName();
+		{
+			if (m_placeHolderFor != null)
+				m_fullyQualifiedName = m_library.getFullyQualifiedName() + MapElementTypeLibrary.TYPE_SEPARATOR + UtilityFunctions.escapeString(m_placeHolderFor);
+			else
+				m_fullyQualifiedName = m_library.getFullyQualifiedName() + MapElementTypeLibrary.TYPE_SEPARATOR + UtilityFunctions.escapeString(m_imageFile.getName());				
+		}
 		
 		return m_fullyQualifiedName;
 	}
@@ -240,7 +273,7 @@ public class BasicMapElementType implements MapElementTypeIF
 	 */
 	public String getImageFilename()
 	{
-		return m_imageFile.getAbsolutePath();
+		return m_imageFileName;
 	}
 
 	/**
@@ -334,6 +367,50 @@ public class BasicMapElementType implements MapElementTypeIF
 	{
 		return m_loaded;
 	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.MapElementTypeIF#loadDataFromNetwork(com.galactanet.gametable.net.NetworkConnectionIF)
+	 */
+	@Override
+	public void loadDataFromNetwork(NetworkConnectionIF conn)
+	{
+		if (!m_loaded)
+		{
+			FileRequestListenerIF listener = new FileRequestListenerIF() {
+				/*
+				 * @see com.galactanet.gametable.ui.net.NetRequestImage.FileRequestListenerIF#onFileRequestReceived(java.lang.String, java.io.File)
+				 */
+				@Override
+				public void onFileRequestReceived(String fqn, File file)
+				{
+//					BasicMapElementType type = new BasicMapElementType(m_library, file, m_faceSize, m_layerType);
+//					type.load();
+//					m_library.addElementType(type);
+					
+					m_imageFile = file;
+					
+					try
+					{
+						m_imageFileName = m_imageFile.getCanonicalPath();
+					}
+					catch (IOException e)
+					{
+						throw new IllegalArgumentException("Invalid file " + m_imageFile);
+					}
+					
+					m_placeHolderFor = null;
+					m_fullyQualifiedName = null;
+					load();
+					
+					// Trigger a refresh through the library's listeners
+					m_library.addElementType(BasicMapElementType.this);
+				}
+			};
+			
+			File destination = new File( m_library.getName() + File.separator + m_placeHolderFor);
+			NetRequestFile.requestFile(conn, BasicMapElementType.class.getName(), getFullyQualifiedName(), destination, listener);
+		}
+	}
 
 	/**
 	 * Loads (or reloads) the MapElement
@@ -344,8 +421,11 @@ public class BasicMapElementType implements MapElementTypeIF
 		// Backup previous image in case of failure
 		final Image oldImage = m_image;
 
-		// Load image from file name
-		m_image = ImageCache.getImage(m_imageFile);
+		if (m_placeHolderFor == null || m_image == null)
+		{
+			// Load image from file name
+			m_image = ImageCache.getImage(m_imageFile);
+		}
 
 		m_listIcon = null;
 
@@ -365,8 +445,10 @@ public class BasicMapElementType implements MapElementTypeIF
 		}
 		else
 		{
+			if (m_placeHolderFor == null)
+				m_loaded = true;
+			
 			// File loaded okay, calculate facing
-			m_loaded = true;
 
 			// Largest dimension is face size in pixels
 			int pixelSize = Math.max(m_image.getWidth(null), m_image.getHeight(null));
@@ -380,19 +462,17 @@ public class BasicMapElementType implements MapElementTypeIF
 	}
 	
 	/**
-	 * Loads (or reloads) the MapElement
+	 * Loads (or reloads) the MapElement with the placeholder image
 	 */
 	private void loadPlaceholder()
 	{
 		if (m_faceSize < 1)
 			m_faceSize = 1;
 
-		// Load place holder image		
-		m_image = getPlaceHolderImage(m_faceSize);
-
 		m_listIcon = null;
-
-		m_loaded = true;
+		m_loaded = false;
+		
+		// Load place holder image
 		m_image = getPlaceHolderImage(m_faceSize);
 	}
 
@@ -411,8 +491,11 @@ public class BasicMapElementType implements MapElementTypeIF
 	@Override
 	public boolean equals(Object obj)
 	{
-		if (m_imageFile != null && obj != null && (obj instanceof File))
+		if ((obj instanceof File) && m_imageFile != null && obj != null)
 			return m_imageFile.equals(obj);
+		
+		if (obj instanceof BasicMapElementType && obj != null)
+			return getFullyQualifiedName().equals(((BasicMapElementType)obj).getFullyQualifiedName());
 
 		return super.equals(obj);
 	}

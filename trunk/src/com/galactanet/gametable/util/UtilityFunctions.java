@@ -469,38 +469,38 @@ public class UtilityFunctions
     }
 
 
-    public static byte[] loadFileToArray(final File file)
-    {
-        if (!file.exists())
-        {
-            return null;
-        }
+	public static byte[] loadFileToArray(final File file)
+	{
+		if (!file.exists())
+		{
+			return null;
+		}
 
-        try
-        {
-            final DataInputStream infile = new DataInputStream(new FileInputStream(file));
-            final byte[] buffer = new byte[1024];
-            final ByteArrayOutputStream fileData = new ByteArrayOutputStream();
-            while (true)
-            {
-                final int bytesRead = infile.read(buffer);
-                if (bytesRead > 0)
-                {
-                    fileData.write(buffer, 0, bytesRead);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            return fileData.toByteArray();
-        }
-        catch (final IOException ex)
-        {
-            Log.log(Log.SYS, ex);
-            return null;
-        }
-    }
+		try
+		{
+			final DataInputStream infile = new DataInputStream(new FileInputStream(file));
+			final byte[] buffer = new byte[1024];
+			final ByteArrayOutputStream fileData = new ByteArrayOutputStream();
+			while (true)
+			{
+				final int bytesRead = infile.read(buffer);
+				if (bytesRead > 0)
+				{
+					fileData.write(buffer, 0, bytesRead);
+				}
+				else
+				{
+					break;
+				}
+			}
+			return fileData.toByteArray();
+		}
+		catch (final IOException ex)
+		{
+			Log.log(Log.SYS, ex);
+			return null;
+		}
+	}
 
     public static byte[] loadFileToArray(final String filename)
     {
@@ -980,4 +980,78 @@ public class UtilityFunctions
     	
       return ((data[startIndex] << 24) + (data[startIndex + 1]<< 16) + (data[startIndex + 2] << 8) + (data[startIndex + 3] << 0));
     }
+    
+  	/**
+  	 * Returns an escaped (URLencoded) string (changes some chars to %xx)
+  	 * Uses UTF-8
+  	 * @param in string to escape
+  	 *
+  	 * @return escaped string
+  	 */
+  	public static String escapeString(String in)
+  	{
+  		return escapeString(in, "UTF-8");
+  	}
+  	
+  	/**
+  	 * Returns an escaped (URLencoded) string (changes some chars to %xx)
+  	 * @param in string to escape
+  	 * @param encoding encoding to use, such as UTF-8
+  	 *
+  	 * @return escaped string
+  	 */
+  	public static String escapeString(String in, String encoding)
+  	{
+  		if (in == null)
+  			return "";
+
+  		try
+  		{
+  				return URLEncoder.encode(in, encoding);
+  		}
+  		catch (UnsupportedEncodingException e)
+  		{
+  			// Can't happen.
+  			return "";
+  		}
+  	}
+  	
+  	/**
+  	 * Returns an unescaped (URLDecoded) string (reverts %xx chars to actual chars)
+  	 * Uses UTF-8 as encoding
+  	 * 
+  	 * @param in string to unescape
+  	 *
+  	 * @return unescaped string
+  	 *
+  	 */
+  	static public String unEscapeString(String in)
+  	{
+  		return unEscapeString(in, "UTF-8");		
+  	}
+  	
+  	/**
+  	 * Returns an unescaped (URLDecoded) string (reverts %xx chars to actual chars)
+  	 * @param in string to unescape
+  	 * @param encoding Such as UTF-8
+  	 *
+  	 * @return unescaped string
+  	 *
+  	 */
+  	static public String unEscapeString(String in, String encoding)
+  	{
+  		if (in == null)
+  			return "";
+
+  		try
+  		{
+  			return URLDecoder.decode(in, encoding);
+  		}
+  		catch(UnsupportedEncodingException e)
+  		{
+  			// can't happen
+  			return "";
+  		}
+
+  	}
 }

@@ -40,6 +40,10 @@ import com.galactanet.gametable.ui.chat.SlashCommands;
 import com.galactanet.gametable.ui.net.*;
 import com.galactanet.gametable.ui.net.NetGroupAction.Action;
 import com.galactanet.gametable.util.*;
+import com.maziade.messages.MessageDefinition;
+import com.maziade.messages.MessageID;
+import com.maziade.messages.MessageListener;
+import com.maziade.messages.MessagePriority;
 import com.maziade.tools.XMLUtils;
 import com.maziade.tools.XMLUtils.XMLOutputProperties;
 import com.plugins.activepogs.ActivePogsModule;
@@ -56,7 +60,7 @@ import com.plugins.network.PacketSourceState;
  * 
  *         #GT-AUDIT GametableFrame
  */
-public class GametableFrame extends JFrame implements ActionListener, MapElementRepositoryIF
+public class GametableFrame extends JFrame implements ActionListener, MapElementRepositoryIF, MessageListener
 {
 	/**
 	 * This class provides a mechanism to store the active tool in the gametable canvas
@@ -326,7 +330,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 */
 	private final List<Player>						m_unmodifiablePlayers;
 	
-	private MapElementTypeLibrary		m_pogLibrary							= null;
+	private MapElementTypeLibrary		m_mapElementTypeLibrary							= null;
 
 	// Pog
 																																																														// pane
@@ -870,7 +874,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 */
 	public MapElementTypeLibrary getMapElementTypeLibrary()
 	{
-		return m_pogLibrary;
+		return m_mapElementTypeLibrary;
 	}
 
 	/**
@@ -1209,11 +1213,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			final FileInputStream infile = new FileInputStream(openFile);
 			final DataInputStream dis = new DataInputStream(infile);
 			final MapElement nPog = new MapElement(dis);
-
-			if (!nPog.getMapElementType().isLoaded())
-			{ // we need this image
-				NetRequestImage.requestMapElementImageFile(null, nPog);
-			}
 			m_gametableCanvas.getActiveMap().addMapElement(nPog);
 		}
 		catch (final IOException ex1)
@@ -1525,32 +1524,24 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	{
 		sendMechanicsMessageBroadcast(SYSTEM_MESSAGE_FONT + text + END_SYSTEM_MESSAGE_FONT);
 	}
-
+	
 	/**
-	 * Reacquires pogs and then refreshes the pog list.
+	 * Refreshes the pog list.
 	 */
-	public void reacquirePogs()
+	private void refreshMapElementList()
 	{
 		try
 		{
-			m_pogLibrary.refresh(true);
+			m_mapElementTypeLibrary.refresh(true);
 		}
 		catch (IOException e)
 		{
 			// .todo proper error handling
 			Log.log(Log.SYS, e.getMessage());
 		}
-
-		refreshMapElementList();
-	}
-	
-	/**
-	 * Refreshes the pog list.
-	 */
-	public void refreshMapElementList()
-	{
+		
 		m_pogPanel.populateChildren();
-		getGametableCanvas().repaint();
+		repaint();
 	}
 
 	/**
@@ -2727,7 +2718,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
-				reacquirePogs();
+				MSG_REFRESH_MAP_LIBRARY.addMessage(GametableFrame.this, "scan");
 			}
 		});
 
@@ -3002,15 +2993,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		
 		initializeGroupManager();
 
-		m_pogLibrary = MapElementTypeLibrary.getMasterLibrary();
-
-		m_pogLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_pogLibrary, new File("pogs"), Layer.POG));
-		m_pogLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_pogLibrary, new File("environment"), Layer.ENVIRONMENT));
-		m_pogLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_pogLibrary, new File("overlays"), Layer.OVERLAY));
-		m_pogLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_pogLibrary, new File("underlays"), Layer.UNDERLAY));
-
+		initialiseMapElementTypeLibrary();
+		
 		// pogWindow
-		m_pogPanel = new PogPanel(m_pogLibrary, getGametableCanvas());
+		m_pogPanel = new PogPanel(m_mapElementTypeLibrary, getGametableCanvas());
 		m_pogsTabbedPane.addTab(m_pogPanel, getLanguageResource().POG_LIBRARY);
 
 		for (Module module : g_modules)
@@ -3195,6 +3181,67 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	}
 
 	/**
+	 * Executes a Message.  Called from MessageQueue.  (This is an event message queue, different from the network messages.)
+	 * @param id Identifies the message
+	 * @param priority message priority
+	 * @param parmeter message parameter
+	 * @param debug debug string
+	 */
+	@Override
+	public void executeMessage(MessageID messageID, MessagePriority priority, Object parameter, String debug)
+	{
+		if (messageID == MSGID_REFRESH_MAP_LIBRARY)
+		{
+			refreshMapElementList();
+		}		
+	}
+
+	private void initialiseMapElementTypeLibrary() throws IOException
+	{
+		MSGID_REFRESH_MAP_LIBRARY = MessageID.acquire(CardModule.class.getCanonicalName() + ".DISCARD");
+		MSG_REFRESH_MAP_LIBRARY = new MessageDefinition(MSGID_REFRESH_MAP_LIBRARY, MessagePriority.LOW);
+		
+		m_mapElementTypeLibrary = MapElementTypeLibrary.getMasterLibrary();
+		
+		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("pogs"), Layer.POG));
+		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("environment"), Layer.ENVIRONMENT));
+		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("overlays"), Layer.OVERLAY));
+		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("underlays"), Layer.UNDERLAY));
+		
+		MapElementTypeLibraryListenerIF listener = new MapElementTypeLibraryListenerIF() {			
+			@Override
+			public void onMapElementTypeRemoved(MapElementTypeLibrary parentLibrary, MapElementTypeIF removedType)
+			{
+				// Queue a refresh message
+				MSG_REFRESH_MAP_LIBRARY.addMessage(GametableFrame.this, "type-removed");
+			}
+
+			@Override
+			public void onMapElementTypeUpdated(MapElementTypeLibrary parentLibrary, MapElementTypeIF type)
+			{
+				// Queue a refresh message
+				MSG_REFRESH_MAP_LIBRARY.addMessage(GametableFrame.this, "type-updated");			
+			}
+			
+			@Override
+			public void onMapElementTypeAdded(MapElementTypeLibrary parentLibrary, MapElementTypeIF newType)
+			{
+				// Queue a refresh message
+				MSG_REFRESH_MAP_LIBRARY.addMessage(GametableFrame.this, "type-added");
+			}
+			
+			@Override
+			public void onLibraryAdded(MapElementTypeLibrary parentLibrary, MapElementTypeLibrary newLibrary)
+			{
+				// Queue a refresh message
+				MSG_REFRESH_MAP_LIBRARY.addMessage(GametableFrame.this, "library-removed");
+			}
+		};
+
+		m_mapElementTypeLibrary.addListener(listener);
+	}
+
+	/**
 	 * Initialize group manager
 	 */
 	private void initializeGroupManager()
@@ -3223,9 +3270,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_networkModule.registerMessageType(NetLoginRejected.getMessageType());
 		m_networkModule.registerMessageType(NetRecenterMap.getMessageType());
 		m_networkModule.registerMessageType(NetRemoveMapElement.getMessageType());
-		// NetRequestImage
 		m_networkModule.registerMessageType(NetSendChatText.getMessageType());
-		// NetSendImage
+		
+		m_networkModule.registerMessageType(NetRequestFile.getMessageType());
+		m_networkModule.registerMessageType(NetSendFile.getMessageType());
+		
 		m_networkModule.registerMessageType(NetSendMechanicsText.getMessageType());	
 		m_networkModule.registerMessageType(NetSendPlayerInfo.getMessageType());
 		m_networkModule.registerMessageType(NetSendPlayersList.getMessageType());
@@ -3862,4 +3911,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 * Holds data about which element is locked
 	 */
 	private SelectionHandler		m_lockedElements;
+
+	/**
+	 * Message to refresh the map element library
+	 */
+	private static MessageDefinition	MSG_REFRESH_MAP_LIBRARY;
+
+	/**
+	 * Message to refresh the map element library
+	 */
+	private static MessageID					MSGID_REFRESH_MAP_LIBRARY;
 }

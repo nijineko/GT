@@ -45,6 +45,11 @@ public class MapElementTypeLibrary
     private final List<MapElementTypeLibrary> m_childLibraries;
     
     /**
+     * Listener that dispatches messages from all sub libraries
+     */
+    protected final MapElementTypeLibraryAdapterOmni m_listeners;
+    
+    /**
      * Unmodifiable, synchronized list of children
      */
     private final List<MapElementTypeLibrary> m_childLibrariesUnmodifiable; 
@@ -76,8 +81,9 @@ public class MapElementTypeLibrary
      */
     protected MapElementTypeLibrary()
     {
+    	m_listeners = new MapElementTypeLibraryAdapterOmni();
       m_childLibraries = new ArrayList<MapElementTypeLibrary>();
-    	m_childLibrariesUnmodifiable = Collections.unmodifiableList(m_childLibraries); 
+    	m_childLibrariesUnmodifiable = Collections.unmodifiableList(m_childLibraries);
     }
     
     /**
@@ -87,7 +93,10 @@ public class MapElementTypeLibrary
     public void addSubLibrary(MapElementTypeLibrary library)
     {
     	m_childLibraries.add(library);
-    	// todo add listener trigger when library is added
+    	
+    	library.addListener(m_listeners);
+    	
+    	m_listeners.onLibraryAdded(this, library);
     }
 
     /**
@@ -189,7 +198,7 @@ public class MapElementTypeLibrary
      */    
     public boolean removeElementType(final MapElementTypeIF type) 
     {
-        return false;       
+    	return false;       
     }
 
     /*
@@ -228,9 +237,13 @@ public class MapElementTypeLibrary
     	if (pos < 0)
     		return null;
     		
-    	String libraryName = typeName.substring(0, pos); 
+    	String libraryName = typeName.substring(0, pos);
+    	
+    	String placeHolderFor = "";
+    	if (pos < typeName.length())
+    		placeHolderFor = typeName.substring(pos + 1);
 
-    	MapElementTypeLibrary lib = getLibraryFromFQN(libraryName);
+    	MapElementTypeLibrary lib = getLibraryFromFQN(libraryName);    	
     	
     	// todo If we can't find the library, we'll need to somehow create it!
     	if (lib == null)
@@ -241,7 +254,7 @@ public class MapElementTypeLibrary
     	// todo I can't arbitrarily decide type - I must be able to get type from type FQN. (only one type for now, but I don't want to break compatibility later)
     	BasicMapElementTypeLibrary basicLib = (BasicMapElementTypeLibrary)lib;  
     	
-    	BasicMapElementType type = new BasicMapElementType(basicLib, faceSize, Layer.UNDERLAY);
+    	BasicMapElementType type = new BasicMapElementType(basicLib, faceSize, placeHolderFor, Layer.UNDERLAY);
     	basicLib.addElementType(type);
     	
     	return type;
@@ -258,7 +271,7 @@ public class MapElementTypeLibrary
     		return;
     	}
     	
-    	if (getParent() == null)
+			if (getParent() == null)
     	{
     		m_fullyQualifiedName = UtilityFunctions.normalizeName(m_libraryName);
     		return;
@@ -295,6 +308,26 @@ public class MapElementTypeLibrary
     {
     	return m_fullyQualifiedName;
     }
+    
+    /**
+     * Adds a MapElementTypeLibraryListenerIF to this library
+     * @param listener Listener to call when something changes within the library
+     */
+    public void addListener(MapElementTypeLibraryListenerIF listener)
+    {
+    	m_listeners.addListener(listener);
+    }
+    
+    /**
+     * Removes a listener from this library
+     * @param listener Listener to remove
+     * @return True if listener was found and removed
+     */
+    public boolean removeListener(MapElementTypeLibraryListenerIF listener)
+    {
+    	return m_listeners.removeListener(listener);
+    }
+
     
     /**
      * Character used to separate library names 

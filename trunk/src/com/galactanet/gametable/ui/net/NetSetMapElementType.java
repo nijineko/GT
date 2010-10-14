@@ -96,7 +96,7 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 		
 		if (mapElement != null && type != null)
 		{
-			mapElement.setElementType(type, event);
+			mapElement.setMapElementType(type, event);
 		}
 	}
 
