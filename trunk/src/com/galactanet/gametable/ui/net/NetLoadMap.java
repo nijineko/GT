@@ -60,7 +60,6 @@ public class NetLoadMap implements NetworkMessageTypeIF
 	 * 
 	 * Reassigns element IDs that already in use
 	 * 
-	 * @author Eric Maziade
 	 */
 	private static class LoadMapSerializeConverter extends XMLSerializeConverter
 	{

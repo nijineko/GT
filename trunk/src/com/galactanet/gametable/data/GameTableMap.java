@@ -362,14 +362,14 @@ public class GameTableMap implements MapElementRepositoryIF
   	for (Element xmEl : XMLUtils.getChildElementsByTagName(elements, "element"))
   	{
   		MapElement el = new MapElement(xmEl, converter);
-  		addMapElement(el);    	
+  		addMapElement(el, netEvent);    	
   	}
   	
   	elements = XMLUtils.getFirstChildElementByTagName(parent, "lines");
   	for (Element xmLine : XMLUtils.getChildElementsByTagName(elements, "line"))
   	{
   		LineSegment ls = new LineSegment(xmLine);
-  		addLineSegment(ls);
+  		addLineSegment(ls, netEvent);
   	}
   	
   	Element groupsEl = XMLUtils.getFirstChildElementByTagName(parent, "groups");
