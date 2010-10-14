@@ -323,9 +323,8 @@ public class MapElement implements Comparable<MapElement>
 		}
 
 		m_mapElementType = type;
-		m_layer = type.getLayerType();
-
 		m_layer = layer; // Saving here as the init updates the layer for newly dropped pogs.
+		
 		reinitializeHitMap();
 	}
 
@@ -988,7 +987,7 @@ public class MapElement implements Comparable<MapElement>
 	 */
 	public void setMapElementType(MapElementTypeIF elementType)
 	{
-		setElementType(elementType, null);		
+		setMapElementType(elementType, null);		
 	}
 
 	/**
@@ -997,15 +996,18 @@ public class MapElement implements Comparable<MapElement>
 	 * @param elementType New element type. Must be of same class as current element type.
 	 * @param netEvent Network event that triggered the operation or null
 	 */
-	public void setElementType(MapElementTypeIF elementType, NetworkEvent netEvent)
+	public void setMapElementType(MapElementTypeIF elementType, NetworkEvent netEvent)
 	{
+		if (elementType == null)
+			throw new IllegalArgumentException("Cannot set null MapElementType");
+		
 		if (elementType == m_mapElementType)
 			return;
 		
 		if (!isValidParent(elementType))
 			throw new IllegalArgumentException("Invalid parent - cannot replace " + m_mapElementType.getClass().getName() + " by "
 					+ elementType.getClass().getName());		
-
+		
 		m_mapElementType = elementType;
 
 		reinitializeHitMap();

@@ -19,97 +19,146 @@ package com.galactanet.gametable.data;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
+import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.net.NetRequestFile;
+import com.galactanet.gametable.ui.net.NetRequestFile.FileSourceIF;
+import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
  * Library containing MapElementTypes
  * 
  * @author iffy
  * 
- * #GT-AUDIT PogLibrary
+ *         #GT-AUDIT PogLibrary
  */
 public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 {
-    /**
-     * Extract library name from path name
-     * 
-     * @param file Directory to use to calculate name. 
-     * @return Name of this library node.
-     */
-    private String getNameFromDirectory(final File file)
+	/**
+	 * Extract library name from path name
+	 * 
+	 * @param file Directory to use to calculate name.
+	 * @return Name of this library node.
+	 */
+	private String getNameFromDirectory(final File file)
+	{
+		return file.getName();
+	}
+
+	/*
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (obj instanceof BasicMapElementType)
+		{
+			return getFullyQualifiedName().equals(((BasicMapElementType) obj).getFullyQualifiedName());
+		}
+
+		return super.equals(obj);
+	}
+
+	/**
+	 * Default layer associated with library
+	 */
+	private Layer														m_defaultLayer	= MapElementTypeIF.Layer.POG;
+
+	/**
+	 * Local path to elements within this library
+	 */
+	private final File											m_libraryPath;
+
+	/**
+	 * The parent library.
+	 */
+	private MapElementTypeLibrary						m_parentLibrary	= null;
+
+	/**
+	 * The list of element types found in this library.
+	 */
+	private final List<BasicMapElementType>	m_types					= new ArrayList<BasicMapElementType>();
+
+	/**
+	 * Constructor
+	 * 
+	 * @param parent Parent library. If null, will use root library
+	 * @param path Access path for this library
+	 * @param defaultLayer Default layer for types of this library
+	 * 
+	 * @throws IOException
+	 */
+	public BasicMapElementTypeLibrary(MapElementTypeLibrary parent, File path, Layer defaultLayer) throws IOException    
+  {
+  	super();
+  	
+  	if (!path.exists() && !path.mkdir()) 
+  	{
+  		throw new IOException("Failed to find or create directory " + path.getAbsolutePath());                  
+  	}
+  	
+    if (!path.canRead() || !path.isDirectory())
     {
-    	return file.getName();
+        throw new IOException("Cannot read from " + path.getAbsolutePath());
     }
 
-    /**
-     * Default layer associated with library
-     */
-    private Layer        m_defaultLayer       = MapElementTypeIF.Layer.POG;
-
-    /**
-     * Local path to elements within this library
-     */
-    private final File  m_libraryPath;
+    if (parent == null)
+    	m_parentLibrary = MapElementTypeLibrary.getMasterLibrary();
+    else
+    	m_parentLibrary = parent;
     
-    /**
-     * The parent library.
-     */
-    private MapElementTypeLibrary m_parentLibrary            = null;
+    m_libraryPath = path.getAbsoluteFile();
+    
+    setLibraryName(getNameFromDirectory(m_libraryPath));
+    
+    m_defaultLayer = defaultLayer;
+    
+    refresh(true);
+    
+  	NetRequestFile.registerFileSource(BasicMapElementType.class.getName(), new FileSourceIF() {
+			@Override
+			public File getFile(String fileSource, String fileName)
+			{
+				// We registered only for one source, so we can safely ignore it.
 
-    /**
-     * The list of element types found in this library.
-     */
-    private final List<BasicMapElementType> m_types              = new ArrayList<BasicMapElementType>();
+				// Split the filename - we're escaping the separator, as it might be a regex character
+				String parts[] = fileName.split("\\" + MapElementTypeLibrary.TYPE_SEPARATOR);
+				
+				if (parts.length != 2)
+					return null;
+				
+				parts[1] = UtilityFunctions.unEscapeString(parts[1]);
+				
+				MapElementTypeLibrary lib = GametableFrame.getGametableFrame().getMapElementTypeLibrary().getLibraryFromFQN(parts[0]);
+				if (lib == null)
+					return null;
+				
+				// Now data... data is usually a file name that should exist within the library...
+				if (lib instanceof BasicMapElementTypeLibrary)
+				{
+					BasicMapElementTypeLibrary blib = (BasicMapElementTypeLibrary)lib;
+					File imageFile = new File(parts[0] + File.separator + parts[1]);
+					if (blib.containsBasicMapElementType(imageFile) && imageFile.exists())
+						return imageFile;
+				}
+				
+				return null;
+			}
+		});
+  }
 
-    /**
-     * Constructor
-     * @param parent Parent library.  If null, will use root library
-     * @param path Access path for this library
-     * @param defaultLayer Default layer for types of this library
-     * 
-     * @throws IOException
-     */
-    public BasicMapElementTypeLibrary(MapElementTypeLibrary parent, File path, Layer defaultLayer) throws IOException    
-    {
-    	super();
-    	
-    	if (!path.exists() && !path.mkdir()) 
-    	{
-    		throw new IOException("Failed to find or create directory " + path.getAbsolutePath());                  
-    	}
-    	
-	    if (!path.canRead() || !path.isDirectory())
-	    {
-	        throw new IOException("Cannot read from " + path.getAbsolutePath());
-	    }
-
-	    if (parent == null)
-	    	m_parentLibrary = MapElementTypeLibrary.getMasterLibrary();
-	    else
-	    	m_parentLibrary = parent;
-	    
-      m_libraryPath = path.getAbsoluteFile();
-      
-      setLibraryName(getNameFromDirectory(m_libraryPath));
-      
-      m_defaultLayer = defaultLayer;
-      
-      refresh(true);
-    }
-
-  /*
-   * @see com.galactanet.gametable.data.MapElementTypeLibrary#refresh(boolean)
-   */
-  @Override
+	/*
+	 * @see com.galactanet.gametable.data.MapElementTypeLibrary#refresh(boolean)
+	 */
+	@Override
 	public void refresh(boolean recurse) throws IOException
 	{
 		if (!m_libraryPath.exists())
 			return;
+
+		removeNonExistingTypes();
 
 		final File[] files = m_libraryPath.listFiles();
 
@@ -123,7 +172,8 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 
 			if (file.isFile() && file.canRead())
 			{
-				addElementType(file, 1, m_defaultLayer, false);
+				if (!containsBasicMapElementType(file))
+					addElementType(file, 1, m_defaultLayer, false);
 			}
 			else if (file.isDirectory() && file.canRead() && recurse)
 			{
@@ -141,19 +191,19 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 		}
 
 		// Go through all types and reload them
-//		for (BasicMapElementType type : m_types)
-//		{
-//			try
-//			{
-//				type.load();
-//			}
-//			catch (Exception e)	// TODO should be IOException.  Should be thrown by load in the model
-//			{
-//				lastException = e;
-//				if (errors != null)
-//					errors += "\n" + e.getMessage();
-//			}
-//		}
+		// for (BasicMapElementType type : m_types)
+		// {
+		// try
+		// {
+		// type.load();
+		// }
+		// catch (Exception e) // TODO should be IOException. Should be thrown by load in the model
+		// {
+		// lastException = e;
+		// if (errors != null)
+		// errors += "\n" + e.getMessage();
+		// }
+		// }
 
 		try
 		{
@@ -170,124 +220,187 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 			throw new IOException(errors, lastException);
 	}
 
-    /**
-     * Adds library to this library, ensuring it doesn't already exist.
-     * 
-     * @param path Library path name
-     * 
-     * @return Newly created library
-     */
-    private BasicMapElementTypeLibrary addSubLibrary(File path) throws IOException
-    {
-    	// Check for existence first
-    	
-    	String libName = getNameFromDirectory(path);
-    	MapElementTypeLibrary lib = getSubLibrary(libName);
-    	if (lib != null)
-    		return null;           
-    	
-    	BasicMapElementTypeLibrary child = new BasicMapElementTypeLibrary(this, path, m_defaultLayer);      
-    	addSubLibrary(child);
-    	
-    	return child;
-    }
+	/**
+	 * Adds library to this library, ensuring it doesn't already exist.
+	 * 
+	 * @param path Library path name
+	 * 
+	 * @return Newly created library
+	 */
+	private BasicMapElementTypeLibrary addSubLibrary(File path) throws IOException
+	{
+		// Check for existence first
 
-    /**
-     * Adds element type to library
-     * @param imageFile Image file to load
-     * @param faceSize Face size 
-     * @param defaultLayer Default layer 
-     * @param skipUnloaded If true, types that are not loaded are not automatically added to the list
-     * @return MapElementType or null 
-     */
-    private MapElementTypeIF addElementType(File imageFile, final int faceSize, final Layer defaultLayer, boolean skipUnloaded)
-    {
-    	//String typeFQN = getFullyQualifiedName() + MapElementTypeLibrary.TYPE_SEPARATOR + imageFile.getName();
-    	
-    	if (m_types.contains(imageFile))
-    		return null;
-    	      
-    	BasicMapElementType type = new BasicMapElementType(this, imageFile, faceSize, defaultLayer);
-            
-      if (!skipUnloaded || type.isLoaded())
-      {
-          addElementType(type);
-      }
-      
-      return type;      
-    }
+		String libName = getNameFromDirectory(path);
+		MapElementTypeLibrary lib = getSubLibrary(libName);
+		if (lib != null)
+			return null;
 
-    /**
-     * Add a loaded element type to the library
-     * @param type
-     */
-		public void addElementType(BasicMapElementType type)
+		BasicMapElementTypeLibrary child = new BasicMapElementTypeLibrary(this, path, m_defaultLayer);
+		addSubLibrary(child);
+
+		return child;
+	}
+
+	/**
+	 * Adds element type to library
+	 * 
+	 * @param imageFile Image file to load
+	 * @param faceSize Face size
+	 * @param defaultLayer Default layer
+	 * @param skipUnloaded If true, types that are not loaded are not automatically added to the list
+	 * @return MapElementType or null
+	 */
+	private MapElementTypeIF addElementType(File imageFile, final int faceSize, final Layer defaultLayer, boolean skipUnloaded)
+	{
+		// String typeFQN = getFullyQualifiedName() + MapElementTypeLibrary.TYPE_SEPARATOR + imageFile.getName();
+
+		if (m_types.contains(imageFile))
+			return null;
+
+		BasicMapElementType type = new BasicMapElementType(this, imageFile, faceSize, defaultLayer);
+
+		if (!skipUnloaded || type.isLoaded())
 		{
-			// Log.log(Log.SYS, new Exception(this + " added: " + pog));
-			m_types.add(type);
-			Collections.sort(m_types, m_typeComparator);
+			addElementType(type);
 		}
+
+		return type;
+	}
+
+	/**
+	 * Checks if we contain a file-base basic map element type
+	 * 
+	 * @param imageFile
+	 * @return
+	 */
+	private boolean containsBasicMapElementType(File imageFile)
+	{
+		String name;
+
+		try
+		{
+			name = imageFile.getCanonicalPath();
+		}
+		catch (IOException e)
+		{
+			// File does not exist...
+			return false;
+		}
+
+		for (BasicMapElementType type : m_types)
+		{
+			if (type.getImageFilename().equals(name))
+				return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Remove types that no longer match pogs
+	 */
+	private void removeNonExistingTypes()
+	{
+		Iterator<BasicMapElementType> iter = m_types.iterator();
+
+		while (iter.hasNext())
+		{
+			BasicMapElementType type = iter.next();
+
+			File f = new File(type.getImageFilename());
+			if (!f.exists())
+				iter.remove();
+		}
+	}
+
+	/**
+	 * Add a loaded element type to the library.  If the type is already within the library, it will trigger a replace
+	 * 
+	 * @param type
+	 */
+	public void addElementType(BasicMapElementType type)
+	{
+		// Log.log(Log.SYS, new Exception(this + " added: " + pog));
+		boolean replaced = m_types.remove(type);
 		
-		/*
-		* @see com.galactanet.gametable.data.MapElementTypeLibrary#getElementType(java.lang.String)
-		*/
-		@Override
-		public MapElementTypeIF getMapElementType(String fullyQualifiedTypeName)
+		m_types.add(type);
+		Collections.sort(m_types, m_typeComparator);
+
+		if (replaced)
 		{
-			if (fullyQualifiedTypeName.startsWith(getFullyQualifiedName()))
-			{
-				for (BasicMapElementType type : m_types)
-					if (type.getFullyQualifiedName().equals(fullyQualifiedTypeName))
-						return type;
-			}
-			
-			return super.getMapElementType(fullyQualifiedTypeName);
+			m_listeners.onMapElementTypeUpdated(this, type);
+		}
+		else
+		{
+			m_listeners.onMapElementTypeAdded(this, type);
+		}
+	}
+
+	/*
+	 * @see com.galactanet.gametable.data.MapElementTypeLibrary#getElementType(java.lang.String)
+	 */
+	@Override
+	public MapElementTypeIF getMapElementType(String fullyQualifiedTypeName)
+	{
+		if (fullyQualifiedTypeName.startsWith(getFullyQualifiedName()))
+		{
+			for (BasicMapElementType type : m_types)
+				if (type.getFullyQualifiedName().equals(fullyQualifiedTypeName))
+					return type;
 		}
 
-    /*
-    * @see com.galactanet.gametable.data.MapElementTypeLibrary#getElementTypes()
-    */
-    @Override
-    public List<MapElementTypeIF> getElementTypes()
-    {
-    	return new ArrayList<MapElementTypeIF>(m_types);
-    }
+		return super.getMapElementType(fullyQualifiedTypeName);
+	}
 
-    /**
-     * @return Returns the parent library.
-     */
-    @Override
-    public MapElementTypeLibrary getParent()
-    {
-        return m_parentLibrary;
-    }
-    
-    /*
-    * @see com.galactanet.gametable.data.MapElementTypeLibrary#removeElementType(com.galactanet.gametable.data.MapElementType)
-    */
-    @Override
-    public boolean removeElementType(MapElementTypeIF type)
-    {
-    	return m_types.remove(type);
-    }
+	/*
+	 * @see com.galactanet.gametable.data.MapElementTypeLibrary#getElementTypes()
+	 */
+	@Override
+	public List<MapElementTypeIF> getElementTypes()
+	{
+		return new ArrayList<MapElementTypeIF>(m_types);
+	}
 
-    /*
-     * @see java.lang.Object#toString()
-     */
-    public String toString()
-    {
-        return "[BasicMapElementType " + getFullyQualifiedName() + "]";
-    }
-    
-    /**
-     * Comparator to keep element types ordered
-     */
-    private Comparator<MapElementTypeIF> m_typeComparator = new Comparator<MapElementTypeIF>()        
-    {            
-      @Override            
-      public int compare(MapElementTypeIF pa, MapElementTypeIF pb)
-      {
-          return pa.getDisplayLabel().compareTo(pb.getDisplayLabel());
-      }
-  };	
+	/**
+	 * @return Returns the parent library.
+	 */
+	@Override
+	public MapElementTypeLibrary getParent()
+	{
+		return m_parentLibrary;
+	}
+
+	/*
+	 * @see
+	 * com.galactanet.gametable.data.MapElementTypeLibrary#removeElementType(com.galactanet.gametable.data.MapElementType)
+	 */
+	@Override
+	public boolean removeElementType(MapElementTypeIF type)
+	{
+		boolean r = m_types.remove(type);
+
+		m_listeners.onMapElementTypeRemoved(this, type);
+
+		return r;
+	}
+
+	/*
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString()
+	{
+		return "[BasicMapElementType " + getFullyQualifiedName() + "]";
+	}
+
+	/**
+	 * Comparator to keep element types ordered
+	 */
+	private Comparator<MapElementTypeIF>	m_typeComparator	= new Comparator<MapElementTypeIF>() {
+																														@Override
+																														public int compare(MapElementTypeIF pa, MapElementTypeIF pb)
+																														{
+																															return pa.getDisplayLabel().compareTo(pb.getDisplayLabel());
+																														}
+																													};
 }
