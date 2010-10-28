@@ -28,8 +28,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -69,7 +70,7 @@ public class NetSendDictionary implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			Collection<NetworkMessageTypeIF> types = ((NetworkModule)module).getRegisteredMessageTypes();
@@ -97,8 +98,8 @@ public class NetSendDictionary implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame(); 
-		NetworkModule module = (NetworkModule)frame.getNetworkModule();
+		GameTableCore core = GameTableCore.getCore(); 
+		NetworkModule module = (NetworkModule)core.getNetworkModule();
 		Collection<NetworkMessageTypeIF> registeredTypes = module.getRegisteredMessageTypes();
 		Map<Integer, NetworkMessageTypeIF> mapping = new HashMap<Integer, NetworkMessageTypeIF>();
 		
@@ -121,7 +122,7 @@ public class NetSendDictionary implements NetworkMessageTypeIF
 			
 			if (!mapped)
 			{
-				frame.getChatPanel().logAlertMessage("Host uses missing " + name);
+				core.sendMessageLocal(MessageType.ALERT, "Host uses missing " + name);
 				Log.log(Log.NET, "Host uses missing " + name);
 				// .todo Kick out for missing modules?
 			}

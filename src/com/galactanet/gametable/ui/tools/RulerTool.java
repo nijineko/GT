@@ -7,6 +7,8 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
+import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -27,13 +29,15 @@ public class RulerTool extends NullTool
     private MapCoordinates           m_mouseAnchor;
     private MapCoordinates           m_mouseFloat;
     private MapCoordinates           m_mousePosition;
+    private final GametableFrame m_frame;
 
     /**
      * Default Constructor.
      */
     public RulerTool()
     {
-    }
+    	m_frame = GametableApp.getUserInterface();
+    }    
 
     /*
      * @see com.galactanet.gametable.AbstractTool#activate(com.galactanet.gametable.GametableCanvas)
@@ -113,16 +117,18 @@ public class RulerTool extends NullTool
     {
         if (m_mouseAnchor != null)
         {
+        	GameTableCore core = GameTableCore.getCore();
+        	
             final Graphics2D g2 = (Graphics2D)g.create();
 
             g2.addRenderingHints(Images.getRenderingHints());
 
-            final double dist = m_canvas.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
+            final double dist = core.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
                 m_mouseAnchor.y);
             double squaresDistance = m_canvas.modelToSquares(dist);
             squaresDistance = Math.round(squaresDistance * 100) / 100.0;
 
-            final Color drawColor = GametableFrame.getGametableFrame().m_drawColor;
+            final Color drawColor = m_frame.getDrawColor();
             g2.setColor(new Color(drawColor.getRed(), drawColor.getGreen(), drawColor.getBlue(), 102));
             g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             final Point drawAnchor = m_canvas.modelToDraw(m_mouseAnchor);
@@ -134,7 +140,8 @@ public class RulerTool extends NullTool
                 final Graphics2D g3 = (Graphics2D)g.create();
                 g3.setFont(Font.decode("sans-12"));
 
-                final String s = squaresDistance + GametableFrame.getGametableFrame().grid_unit;
+                final String s = squaresDistance + m_frame.getGridUnit();
+                
                 final FontMetrics fm = g3.getFontMetrics();
                 final Rectangle rect = fm.getStringBounds(s, g3).getBounds();
 

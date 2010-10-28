@@ -19,8 +19,6 @@ package com.galactanet.gametable.data;
 
 import java.awt.Graphics2D;
 
-import com.galactanet.gametable.ui.GametableCanvas;
-
 /**
  * @author sephalon
  * 
@@ -28,11 +26,6 @@ import com.galactanet.gametable.ui.GametableCanvas;
  */
 public class GridMode
 {
-	/**
-	 * Canvas using this grid mode
-	 */
-	protected GametableCanvas	m_canvas;
-
 	/**
 	 * Draws the lines to the canvas. Assumes there is a properly offset graphics object passed in
 	 * 
@@ -87,16 +80,6 @@ public class GridMode
 	public double getDistanceMultplierY()
 	{
 		return 1.0d;
-	}
-
-	/**
-	 * Initialize the grid mode
-	 * 
-	 * @param canvas GameTableCanvas to link to the grid mode
-	 */
-	public void init(GametableCanvas canvas)
-	{
-		m_canvas = canvas;
 	}
 
 	/**
@@ -161,5 +144,13 @@ public class GridMode
 			return ((mapCoordinate - squareSize / 2) / squareSize) * squareSize;
 
 		return ((mapCoordinate + squareSize / 2) / squareSize) * squareSize;
+	}
+	
+	/**
+	 * If it has not already been initialized, initialize the grid mode (implementation is expected to make the check) 
+	 */
+	public void initialize()
+	{		
+		// Nothing to do in base grid mode
 	}
 }

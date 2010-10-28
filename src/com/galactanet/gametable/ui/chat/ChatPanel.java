@@ -14,10 +14,11 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
+import com.galactanet.gametable.data.ChatEngineIF;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.ui.FloatingWindow;
 import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
  * #GT-COMMENT
@@ -26,18 +27,18 @@ import com.galactanet.gametable.util.UtilityFunctions;
  * 
  * #GT-AUDIT ChatPanel
  */
-public class ChatPanel extends JPanel
+public class ChatPanel extends JPanel implements ChatEngineIF
 {
     private FloatingWindow          m_floatWindow           = null;
     private boolean                 m_docked               = true;
 
     private boolean                 m_useMechanicsLog      = false;
     public String                   m_lastPrivateMessageSender;     // the name of the last person who sent a private message
-    private final ChatLogPane       m_mechanicsLog         = new ChatLogPane(1, false); // 1 = not default (for now)
-    private final ChatLogPane       m_chatLog              = new ChatLogPane(0, false); // 0 = default chat log
+    private final ChatLogPane       m_mechanicsLog         = new ChatLogPane(this, 1, false); // 1 = not default (for now)
+    private final ChatLogPane       m_chatLog              = new ChatLogPane(this, 0, false); // 0 = default chat log
     private final JSplitPane        m_chatSplitPane        = new JSplitPane();    // The chat pane is really a split between the chat and mechanics
 
-    private final ChatLogEntryPane  m_textEntry            = new ChatLogEntryPane();
+    private final ChatLogEntryPane  m_textEntry;
     private final JPanel            m_textAreaPanel        = new JPanel();
     private final JPanel            m_textAndEntryPanel    = new JPanel();
 
@@ -45,31 +46,24 @@ public class ChatPanel extends JPanel
     private final JComboBox         pmSendTo               = new JComboBox();
 //    private int                     pmToID                 = 0;
     
-    public final static String    ALERT_MESSAGE_FONT       = "<b><font color=\"#FF0000\">";
-    public final static String    END_ALERT_MESSAGE_FONT   = "</b></font>";
+    private final static String    ALERT_MESSAGE_FONT       = "<b><font color=\"#FF0000\">";
+    private final static String    END_ALERT_MESSAGE_FONT   = "</b></font>";
 
-    public final static String    DIEROLL_MESSAGE_FONT     = "<b><font color=\"#990022\">";
-    public final static String    END_DIEROLL_MESSAGE_FONT = "</b></font>";
-
-    public final static String    EMOTE_MESSAGE_FONT       = "<font color=\"#004477\">";
-    public final static String    END_EMOTE_MESSAGE_FONT   = "</font>";
-
-    public final static String    PRIVATE_MESSAGE_FONT     = "<font color=\"#009900\">";
-    public final static String    END_PRIVATE_MESSAGE_FONT = "</font>";
-
-    public final static String    SAY_MESSAGE_FONT         = "<font color=\"#007744\">";
-    public final static String    END_SAY_MESSAGE_FONT     = "</font>";
-
-    public final static String    SYSTEM_MESSAGE_FONT      = "<font color=\"#666600\">";
-    public final static String    END_SYSTEM_MESSAGE_FONT  = "</font>";
+    private final static String    SYSTEM_MESSAGE_FONT      = "<font color=\"#666600\">";
+    private final static String    END_SYSTEM_MESSAGE_FONT  = "</font>";
 
     public final static int       NETSTATE_HOST            = 1;
     public final static int       NETSTATE_JOINED          = 2;
     public final static int       NETSTATE_NONE            = 0;
+    
+    private final GametableFrame m_frame;
 
-    public ChatPanel()
+    public ChatPanel(GametableFrame frame)
     {
-        initialize();
+  		m_frame = frame;
+  		m_textEntry = new ChatLogEntryPane(m_frame);
+	
+      initialize();
     }
     
     private void initialize()
@@ -102,16 +96,12 @@ public class ChatPanel extends JPanel
         this.add(m_textAreaPanel, BorderLayout.CENTER);
     }
 
-    public void init_sendTo() {
+    private void init_sendTo() {
         pmSendTo.removeAllItems();
-        for(int i = 0;i < GametableFrame.getGametableFrame().getPlayers().size(); i++) {
-            final Player player = GametableFrame.getGametableFrame().getPlayers().get(i);
+        for(int i = 0;i < GameTableCore.getCore().getPlayers().size(); i++) {
+            final Player player = GameTableCore.getCore().getPlayers().get(i);
             pmSendTo.addItem(player.getCharacterName());
         }
-    }
-
-    public void clearText() {
-        m_chatLog.clearText();
     }
 
     public JSplitPane getChatSplitPane()
@@ -139,40 +129,41 @@ public class ChatPanel extends JPanel
         return m_useMechanicsLog;
     }
 
-    public void logAlertMessage(final String text)
+    /**
+     * Add a formatted alert message to the mechanics window
+     * @param text
+     */
+    private void addAlertMessage(final String text)
     {
-        addMechanicsMessage(ALERT_MESSAGE_FONT + text + END_ALERT_MESSAGE_FONT);
+    	addMechanicsMessage(ALERT_MESSAGE_FONT + text + END_ALERT_MESSAGE_FONT);
     }
 
-    public void logMessage(final String text)
+    /**
+     * Add text to the chat window (no formatting)
+     * @param text
+     */
+    private void addChatMessage(final String text)
     {
         m_chatLog.addText(text);
     }
 
     /**
-     * Add a message to the mechanics window
-     * @param message message to show
+     * Add text to the mechanics window (no formatting)
+     * @param text message to show
      */
-    public void addMechanicsMessage(final String message)
+    private void addMechanicsMessage(final String text)
     {
         if (m_useMechanicsLog) 
-        	m_mechanicsLog.addText(message);
+        	m_mechanicsLog.addText(text);
         else 
-        	logMessage(message);
+        	addChatMessage(text);
     }
 
-    public void logPrivateMessage(final String fromName, final String toName, final String text)
-    {
-        // when they get a private message, we format it for the chat log
-        logMessage(PRIVATE_MESSAGE_FONT + UtilityFunctions.emitUserLink(fromName) + " tells you: "
-            + END_PRIVATE_MESSAGE_FONT + text);
-
-        // we track who the last private message sender was, for
-        // reply purposes
-        m_lastPrivateMessageSender = fromName;
-    }
-
-    public void logSystemMessage(final String text)
+    /**
+     * Add a formatted message to the mechanics window
+     * @param text
+     */
+    private void addSystemMessage(final String text)
     {
         addMechanicsMessage(SYSTEM_MESSAGE_FONT + text + END_SYSTEM_MESSAGE_FONT);
     }
@@ -187,8 +178,8 @@ public class ChatPanel extends JPanel
 //            return false;
 //        }
         
-        final PrivateMessageDialog pmDialog = new PrivateMessageDialog();
-        pmDialog.setLocationRelativeTo(GametableFrame.getGametableFrame().getGametableCanvas());
+        final PrivateMessageDialog pmDialog = new PrivateMessageDialog(this);
+        pmDialog.setLocationRelativeTo(m_frame);
         pmDialog.setVisible(true);
 
         if (!pmDialog.m_bAccepted)
@@ -301,7 +292,7 @@ public class ChatPanel extends JPanel
         m_floatWindow.add(this);
         m_floatWindow.setVisible(true);
         
-        GametableFrame.getGametableFrame().validate();
+        m_frame.validate();
         
         m_docked = false;        
     }
@@ -329,8 +320,55 @@ public class ChatPanel extends JPanel
             }   
         }
 
-        GametableFrame.getGametableFrame().validate();
+        m_frame.validate();
         
         m_docked = true;
+    }
+    
+    
+    /*
+    * @see com.galactanet.gametable.data.ChatEngineIF#clearMessages()
+    */
+    @Override
+    public void clearMessages()
+    {
+    	m_chatLog.clearText();
+    }
+    
+    /*
+    * @see com.galactanet.gametable.data.ChatEngineIF#displayMessage(com.galactanet.gametable.data.ChatEngineIF.MessageType, java.lang.String)
+    */
+    @Override
+    public void displayMessage(MessageType type, String text)
+    {
+    	switch (type)
+    	{
+    	case ALERT:
+    		addAlertMessage(text);
+    		break;
+    		
+    	case MECHANIC:
+    		addMechanicsMessage(text);
+    		break;
+    		
+    	case SYSTEM:
+    		addSystemMessage(text);
+    		break;
+    		
+    	case CHAT:
+   		default:
+   			addChatMessage(text);
+   			break;
+      	
+    	}
+    }
+    
+    /*
+    * @see com.galactanet.gametable.data.ChatEngineIF#onPlayersChanged()
+    */
+    @Override
+    public void onPlayersChanged()
+    {
+    	init_sendTo();
     }
 }

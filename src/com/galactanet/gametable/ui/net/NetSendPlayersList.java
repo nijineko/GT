@@ -22,9 +22,10 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.List;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.GameTableCore.NetworkResponderCore;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -47,6 +48,18 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 	}
 	
 	/**
+	 * Singleton factory method
+	 * @return
+	 */
+	public static NetSendPlayersList getMessageType(NetworkResponderCore responder)
+	{
+		NetSendPlayersList info = getMessageType();
+		info.m_responder = responder;
+		
+		return info;
+	}
+	
+	/**
 	 * Singleton instance
 	 */
 	private static NetSendPlayersList g_messageType = null;
@@ -63,12 +76,12 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 		try
 		{
 			// create a packet with all the players in it
-			final GametableFrame frame = GametableFrame.getGametableFrame();
+			final GameTableCore core = GameTableCore.getCore();
 			
-			NetworkModuleIF module = frame.getNetworkModule();
+			NetworkModuleIF module = core.getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
-			final List<Player> players = frame.getPlayers();
+			final List<Player> players = core.getPlayers();
 			dos.writeInt(players.size());
 
 			for (Player player : players)
@@ -80,8 +93,7 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 			}
 
 			// finally, tell the recipient which player he is
-			final int whichPlayer = frame.getPlayerIndex(recipient);
-			dos.writeInt(whichPlayer);
+			dos.writeInt(recipient.getID());
 
 			return dos.toByteArray();
 		}
@@ -111,14 +123,12 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 			players[i].setIsHostPlayer(dis.readBoolean());
 		}
 
-		// get which index we are
-		final int ourIdx = dis.readInt();
-		if (ourIdx < players.length)
-			players[ourIdx].setLocalPlayer(true);
+		// get which ID we are
+		int ourPlayerID = dis.readInt();
 
 		// this is only ever received by players
-		final GametableFrame frame = GametableFrame.getGametableFrame();
-		frame.setPlayersInformation(players, ourIdx);
+		if (m_responder != null)
+			m_responder.setPlayersInformation(players, ourPlayerID);
 	}
 
 	/*
@@ -153,4 +163,9 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 
 	private static int		g_id		= 0;
 	private static String	g_name	= null;
+	
+	/**
+	 * Responder interface to communicate with 'hidden' features of the core
+	 */
+	private NetworkResponderCore m_responder = null;
 }

@@ -25,10 +25,10 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -57,19 +57,19 @@ public class NetShowPointingMarker implements NetworkMessageTypeIF
 	
 /**
 	 * Create a network data packet requesting that the pointer be shown or hidden
-	 * @param playerIndex Index of the player showing or hiding his pointer
+	 * @param player Player showing or hiding his pointer
 	 * @param point The coordinates at which the pointer is to be shown
 	 * @param showPointer True to show the pointer, false to hide it
 	 * @return data packet
 	 */
-	public static byte[] makePacket(int playerIndex, MapCoordinates point, boolean showPointer)
+	public static byte[] makePacket(Player player, MapCoordinates point, boolean showPointer)
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeInt(playerIndex);
+      dos.writeInt(player.getID());
       dos.writeInt(point.x);
       dos.writeInt(point.y);
       dos.writeBoolean(showPointer);
@@ -89,18 +89,18 @@ public class NetShowPointingMarker implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final int playerIndex = dis.readInt();
+		final int playerID = dis.readInt();
 
     MapCoordinates point = new MapCoordinates(dis.readInt(), dis.readInt());
     
     final boolean showPointer = dis.readBoolean();
 
-    final GametableFrame frame = GametableFrame.getGametableFrame();
+    final GameTableCore core = GameTableCore.getCore();
     
     // Do not show current player's pointer
-		if (playerIndex != frame.getMyPlayerIndex())
+		if (playerID != core.getPlayerID())
 		{
-			final Player player = frame.getPlayer(playerIndex);
+			final Player player = core.getPlayer(playerID);
 			
 			if (player != null)
 				player.setPointing(showPointer, point, event);

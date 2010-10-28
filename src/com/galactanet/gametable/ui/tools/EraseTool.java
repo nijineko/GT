@@ -7,6 +7,9 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
+import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapRectangle;
 import com.galactanet.gametable.ui.GametableCanvas;
@@ -28,20 +31,22 @@ public class EraseTool extends NullTool
     private MapCoordinates           m_mouseAnchor;
 
     private MapCoordinates           m_mouseFloat;
+    private final GametableFrame m_frame;
 
     /**
      * Default Constructor.
      */
     public EraseTool()
     {
-        this(false);
+        this(GametableApp.getUserInterface(), false);
     }
 
     /**
      * Constructor specifying color mode.
      */
-    public EraseTool(final boolean color)
+    public EraseTool(GametableFrame frame, final boolean color)
     {
+    	m_frame = frame;
         m_bEraseColor = color;
     }
 
@@ -91,14 +96,17 @@ public class EraseTool extends NullTool
     {
         if ((m_mouseAnchor != null) && !m_mouseAnchor.equals(m_mouseFloat))
         {
+        	GameTableCore core = GameTableCore.getCore();
+        	GameTableMap activeMap = core.getMap(GameTableCore.MapType.ACTIVE);
+        	
             if (m_bEraseColor)
             {
-            	m_canvas.getActiveMap().removeLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), true,
-                    GametableFrame.getGametableFrame().m_drawColor.getRGB());
+            	activeMap.removeLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), true,
+                    m_frame.getDrawColor().getRGB());
             }
             else
             {
-            	m_canvas.getActiveMap().removeLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), false, 0);
+            	activeMap.removeLineSegments(new MapRectangle(m_mouseAnchor, m_mouseFloat), false, 0);
             }
         }
         endAction();

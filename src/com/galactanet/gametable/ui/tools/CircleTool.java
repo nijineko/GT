@@ -7,6 +7,8 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
+import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
@@ -29,12 +31,14 @@ public class CircleTool extends NullTool
     private MapCoordinates           m_mouseFloat;
 
     private MapCoordinates           m_mousePosition;
+    private final GametableFrame m_frame;
 
     /**
      * Default Constructor.
      */
     public CircleTool()
     {
+    	m_frame = GametableApp.getUserInterface();
     }
 
     /*
@@ -88,7 +92,7 @@ public class CircleTool extends NullTool
     @Override
 		public void mouseButtonReleased(MapCoordinates modelPos, final int modifierMask)
     {
-        m_penAsset = new PenAsset(GametableFrame.getGametableFrame().m_drawColor);
+        m_penAsset = new PenAsset(m_frame.getDrawColor());
 
         // Figure the radius of the circle and use a PenAsset as if we had drawn
         // the circle with the PenTool.
@@ -107,7 +111,8 @@ public class CircleTool extends NullTool
             // redrawing takes too long.
             // m_penAsset.smooth();
             java.util.List<LineSegment> lines = m_penAsset.getLineSegments();
-            m_canvas.getActiveMap().addLineSegments(lines);
+            
+            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
         }
         endAction();
     }
@@ -146,12 +151,15 @@ public class CircleTool extends NullTool
             //g2.addRenderingHints(UtilityFunctions.STANDARD_RENDERING_HINTS);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            double dist = m_canvas.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
+            GameTableCore core = GameTableCore.getCore();
+            
+            double dist = core.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
                 m_mouseAnchor.y);
             double squaresDistance = m_canvas.modelToSquares(dist);
             squaresDistance = Math.round(squaresDistance * 100) / 100.0;
 
-            Color drawColor = GametableFrame.getGametableFrame().m_drawColor;
+            Color drawColor = m_frame.getDrawColor();
+            
             g2.setColor(new Color(drawColor.getRed(), drawColor.getGreen(), drawColor.getBlue(), 102));
             g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             Point drawAnchor = m_canvas.modelToDraw(m_mouseAnchor);
@@ -166,13 +174,13 @@ public class CircleTool extends NullTool
             // draw the circle
             g2.drawOval((drawAnchor.x - circleRadius), (drawAnchor.y - circleRadius), circleDiameter, circleDiameter);
 
-            double indicatorThreshold = .10 * GametableFrame.getGametableFrame().grid_multiplier;
+            double indicatorThreshold = .10 * m_frame.getGridMultiplier();
             if (squaresDistance >= indicatorThreshold)
             {
                 Graphics2D g3 = (Graphics2D)g.create();
                 g3.setFont(Font.decode("sans-12"));
 
-                String s = squaresDistance + GametableFrame.getGametableFrame().grid_unit;
+                String s = String.valueOf(squaresDistance) + m_frame.getGridUnit();
                 FontMetrics fm = g3.getFontMetrics();
                 Rectangle rect = fm.getStringBounds(s, g3).getBounds();
 

@@ -274,12 +274,15 @@ public class ToolManager
     private boolean    m_bActionCancelled = false;
 
     private final Map<String, Info>  nameInfoMap        = new HashMap<String, Info>();
+    
+    private final GametableFrame m_frame;
 
     /**
      * Constructor.
      */
-    public ToolManager()
+    public ToolManager(GametableFrame frame)
     {
+    	m_frame = frame;
     }
 
     public void cancelToolAction()
@@ -294,7 +297,7 @@ public class ToolManager
     // shortcut function to get the active tool
     public ToolIF getActiveTool()
     {
-        return GametableFrame.getGametableFrame().getGametableCanvas().getActiveTool();
+        return m_frame.getActiveTool();
     }
 
     /**

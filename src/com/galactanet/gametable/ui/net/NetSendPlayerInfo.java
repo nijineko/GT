@@ -25,9 +25,10 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.GameTableCore.NetworkResponderCore;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -50,6 +51,18 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 	}
 	
 	/**
+	 * Singleton factory method
+	 * @return
+	 */
+	public static NetSendPlayerInfo getMessageType(NetworkResponderCore responder)
+	{
+		NetSendPlayerInfo info = getMessageType();
+		info.m_responder = responder;
+		
+		return info;
+	}
+	
+	/**
 	 * Singleton instance
 	 */
 	private static NetSendPlayerInfo g_messageType = null;
@@ -64,7 +77,7 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(VERSION);
@@ -88,8 +101,6 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final GametableFrame frame = GametableFrame.getGametableFrame();
-
     final int version = dis.readInt();
     if (version != VERSION)
     {
@@ -108,7 +119,8 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
     final Player newPlayer = new Player(playerName, characterName, -1, false);
     newPlayer.setIsHostPlayer(dis.readBoolean());
 
-    frame.onPlayerJoined(sourceConnection, newPlayer, password);
+    if (m_responder != null)
+    	m_responder.onPlayerJoined(sourceConnection, newPlayer, password);
 	}
 		
 	/*
@@ -145,4 +157,9 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 	private static String g_name = null;
 	
 	private static int VERSION = 1;
+	
+	/**
+	 * Responder interface to communicate with 'hidden' features of the core
+	 */
+	private NetworkResponderCore m_responder = null; 
 }

@@ -25,8 +25,9 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -88,7 +89,7 @@ public class NetLoginRejected implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(reason.ordinal());
@@ -110,20 +111,20 @@ public class NetLoginRejected implements NetworkMessageTypeIF
 	{
 		final RejectReason reason = RejectReason.fromOrdinal(dis.readInt());
 
-    final GametableFrame frame = GametableFrame.getGametableFrame();
+    final GameTableCore core = GameTableCore.getCore();
     
 		switch (reason)
 		{
 		case INVALID_PASSWORD:
-			frame.sendAlertMessageLocal(frame.getLanguageResource().JOIN_BAD_PASS);
+			core.sendMessageLocal(MessageType.ALERT, "Invalid Password. Connection refused.");
 			break;
 
 		case VERSION_MISMATCH:
-			frame.sendAlertMessageLocal(frame.getLanguageResource().JOIN_BAD_VERSION);
+			core.sendMessageLocal(MessageType.ALERT, "The host is using a different version of the Gametable network protocol. Connection aborted.");
 			break;
 		}
 		
-		frame.disconnect();
+		core.disconnect();
 	}
 		
 	/*

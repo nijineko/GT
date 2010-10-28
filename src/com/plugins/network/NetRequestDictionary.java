@@ -25,8 +25,8 @@ package com.plugins.network;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -66,8 +66,8 @@ public class NetRequestDictionary implements NetworkMessageTypeIF
 	{
 		try
 		{
-			GametableFrame frame = GametableFrame.getGametableFrame();
-			NetworkModuleIF module = frame.getNetworkModule();
+			GameTableCore core = GameTableCore.getCore();
+			NetworkModuleIF module = core.getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			// No data
@@ -87,8 +87,8 @@ public class NetRequestDictionary implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame(); 
-		NetworkModule module = (NetworkModule)frame.getNetworkModule();
+		GameTableCore core = GameTableCore.getCore(); 
+		NetworkModule module = (NetworkModule)core.getNetworkModule();
 		
 		// Reply
 		module.send(NetSendDictionary.makePacket(), sourceConnection);

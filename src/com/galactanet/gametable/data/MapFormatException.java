@@ -1,7 +1,7 @@
 /*
- * GameTableFrameAdapter.java
+ * MapFormatException.java
  *
- * @created 2010-08-29
+ * @created 2010-10-25
  *
  * Copyright (C) 1999-2010 Open Source Game Table Project
  * 
@@ -20,34 +20,35 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui;
+package com.galactanet.gametable.data;
 
-import com.galactanet.gametable.data.Player;
+import java.io.File;
+import java.io.IOException;
 
 /**
- * Clean encapsulation of GameTableFrameListener (utility class)
+ * Thrown when the XML file format is non-compliant 
  *
  * @author Eric Maziade
  */
-public class GameTableFrameAdapter implements GameTableFrameListener
+public class MapFormatException extends IOException
 {
-	/*
-	 * @see com.galactanet.gametable.ui.GameTableFrameListener#onHostingStarted()
+	/**
+	 * Constructor
+	 * @param source source file of invalid format
 	 */
-	@Override
-	public void onHostingStarted()
+	public MapFormatException(File source)
 	{
-		// todo Auto-generated method stub
-		
+		m_file = source;
 	}
 	
-	/*
-	 * @see com.galactanet.gametable.ui.GameTableFrameListener#onPlayerJoined(com.galactanet.gametable.data.Player)
+	/**
+	 * @return Source file
 	 */
-	@Override
-	public void onPlayerJoined(Player player)
+	public File getSourceFile()
 	{
-		// todo Auto-generated method stub
-		
+		return m_file;
 	}
+	
+	private final File m_file;
+
 }

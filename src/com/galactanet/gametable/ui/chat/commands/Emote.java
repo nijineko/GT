@@ -22,7 +22,8 @@
 
 package com.galactanet.gametable.ui.chat.commands;
 
-import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.ui.chat.SlashCommand;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -72,11 +73,11 @@ public class Emote extends SlashCommand
      // simply post text that's an emote instead of a character action
      final String toPost = 
     	 EMOTE_MESSAGE_FONT + 
-    	 UtilityFunctions.emitUserLink(GametableFrame.getGametableFrame().getMyPlayer().getCharacterName()) +
+    	 UtilityFunctions.emitUserLink(GameTableCore.getCore().getPlayer()) +
        " " + emote + 
        END_EMOTE_MESSAGE_FONT;
      
-     GametableFrame.getGametableFrame().sendChatMessageBroadcast(toPost);
+     GameTableCore.getCore().sendMessageBroadcast(MessageType.CHAT, toPost);
      
      return null;
 	}

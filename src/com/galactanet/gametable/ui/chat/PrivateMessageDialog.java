@@ -13,8 +13,8 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -33,9 +33,13 @@ public class PrivateMessageDialog extends JDialog implements FocusListener
 
 
     JButton                   m_ok               = new JButton();
+    
+    private final ChatPanel m_chatPanel;
 
-    public PrivateMessageDialog()
+    public PrivateMessageDialog(ChatPanel chatPanel)
     {
+    	m_chatPanel = chatPanel;
+    	
         try
         {
             initialize();
@@ -99,7 +103,7 @@ public class PrivateMessageDialog extends JDialog implements FocusListener
         });
 
         jLabel1.setText("Send to Player:");
-        m_pmSendTo = GametableFrame.getGametableFrame().getChatPanel().getpmSendTo();
+        m_pmSendTo = m_chatPanel.getpmSendTo();
             
         final int PADDING = 5;
 
@@ -143,9 +147,9 @@ public class PrivateMessageDialog extends JDialog implements FocusListener
     class SendToListener implements ItemListener {
         public void itemStateChanged(ItemEvent e) {
             final String toName = (String)e.getItem();
-            for (int i = 0; i < GametableFrame.getGametableFrame().getPlayers().size(); i++)
+            for (int i = 0; i < GameTableCore.getCore().getPlayers().size(); i++)
             {
-                final Player player = GametableFrame.getGametableFrame().getPlayers().get(i);
+                final Player player = GameTableCore.getCore().getPlayers().get(i);
                 if (player.hasName(toName))
                 {
                     m_pmToID = player.getID();

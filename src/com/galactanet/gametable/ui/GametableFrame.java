@@ -10,7 +10,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.swing.*;
@@ -22,34 +21,30 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
-import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
-import com.galactanet.gametable.data.prefs.Preferences;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
+import com.galactanet.gametable.data.prefs.PropertyDescriptor;
 import com.galactanet.gametable.module.Module;
-import com.galactanet.gametable.net.*;
+import com.galactanet.gametable.net.NetworkConnectionIF;
+import com.galactanet.gametable.net.NetworkEvent;
+import com.galactanet.gametable.net.NetworkListenerIF;
+import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
-import com.galactanet.gametable.ui.net.*;
-import com.galactanet.gametable.ui.net.NetGroupAction.Action;
+import com.galactanet.gametable.ui.net.NetLoadMap;
+import com.galactanet.gametable.ui.net.NetRecenterMap;
+import com.galactanet.gametable.ui.net.NetSendTypingFlag;
 import com.galactanet.gametable.util.*;
 import com.maziade.messages.MessageDefinition;
 import com.maziade.messages.MessageID;
 import com.maziade.messages.MessageListener;
 import com.maziade.messages.MessagePriority;
-import com.maziade.tools.XMLUtils;
-import com.maziade.tools.XMLUtils.XMLOutputProperties;
-import com.plugins.activepogs.ActivePogsModule;
+import com.maziade.props.XProperties;
 import com.plugins.cards.CardModule;
-import com.plugins.dicemacro.DiceMacroModule;
-import com.plugins.network.NetworkModule;
 import com.plugins.network.PacketSourceState;
 
 /**
@@ -60,8 +55,25 @@ import com.plugins.network.PacketSourceState;
  * 
  *         #GT-AUDIT GametableFrame
  */
-public class GametableFrame extends JFrame implements ActionListener, MapElementRepositoryIF, MessageListener
+public class GametableFrame extends JFrame implements ActionListener, MessageListener
 {
+	/**
+	 * 
+	 */
+	public GametableFrame() throws IOException
+	{
+		m_core = GameTableCore.getCore();
+		
+		try
+		{			
+			initialize(); // Create the menu, controls, etc.
+		}
+		catch (final Exception e)
+		{
+			Log.log(Log.SYS, e);
+		}
+	}
+	
 	/**
 	 * This class provides a mechanism to store the active tool in the gametable canvas
 	 */
@@ -95,6 +107,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		}
 	}
 
+	public ToolIF getActiveTool()
+	{
+		return m_gametableCanvas.getActiveTool();
+	}
+	
+
 	/**
 	 * Action listener for tool buttons.
 	 */
@@ -117,11 +135,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	}
 
 	/**
-	 * Xml strings with a font definitions, standard tags for messages
-	 */
-	public final static String		ALERT_MESSAGE_FONT				= "<b><font color=\"#FF0000\">";
-
-	/**
 	 * Array of standard colors used
 	 */
 	public final static Integer[]	COLORS										= { new Integer(new Color(0, 0, 0).getRGB()),
@@ -135,36 +148,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 * The version of the communications protocol used by this build. This needs to change whenever an incompatibility
 	 * arises between versions.
 	 */
-	public final static String		DIEROLL_MESSAGE_FONT			= "<b><font color=\"#990022\">";
-	public final static String		EMOTE_MESSAGE_FONT				= "<font color=\"#004477\">";
 
-	public final static String		END_ALERT_MESSAGE_FONT		= "</b></font>";
-	public final static String		END_DIEROLL_MESSAGE_FONT	= "</b></font>";
+	// based on chat context
 
-	public final static String		END_EMOTE_MESSAGE_FONT		= "</font>";
-	public final static String		END_PRIVATE_MESSAGE_FONT	= "</font>";
 
-	public final static String		END_SAY_MESSAGE_FONT			= "</font>";
-	public final static String		END_SYSTEM_MESSAGE_FONT		= "</font>";
-
-	public final static String		PRIVATE_MESSAGE_FONT			= "<font color=\"#009900\">";
-
-	public final static String		SAY_MESSAGE_FONT					= "<font color=\"#007744\">";
-	public final static String		SYSTEM_MESSAGE_FONT				= "<font color=\"#666600\">";
 
 	private final static boolean	DEBUG_FOCUS								= false;
 
-	/**
-	 * Default Character name for when there is no prefs file.
-	 */
-	private static final String		DEFAULT_CHARACTER_NAME		= "Anonymous";
 
-	/**
-	 * The global gametable instance.
-	 */
-	private static GametableFrame	g_gameTableFrame;
-
-	private static List<Module>						g_modules		= new ArrayList<Module>();
 
 	// The current file path used by save and open.
 	// NULL if unset.
@@ -182,32 +173,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
      * 
      */
 	private static final long			serialVersionUID				= -1997597054204909759L;
-	/**
-	 * todo #Plugins Might be nice if it returned an interface to clean up API for plugins
-	 * 
-	 * @return The global GametableFrame instance.
-	 */
-	public static GametableFrame getGametableFrame()
-	{
-		if (g_gameTableFrame == null)
-		{
-			// Constructor auto-assigns g_gameTableFrame
-			new GametableFrame();
-		}
-		
-		return g_gameTableFrame;
-	}
 
-	/**
-	 * Register a new module with GameTable
-	 * 
-	 * @param module
-	 */
-	public static void registerModule(Module module)
-	{
-		g_modules.remove(module);
-		g_modules.add(module);
-	}
 
 	private static String getMenuAccelerator()
 	{
@@ -230,23 +196,21 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	private Language								m_languageResource				= new Language(GametableApp.LANGUAGE);
 
 	
-	public double										grid_multiplier						= 5.0;
+	private double										m_gridMultiplier						= 5.0;
 
-	public String										grid_unit									= "ft";
+	private String										m_gridUnit									= "ft";
 
 	public File											m_actingFilePublic;
 
-	public String										m_characterName						= DEFAULT_CHARACTER_NAME;																			// The
-																																																														// character
-																																																														// name
+	
 
 	public Color										m_drawColor								= Color.BLACK;
 
-	public int											m_nextPlayerId = 1;	// Player ID 0 is reserved for host
+	
 	// the id that will be assigned to the change made
 	public int											m_nextStateId;
 
-	public String										m_playerName							= System.getProperty("user.name");
+	
 	
 	private javax.swing.Action						m_actionLoadMap;
 
@@ -294,7 +258,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 																																																														// containing
 																																																														// the
 																																																														// map
-	private final GametableCanvas		m_gametableCanvas					= new GametableCanvas();																				// This
+	private final GametableCanvas		m_gametableCanvas					= new GametableCanvas(this);																				// This
 
 	private JMenuItem								m_startNetworkingMenuItem;
 
@@ -306,31 +270,15 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 
 	private long										m_lastTickTime						= 0;
-	private List<GameTableFrameListener>	m_listeners	= new ArrayList<GameTableFrameListener>();
+	
 	private final JSplitPane				m_mapChatSplitPane				= new JSplitPane();																						// The
 
 	// The map-pog split pane goes in the center
 	private final JSplitPane				m_mapPogSplitPane					= new JSplitPane();																						// Split
 
-	// which player I am
-	private int											m_myPlayerIndex;
+
 	
-	/**
-	 * List of connected players
-	 */
-	private final List<Player>						m_players;
 	
-	/**
-	 * Instance of player listener to react to player data changes
-	 */
-	private final PlayerListenerIF	m_playerListener;
-	
-	/**
-	 * Unmodifiable list, synchronized to the players list
-	 */
-	private final List<Player>						m_unmodifiablePlayers;
-	
-	private MapElementTypeLibrary		m_mapElementTypeLibrary							= null;
 
 	// Pog
 																																																														// pane
@@ -348,9 +296,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 																																																														// and
 																																																														// map
 																																																														// pane
-	private final PogWindow					m_pogsTabbedPane					= new PogWindow();																							// The
+	private final PogWindow					m_pogsTabbedPane					= new PogWindow(this);																							// The
 
-	private final Preferences				m_preferences							= new Preferences();
+
 																																																														private final JCheckBox					m_randomRotate						= new JCheckBox(getLanguageResource().RANDOM_ROTATE);					// #randomrotate
 																																																														private final JCheckBox					m_showNamesCheckbox				= new JCheckBox(getLanguageResource().SHOW_POG_NAMES);
 
@@ -370,7 +318,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 	private JToggleButton						m_toolButtons[]						= null;
 
-	private final ToolManager				m_toolManager							= new ToolManager();
+	private final ToolManager				m_toolManager							= new ToolManager(this);
 
 	/**
 	 * List of players currently typing
@@ -398,43 +346,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 	// --- MenuItems ---
 
-	/**
-	 * Construct the frame
-	 */
-	private GametableFrame()
-	{
-		g_gameTableFrame = this;
-		m_lockedElements = new SelectionHandler();
-		m_players = new ArrayList<Player>();
-		m_unmodifiablePlayers = Collections.unmodifiableList(m_players);
-		m_playerListener = new PlayerAdapter() {
-			/*
-			 * @see com.galactanet.gametable.data.PlayerAdapter#onPointingLocationChanged(com.galactanet.gametable.data.Player, boolean, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.net.NetworkEvent)
-			 */
-			@Override
-			public void onPointingLocationChanged(Player player, boolean pointing, MapCoordinates location, NetworkEvent netEvent)
-			{
-				if (shouldPropagateChanges(netEvent))
-				{
-					if (pointing)
-						sendBroadcast(NetShowPointingMarker.makePacket(getPlayerIndex(player), location, true));
-					else
-						sendBroadcast(NetShowPointingMarker.makePacket(getPlayerIndex(player), MapCoordinates.ORIGIN, false));
-				}
-				
-				repaint();
-			}
-		};
-
-		try
-		{
-			initialize(); // Create the menu, controls, etc.
-		}
-		catch (final Exception e)
-		{
-			Log.log(Log.SYS, e);
-		}
-	}
+	
 
 	/**
 	 * actionPerformed is an event handler for some of the controls in the frame
@@ -448,7 +360,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		{
 			// If the event is triggered by the grid unit drop down,
 			// get the selected unit
-			grid_unit = (String) (m_gridunit.getSelectedItem());
+			m_gridUnit = (String) (m_gridunit.getSelectedItem());
 		}
 
 		if (e.getSource() == m_colorCombo)
@@ -463,102 +375,44 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			// If the event is triggered by the "No Grid Mode" menu item then
 			// remove the grid from the canvas
 			// Set the Gametable canvas in "No Grid" mode
-			setGridMode(GridModeID.NONE);
+			m_core.setGridMode(GridModeID.NONE);
 
 			// Notify other players
-			sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_GRID_CHANGE);
+			m_core.sendMessageBroadcast(MessageType.SYSTEM, m_core.getPlayer().getPlayerName() + " " + getLanguageResource().MAP_GRID_CHANGE);
 		}
 		else if (e.getSource() == m_squareGridModeMenuItem)
 		{
 			// If the event is triggered by the "Square Grid Mode" menu item,
 			// adjust the canvas accordingly
 			// Set the Gametable canvas in "Square Grid mode"
-			getGametableCanvas().m_gridMode = getGametableCanvas().m_squareGridMode;
-			sendBroadcast(NetSetGridMode.makePacket(GridModeID.SQUARES));
+			
+			// TODO #NETWORK - broadcast gridmode changes
+			
+			m_core.setGridMode(GridModeID.SQUARES);
+
 			// Check and uncheck menu items
 			updateGridModeMenu();
 			// Repaint the canvas
 			getGametableCanvas().repaint();
 			// Notify other players
-			sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_GRID_CHANGE);
+			m_core.sendMessageBroadcast(MessageType.SYSTEM, m_core.getPlayer().getPlayerName() + " " + getLanguageResource().MAP_GRID_CHANGE);
 		}
 		else if (e.getSource() == m_hexGridModeMenuItem)
 		{
 			// If the event is triggered by the "Hex Grid Mode" menu item,
 			// adjust the canvas accordingly
 			// Set the Gametable canvas in "Hex Grid Mode"
-			getGametableCanvas().m_gridMode = getGametableCanvas().m_hexGridMode;
-			sendBroadcast(NetSetGridMode.makePacket(GridModeID.HEX));
+			m_core.setGridMode(GridModeID.HEX);
 			// Check and uncheck menu items
 			updateGridModeMenu();
 			// Repaint the canvas
 			getGametableCanvas().repaint();
 			// Notify other players
-			sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_GRID_CHANGE);
+			m_core.sendMessageBroadcast(MessageType.SYSTEM, m_core.getPlayer().getPlayerName() + " " + getLanguageResource().MAP_GRID_CHANGE);
 		}
 	}
 
-	/**
-	 * Adds a GameTableFrameListener to this map
-	 * 
-	 * @param listener Listener to call
-	 */
-	public void addListener(GameTableFrameListener listener)
-	{
-		m_listeners.remove(listener);
-		m_listeners.add(listener);
-	}
 
-	/**
-	 * Adds a player to the player list
-	 * 
-	 * @param player
-	 */
-	private void addPlayer(final Player player)
-	{
-		m_players.add(player);
-		player.addPlayerListener(m_playerListener);
-
-		for (Module module : g_modules)
-			module.onPlayerAdded(player);
-
-		// todo #Plugins Chat panel as plugin (?)
-		m_chatPanel.init_sendTo();
-	}
-	
-	/**
-	 * Remove a player from the list
-	 * @param player
-	 */
-	private void removePlayer(Player player)
-	{
-		if (!m_players.remove(player))
-			return;
-		
-		player.removePlayerListener(m_playerListener);
-		
-		for (Module module : g_modules)
-			module.onPlayerRemoved(player);
-	}
-	
-	/**
-	 * Remove all players 
-	 */
-	private void clearAllPlayers()
-	{
-		// Making a copy so we can clear the list before calling listeners
-		List<Player> players = new ArrayList<Player>(m_players);	
-		m_players.clear();
-		m_nextPlayerId = 1;
-		
-		for (Player player : players)
-		{
-			player.removePlayerListener(m_playerListener);
-			
-			for (Module module : g_modules)
-				module.onPlayerRemoved(player);
-		}
-	}
 
 	/**
 	 * Updates the frame size and position based on the preferences stored.
@@ -586,69 +440,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 */
 	public void centerView(MapCoordinates modelCenter, final int zoomLevel)
 	{
-		if (getNetworkStatus() != NetworkStatus.DISCONNECTED)
-			sendBroadcast(NetRecenterMap.makePacket(modelCenter, zoomLevel));
+		if (m_core.getNetworkStatus() != NetworkStatus.DISCONNECTED)
+			m_core.sendBroadcast(NetRecenterMap.makePacket(modelCenter, zoomLevel));
 		
 		m_gametableCanvas.centerView(modelCenter, zoomLevel);
-	}
-
-
-	/**
-	 * grumpy function that throws an exception if we are not the host of a network game
-	 * 
-	 * @throws IllegalStateException
-	 */
-	public void confirmHost() throws IllegalStateException
-	{
-		if (getNetworkStatus() != NetworkStatus.HOSTING)
-		{
-			throw new IllegalStateException(getLanguageResource().CONFIRM_HOST_FAIL);
-		}
-	}
-
-	/**
-	 * throws an exception is the current status is not NetworkStatus.JOINED
-	 * 
-	 * @throws IllegalStateException
-	 */
-	public void confirmJoined() throws IllegalStateException
-	{
-		if (getNetworkStatus() != NetworkStatus.CONNECTED)
-		{
-			throw new IllegalStateException("confirmJoined failure");
-		}
-	}
-
-	/**
-	 * Handles a drop of the network connection
-	 * 
-	 * @param conn network connection
-	 */
-	private void onNetworkConnectionDropped(final NetworkConnectionIF conn)
-	{
-		if (getNetworkStatus() == NetworkStatus.CONNECTED) // if we were connected before
-		{
-			// we lost our connection to the host
-			m_chatPanel.logAlertMessage(getLanguageResource().CONNECTION_LOST);
-			disconnect(); // do any disconnection processing
-			return;
-		}
-
-		// find the player who owns that connection
-		final Player dead = getPlayerFromConnection(conn);
-		if (dead != null) // if we found the player
-		{
-			// remove this player
-			removePlayer(dead);			
-			sendPlayersInformation(); // send updated list of players
-			// notify other users
-			sendSystemMessageBroadcast(dead.getPlayerName() + " " + getLanguageResource().CONNECTION_LEFT);
-		}
-		else
-		// if we didn't find the player then the connection failed while login in
-		{
-			sendAlertMessageLocal(getLanguageResource().CONNECTION_REJECTED);
-		}
 	}
 
 	/**
@@ -659,49 +454,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	public void copyMapElement(final MapElement mapElement)
 	{
 		final MapElement newMapElement = new MapElement(mapElement);
-		getGametableCanvas().getActiveMap().addMapElement(newMapElement);
-	}
-
-	/**
-	 * Disconnect from a joined game or terminate a hosted game. 
-	 */
-	public void disconnect()
-	{
-		if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
-			return;
-		
-		getNetworkModule().disconnect();
-	}
-	
-	private void onNetworkConnectionClosed()
-	{
-		m_startNetworkingMenuItem.setEnabled(true); // enable the menu item to join an existing game
-		m_disconnectMenuItem.setEnabled(false); // disable the menu item to disconnect from the game
-
-		// Make me the only player in the game
-		clearAllPlayers();
-		final Player me = new Player(m_playerName, m_characterName, -1, true);
-		addPlayer(me);
-		m_myPlayerIndex = 0;
-		
-		setTitle(GametableApp.VERSION);
-
-		// TODO #Networking what is this dumping thing?
-		// we might have disconnected during initial data receipt
-		PacketSourceState.endHostDump();
-
-		m_chatPanel.logSystemMessage(getLanguageResource().DISCONNECTED);
-		updateStatus();
-	}
-	
-	public GroupManager getActiveGroupManager()
-	{
-		return getGametableCanvas().getActiveMap().getGroupManager();
-	}
-	
-	public GroupManager getPublicGroupManager()
-	{
-		return getGametableCanvas().getPublicMap().getGroupManager();
+		m_core.getMap(GameTableCore.MapType.ACTIVE).addMapElement(newMapElement);
 	}
 
 	public ChatPanel getChatPanel()
@@ -720,91 +473,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	/**
 	 * @return Returns the lang.
 	 */
-	public Language getLanguageResource()
+	private Language getLanguageResource()
 	{
 		return m_languageResource;
-	}
-
-	/*
-	 * @see com.galactanet.gametable.data.MapElementRepositoryIF#getMapElement(com.galactanet.gametable.data.MapElementID)
-	 */
-	@Override
-	public MapElement getMapElement(MapElementID id)
-	{
-		MapElement el = m_gametableCanvas.getPublicMap().getMapElement(id);
-		if (el == null)
-			el = m_gametableCanvas.getPrivateMap().getMapElement(id);
-
-		return el;
-	}
-	
-	/**
-	 * Get the requested GameTableMap instance
-	 * @param type active, private or public map
-	 * @return GameTableMap
-	 */
-	public GameTableMap getGameTableMap(GameTableMapType type)
-	{
-		switch (type)
-		{
-		case ACTIVE:
-			return m_gametableCanvas.getActiveMap();
-			
-		case PRIVATE:
-			return m_gametableCanvas.getPrivateMap();
-			
-		case PUBLIC:
-			return m_gametableCanvas.getPublicMap();
-		}
-		
-		throw new IllegalArgumentException("There is no map of type " + type);
-	}
-
-	/**
-	 * @return The player representing this client.
-	 */
-	public Player getMyPlayer()
-	{
-		if (m_players.size() == 0)
-			return null;
-
-		return m_players.get(getMyPlayerIndex());
-	}
-
-	/**
-	 * @return The id of the player representing this client.
-	 */
-	public int getMyPlayerId()
-	{
-		Player p = getMyPlayer();
-		if (p == null)
-			return 0;
-
-		return p.getID();
-	}
-	
-	/**
-	 * Get requested player by ID
-	 * @param playerID ID of player we are looking for
-	 * @return player object or null
-	 */
-	public Player getPlayerByID(int playerID)
-	{
-		for (Player player : m_players)
-		{
-			if (player.getID() == playerID)
-				return player;
-		}
-		
-		return null;
-	}
-
-	/**
-	 * @return Returns the myPlayerIndex.
-	 */
-	public int getMyPlayerIndex()
-	{
-		return m_myPlayerIndex;
 	}
 
 	/**
@@ -817,65 +488,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		return m_nextStateId++;
 	}
 
-	/**
-	 * gets the player associated with a connection
-	 * 
-	 * @param conn connection to use to find the player
-	 * @return the player object associated with the connection
-	 */
-	public Player getPlayerFromConnection(final NetworkConnectionIF conn)
-	{
-		for (int i = 0; i < m_players.size(); i++)
-		{
-			final Player plr = m_players.get(i);
-			if (conn == plr.getConnection())
-			{
-				return plr;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Finds the index of a given player.
-	 * 
-	 * @param player Player to find index of.
-	 * @return Index of the given player, or -1.
-	 */
-	public int getPlayerIndex(final Player player)
-	{
-		return m_players.indexOf(player);
-	}
-
-	/**
-	 * Get requested player by index
-	 * @param playerIndex index of player we are looking for
-	 * @return player object or null
-	 */
-	public Player getPlayer(int playerIndex)
-	{
-		if (playerIndex < 0 || playerIndex >= m_players.size())
-			return null;
-		
-		return m_players.get(playerIndex);
-	}
-
-	/**
-	 * @return Returns the player list.
-	 */
-	public List<Player> getPlayers()
-	{
-		return m_unmodifiablePlayers;
-	}
-
-	/**
-	 * @return The root pog library.
-	 */
-	public MapElementTypeLibrary getMapElementTypeLibrary()
-	{
-		return m_mapElementTypeLibrary;
-	}
 
 	/**
 	 * @return The pog panel.
@@ -893,13 +505,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		return pogWindow;
 	}
 
-	/**
-	 * @return The preferences object.
-	 */
-	public Preferences getPreferences()
-	{
-		return m_preferences;
-	}
 
 	/**
 	 * builds and returns the "Save map as" menu item
@@ -915,16 +520,16 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			{
 				m_actingFilePublic = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
 				if (m_actingFilePublic != null)
-					saveToXML(m_actingFilePublic);
+					saveMapToXML(m_actingFilePublic);
 
 				/*
 				 * 
 				 * 
 				 * if (getGametableCanvas().isPublicMap()) { m_actingFilePublic =
 				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); if (m_actingFilePublic != null) {
-				 * saveState(getGametableCanvas().getActiveMap(), m_actingFilePublic); } } else { m_actingFilePrivate =
+				 * saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE), m_actingFilePublic); } } else { m_actingFilePrivate =
 				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); if (m_actingFilePrivate != null) {
-				 * saveState(getGametableCanvas().getActiveMap(), m_actingFilePrivate); } }
+				 * saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE), m_actingFilePrivate); } }
 				 */
 			}
 		});
@@ -951,17 +556,17 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 					m_actingFilePublic = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
 
 				if (m_actingFilePublic != null)
-					saveToXML(m_actingFilePublic);
+					saveMapToXML(m_actingFilePublic);
 
 				/*
 				 * if (getGametableCanvas().isPublicMap()) { if (m_actingFilePublic == null) { m_actingFilePublic =
 				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); }
 				 * 
-				 * if (m_actingFilePublic != null) { // save the file saveState(getGametableCanvas().getActiveMap(),
+				 * if (m_actingFilePublic != null) { // save the file saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE),
 				 * m_actingFilePublic); } } else { if (m_actingFilePrivate == null) { m_actingFilePrivate =
 				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); }
 				 * 
-				 * if (m_actingFilePrivate != null) { // save the file saveState(getGametableCanvas().getActiveMap(),
+				 * if (m_actingFilePrivate != null) { // save the file saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE),
 				 * m_actingFilePrivate); } }
 				 */
 			}
@@ -988,116 +593,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	{
 		return m_toolManager;
 	}
-	
-	/**
-	 * Changes the currently used grid mode
-	 * @param gridMode grid mode
-	 */
-	public void setGridMode(GridModeID gridMode)
-	{
-		setGridMode(gridMode, null);
-	}
-
-	/**
-	 * Changes the currently used grid mode
-	 * @param gridMode grid mode
-	 * @param netEvent Network event that triggered the change.  Null for none.
-	 */
-	public void setGridMode(GridModeID gridMode, NetworkEvent netEvent)
-	{
-		// Request change of grid mode from canvas
-		getGametableCanvas().setGridModeByID(gridMode);
-		
-		// Update menus @revise menu system
-		updateGridModeMenu();
-		
-		// todo trigger listeners?
-
-		repaint();
-		
-		if (shouldPropagateChanges(netEvent))
-		{
-			sendBroadcast(NetSetGridMode.makePacket(gridMode));
-		}
-	}
-	
-	private void onNetworkConnectionEstablished(NetworkConnectionIF conn)
-	{
-		if (getNetworkStatus() == NetworkStatus.HOSTING)
-		{
-			// clear out all players
-			clearAllPlayers();
-			final Player me = new Player(m_playerName, m_characterName, 0, true); // this means the host is always
-			m_nextPlayerId = 1;
-			addPlayer(me);
-			m_myPlayerIndex = 0;
-
-			me.setIsHostPlayer(true);
-			
-			m_startNetworkingMenuItem.setEnabled(false); // disable the join menu item
-			m_disconnectMenuItem.setEnabled(true); // enable the disconnect menu item
-			
-			setTitle(GametableApp.VERSION + " - " + me.getCharacterName());
-
-			// Advise listeners 
-			for (GameTableFrameListener listener : m_listeners)
-				listener.onHostingStarted();			
-		}
-		else
-		{
-			// Player connection
-
-			try
-			{
-				m_loggingIn = true;
-				
-				// now that we've successfully made a connection, let the host know who we are
-				clearAllPlayers();
-				final Player me = new Player(m_playerName, m_characterName, -1, true);
-				me.setConnection(conn);
-				addPlayer(me);
-				m_myPlayerIndex = 0;
-
-				// reset game data
-				m_gametableCanvas.setScrollPosition(0, 0);
-				m_gametableCanvas.getPublicMap().clearMap(null);
-				
-				// Send player info to the host
-				send(NetSendPlayerInfo.makePacket(me, m_networkModule.getPassword()), conn);
-				
-				m_loggingIn = false;
-
-				// TODO #Networking What is this?
-				PacketSourceState.beginHostDump();
-
-				// and now we're ready to pay attention
-
-				m_chatPanel.logSystemMessage(getLanguageResource().JOINED);
-
-				m_startNetworkingMenuItem.setEnabled(false); // disable the join menu item
-				m_disconnectMenuItem.setEnabled(true); // enable the disconnect menu item
-				
-				setTitle(GametableApp.VERSION + " - " + me.getCharacterName());						
-			}
-			catch (final Exception ex)
-			{
-				Log.log(Log.SYS, ex);
-				m_chatPanel.logAlertMessage(getLanguageResource().CONNECT_FAIL);
-				setTitle(GametableApp.VERSION);
-				PacketSourceState.endHostDump();
-			}
-		}
-	}
-	
-	/**
-	 * Checks whether the system is currently into the 'logging in' process of connecting to a network game.
-	 * Some networking components will not want to propagate changes to the network while logging in.
-	 * @return true while logging in
-	 */
-	public boolean isLoggingIn()
-	{
-		return m_loggingIn;
-	}
 
 
 	/**
@@ -1111,92 +606,31 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		if (!res)
 			return;
 
-		try
-		{
-			m_hostConnection = m_networkModule.connect();
-		}
-		catch (IllegalStateException e)
-		{
-			m_chatPanel.logAlertMessage(e.getMessage());
-			return;
-		}
-		catch (final Exception ex)
-		{
-			Log.log(Log.SYS, ex);
-			m_chatPanel.logAlertMessage(getLanguageResource().CONNECT_FAIL);
-		}
+		m_core.networkConnect();
 	}
 
-	public void loadFromXML(File file, boolean loadPublic, boolean loadPrivate)
+	/**
+	 * Load a map file from file (goes through core, but handles errors through UI)
+	 * @param file XML File from which to load the map
+	 * @param loadPublic true to load the public map within the file.
+	 * @param loadPrivate true to load the private map within the file.
+	 */
+	public void loadMapFromXML(File file, boolean loadPublic, boolean loadPrivate)
 	{
-		Document doc;
 		try
 		{
-			doc = XMLUtils.parseXMLDocument(file);
+			m_core.loadMapFromXML(file, loadPublic, loadPrivate);
+		}
+		catch (MapFormatException e)
+		{
+			JOptionPane.showMessageDialog(this, "Invalid file format", null, JOptionPane.ERROR_MESSAGE);
+			return;
 		}
 		catch (IOException e)
 		{
 			JOptionPane.showMessageDialog(this, "Error loading " + file.getName() + " : " + e.getMessage(), null, JOptionPane.ERROR_MESSAGE);
 			// todo proper error handling
 			return;
-		}
-
-		Element root = doc.getDocumentElement();
-		if (!root.getTagName().equals("gt"))
-		{
-			JOptionPane.showMessageDialog(this, "Invalid file format", null, JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
-		try
-		{
-			PacketSourceState.beginFileLoad();
-
-			if (loadPrivate && loadPublic)
-				MapElementID.clear();
-
-			XMLSerializeConverter converter = new XMLSerializeConverter();
-
-			if (loadPublic)
-			{
-				Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
-				m_gametableCanvas.getPublicMap().deserializeFromXML(publicEl, converter, null);
-			}
-
-			if (loadPrivate)
-			{
-				Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
-				m_gametableCanvas.getPrivateMap().deserializeFromXML(privateEl, converter, null);
-			}
-
-			if (loadPublic && loadPrivate)
-			{
-				loadGridFromXML(root, converter);
-				loadLockedElementsFromXML(root, converter);
-
-				// Hook for modules to load data from save file
-				Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
-
-				if (modulesEl != null)
-				{
-					for (Module module : g_modules)
-					{
-						if (module.canSaveToXML())
-						{
-							Element moduleEl = XMLUtils.findFirstChildElement(modulesEl, "module", "name", module.getModuleName());
-
-							if (moduleEl != null)
-							{
-								module.loadFromXML(moduleEl, converter);
-							}
-						}
-					}
-				}
-			}
-		}
-		finally
-		{
-			PacketSourceState.endFileLoad();
 		}
 	}
 
@@ -1213,7 +647,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			final FileInputStream infile = new FileInputStream(openFile);
 			final DataInputStream dis = new DataInputStream(infile);
 			final MapElement nPog = new MapElement(dis);
-			m_gametableCanvas.getActiveMap().addMapElement(nPog);
+			m_core.getMap(GameTableCore.MapType.ACTIVE).addMapElement(nPog);
 		}
 		catch (final IOException ex1)
 		{
@@ -1224,77 +658,36 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	/**
 	 * loads preferences from file
 	 */
-	public void loadPrefs()
+	public void applyProperties()
 	{
-		final File file = getPreferenceFile();
-		if (!file.exists()) // if the file doesn't exist, set some hard-coded defaults and return
-		{
-			// DEFAULTS
-			m_mapChatSplitPane.setDividerLocation(0.7);
-			m_mapPogSplitPane.setDividerLocation(150);
-			m_windowSize = new Dimension(800, 600);
-			final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-			m_windowPos = new Point((screenSize.width - m_windowSize.width) / 2, (screenSize.height - m_windowSize.height) / 2);
-			m_bMaximized = false;
-			getGametableCanvas().setPrimaryScroll(getGametableCanvas().getPublicMap(), 0, 0);
-			getGametableCanvas().setZoomLevel(0);
-			applyWindowInfo();
+		XProperties props = m_core.getProperties();
 
-			m_showNamesCheckbox.setSelected(false);
-			m_randomRotate.setSelected(false); // #randomrotate
+		Point pt = XProperties.toPoint(props.getTextPropertyValue(PROP_SCROLL_POSITION), new Point(0, 0));
+		getGametableCanvas().setPrimaryScroll(m_core.getMap(GameTableCore.MapType.PUBLIC), pt.x, pt.y);
+		getGametableCanvas().setZoomLevel(props.getNumberPropertyValue(PROP_ZOOM_LEVEL));
 
-			for (Module module : g_modules)
-				module.onLoadPreferencesCompleted();
-
-			return;
-		}
-
-		// try reading preferences from file
-		try
-		{
-			final FileInputStream prefFile = new FileInputStream(file);
-			final DataInputStream prefDis = new DataInputStream(prefFile);
-
-			m_playerName = prefDis.readUTF();
-			m_characterName = prefDis.readUTF();
-			
-		// TODO #Networking Load networking preferences
-
-			getGametableCanvas().setPrimaryScroll(getGametableCanvas().getPublicMap(), prefDis.readInt(), prefDis.readInt());
-			getGametableCanvas().setZoomLevel(prefDis.readInt());
-
-			m_windowSize = new Dimension(prefDis.readInt(), prefDis.readInt());
-			m_windowPos = new Point(prefDis.readInt(), prefDis.readInt());
-			m_bMaximized = prefDis.readBoolean();
-			applyWindowInfo();
+		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		m_windowSize = XProperties.toDimension(props.getTextPropertyValue(PROP_WINDOW_SIZE), 
+				new Dimension(DEFAULT_WINDOWSIZE_WIDTH, DEFAULT_WINDOWSIZE_HEIGHT));
+		
+		m_windowPos = XProperties.toPoint(props.getTextPropertyValue(PROP_WINDOW_POSITION), new Point((screenSize.width - m_windowSize.width) / 2, (screenSize.height - m_windowSize.height) / 2));
+		m_bMaximized = props.getBooleanPropertyValue(PROP_MAXIMIZED);
+		applyWindowInfo();
 
 			// divider locations
-			m_mapChatSplitPane.setDividerLocation(prefDis.readInt());
-			m_mapPogSplitPane.setDividerLocation(prefDis.readInt());
+		float f =  props.getNumberFloatPropertyValue(PROP_CHAT_SPLIT);
+		if (f > 0 && f <= 1)
+			m_mapChatSplitPane.setDividerLocation(f);
+		else
+			m_mapChatSplitPane.setDividerLocation(props.getNumberPropertyValue(PROP_CHAT_SPLIT));
+		
+		m_mapPogSplitPane.setDividerLocation(props.getNumberPropertyValue(PROP_COLUMN_SPLIT));
 
-			m_showNamesCheckbox.setSelected(prefDis.readBoolean());
+		m_showNamesCheckbox.setSelected(props.getBooleanPropertyValue(PROP_SHOW_NAMES_ON_MAP));
+		m_randomRotate.setSelected(props.getBooleanPropertyValue(PROP_RANDOM_ROTATE));
 
-			// new divider locations
-			m_chatPanel.setChatSplitPaneDivider(prefDis.readInt());
-			m_chatPanel.setUseMechanicsLog(prefDis.readBoolean());
+		m_chatPanel.setUseMechanicsLog(props.getBooleanPropertyValue(PROP_USE_CHAT_MECHANICS));
 
-			for (Module module : g_modules)
-				module.onLoadPreferences(prefDis);
-
-			prefDis.close();
-			prefFile.close();
-		}
-		catch (final FileNotFoundException ex1)
-		{
-			Log.log(Log.SYS, ex1);
-		}
-		catch (final IOException ex1)
-		{
-			Log.log(Log.SYS, ex1);
-		}
-
-		for (Module module : g_modules)
-			module.onLoadPreferencesCompleted();
 	}
 
 	// private JMenuItem getPrivChatWindowMenuItem()
@@ -1313,218 +706,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	// return item;
 	// }
 
-	/**
-	 * TODO #Network Move this to the private interface
-	 * A player just joined this hosted session.  Used by NetSendPlayerInfo.
-	 * @param sourceConnection Network source connection
-	 * @param player Player object
-	 * @param password Password entered by the player to join
-	 */
-	public void onPlayerJoined(final NetworkConnectionIF sourceConnection, final Player player, final String password)
-	{
-		confirmHost();
 
-		if (!m_networkModule.getPassword().equals(password))
-		{
-			// Reject connection due to invalid password			
-			send(NetLoginRejected.makePacket(NetLoginRejected.RejectReason.INVALID_PASSWORD), sourceConnection);
-			sourceConnection.close();
-			return;
-		}
 
-		// now we can associate a player with the connection
-		sourceConnection.markLoggedIn();
-		player.setConnection(sourceConnection);
 
-		// set their ID
-		player.setId(m_nextPlayerId++);
 
-		// tell everyone about the new guy
-		sendSystemMessageBroadcast(player.getPlayerName() + " " + getLanguageResource().PLAYER_JOINED);
-		addPlayer(player);
 
-		sendPlayersInformation();
-
-		send(NetSetGridMode.makePacket(m_gametableCanvas.getGridModeId()), player);
-		
-		MapElementTypeIF type = m_gametableCanvas.getBackgroundMapElementType();
-		if (type != null)
-		{
-			send(NetSetBackground.makePacket(type), player);
-		}
-		else
-		{
-			send(NetSetBackground.makePacket(m_gametableCanvas.getBackgroundColor()), player);
-		}
-
-		// Send all existing line segments to the new player
-		send(NetAddLineSegments.makePacket(getGametableCanvas().getPublicMap().getLines()), player);
-
-		// Send all current map elements to the new player
-		for (MapElement pog : getGametableCanvas().getPublicMap().getMapElements())
-			send(NetAddMapElement.makePacket(pog), player);
-		
-		// finally, have the player recenter on the host's view
-		final int viewCenterX = getGametableCanvas().getWidth() / 2;
-		final int viewCenterY = getGametableCanvas().getHeight() / 2;
-
-		// convert to model coordinates
-		final MapCoordinates modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
-		send(NetRecenterMap.makePacket(modelCenter, m_gametableCanvas.getZoomLevel()), player);
-
-		// TODO #Networking see if this is necessary... network module already knows of this and we have the following listener call to handle modules.
-		
-		// let them know we're done sending them data from the login
-		send(NetLoginComplete.makePacket(), player);
-
-		for (GameTableFrameListener listener : m_listeners)
-			listener.onPlayerJoined(player);
-	}
-
-	/**
-	 * Send an alert message to the chat window
-	 * @param text Alert text
-	 */
-	public void sendAlertMessageLocal(final String text)
-	{
-		sendChatMessageLocal(ALERT_MESSAGE_FONT + text + END_ALERT_MESSAGE_FONT);
-	}
-	
-	/**
-	 * Show a message on the mechanics window, without sending over network
-	 * @param text
-	 */
-	public void sendMechanicsMessageLocal(final String text)
-	{
-		m_chatPanel.addMechanicsMessage(text);
-	}
-
-	/**
-	 * Sends a mechanics message specifically to a given player
-	 * @param toName
-	 * @param text
-	 */
-	public void sendMechanicsMessage(final String toName, final String text)
-	{
-		if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
-		{
-			if (getMyPlayer().hasName(toName))
-				m_chatPanel.addMechanicsMessage(text);
-		}
-		else
-		{
-			sendBroadcast(NetSendMechanicsText.makePacket(toName, text));
-		}
-	}
-
-	/**
-	 * Sends a mechanics message so that all players see it
-	 * @param text
-	 */
-	public void sendMechanicsMessageBroadcast(final String text)
-	{
-		if (getNetworkStatus() != NetworkStatus.DISCONNECTED)
-			sendBroadcast(NetSendMechanicsText.makeBroadcastPacket(text));
-		
-		// Broadcasting does not send back to self
-		m_chatPanel.addMechanicsMessage(text);
-	}
-
-	/**
-	 * Send a chat message to all players
-	 * @param text message to send
-	 */
-	public void sendChatMessageBroadcast(final String text)
-	{
-		m_chatPanel.logMessage(text);
-		if (getNetworkStatus() != NetworkStatus.DISCONNECTED)
-		{
-			sendBroadcast(NetSendChatText.makeBroadcastPacket(text));
-		}
-	}
-	
-	/**
-	 * Send a chat message to current player only
-	 * @param text message to send
-	 */
-	public void sendChatMessageLocal(final String text)
-	{
-		m_chatPanel.logMessage(text);
-	}
-
-	/**
-	 * Send a chat message to a specific player name
-	 * @param fromName Name of the originating player 
-	 * @param toName Name of the target player
-	 * @param text Message to display
-	 */
-	public void sendChatMessage(final String fromName, final String toName, final String text)
-	{
-		if (getMyPlayer().hasName(toName))
-		{
-			m_chatPanel.logPrivateMessage(fromName, toName, text);
-		}
-		else switch(getNetworkStatus())
-		{
-		case  HOSTING:		
-			// Send directly to player
-			for (Player player : m_players)
-			{
-				if (player.hasName(toName))
-				{
-					send(NetSendChatText.makePacket(fromName, toName, text), player);
-					return;
-				}
-			}
-			break;
-			
-		case CONNECTED:
-			// Send to host - he will be dispatching
-			send(NetSendChatText.makePacket(fromName, toName, text), getHostConnection());
-			break;
-			
-		case DISCONNECTED:
-			// No one to send to
-			break;
-		}
-	}
-	
-	/**
-	 * @return Connection to the host.  Will be 'null' if current player is host.
-	 */
-	public NetworkConnectionIF getHostConnection()
-	{
-		return m_hostConnection;
-	}
-	
-	/**
-	 * Shows a system message through the mechanics window
-	 * @param text
-	 */
-	public void sendSystemMessageLocal(final String text)
-	{
-		sendMechanicsMessageLocal(SYSTEM_MESSAGE_FONT + text + END_SYSTEM_MESSAGE_FONT);
-	}
-	
-	/**
-	 * Shows a system message to a specific user
-	 * @param toName Name of the player to send the message to
-	 * @param text
-	 */
-	public void sendSystemMessageLocal(String toName, String text)
-	{
-		sendMechanicsMessage(toName, SYSTEM_MESSAGE_FONT + text + END_SYSTEM_MESSAGE_FONT);
-	}
-
-	/**
-	 * Broadcast a system message through the mechanics window
-	 * @param text
-	 */
-	public void sendSystemMessageBroadcast(final String text)
-	{
-		sendMechanicsMessageBroadcast(SYSTEM_MESSAGE_FONT + text + END_SYSTEM_MESSAGE_FONT);
-	}
-	
 	/**
 	 * Refreshes the pog list.
 	 */
@@ -1532,7 +718,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	{
 		try
 		{
-			m_mapElementTypeLibrary.refresh(true);
+			m_core.getMapElementTypeLibrary().refresh(true);
 		}
 		catch (IOException e)
 		{
@@ -1542,17 +728,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		
 		m_pogPanel.populateChildren();
 		repaint();
-	}
-
-	/**
-	 * Removes a listener from this map
-	 * 
-	 * @param listener Listener to remove
-	 * @return True if listener was found and removed
-	 */
-	public boolean removeListener(GameTableFrameListener listener)
-	{
-		return m_listeners.remove(listener);
 	}
 	
 	public boolean runHostDialog()
@@ -1601,65 +776,66 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		}
 	}
 
-	public void savePrefs()
+	/**
+	 * Update properties before save - called by core
+	 */
+	public void updateProperties()
 	{
-		try
-		{
-			final FileOutputStream prefFile = new FileOutputStream(getPreferenceFile());
-			final DataOutputStream prefDos = new DataOutputStream(prefFile);
+		XProperties props = m_core.getProperties();
 
-			prefDos.writeUTF(m_playerName);
-			prefDos.writeUTF(m_characterName);
-
-			// TODO #Networking Save networking preferences
-			
-			Point pos = m_gametableCanvas.getScrollPosition();
-			prefDos.writeInt(pos.x);
-			prefDos.writeInt(pos.y);
-			prefDos.writeInt(m_gametableCanvas.getZoomLevel());
-
-			prefDos.writeInt(m_windowSize.width);
-			prefDos.writeInt(m_windowSize.height);
-			prefDos.writeInt(m_windowPos.x);
-			prefDos.writeInt(m_windowPos.y);
-			prefDos.writeBoolean(m_bMaximized);
-
-			// divider locations
-			prefDos.writeInt(m_mapChatSplitPane.getDividerLocation());
-			prefDos.writeInt(m_mapPogSplitPane.getDividerLocation());
-
-			prefDos.writeBoolean(m_showNamesCheckbox.isSelected());
-
-			// new divider location
-			prefDos.writeInt(m_mapChatSplitPane.getDividerLocation());
-
-			prefDos.writeBoolean(m_chatPanel.getUseMechanicsLog());
-
-			for (Module module : g_modules)
-				module.onSavePreferences(prefDos);
-
-			prefDos.close();
-			prefFile.close();
-
-			for (Module module : g_modules)
-				module.onSavePreferencesCompleted();
-		}
-		catch (final FileNotFoundException ex1)
-		{
-			Log.log(Log.SYS, ex1);
-		}
-		catch (final IOException ex1)
-		{
-			Log.log(Log.SYS, ex1);
-		}
+		props.setBooleanPropertyValue(PROP_SHOW_NAMES_ON_MAP, m_showNamesCheckbox.isSelected());
+		props.setBooleanPropertyValue(PROP_USE_CHAT_MECHANICS, m_chatPanel.getUseMechanicsLog());
+		props.setTextPropertyValue(PROP_SCROLL_POSITION, XProperties.fromPoint(m_gametableCanvas.getScrollPosition()));
+		props.setNumberPropertyValue(PROP_ZOOM_LEVEL, getZoomLevel());
+		props.setTextPropertyValue(PROP_WINDOW_SIZE, XProperties.fromDimension(m_windowSize));
+		props.setTextPropertyValue(PROP_WINDOW_POSITION, XProperties.fromPoint(m_windowPos));
+		props.setBooleanPropertyValue(PROP_MAXIMIZED, m_bMaximized);
+		props.setNumberPropertyValue(PROP_CHAT_SPLIT, m_mapChatSplitPane.getDividerLocation());
+		props.setNumberPropertyValue(PROP_COLUMN_SPLIT, m_mapPogSplitPane.getDividerLocation());
 	}
-
-	public void saveToXML(final File file)
+	
+	/**
+	 * Initialize properties before load - called by core
+	 */
+	public void initializeProperties()
 	{
-		Document doc;
+		XProperties props = m_core.getProperties();
+		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+		props.addBooleanProperty(PROP_SHOW_NAMES_ON_MAP, false, true, "map_options", -1);
+		props.addBooleanProperty(PROP_USE_CHAT_MECHANICS, false, true, "map_options", -1);
+		props.addBooleanProperty(PROP_RANDOM_ROTATE, false, true, "map_options", -1);
+		
+		props.addTextProperty(PROP_SCROLL_POSITION, XProperties.fromPoint(new Point(0, 0)), false, "window", -1);
+		props.addNumberProperty(PROP_ZOOM_LEVEL, 0, false, "window", -1);
+		props.addTextProperty(PROP_WINDOW_SIZE, XProperties.fromDimension(new Dimension(800, 600)), false, "window", -1);
+		
+		props.addTextProperty(PROP_WINDOW_POSITION, XProperties.fromPoint(new Point((screenSize.width - DEFAULT_WINDOWSIZE_WIDTH) / 2, (screenSize.height - DEFAULT_WINDOWSIZE_HEIGHT) / 2)), false, "window", -1);
+		props.addBooleanProperty(PROP_MAXIMIZED, false, false, "window", -1);
+		props.addNumberProperty(PROP_CHAT_SPLIT, 0.7f, false, "window", -1);
+		props.addNumberProperty(PROP_COLUMN_SPLIT, 150, false, "window", -1);		
+	}
+	
+	private final static String PROP_SHOW_NAMES_ON_MAP = GametableFrame.class.getName() + ".show_names";
+	private final static String PROP_RANDOM_ROTATE = GametableFrame.class.getName() + ".rnd_rotate_elements";
+	private final static String PROP_USE_CHAT_MECHANICS = GametableFrame.class.getName() + ".show_chat_mechanics";
+	private static final String PROP_SCROLL_POSITION = GametableFrame.class.getName() + ".scroll_position";
+	private static final String PROP_ZOOM_LEVEL = GametableFrame.class.getName() + ".zoom_level";
+	private static final String PROP_WINDOW_SIZE = GametableFrame.class.getName() + ".window_size";
+	private static final String PROP_WINDOW_POSITION = GametableFrame.class.getName() + ".window_position";
+	private static final String PROP_MAXIMIZED = GametableFrame.class.getName() + ".window_maximized";
+	private static final String PROP_CHAT_SPLIT = GametableFrame.class.getName() + ".chat_divider_loc";
+	private static final String PROP_COLUMN_SPLIT = GametableFrame.class.getName() + ".column_divider_loc";
+
+	/**
+	 * Save the current maps to XML.  Goes through core, but handles exceptions through UI)
+	 * @param file
+	 */
+	public void saveMapToXML(final File file)
+	{
 		try
 		{
-			doc = XMLUtils.createDocument();
+			m_core.saveMapToXML(file);
 		}
 		catch (IOException e)
 		{
@@ -1667,129 +843,8 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			JOptionPane.showMessageDialog(this, e.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-
-		Element root = doc.createElement("gt");
-		doc.appendChild(root);
-
-		Element publicEl = doc.createElement("public_map");
-		root.appendChild(publicEl);
-		m_gametableCanvas.getPublicMap().serializeToXML(publicEl);
-
-		Element privateEl = doc.createElement("private_map");
-		root.appendChild(privateEl);
-		m_gametableCanvas.getPrivateMap().serializeToXML(privateEl);
-
-		storeLockedElementsToXML(doc, root);
-		storeGridToXML(doc, root);
-
-		// Hook for modules to add elements to save file
-		Element modulesEl = doc.createElement("modules");
-
-		for (Module module : g_modules)
-		{
-			if (module.canSaveToXML())
-			{
-				Element moduleEl = doc.createElement("module");
-				moduleEl.setAttribute("name", module.getModuleName());
-
-				if (module.saveToXML(moduleEl))
-					modulesEl.appendChild(moduleEl);
-			}
-		}
-
-		// If non-empty, append
-		if (modulesEl.getFirstChild() != null)
-			root.appendChild(modulesEl);
-
-		// -------------------------------------
-		try
-		{
-			XMLOutputProperties props = new XMLOutputProperties();
-			props.indentXML = false;
-			props.encoding = "UTF-8";
-			XMLUtils.saveDocument(file, doc, props);
-		}
-		catch (IOException e)
-		{
-			Log.log(Log.SYS, e.getMessage());
-			JOptionPane.showMessageDialog(this, e.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
 	}
 
-	/**
-	 * Sends a public message to all players.
-	 * 
-	 * @param text Message to send.
-	 */
-	public void say(final String text)
-	{
-		sendChatMessageBroadcast(SAY_MESSAGE_FONT + UtilityFunctions.emitUserLink(getMyPlayer().getCharacterName()) + ": " + END_SAY_MESSAGE_FONT + text);
-	}
-
-	/**
-	 * Broadcasts a packet through the networking module.  Everyone but logged player receives the message.
-	 * @param packet
-	 */
-	public void sendBroadcast(final byte[] packet)
-	{
-		m_networkModule.sendBroadcast(packet);
-	}
-	
-	/**
-	 * Sends a packet through the networking module through the specified connection
-	 * @param packet
-	 * @param player
-	 */
-	public void send(final byte[] packet, final NetworkConnectionIF conn)
-	{
-		m_networkModule.send(packet, conn);
-	}
-
-	/**
-	 * Sends a packet through the networking module to the specified player
-	 * @param packet
-	 * @param player
-	 */
-	private void send(final byte[] packet, final Player player)
-	{
-		if (player.getConnection() == null)
-		{
-			throw new IllegalStateException("You do not have direct connection to player " + player.getCharacterName());
-		}
-		
-		send(packet, player.getConnection());		
-	}
-	
-	/**
-	 * Get the network status from the network module
-	 * @return network status
-	 */
-	public NetworkStatus getNetworkStatus()
-	{
-		return m_networkModule.getNetworkStatus();
-	}
-	
-	/**
-	 * Send players information to all connected players
-	 */
-	private void sendPlayersInformation()
-	{
-		// Since the player list message includes a pointer telling which player the recipient is,
-		// We will not be broadcasting the list, but sending a specific message to each player
-		
-		Player me = getMyPlayer();
-		
-		for (Player recipient : m_players)
-		{
-			if (me == recipient)
-				continue;
-			
-			final byte[] castPacket = NetSendPlayersList.makePacket(recipient);
-			send(castPacket, recipient);
-		}
-	}
 
 	public void setToolSelected(final int toolId)
 	{
@@ -1815,43 +870,43 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		return m_showNamesCheckbox.isSelected();
 	}
 
-	public void startTellTo(String name)
-	{
-        if (name.contains(" ") || name.contains("\"") || name.contains("\t"))
-        {
-            name = "\"" + name.replace("\"", "\\\"") + "\"";
-        }
-	        
-		m_textEntry.setText("/tell " + name + "<b> </b>");
-		m_textEntry.requestFocus();
-		m_textEntry.toggleStyle("bold");
-		m_textEntry.toggleStyle("bold");
-	}
+//	public void startTellTo(String name)
+//	{
+//        if (name.contains(" ") || name.contains("\"") || name.contains("\t"))
+//        {
+//            name = "\"" + name.replace("\"", "\\\"") + "\"";
+//        }
+//	        
+//		m_textEntry.setText("/tell " + name + "<b> </b>");
+//		m_textEntry.requestFocus();
+//		m_textEntry.toggleStyle("bold");
+//		m_textEntry.toggleStyle("bold");
+//	}
 
-	/**
-	 * Sends a private message to the target player.
-	 * 
-	 * @param target Player to address message to.
-	 * @param text Message to send.
-	 */
-	public void tell(final Player target, final String text)
-	{
-		if (target.getID() == getMyPlayer().getID())
-		{
-			m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + getLanguageResource().TELL_SELF + " " + END_PRIVATE_MESSAGE_FONT + text);
-			return;
-		}
-
-		final String fromName = getMyPlayer().getCharacterName();
-		final String toName = target.getCharacterName();
-
-		sendChatMessage(fromName, toName, text);
-
-		// and when you post a private message, you get told about it in your
-		// own chat log
-		m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + getLanguageResource().TELL + " " + UtilityFunctions.emitUserLink(toName) + ": "
-				+ END_PRIVATE_MESSAGE_FONT + text);
-	}
+//	/**
+//	 * Sends a private message to the target player.
+//	 * 
+//	 * @param target Player to address message to.
+//	 * @param text Message to send.
+//	 */
+//	public void tell(final Player target, final String text)
+//	{
+//		if (target.getID() == m_core.getMyPlayer().getID())
+//		{
+//			m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + getLanguageResource().TELL_SELF + " " + END_PRIVATE_MESSAGE_FONT + text);
+//			return;
+//		}
+//
+//		final String fromName = m_core.getMyPlayer().getCharacterName();
+//		final String toName = target.getCharacterName();
+//
+//		m_core.sendMessage(MessageType.CHAT, fromName, toName, text);
+//
+//		// and when you post a private message, you get told about it in your
+//		// own chat log
+//		m_chatPanel.logMessage(PRIVATE_MESSAGE_FONT + getLanguageResource().TELL + " " + UtilityFunctions.emitUserLink(toName) + ": "
+//				+ END_PRIVATE_MESSAGE_FONT + text);
+//	}
 
 	/**
 	 * Toggles between the two layers.
@@ -1859,63 +914,32 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	public void toggleLayer()
 	{
 		// toggle the map we're on
-		boolean publicMap = getGametableCanvas().isPublicMap();
-		if (publicMap)
-		{
-			getGametableCanvas().setActiveMap(getGametableCanvas().getPrivateMap());
-		}
-		else
-		{
-			getGametableCanvas().setActiveMap(getGametableCanvas().getPublicMap());
-		}
-
-		// if they toggled the layer, whatever tool they're using is cancelled
-		getToolManager().cancelToolAction();
-		getGametableCanvas().requestFocus();
-
-		for (Module module : g_modules)
-			module.onToggleActiveMap(!publicMap);
-
-		repaint();
-	}
-
-	/**
-	 * Sets the player information for the game
-	 * @param players List of players currently connected
-	 * @param ourIdx Index of our player information
-	 */
-	public void setPlayersInformation(final Player[] players, final int ourIdx)
-	{
-		// you should only get this if you're a joiner
-		confirmJoined();
-
-		// set up the current cast
-		clearAllPlayers();
-		for (int i = 0; i < players.length; i++)
-			addPlayer(players[i]);
-
-		m_myPlayerIndex = ourIdx;
+		boolean publicMap = m_core.isActiveMapPublic();
+		m_core.setActiveMap(publicMap ? GameTableCore.MapType.PRIVATE : GameTableCore.MapType.PUBLIC);
 	}
 
 	public void updateGridModeMenu()
 	{
-		if (getGametableCanvas().m_gridMode == getGametableCanvas().m_noGridMode)
-		{
-			m_noGridModeMenuItem.setState(true);
-			m_squareGridModeMenuItem.setState(false);
-			m_hexGridModeMenuItem.setState(false);
-		}
-		else if (getGametableCanvas().m_gridMode == getGametableCanvas().m_squareGridMode)
-		{
+		switch (m_core.getGridModeID())
+		{			
+		case SQUARES:
 			m_noGridModeMenuItem.setState(false);
 			m_squareGridModeMenuItem.setState(true);
 			m_hexGridModeMenuItem.setState(false);
-		}
-		else if (getGametableCanvas().m_gridMode == getGametableCanvas().m_hexGridMode)
-		{
+			break;
+			
+		case HEX:
 			m_noGridModeMenuItem.setState(false);
 			m_squareGridModeMenuItem.setState(false);
 			m_hexGridModeMenuItem.setState(true);
+			break;
+			
+		case NONE:
+		default:
+			m_noGridModeMenuItem.setState(true);
+			m_squareGridModeMenuItem.setState(false);			
+			m_hexGridModeMenuItem.setState(false);
+			break;			
 		}
 	}
 
@@ -1926,7 +950,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	{
 		String newStatusText = "";
 		
-		switch (getNetworkStatus())
+		switch (m_core.getNetworkStatus())
 		{
 		case DISCONNECTED:
 			newStatusText = getLanguageResource().DISCONNECTED;
@@ -1957,12 +981,14 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			break;
 		}
 
-		if (getNetworkStatus() != NetworkStatus.DISCONNECTED)
+		if (m_core.getNetworkStatus() != NetworkStatus.DISCONNECTED)
 		{
-			if (m_players.size() > 1)
-				newStatusText += "; " + m_players.size() + " players " + getLanguageResource().CONNECTED;
+			List<Player> players = m_core.getPlayers();
+			
+			if (players.size() > 1)
+				newStatusText += "; " + players.size() + " players " + getLanguageResource().CONNECTED;
 			else
-				newStatusText += "; " + m_players.size() + " player " + getLanguageResource().CONNECTED;
+				newStatusText += "; " + players.size() + " player " + getLanguageResource().CONNECTED;
 			
 			int count = m_typingPlayers.size();
 			boolean started = false;
@@ -2078,11 +1104,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 				});
 		return item;
 	}
-	
-	private File getPreferenceFile()
-	{
-		return new File(GametableApp.USER_FILES_PATH, "prefs.prf");
-	}
 
 	private File getAutoSaveXMLFile()
 	{
@@ -2104,7 +1125,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 			public void actionPerformed(ActionEvent e)
 			{
-				changeBackground(color, null);
+				m_core.setBackgroundColor(color, null);
 			}
 		});
 
@@ -2151,7 +1172,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 				final int res = UtilityFunctions.yesNoDialog(GametableFrame.this, getLanguageResource().MAP_CLEAR_WARNING, getLanguageResource().MAP_CLEAR);
 				if (res == UtilityFunctions.YES)
 				{
-					GameTableMap map = m_gametableCanvas.getActiveMap();
+					GameTableMap map = m_core.getMap(GameTableCore.MapType.ACTIVE);
 					map.clearMap(null);
 				}
 			}
@@ -2176,18 +1197,18 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
-				if (getActiveGroupManager().getGroupCount() < 1)
+				if (m_core.getGroupManager(GameTableCore.MapType.ACTIVE).getGroupCount() < 1)
 				{
-					JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", "No Groups", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(GametableFrame.this, "No Groups Defined.", "No Groups", JOptionPane.INFORMATION_MESSAGE);
 					return;
 				}
 				if (all == 1)
 				{
-					getActiveGroupManager().deleteEmptyGroups();
+					m_core.getGroupManager(GameTableCore.MapType.ACTIVE).deleteEmptyGroups();
 				}
 				if (all == 2)
 				{
-					getActiveGroupManager().deleteAllGroups();
+					m_core.getGroupManager(GameTableCore.MapType.ACTIVE).deleteAllGroups();
 				}
 				else
 				{
@@ -2218,7 +1239,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					disconnect();
+					m_core.disconnect();
 				}
 			});
 			m_disconnectMenuItem = item;
@@ -2347,7 +1368,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		/*
 		 * menu.add(new JMenuItem(new AbstractAction("ISHOST") {
 		 * 
-		 * @Override public void actionPerformed(ActionEvent e) { Player p = getMyPlayer();
+		 * @Override public void actionPerformed(ActionEvent e) { Player p = m_core.getMyPlayer();
 		 * System.out.println(p.isHostPlayer() ? "host" : "guest"); System.out.println(p.getConnection() == null ?
 		 * "disconnected" : "connected"); } }));
 		 */
@@ -2397,7 +1418,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e)
 			{
-				lockAllMapElements(GameTableMapType.ACTIVE, lock);
+				m_core.lockAllMapElements(GameTableCore.MapType.ACTIVE, lock);
 			}
 		});
 
@@ -2565,7 +1586,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	{
 		JMenu modulesMenu = null;
 
-		for (Module module : g_modules)
+		for (Module module : m_core.getRegisteredModules())
 		{
 			JMenu menu = module.getModuleMenu();
 			if (menu != null)
@@ -2680,7 +1701,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 					// convert to model coordinates
 					final MapCoordinates modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
 					centerView(modelCenter, m_gametableCanvas.getZoomLevel());
-					sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_CENTER_DONE);
+					m_core.sendMessageBroadcast(MessageType.SYSTEM, m_core.getPlayer().getPlayerName() + " " + getLanguageResource().MAP_CENTER_DONE);
 				}
 			}
 		});
@@ -2699,7 +1720,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
-				m_gametableCanvas.getActiveMap().removeMapElements(m_gametableCanvas.getSelectedMapElementInstances());
+				m_core.getMap(GameTableCore.MapType.ACTIVE).removeMapElements(m_gametableCanvas.getSelectedMapElementInstances());
 			}
 		});
 
@@ -2737,9 +1758,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
-				if (getActiveGroupManager().getGroupCount() < 1)
+				if (m_core.getGroupManager(GameTableCore.MapType.ACTIVE).getGroupCount() < 1)
 				{
-					JOptionPane.showMessageDialog(getGametableFrame(), "No Groups Defined.", "No Groups", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(GametableFrame.this, "No Groups Defined.", "No Groups", JOptionPane.INFORMATION_MESSAGE);
 					return;
 				}
 				GroupingDialog gd = new GroupingDialog(false);
@@ -2795,7 +1816,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 				for (MapElement pog : getGametableCanvas().getSelectedMapElementInstances())
 				{
-					Group g = getActiveGroupManager().getGroup(pog);
+					Group g = m_core.getGroupManager(GameTableCore.MapType.ACTIVE).getGroup(pog);
 					if (g != null)
 						g.removeElement(pog);
 				}
@@ -2820,13 +1841,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			public void actionPerformed(final ActionEvent e)
 			{
 				MapElement npog;
-				GameTableMap map = getGametableCanvas().getActiveMap();
+				GameTableMap map = m_core.getMap(GameTableCore.MapType.ACTIVE);
 				GameTableMap to;
 
-				if (map == getGametableCanvas().getPublicMap())
-					to = getGametableCanvas().getPrivateMap();
+				if (map == m_core.getMap(GameTableCore.MapType.PUBLIC))
+					to = m_core.getMap(GameTableCore.MapType.PRIVATE);
 				else
-					to = getGametableCanvas().getPublicMap();
+					to = m_core.getMap(GameTableCore.MapType.PUBLIC);
 
 				for (MapElement pog : getGametableCanvas().getSelectedMapElementInstances())
 				{
@@ -2865,18 +1886,16 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	private void initialize() throws IOException
 	{
 		ImageCache.startCacheDaemon();
+		
+		m_networkResponder = new NetworkFrameResponder();
+		
+		// Set network responder to our messages
+		NetSendTypingFlag.getMessageType(m_networkResponder);
+		
+		initializeCoreListeners();
 
 		buildActions();
-		
-		initializeNetworkModule();
-		
-		SlashCommands.registerDefaultChatCommands();
-
-		// todo #Plugins Automated module loading mechanism
-
-		registerModule(CardModule.getModule());
-		registerModule(DiceMacroModule.getModule());
-		registerModule(ActivePogsModule.getModule());
+	
 
 		if (DEBUG_FOCUS) // if debugging
 		{
@@ -2896,7 +1915,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		}
 
 		// Configure chat panel
-		m_chatPanel = new ChatPanel();
+		m_chatPanel = new ChatPanel(this);
+		m_core.registerChatEngine(m_chatPanel);
+		
 		m_textEntry = m_chatPanel.getTextEntry();
 
 		setContentPane(new JPanel(new BorderLayout())); // Set the main UI object with a Border Layout
@@ -2953,12 +1974,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			// todo exceptions should be captured
 			public void changedUpdate(final DocumentEvent e)
 			{
-				grid_multiplier = Double.parseDouble(m_gridunitmultiplier.getText());
+				m_gridMultiplier = Double.parseDouble(m_gridunitmultiplier.getText());
 			}
 
 			public void insertUpdate(final DocumentEvent e)
 			{
-				grid_multiplier = Double.parseDouble(m_gridunitmultiplier.getText());
+				m_gridMultiplier = Double.parseDouble(m_gridunitmultiplier.getText());
 			}
 
 			public void removeUpdate(final DocumentEvent e)
@@ -2989,20 +2010,20 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 		getContentPane().add(m_toolBar, BorderLayout.NORTH);
 
-		getGametableCanvas().init(this);
-		
-		initializeGroupManager();
-
-		initialiseMapElementTypeLibrary();
+//		getGametableCanvas().init(this);
+//		
+//		initializeGroupManager();
+//
+		initializeMapElementTypeLibrary();
 		
 		// pogWindow
-		m_pogPanel = new PogPanel(m_mapElementTypeLibrary, getGametableCanvas());
+		m_pogPanel = new PogPanel(m_core.getMapElementTypeLibrary(), getGametableCanvas());
 		m_pogsTabbedPane.addTab(m_pogPanel, getLanguageResource().POG_LIBRARY);
 
-		for (Module module : g_modules)
+		for (Module module : m_core.getRegisteredModules())
 		{
 			// todo #Plugins consider abstracting "PogsTabbedPane" through an interface.
-			module.onInitializeUI();
+			module.onInitializeUI(this);
 		}
 
 		m_pogsTabbedPane.setFocusable(false);
@@ -3022,25 +2043,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 		final ColorComboCellRenderer renderer = new ColorComboCellRenderer();
 		m_colorCombo.setRenderer(renderer);
-
-		// load the primary map
-		// getGametableCanvas().setActiveMap(getGametableCanvas().getPrivateMap());
-		PacketSourceState.beginFileLoad();
-		File autoSave = getAutoSaveXMLFile();
-		if (autoSave.exists())
-			loadFromXML(autoSave, true, true);
-
-		// loadState(new File("autosavepvt.grm"));
-		PacketSourceState.endFileLoad();
-
-		/*
-		 * getGametableCanvas().setActiveMap(getGametableCanvas().getPublicMap()); loadState(new File("autosave.grm"));
-		 */
-		// loadPrefs();
-
-		addPlayer(new Player(m_playerName, m_characterName, -1, true));
-		m_myPlayerIndex = 0;
-
+	
 		m_colorCombo.addActionListener(this);
 		updateGridModeMenu();
 
@@ -3173,11 +2176,13 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		// m_textEntry.requestFocus();
 		// }
 		// });
+		
+		m_gametableCanvas.init();
 
 		initializeExecutorThread();
 
 		// Load frame preferences
-		loadPrefs();
+		m_core.loadProperties();
 	}
 
 	/**
@@ -3196,17 +2201,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		}		
 	}
 
-	private void initialiseMapElementTypeLibrary() throws IOException
+	private void initializeMapElementTypeLibrary() throws IOException
 	{
 		MSGID_REFRESH_MAP_LIBRARY = MessageID.acquire(CardModule.class.getCanonicalName() + ".DISCARD");
 		MSG_REFRESH_MAP_LIBRARY = new MessageDefinition(MSGID_REFRESH_MAP_LIBRARY, MessagePriority.LOW);
 		
-		m_mapElementTypeLibrary = MapElementTypeLibrary.getMasterLibrary();
-		
-		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("pogs"), Layer.POG));
-		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("environment"), Layer.ENVIRONMENT));
-		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("overlays"), Layer.OVERLAY));
-		m_mapElementTypeLibrary.addSubLibrary(new BasicMapElementTypeLibrary(m_mapElementTypeLibrary, new File("underlays"), Layer.UNDERLAY));
 		
 		MapElementTypeLibraryListenerIF listener = new MapElementTypeLibraryListenerIF() {			
 			@Override
@@ -3238,102 +2237,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 			}
 		};
 
-		m_mapElementTypeLibrary.addListener(listener);
+		m_core.getMapElementTypeLibrary().addListener(listener);
 	}
 
-	/**
-	 * Initialize group manager
-	 */
-	private void initializeGroupManager()
-	{
-		getGametableCanvas().getPublicMap().getGroupManager().addListener(new GroupManagerListener());
-	}
 	
-	/**
-	 * Initialize network module
-	 */
-	private void initializeNetworkModule()
-	{
-		m_networkResponder = new NetworkResponder();
-		
-		m_networkModule = NetworkModule.getNetworkModule();	// .todo Allow other network modules
-
-		m_networkModule.registerMessageType(NetAddLineSegments.getMessageType());
-		m_networkModule.registerMessageType(NetAddMapElement.getMessageType());
-		m_networkModule.registerMessageType(NetClearLineSegments.getMessageType());
-		m_networkModule.registerMessageType(NetEraseLineSegments.getMessageType());
-		m_networkModule.registerMessageType(NetFlipMapElement.getMessageType());
-		m_networkModule.registerMessageType(NetGroupAction.getMessageType());
-		
-		m_networkModule.registerMessageType(NetLoadMap.getMessageType());
- 
-		m_networkModule.registerMessageType(NetLockMapElements.getMessageType());
-		m_networkModule.registerMessageType(NetLoginComplete.getMessageType());
-		m_networkModule.registerMessageType(NetLoginRejected.getMessageType());
-		m_networkModule.registerMessageType(NetRecenterMap.getMessageType());
-		m_networkModule.registerMessageType(NetRemoveMapElement.getMessageType());
-		m_networkModule.registerMessageType(NetSendChatText.getMessageType());
-		
-		m_networkModule.registerMessageType(NetRequestFile.getMessageType());
-		m_networkModule.registerMessageType(NetSendFile.getMessageType());
-		
-		m_networkModule.registerMessageType(NetSendMechanicsText.getMessageType());	
-		m_networkModule.registerMessageType(NetSendPlayerInfo.getMessageType());
-		m_networkModule.registerMessageType(NetSendPlayersList.getMessageType());
-		m_networkModule.registerMessageType(NetSendTypingFlag.getMessageType(m_networkResponder));
-		m_networkModule.registerMessageType(NetSetBackground.getMessageType());
-		m_networkModule.registerMessageType(NetSetGridMode.getMessageType());
-		m_networkModule.registerMessageType(NetSetMapElementAngle.getMessageType());
-		m_networkModule.registerMessageType(NetSetMapElementPosition.getMessageType());
-		m_networkModule.registerMessageType(NetSetMapElementData.getMessageType());
-		m_networkModule.registerMessageType(NetSetMapElementLayer.getMessageType());
-		m_networkModule.registerMessageType(NetSetMapElementSize.getMessageType());
-		m_networkModule.registerMessageType(NetSetMapElementType.getMessageType());
-		m_networkModule.registerMessageType(NetShowPointingMarker.getMessageType());
-		
-		
-		//--------------------------
-		NetworkListenerIF listener = new NetworkAdapter() {
-			/*
-			 * @see com.galactanet.gametable.data.net.NetworkAdapter#connectionEstablished(com.galactanet.gametable.data.net.Connection)
-			 */
-			@Override
-			public void connectionEstablished(NetworkConnectionIF conn)
-			{
-				onNetworkConnectionEstablished(conn);
-			}
-			
-			/*
-			 * @see com.galactanet.gametable.data.net.NetworkAdapter#connectionEnded()
-			 */
-			@Override
-			public void connectionEnded()
-			{
-				onNetworkConnectionClosed();
-			}
-			
-			/*
-			 * @see com.galactanet.gametable.data.net.NetworkAdapter#connectionDropped(com.galactanet.gametable.data.net.Connection)
-			 */
-			@Override
-			public void connectionDropped(NetworkConnectionIF conn)
-			{
-				onNetworkConnectionDropped(conn);
-			}
-			
-			/*
-			 * @see com.galactanet.gametable.data.net.NetworkAdapter#networkStatusChange(com.galactanet.gametable.data.net.NetworkStatus)
-			 */
-			@Override
-			public void networkStatusChange(NetworkStatus status)
-			{
-				updateStatus();
-			}
-		};
-		
-		m_networkModule.addListener(listener);
-	}
-
 	/**
 	 * Initializes the tools from the ToolManager.
 	 */
@@ -3375,11 +2282,11 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 					keyInfo = " (Ctrl+" + info.getQuickKey() + ")";
 				}
 				button.setToolTipText(info.getName() + keyInfo);
-				final List<PreferenceDescriptor> prefs = info.getTool().getPreferences();
-				for (PreferenceDescriptor desc : prefs)
-				{
-					m_preferences.addPreference(desc);
-				}
+				
+				XProperties properties = m_core.getProperties();
+				final List<PropertyDescriptor> prefs = info.getTool().getPreferences();
+				for (PropertyDescriptor desc : prefs)
+					properties.addProperty(desc.m_name, desc.m_type, desc.m_defaultValue, desc.m_visible, desc.m_group, desc.m_position);
 			}
 		}
 		catch (final IOException ioe)
@@ -3389,81 +2296,9 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		}
 	}
 
-	private void loadGridFromXML(Element root, XMLSerializeConverter converter)
-	{
-		// grid
-		Element gridEl = XMLUtils.getFirstChildElementByTagName(root, "grid");
-		if (gridEl != null)
-		{
-			GridModeID gridMode = GridModeID.SQUARES;
-			try
-			{
-				gridMode = GridModeID.valueOf(gridEl.getAttribute("modeid"));  
-			}
-			catch (Throwable e)
-			{
-				// stick with default if value is not parsable
-			}
-				
-			//, GridModeID.NONE.ordinal()));
-			m_gametableCanvas.setGridModeByID(gridMode);
+	
 
-			// grid background
-			Element bkEl = XMLUtils.getFirstChildElementByTagName(gridEl, "background");
-			String typeFQN = bkEl.getAttribute("element_type");
-			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(typeFQN);
-			if (type != null)
-			{
-				changeBackground(type, null);
-			}
-			else
-			{
-				String color = bkEl.getAttribute("color");
-				BackgroundColor bkColor = BackgroundColor.DEFAULT;
 
-				try
-				{
-					bkColor = BackgroundColor.valueOf(color);
-				}
-				catch (IllegalArgumentException e)
-				{
-					// stick to default
-				}
-				catch (NullPointerException e)
-				{
-					// stick to default
-				}
-
-				changeBackground(bkColor, null);
-			}
-		}
-	}
-
-	/**
-	 * Store locked element list
-	 * 
-	 * @param root
-	 * @param converter
-	 */
-	private void loadLockedElementsFromXML(Element root, XMLSerializeConverter converter)
-	{
-		lockAllMapElements(GameTableMapType.ACTIVE, false, null);
-		Element listEl = XMLUtils.getFirstChildElementByTagName(root, "locked");
-		if (listEl == null)
-			return;
-
-		for (Element el : XMLUtils.getChildElementsByTagName(listEl, "id"))
-		{
-			long id = UtilityFunctions.parseLong(XMLUtils.getNodeValue(el), 0);
-			MapElementID elID = converter.getMapElementID(id);
-			if (elID != null)
-			{
-				MapElement mapEl = getMapElement(elID);
-				if (mapEl != null)
-					lockMapElement(GameTableMapType.ACTIVE, mapEl, true, null);
-			}
-		}
-	}
 
 	/**
 	 * Load map
@@ -3477,12 +2312,12 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 
 		if (openFile != null)
 		{
-			loadFromXML(openFile, loadPublic, loadPrivate);
+			loadMapFromXML(openFile, loadPublic, loadPrivate);
 
-			if (getNetworkStatus() == NetworkStatus.HOSTING)
+			if (m_core.getNetworkStatus() == NetworkStatus.HOSTING)
 			{
 				// Send data to other connected players (host only)
-				sendBroadcast(NetLoadMap.makePacket(m_gametableCanvas.getPublicMap()));
+				m_core.sendBroadcast(NetLoadMap.makePacket(m_core.getMap(GameTableCore.MapType.PUBLIC)));
 			}
 		}
 	}
@@ -3509,59 +2344,10 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 */
 	private void saveAll()
 	{
-		saveToXML(getAutoSaveXMLFile());
-		// saveState(getGametableCanvas().getPublicMap(), new File("autosave.grm"));
-		// saveState(getGametableCanvas().getPrivateMap(), new File("autosavepvt.grm"));
-		savePrefs();
-	}
-
-	/**
-	 * Store grid information
-	 * 
-	 * @param doc
-	 * @param root
-	 */
-	private void storeGridToXML(Document doc, Element root)
-	{
-		// grid
-		Element gridEl = doc.createElement("grid");
-		gridEl.setAttribute("modeid", String.valueOf(getGametableCanvas().getGridModeId()));
-		root.appendChild(gridEl);
-
-		// grid background
-		Element bkEl = doc.createElement("background");
-		gridEl.appendChild(bkEl);
-		
-		MapElementTypeIF type = m_gametableCanvas.getBackgroundMapElementType();
-		if (type != null)
-		{
-			bkEl.setAttribute("element_type",type.getFullyQualifiedName());
-		}
-		else
-		{
-			bkEl.setAttribute("color", m_gametableCanvas.getBackgroundColor().name());
-		}
-	}
-
-	/**
-	 * Store locked element list
-	 * 
-	 * @param doc
-	 * @param root
-	 */
-	private void storeLockedElementsToXML(Document doc, Element root)
-	{
-		List<MapElement> elements = m_lockedElements.getSelectedMapElements();
-		if (elements.size() == 0)
-			return;
-
-		Element listEl = doc.createElement("locked");
-		for (MapElement el : elements)
-		{
-			listEl.appendChild(XMLUtils.createElementValue(doc, "id", String.valueOf(el.getID().numeric())));
-		}
-
-		root.appendChild(listEl);
+		saveMapToXML(getAutoSaveXMLFile());
+		// saveState(m_core.getGameTableMap(GameTableMapType.PUBLIC), new File("autosave.grm"));
+		// saveState(m_core.getGameTableMap(GameTableMapType.PRIVATE), new File("autosavepvt.grm"));
+		m_core.saveProperties();
 	}
 	
 	/**
@@ -3614,148 +2400,21 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		m_chatPanel.toggleMechanicsWindow();
 		validate();
 	}
-
-	/**
-	 * Get the installed network module
-	 * @return
-	 */
-	public NetworkModuleIF getNetworkModule()
-	{
-		return m_networkModule;
-	}
-	
-	private NetworkModuleIF m_networkModule;
-	
-	/**
-	 * GroupManagerListener implementation
-	 *
-	 * @author Eric Maziade
-	 */
-	private class GroupManagerListener implements GroupManagerListenerIF
-	{		
-		@Override
-		public void onRemoveMapElementFromGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent)
-		{
-			// We don't want to re-broadcast if the source is not user action
-			if (netEvent == null)			
-				send(Action.REMOVE_ELEMENT, group, mapElementID);
-		}
-		
-		@Override
-		public void onRemoveGroup(Group group, NetworkEvent netEvent)
-		{
-			if (netEvent == null)
-				send(Action.DELETE, group, null);
-		}
-		
-		@Override
-		public void onGroupRename(Group group, String oldGroupName, NetworkEvent netEvent)
-		{
-			if (netEvent == null)
-				sendRename(group, oldGroupName, group.getName());
-		}
-		
-		@Override
-		public void onAddMapElementToGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent)
-		{
-			if (netEvent == null)
-				send(Action.ADD_ELEMENT, group, mapElementID);
-		}
-
-		/**
-		 * Send a network packet
-		 * 
-		 * @param action Network action to perform
-		 * @param groupName Name of the affected group
-		 * @param elementID Unique element ID, if the action is related to an element.
-		 */
-		private void send(NetGroupAction.Action action, final Group group, final MapElementID elementID)
-		{
-			if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
-				return;
-			
-			GametableCanvas canvas = getGametableCanvas();
-
-			// Make sure we are not processing the packet
-			// Ignore if editing the protected map (publish action will handle networking when needed)
-			if (canvas.isPublicMap() && !PacketSourceState.isNetPacketProcessing())
-			{
-				final int player = getMyPlayerId();
-				GametableFrame.this.sendBroadcast(NetGroupAction.makePacket(action, group == null ? "" : group.getName(), null, elementID, player));
-			}
-		}
-
-		/**
-		 * Send a network packet
-		 * 
-		 * @param group group
-		 * @param newName new name
-		 */
-		private void sendRename(final Group group, String oldName, String newName)
-		{
-			if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
-				return;
-			
-			GametableCanvas canvas = getGametableCanvas();
-
-			// Make sure we are not processing the packet
-			// Ignore if editing the protected map (publish action will handle networking when needed)
-			if (canvas.isPublicMap() && !PacketSourceState.isNetPacketProcessing())
-			{
-				final int player = getMyPlayerId();
-				GametableFrame.this.sendBroadcast(NetGroupAction.makeRenamePacket(oldName, newName, player));
-			}
-		}
-	}
-	
-	/**
-	 * Verifies whether changes to the data should be propagated over the network
-	 * 
-	 * @param netEvent Network event that might have triggered the changes
-	 * @return True to propagate, false otherwise.
-	 */
-	protected boolean shouldPropagateChanges(NetworkEvent netEvent)
-	{
-		return getNetworkStatus() != NetworkStatus.DISCONNECTED && netEvent == null && !isLoggingIn();
-	}
-	
-	/**
-	 * Flag denoting that we are currently in the 'logging in' phase of connecting to a hosted game.
-	 */
-	private boolean m_loggingIn = false;
-	
-	/**
-	 * Set the color of the background
-	 * @param color
-	 * @param netEvent Triggering network event or null
-	 */
-	public void changeBackground(BackgroundColor color, NetworkEvent netEvent)
-	{
-		m_gametableCanvas.changeBackground(color, netEvent);
-	}
-	
-	/**
-	 * Set the background's tile
-	 * @param type
-	 * @param netEvent Triggering network event or null
-	 */
-	public void changeBackground(MapElementTypeIF type, NetworkEvent netEvent)
-	{
-		m_gametableCanvas.changeBackground(type, netEvent);
-	}
-
-	/**
-	 * Connection to host (if not hosting)
-	 */
-	private NetworkConnectionIF m_hostConnection = null;
 	
 	/**
 	 * Class to opens up hidden functionality to the UI's networking message package
 	 *
 	 * @author Eric Maziade
 	 */
-	public class NetworkResponder
+	public class NetworkFrameResponder
 	{
+		/**
+		 * Private constructor
+		 */
+		private NetworkFrameResponder()
+		{
+		}
+		
 		/**
 		 * Updates the typing status
 		 * @param playerID ID of the player typing
@@ -3763,7 +2422,7 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 		 */
 		public void updateTypingStatus(int playerID, boolean typing)
 		{
-			Player player = getPlayerByID(playerID);
+			Player player = m_core.getPlayer(playerID);
 			if (player != null)
 			{			
 				if (typing)
@@ -3780,141 +2439,6 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	}
 	
 	/**
-	 * Lock specified all map elements from a given map
-	 * @param mapType Map on which to lock
-	 * @param lock True to lock, false to unlock
-	 */
-	public void lockAllMapElements(GameTableMapType mapType, boolean lock)
-	{
-		lockAllMapElements(mapType, lock, null);
-	}
-
-	/**
-	 * Lock specified all map elements from a given map
-	 * @param mapType Map on which to lock
-	 * @param lock True to lock, false to unlock
-	 * @param netEvent Network event that triggered the change or null
-	 */
-	public void lockAllMapElements(GameTableMapType mapType, boolean lock, NetworkEvent netEvent)
-	{
-		if (mapType.isPublic() && shouldPropagateChanges(netEvent))
-			sendBroadcast(NetLockMapElements.makeLockAllPacket(lock));
-		
-		GameTableMap map = getGameTableMap(mapType);
-		m_lockedElements.selectMapElements(map.getMapElements(), lock);
-		
-		if (netEvent == null && getNetworkStatus() != NetworkStatus.DISCONNECTED)
-		{
-			if (lock)
-				sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_LOCK_ALL_DONE2);
-			else
-				sendSystemMessageBroadcast(getMyPlayer().getPlayerName() + " " + getLanguageResource().MAP_UNLOCK_ALL_DONE2);
-		}
-		
-		repaint();
-	}
-	
-	/**
-	 * Lock specified map elements
-	 * @param mapElements Elements to lock
-	 * @param lock True to lock, false to unlock
-	 */
-	public void lockMapElements(GameTableMapType mapType, List<MapElement> mapElements, boolean lock)
-	{
-		lockMapElements(mapType, mapElements, lock, null);
-	}
-	
-	/**
-	 * Lock specified map elements
-	 * @param mapElements Elements to lock
-	 * @param lock True to lock, false to unlock
-	 * @param netEvent Network event that triggered the change or null
-	 */
-	public void lockMapElements(GameTableMapType mapType, List<MapElement> mapElements, boolean lock, NetworkEvent netEvent)
-	{
-		if (mapType.isPublic() && shouldPropagateChanges(netEvent))
-			sendBroadcast(NetLockMapElements.makePacket(mapElements, lock));
-		
-		m_lockedElements.selectMapElements(mapElements, lock);
-		
-		repaint();
-	}
-	
-	/**
-	 * Lock specified map elements
-	 * @param mapType Map on which to lock
-	 * @param mapElement Element to lock
-	 * @param lock True to lock, false to unlock
-	 */
-	public void lockMapElement(GameTableMapType mapType, MapElement mapElement, boolean lock)
-	{
-		lockMapElement(mapType, mapElement, lock, null);
-	}
-	
-	/**
-	 * Lock specified map elements
-	 * @param mapType Map on which to lock
-	 * @param mapElement Element to lock
-	 * @param lock True to lock, false to unlock
-	 * @param netEvent Network event that triggered the change or null
-	 */
-	public void lockMapElement(GameTableMapType mapType, MapElement mapElement, boolean lock, NetworkEvent netEvent)
-	{
-		if (mapType.isPublic() && shouldPropagateChanges(netEvent))
-			sendBroadcast(NetLockMapElements.makePacket(mapElement, lock));
-		
-		m_lockedElements.selectMapElement(mapElement, lock);
-		
-		repaint();
-}
-	
-	/**
-	 * Gets the list of locked element instances
-	 * 
-	 * @return The list of currently selected instances (unmodifiable). Never null.
-	 */
-	public List<MapElement> getLockedMapElements()
-	{
-		return m_lockedElements.getSelectedMapElements();
-	}
-
-	/**
-	 * Checks if a specific map element is marked as locked
-	 * 
-	 * @param mapElement Map element to lock
-	 * @return true if locked
-	 */
-	public boolean isMapElementLocked(MapElement mapElement)
-	{
-		return m_lockedElements.isSelected(mapElement);
-	}
-	
-	/**
-	 * Instance of network message handling class
-	 */
-	private NetworkResponder m_networkResponder;
-	
-	public static enum GameTableMapType { 
-		PUBLIC, PRIVATE, ACTIVE;
-		
-		public boolean isPublic()
-		{
-			if (this == PUBLIC)
-				return true;
-			
-			if (this == ACTIVE && getGametableFrame().m_gametableCanvas.isPublicMap())
-				return true;
-			
-			return false;
-		}
-	}
-	
-	/**
-	 * Holds data about which element is locked
-	 */
-	private SelectionHandler		m_lockedElements;
-
-	/**
 	 * Message to refresh the map element library
 	 */
 	private static MessageDefinition	MSG_REFRESH_MAP_LIBRARY;
@@ -3923,4 +2447,214 @@ public class GametableFrame extends JFrame implements ActionListener, MapElement
 	 * Message to refresh the map element library
 	 */
 	private static MessageID					MSGID_REFRESH_MAP_LIBRARY;
+	
+	/**
+	 * Pointer to the core
+	 */
+	private final GameTableCore m_core;
+
+	public final static int			MAX_ZOOM_LEVEL					= 5;
+	
+	public Color getDrawColor()
+	{
+		return m_drawColor;
+	}
+	
+	public double getGridMultiplier()
+	{
+		return m_gridMultiplier;
+	}
+	
+	public String getGridUnit()
+	{
+		return m_gridUnit;
+	}
+	
+	public void scrollToPog(final MapElement pog)
+	{
+		m_gametableCanvas.scrollToPog(pog);
+	}
+	
+	/**
+	 * @return Current zoom level (number of pixels per smallest map unit)
+	 */
+	public int getZoomLevel()
+	{
+		return m_gametableCanvas.getZoomLevel();
+	}
+	
+	/**
+	 * @return Size of a square in pixels, taking into account the current zoom level
+	 */
+	public int getSquareSize()
+	{
+		return m_gametableCanvas.getSquareSize();
+	}
+	
+	private void initializeCoreListeners()
+	{
+		GameTableCoreListenerIF coreListener = new GameTableCoreListenerIF() {
+			
+			@Override
+			public void onPointingLocationChanged(Player player, boolean pointing, MapCoordinates location, NetworkEvent netEvent)
+			{
+				repaint();
+			}
+			
+			@Override
+			public void onPlayerNameChanged(Player player, String playerName, String characterName, NetworkEvent netEvent)
+			{
+				repaint();				
+			}
+			
+			@Override
+			public void onPlayerJoined(Player player)
+			{
+				// finally, have the player recenter on the host's view
+				final int viewCenterX = getGametableCanvas().getWidth() / 2;
+				final int viewCenterY = getGametableCanvas().getHeight() / 2;
+
+				// convert to model coordinates
+				final MapCoordinates modelCenter = getGametableCanvas().viewToModel(viewCenterX, viewCenterY);
+				m_core.send(NetRecenterMap.makePacket(modelCenter, m_gametableCanvas.getZoomLevel()), player.getConnection());
+			}
+			
+			@Override
+			public void onMapElementsLocked(boolean onPublicMap, List<MapElement> mapElements, boolean locked, NetworkEvent netEvent)
+			{
+				repaint();				
+			}
+			
+			@Override
+			public void onMapElementLocked(boolean onPublicMap, MapElement mapElement, boolean locked, NetworkEvent netEvent)
+			{
+				repaint();
+			}
+			
+			@Override
+			public void onHostingStarted()
+			{
+				repaint();
+			}
+			
+			@Override
+			public void onGridModeChanged(GridModeID gridMode, NetworkEvent netEvent)
+			{
+				updateGridModeMenu();
+				repaint();
+			}
+			
+			@Override
+			public void onBackgroundChanged(boolean isMapElementType, MapElementTypeIF elementType, BackgroundColor color, NetworkEvent netEvent)
+			{
+				m_gametableCanvas.onBackgroundChanged(isMapElementType, elementType, color);
+			}
+			
+			@Override
+			public void onAllMapElementsLocked(boolean onPublicMap, boolean locked, NetworkEvent netEvent)
+			{
+				repaint();
+			}
+			
+			@Override
+			public void onActiveMapChange(boolean publicMap)
+			{
+				// if they toggled the layer, whatever tool they're using is cancelled
+				getToolManager().cancelToolAction();
+				getGametableCanvas().requestFocus();
+
+				repaint();
+			}
+		};
+		
+		m_core.addListener(coreListener);
+		
+		m_core.getNetworkModule().addListener(new NetworkListenerIF() {
+			
+			@Override
+			public void networkStatusChange(NetworkStatus status)
+			{
+				updateStatus();
+			}
+			
+			@Override
+			public void connectionEstablished(NetworkConnectionIF conn)
+			{
+				if (m_core.getNetworkStatus() == NetworkStatus.HOSTING)
+				{
+					m_startNetworkingMenuItem.setEnabled(false); // disable the join menu item
+					m_disconnectMenuItem.setEnabled(true); // enable the disconnect menu item
+					
+					setTitle(GametableApp.VERSION + " - " + m_core.getPlayer().getCharacterName());
+				}
+				else
+				{
+					// Player connection
+	
+					try
+					{
+						// and now we're ready to pay attention
+						m_core.sendMessageLocal(MessageType.SYSTEM, "Joined game");
+		
+						m_gametableCanvas.setScrollPosition(0, 0);
+	
+						m_startNetworkingMenuItem.setEnabled(false); // disable the join menu item
+						m_disconnectMenuItem.setEnabled(true); // enable the disconnect menu item
+						
+						setTitle(GametableApp.VERSION + " - " + m_core.getPlayer().getCharacterName());						
+					}
+					catch (final Exception ex)
+					{
+						Log.log(Log.SYS, ex);
+						m_core.sendMessageLocal(MessageType.ALERT, "Failed to connect.");
+						setTitle(GametableApp.VERSION);
+					}
+				}
+			}
+			
+			@Override
+			public void connectionEnded()
+			{
+				m_startNetworkingMenuItem.setEnabled(true); // enable the menu item to join an existing game
+				m_disconnectMenuItem.setEnabled(false); // disable the menu item to disconnect from the game
+				
+				setTitle(GametableApp.VERSION);
+	
+				m_core.sendMessageLocal(MessageType.SYSTEM, "Disconnected");
+				updateStatus();
+			}
+			
+			@Override
+			public void connectionDropped(NetworkConnectionIF conn)
+			{
+				connectionEnded();
+			}
+		});
+	}
+	
+	
+	/**
+	 * Instance of network message handling class
+	 */
+	private NetworkFrameResponder m_networkResponder;
+	
+	public void start()
+	{
+		setVisible(true);
+	
+		// TODO !!! PacketSourceState
+		
+		// load the primary map
+		PacketSourceState.beginFileLoad();
+		File autoSave = getAutoSaveXMLFile();
+		if (autoSave.exists())
+			loadMapFromXML(autoSave, true, true);//
+		PacketSourceState.endFileLoad();
+		
+		// END of WTF
+	
+	}
+	
+	private final int DEFAULT_WINDOWSIZE_WIDTH = 800;
+	private final int DEFAULT_WINDOWSIZE_HEIGHT = 600;
 }

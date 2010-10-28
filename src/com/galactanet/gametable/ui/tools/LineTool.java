@@ -7,6 +7,8 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
+import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
@@ -24,6 +26,7 @@ import com.galactanet.gametable.util.Images;
  */
 public class LineTool extends NullTool
 {
+	private final GametableFrame m_frame;
     private GametableCanvas m_canvas;
     private MapCoordinates           m_mouseAnchor;
     private MapCoordinates           m_mouseFloat;
@@ -34,6 +37,7 @@ public class LineTool extends NullTool
      */
     public LineTool()
     {
+    	m_frame = GametableApp.getUserInterface();
     }
 
     /*
@@ -88,9 +92,9 @@ public class LineTool extends NullTool
         if (m_mouseAnchor != null)
         {
             final LineSegment ls = new LineSegment(m_mouseAnchor, m_mouseFloat,
-                GametableFrame.getGametableFrame().m_drawColor);
+                m_frame.getDrawColor());
             
-            m_canvas.getActiveMap().addLineSegment(ls);
+            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegment(ls);
         }
 
         endAction();
@@ -129,12 +133,14 @@ public class LineTool extends NullTool
 
             g2.addRenderingHints(Images.getRenderingHints());
 
-            final double dist = m_canvas.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
+            GameTableCore core = GameTableCore.getCore();
+            
+            final double dist = core.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
                 m_mouseAnchor.y);
             double squaresDistance = m_canvas.modelToSquares(dist);
             squaresDistance = Math.round(squaresDistance * 100) / 100.0;
 
-            final Color drawColor = GametableFrame.getGametableFrame().m_drawColor;
+            final Color drawColor = m_frame.getDrawColor();
             g2.setColor(new Color(drawColor.getRed(), drawColor.getGreen(), drawColor.getBlue(), 102));
             g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             final Point drawAnchor = m_canvas.modelToDraw(m_mouseAnchor);
@@ -146,7 +152,7 @@ public class LineTool extends NullTool
                 final Graphics2D g3 = (Graphics2D)g.create();
                 g3.setFont(Font.decode("sans-12"));
 
-                final String s = squaresDistance + GametableFrame.getGametableFrame().grid_unit;
+                final String s = squaresDistance + m_frame.getGridUnit();
                 final FontMetrics fm = g3.getFontMetrics();
                 final Rectangle rect = fm.getStringBounds(s, g3).getBounds();
 

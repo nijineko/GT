@@ -13,7 +13,10 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.KeyStroke;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
@@ -21,6 +24,8 @@ import javax.swing.text.*;
 import javax.swing.text.AbstractDocument.LeafElement;
 import javax.swing.text.html.HTMLDocument;
 
+import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.net.NetSendTypingFlag;
@@ -161,19 +166,22 @@ public class ChatLogEntryPane extends JEditorPane
     private boolean              ignoreCaret     = false;
     private boolean								m_lastTyping 	 = false;
     
-    private GametableFrame       frame           = null;
+    private GameTableCore       m_core           = null;
 
     private boolean              spaceTyped      = false;
 
     private MutableAttributeSet  styleOverride   = null;
 
     private StyledEntryToolbar   toolbar         = null;
+    
+    private final GametableFrame m_frame;
 
 //    public ChatLogEntryPane(final GametableFrame parentFrame)
-    public ChatLogEntryPane()
+    public ChatLogEntryPane(GametableFrame frame)
     {
         super("text/html", ChatLogPane.DEFAULT_TEXT);
-        frame = GametableFrame.getGametableFrame();
+        m_core = GameTableCore.getCore();
+        m_frame = frame;
         initialize();
         clear();
     }
@@ -339,13 +347,13 @@ public class ChatLogEntryPane extends JEditorPane
                 }
                 spaceTyped = false;
                 
-                if (frame.getNetworkStatus() != NetworkStatus.DISCONNECTED)
+                if (m_core.getNetworkStatus() != NetworkStatus.DISCONNECTED)
                 {
 	                boolean typing = (getText().length() > 0);
 	                
 	                if (typing != m_lastTyping)
 	                {
-	                	frame.sendBroadcast(NetSendTypingFlag.makePacket(frame.getMyPlayer(), typing));
+	                	m_core.sendBroadcast(NetSendTypingFlag.makePacket(m_core.getPlayer(), typing));
 	                	m_lastTyping = typing;
 	                }
                 }
@@ -434,7 +442,7 @@ public class ChatLogEntryPane extends JEditorPane
                 {
                     // useless string.
                     // return focus to the map
-                    frame.getGametableCanvas().requestFocus();
+                    m_frame.requestFocus();
                     return;
                 }
 
@@ -449,7 +457,9 @@ public class ChatLogEntryPane extends JEditorPane
                 }
                 else
                 {
-                    frame.say(entered);
+          				String message = SAY_MESSAGE_FONT + UtilityFunctions.emitUserLink(m_core.getPlayer()) + ": " + END_SAY_MESSAGE_FONT + entered;		
+
+                	m_core.sendMessageBroadcast(MessageType.CHAT, message);
                 }
 
                 if (styleOverride == null)
@@ -528,4 +538,8 @@ public class ChatLogEntryPane extends JEditorPane
 
         toolbar.updateStyles();
     }
+    
+  	private final static String		SAY_MESSAGE_FONT					= "<font color=\"#007744\">";
+  	private final static String		END_SAY_MESSAGE_FONT			= "</font>";
+
 }

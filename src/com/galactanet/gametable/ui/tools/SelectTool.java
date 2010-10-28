@@ -3,12 +3,8 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
-import com.galactanet.gametable.data.GameTableMap;
-import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapRectangle;
+import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.ui.GametableCanvas;
-import com.galactanet.gametable.ui.GametableFrame;
 
 /**
  * Map tool for erasing lines.
@@ -18,7 +14,7 @@ import com.galactanet.gametable.ui.GametableFrame;
 public class SelectTool extends NullTool
 {
     private GametableCanvas m_canvas;
-    private final GametableFrame m_frame;
+    private final GameTableCore m_core;
     private MapCoordinates           m_mouseAnchor;
     private MapCoordinates           m_mouseFloat;
 
@@ -27,7 +23,7 @@ public class SelectTool extends NullTool
      */
     public SelectTool()
     {
-    	m_frame = GametableFrame.getGametableFrame();
+    	m_core = GameTableCore.getCore();
     }
 
     /*
@@ -94,9 +90,9 @@ public class SelectTool extends NullTool
 
             // first off, copy all the pogs/underlays over to the public layer
             
-            for (MapElement pog : m_canvas.getActiveMap().getMapElements())
+            for (MapElement pog : m_core.getMap(GameTableCore.MapType.ACTIVE).getMapElements())
             {
-                if (m_canvas.isHighlighted(pog) && (!m_frame.isMapElementLocked(pog) || bIgnoreLock)) {
+                if (m_canvas.isHighlighted(pog) && (!m_core.isMapElementLocked(pog) || bIgnoreLock)) {
                     m_canvas.selectMapElementInstance(pog, true);
                 }                
             }
@@ -143,7 +139,7 @@ public class SelectTool extends NullTool
     {
         final MapRectangle selRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
 
-        for (MapElement pog : m_canvas.getActiveMap().getMapElements())
+        for (MapElement pog : m_core.getMap(GameTableCore.MapType.ACTIVE).getMapElements())
         {
         	final int size = (int)(pog.getFaceSize() * GameTableMap.getBaseSquareSize());
           
@@ -151,7 +147,7 @@ public class SelectTool extends NullTool
           
           final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
-            if (selRect.intersects(pogRect) && (!m_frame.isMapElementLocked(pog) || bIgnoreLock))
+            if (selRect.intersects(pogRect) && (!m_core.isMapElementLocked(pog) || bIgnoreLock))
             {
                 // this pog will be sent
             	m_canvas.highlightMapElementInstance(pog, true);

@@ -16,15 +16,16 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
+import com.galactanet.gametable.data.prefs.PropertyDescriptor;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.SetPogAttributeDialog;
 import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
-import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.maziade.props.XPropertyType;
 
 /**
  * The basic pog interaction tool.
@@ -36,7 +37,8 @@ import com.galactanet.gametable.util.UtilityFunctions;
 public class PointerTool extends NullTool
 {
 	GridMode											m_gridMode;
-	private final GametableFrame	m_frame;
+	private final GameTableCore	m_core;
+	private final GametableFrame m_frame;
 
 	private class DeletePogAttributeActionListener implements ActionListener
 	{
@@ -83,22 +85,22 @@ public class PointerTool extends NullTool
 		}
 	}
 
-	private static final String											PREF_DRAG		= "com.galactanet.gametable.tools.PointerTool.drag";
+	private static final String											PREF_DRAG		= PointerTool.class.getName() + ".drag";
 
-	private static final List<PreferenceDescriptor>	PREFERENCES	= createPreferenceList();
+	private static final List<PropertyDescriptor>	PREFERENCES	= createPreferenceList();
 
 	/**
 	 * @return The static, unmodifiable list of preferences for this tool.
 	 */
-	private static final List<PreferenceDescriptor> createPreferenceList()
+	private static final List<PropertyDescriptor> createPreferenceList()
 	{
-		final List<PreferenceDescriptor> retVal = new ArrayList<PreferenceDescriptor>();
-		retVal.add(new PreferenceDescriptor(PREF_DRAG, "Drag map when not over Pog", PreferenceDescriptor.TYPE_FLAG, "true"));
+		final List<PropertyDescriptor> retVal = new ArrayList<PropertyDescriptor>();
+		retVal.add(new PropertyDescriptor(PREF_DRAG, XPropertyType.BOOLEAN, Boolean.TRUE.toString(), true, PropertyDescriptor.GROUP_TOOLS, -1));
+		// "Drag map when not over Pog"
 		return Collections.unmodifiableList(retVal);
 	}
 
 	private GametableCanvas	m_canvas;
-	private GameTableMap		m_from;
 	private GameTableMap		m_to;
 	private boolean					m_clicked	= true;
 	private MapElement			m_ghostPog;
@@ -118,7 +120,8 @@ public class PointerTool extends NullTool
 	 */
 	public PointerTool()
 	{
-		m_frame = GametableFrame.getGametableFrame();
+		m_frame = GametableApp.getUserInterface();
+		m_core = GameTableCore.getCore();
 	}
 
 	/*
@@ -152,16 +155,16 @@ public class PointerTool extends NullTool
 	 * @see com.galactanet.gametable.Tool#getPreferences()
 	 */
 	@Override
-	public List<PreferenceDescriptor> getPreferences()
+	public List<PropertyDescriptor> getPreferences()
 	{
 		return PREFERENCES;
 	}
 
 	private void hoverCursorCheck()
-	{
-		if (m_frame.getPreferences().getBooleanValue(PREF_DRAG))
+	{		
+		if (m_core.getProperties().getBooleanPropertyValue(PREF_DRAG))
 		{
-			final MapElement pog = m_canvas.getActiveMap().getMapElementAt(m_mousePosition);
+			final MapElement pog = m_core.getMap(GameTableCore.MapType.ACTIVE).getMapElementAt(m_mousePosition);
 			if (pog != null)
 			{
 				m_canvas.setToolCursor(0);
@@ -196,14 +199,14 @@ public class PointerTool extends NullTool
 	{
 		m_clicked = true;
 		m_mousePosition = modelPos;
-		m_grabbedMapElement = m_canvas.getActiveMap().getMapElementAt(m_mousePosition);
+		m_grabbedMapElement = m_core.getMap(GameTableCore.MapType.ACTIVE).getMapElementAt(m_mousePosition);
 		if (m_grabbedMapElement != null)
 		{
 			m_ghostPog = new MapElement(m_grabbedMapElement);
 			m_grabOffset = new Point(m_grabbedMapElement.getPosition().x - m_mousePosition.x, m_grabbedMapElement.getPosition().y - m_mousePosition.y);
 			setSnapping(modifierMask);
 		}
-		else if (m_frame.getPreferences().getBooleanValue(PREF_DRAG))
+		else if (m_core.getProperties().getBooleanPropertyValue(PREF_DRAG))
 		{
 			m_startScroll = m_canvas.drawToModel(m_canvas.getScrollPosition());
 			m_startMouse = m_canvas.modelToView(modelPos);
@@ -225,12 +228,12 @@ public class PointerTool extends NullTool
 			}
 			else
 			{
-				if (!m_frame.isMapElementLocked(m_grabbedMapElement))
+				if (!m_core.isMapElementLocked(m_grabbedMapElement))
 				{
 					if (!m_canvas.isPointVisible(m_mousePosition))
 					{
 						// We moved outside canvas, consider the mapElement as removed
-						m_canvas.getActiveMap().removeMapElement(m_grabbedMapElement);
+						m_core.getMap(GameTableCore.MapType.ACTIVE).removeMapElement(m_grabbedMapElement);
 					}
 					else
 					{
@@ -250,7 +253,7 @@ public class PointerTool extends NullTool
 	{
 		setSnapping(modifierMask);
 		m_mousePosition = modelPos;
-		if ((m_grabbedMapElement != null) && !m_frame.isMapElementLocked(m_grabbedMapElement))
+		if ((m_grabbedMapElement != null) && !m_core.isMapElementLocked(m_grabbedMapElement))
 		{
 			m_clicked = false;
 			if (m_snapping)
@@ -272,7 +275,7 @@ public class PointerTool extends NullTool
 			final MapCoordinates modelDelta = m_canvas.drawToModel(m_startMouse.x - mousePosition.x, m_startMouse.y - mousePosition.y);
 			m_canvas.scrollMapTo(m_startScroll.delta(modelDelta));
 		}
-		else if ((m_grabbedMapElement != null) && m_frame.isMapElementLocked(m_grabbedMapElement))
+		else if ((m_grabbedMapElement != null) && m_core.isMapElementLocked(m_grabbedMapElement))
 		{
 			m_clicked = false;
 		}
@@ -332,7 +335,7 @@ public class PointerTool extends NullTool
 			final float pogSize = m_menuPog.getFaceSize();
 			MapCoordinates pogPos = m_menuPog.getPosition();
 			final float tempSize = pogSize;
-			final GridModeID m_gridModeId = m_canvas.getGridModeId();
+			final GridModeID m_gridModeId = m_core.getGridModeID();
 
 			if (m_gridModeId == GridModeID.SQUARES) // square mode
 			{
@@ -357,11 +360,11 @@ public class PointerTool extends NullTool
 		else
 		{
 			menu.add(new JMenuItem("Cancel"));
-			JMenuItem item = new JMenuItem(m_frame.isMapElementLocked(m_menuPog) ? "Unlock" : "Lock");
+			JMenuItem item = new JMenuItem(m_core.isMapElementLocked(m_menuPog) ? "Unlock" : "Lock");
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					m_frame.lockMapElement(GameTableMapType.ACTIVE, m_menuPog, !m_frame.isMapElementLocked(m_menuPog));
+					m_core.lockMapElement(GameTableCore.MapType.ACTIVE, m_menuPog, !m_core.isMapElementLocked(m_menuPog));
 					// System.out.println(m_menuPog.isLocked());
 				}
 			});
@@ -370,11 +373,6 @@ public class PointerTool extends NullTool
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
-					if (m_canvas.isPublicMap())
-						m_from = m_canvas.getPublicMap();
-					else
-						m_from = m_canvas.getPrivateMap();
-
 					if (m_canvas.isSelected(m_menuPog))
 						m_canvas.selectMapElementInstance(m_menuPog, false);
 					else
@@ -383,46 +381,38 @@ public class PointerTool extends NullTool
 			});
 			menu.add(item);
 
-			if (m_frame.getActiveGroupManager().getGroup(m_menuPog) != null)
+			if (m_core.getGroupManager(GameTableCore.MapType.ACTIVE).getGroup(m_menuPog) != null)
 			{
 				item = new JMenuItem("UnGroup");
 				item.addActionListener(new ActionListener() {
 					public void actionPerformed(final ActionEvent e)
 					{
-						Group group = m_frame.getActiveGroupManager().getGroup(m_menuPog);
+						Group group = m_core.getGroupManager(GameTableCore.MapType.ACTIVE).getGroup(m_menuPog);
 						if (group != null)
 							group.removeElement(m_menuPog);
 					}
 				});
 				menu.add(item);
 			}
-			item = new JMenuItem(m_canvas.isPublicMap() ? "Unpublish" : "Publish");
+			item = new JMenuItem(m_core.isActiveMapPublic() ? "Unpublish" : "Publish");
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(final ActionEvent e)
 				{
 					final MapElement pog = m_menuPog;
-					if (m_canvas.isPublicMap())
-					{
-						m_from = m_canvas.getPublicMap();
-						m_to = m_canvas.getPrivateMap();
-					}
+					if (m_core.isActiveMapPublic())
+						m_to = m_core.getMap(GameTableCore.MapType.PRIVATE);
 					else
-					{
-						m_from = m_canvas.getPrivateMap();
-						m_to = m_canvas.getPublicMap();
-					}
+						m_to = m_core.getMap(GameTableCore.MapType.PUBLIC);
 
 					// this pog gets copied
 					final MapElement newPog = new MapElement(pog);
-					m_canvas.setActiveMap(m_to);
 					m_to.addMapElement(newPog);
-					m_frame.lockMapElement(GameTableMapType.ACTIVE, newPog, m_frame.isMapElementLocked(pog));
-					m_canvas.setActiveMap(m_from);
+					m_core.lockMapElement(GameTableCore.MapType.ACTIVE, newPog, m_core.isMapElementLocked(pog));
 
 					if ((modifierMask & MODIFIER_CTRL) == 0) // not holding control
 					{
 						// remove the pogs that we moved
-						m_canvas.getActiveMap().removeMapElement(pog);
+						m_core.getMap(GameTableCore.MapType.ACTIVE).removeMapElement(pog);
 					}
 				}
 			});
@@ -788,7 +778,7 @@ public class PointerTool extends NullTool
 						final int result = UtilityFunctions.yesNoDialog(m_frame, "Are you sure you wish to change the background to this pog's Image?",
 								"Change Background?");
 						if (result == UtilityFunctions.YES)
-							m_frame.changeBackground(m_menuPog.getMapElementType(), null);
+							m_core.setBackgroundMapElementType(m_menuPog.getMapElementType(), null);
 					}
 				});
 				menu.add(item);

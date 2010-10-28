@@ -20,13 +20,16 @@ package com.galactanet.gametable.ui.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -78,7 +81,7 @@ public class NetSetMapElementData implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			// Map element ID
@@ -169,7 +172,7 @@ public class NetSetMapElementData implements NetworkMessageTypeIF
 		}
 		
 		// Tell the model
-		MapElement mapElement = GametableFrame.getGametableFrame().getMapElement(mapElementID);
+		MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
 		if (mapElement != null)
 		{
 			if (name != null)

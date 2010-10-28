@@ -25,8 +25,8 @@ package com.galactanet.gametable.ui.chat.commands;
 import java.util.List;
 
 import com.galactanet.gametable.data.GameTableMap;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.chat.SlashCommand;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -64,7 +64,7 @@ public class PogList extends SlashCommand
     }
 
     final String name = UtilityFunctions.stitchTogetherWords(words, 1);
-    final GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap();
+    final GameTableMap map = GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE);
     final List<MapElement> pogs = map.getMapElements();
     final StringBuffer buffer = new StringBuffer();
     

@@ -7,8 +7,6 @@ import java.util.List;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.ui.GametableCanvas;
-import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
 
 
 
@@ -21,7 +19,7 @@ import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
  */
 public class PublishTool extends NullTool
 {
-		private final GametableFrame m_frame;
+		private final GameTableCore m_core;
     private GametableCanvas m_canvas;
     private GameTableMap    m_from;
     private MapCoordinates           m_mouseAnchor;
@@ -38,7 +36,7 @@ public class PublishTool extends NullTool
      */
     public PublishTool()
     {
-    	m_frame = GametableFrame.getGametableFrame();
+    	m_core = GameTableCore.getCore();
     }
 
     /*
@@ -83,7 +81,7 @@ public class PublishTool extends NullTool
 		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
 
-        if (m_canvas.isPublicMap())
+        if (m_core.isActiveMapPublic())
         {
             // this tool is not usable on the public map. So we cancel this action
             // GametableFrame.getGametableFrame().getToolManager().cancelToolAction();
@@ -91,13 +89,13 @@ public class PublishTool extends NullTool
             
             //  Use from public map to return objects to private map.
 
-            m_from = m_canvas.getPublicMap();
-            m_to = m_canvas.getPrivateMap();
+            m_from = m_core.getMap(GameTableCore.MapType.PUBLIC);
+            m_to = m_core.getMap(GameTableCore.MapType.PRIVATE);
         }
         else
         {
-            m_from = m_canvas.getPrivateMap();
-            m_to = m_canvas.getPublicMap();
+            m_from = m_core.getMap(GameTableCore.MapType.PRIVATE);
+            m_to = m_core.getMap(GameTableCore.MapType.PUBLIC);
         }
 
         m_mouseAnchor = modelPos;
@@ -117,20 +115,17 @@ public class PublishTool extends NullTool
             // first off, copy all the pogs/underlays over to the public layer
         	for (MapElement pog : m_from.getMapElements())
             {
-                if (m_canvas.isHighlighted(pog) && (!m_frame.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
+                if (m_canvas.isHighlighted(pog) && (!m_core.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                 {
                     // this pog gets copied
                     final MapElement newPog = new MapElement(pog);
 
-                    m_canvas.setActiveMap(m_to);
                     m_to.addMapElement(newPog);
                     
-                    if (m_frame.isMapElementLocked(pog))
+                    if (m_core.isMapElementLocked(pog))
                     {
-                    	m_frame.lockMapElement(GameTableMapType.ACTIVE, newPog, true);
+                    	m_core.lockMapElement(GameTableCore.MapType.ACTIVE, newPog, true);
                     }
-                    
-                    m_canvas.setActiveMap(m_from);
                 }
             }
 
@@ -167,17 +162,20 @@ public class PublishTool extends NullTool
             	List<MapElement> items = new ArrayList<MapElement>();
             	for (MapElement pog : m_from.getMapElements().toArray(new MapElement[0]))	// converting list to array to avoid concurrent modifications
                 {
-                    if (m_canvas.isHighlighted(pog) && (!m_frame.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
+                    if (m_canvas.isHighlighted(pog) && (!m_core.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
                     {                    	
                     	items.add(pog);
                     }
                 }
 
-            	m_canvas.getActiveMap().removeMapElements(items);
+
+            	GameTableMap activeMap = m_core.getMap(GameTableCore.MapType.ACTIVE);
+            	
+            	activeMap.removeMapElements(items);
 
                 // remove the line segments
                 final MapRectangle eraseRect = new MapRectangle(m_mouseAnchor, m_mouseFloat);
-                m_canvas.getActiveMap().removeLineSegments(eraseRect, false, -1);
+                activeMap.removeLineSegments(eraseRect, false, -1);
             }
         }
         endAction();
@@ -236,7 +234,7 @@ public class PublishTool extends NullTool
             
             final MapRectangle pogRect = new MapRectangle(pog.getPosition(), bottomRight);
 
-            if (selRect.intersects(pogRect) && (!m_frame.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
+            if (selRect.intersects(pogRect) && (!m_core.isMapElementLocked(pog) || (modifierMask & MODIFIER_SHIFT) != 0))
             {
             	m_canvas.highlightMapElementInstance(pog, true);
             }

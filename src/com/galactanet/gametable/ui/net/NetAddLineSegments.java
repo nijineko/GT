@@ -27,9 +27,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -67,7 +67,7 @@ public class NetAddLineSegments implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 		  dos.writeInt(lines.size());
@@ -94,7 +94,7 @@ public class NetAddLineSegments implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeInt(1);
@@ -126,9 +126,8 @@ public class NetAddLineSegments implements NetworkMessageTypeIF
     }
 
     // tell the model
-    final GametableFrame frame = GametableFrame.getGametableFrame();
-    
-    frame.getGametableCanvas().getPublicMap().addLineSegments(lines, event);
+    final GameTableCore core = GameTableCore.getCore();
+    core.getMap(GameTableCore.MapType.PUBLIC).addLineSegments(lines, event);
 	}
 		
 	/*

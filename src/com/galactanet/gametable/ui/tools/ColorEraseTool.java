@@ -5,6 +5,8 @@
 
 package com.galactanet.gametable.ui.tools;
 
+import com.galactanet.gametable.GametableApp;
+
 /**
  * Eraser tool that erases only the currently selected color.
  * 
@@ -19,6 +21,6 @@ public class ColorEraseTool extends EraseTool
      */
     public ColorEraseTool()
     {
-        super(true);
+        super(GametableApp.getUserInterface(), true);
     }
 }

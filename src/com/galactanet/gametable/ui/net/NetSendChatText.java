@@ -25,9 +25,10 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -55,40 +56,40 @@ public class NetSendChatText implements NetworkMessageTypeIF
 	
 /**
 	 * Utility method to create a broadcasting data packet  
-	 * @param chatText Text to send to the chat window
+	 * @param msgType Message type
+	 * @param text Text to send to the chat window
 	 * @return data packet
 	 */
-	public static byte[] makeBroadcastPacket(String chatText)
+	public static byte[] makeBroadcastPacket(MessageType msgType, String text)
 	{
-		return makePacket("", "", chatText);
+		return makePacket(msgType, null, text);
 	}
 	
 	/**
 	 * Makes a data packet to send mechanics text targeting a specific player
-	 * @param fromPlayerName Specifies a name the player the message comes from.  Null/empty to broadcast
-	 * @param targetPlayerName Specifies the target player or null/empty string to broadcast 
-	 * @param chatText Text to send to the chat window
+	 * @param msgType Message type
+	 * @param targetPlayer Specifies the target player or null/empty string to broadcast 
+	 * @param text Text to send to the chat window
 	 * @return data packet
 	 */
-	public static byte[] makePacket(String fromPlayerName, String targetPlayerName, String chatText)
+	public static byte[] makePacket(MessageType msgType, Player targetPlayer, String text)
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-			if (fromPlayerName == null)
-				fromPlayerName = "";
+			if (text == null)
+				text = "";
 			
-			if (targetPlayerName == null)
-				targetPlayerName = "";
+			dos.writeInt(msgType.ordinal());
+
+			if (targetPlayer == null)
+				dos.writeInt(-1);
+			else
+				dos.writeInt(targetPlayer.getID());
 			
-			if (chatText == null)
-				chatText = "";
-			
-			dos.writeUTF(fromPlayerName);
-			dos.writeUTF(targetPlayerName);
-      dos.writeUTF(chatText);
+      dos.writeUTF(text);
 
 			return dos.toByteArray();
 		}
@@ -105,35 +106,45 @@ public class NetSendChatText implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final String fromName = dis.readUTF();
-		final String toName = dis.readUTF();
+    
+    GameTableCore core = GameTableCore.getCore();
+
+    // Message type
+		MessageType msgType = MessageType.fromOrdinal(dis.readInt());
+		if (msgType == null)
+			msgType = MessageType.CHAT;
+		
+		// Player
+		int playerID = dis.readInt();
+		Player toPlayer = null;
+		if (playerID > 0)
+			toPlayer = core.getPlayer(playerID);
+		
     final String text = dis.readUTF();
     
-    GametableFrame frame = GametableFrame.getGametableFrame();
-    
     // Broadcast
-    if (toName.equals(""))
+    if (toPlayer == null)
     {
-    	frame.sendChatMessageLocal(text);
+    	core.sendMessageLocal(msgType, text);
   		return;
     }
     
     // If the current player's name has come up, display text
-    if (frame.getMyPlayer().hasName(toName))
+    if (toPlayer.equals(core.getPlayer()))
 		{
-    	frame.sendChatMessage(fromName, toName, text);
+    	core.sendMessage(msgType, toPlayer, text);
 			return;
 		}
 
     // If hosting, dispatch the message directly to the appropriate player - helps prevent useless broadcasting
     if (!event.isBroadcast())
     {
-	    if (frame.getNetworkStatus() == NetworkStatus.HOSTING)
+	    if (core.getNetworkStatus() == NetworkStatus.HOSTING)
 	    {
-	    	for (Player player : frame.getPlayers())
+	    	for (Player player : core.getPlayers())
 				{
-					if (player.hasName(toName))
-						frame.send(makePacket(fromName, toName, text), player.getConnection());
+					if (player.equals(toPlayer))
+						core.send(makePacket(msgType, toPlayer, text), player.getConnection());
 				}
 			}
 		}
