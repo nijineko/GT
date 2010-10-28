@@ -22,8 +22,11 @@
 
 package com.galactanet.gametable.ui.chat.commands;
 
+import java.util.List;
+
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.ui.chat.SlashCommand;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -57,6 +60,8 @@ public class Tell extends SlashCommand
 	@Override
 	public String processCommand(String words[], String text)
 	{
+		GameTableCore core = GameTableCore.getCore();
+		
 		 // send a private message to another player
     if (words.length < 3)
     {
@@ -78,9 +83,9 @@ public class Tell extends SlashCommand
     // see if there is a player or character with that name
     // and note the "proper" name for them (which is their player name)
     Player toPlayer = null;
-    for (int i = 0; i < GametableFrame.getGametableFrame().getPlayers().size(); i++)
+    List<Player> players = core.getPlayers();
+    for (Player player : players)
     {
-        final Player player = GametableFrame.getGametableFrame().getPlayers().get(i);
         if (player.hasName(toName))
         {
             toPlayer = player;
@@ -91,7 +96,7 @@ public class Tell extends SlashCommand
     if (toPlayer == null)
     {
         // nobody by that name is in the session
-    		GametableFrame.getGametableFrame().getChatPanel().logAlertMessage("There is no player or character named \"" + toName + "\" in the session.");
+    		core.sendMessageLocal(MessageType.ALERT, "There is no player or character named \"" + toName + "\" in the session.");
         return null;
     }
 
@@ -103,9 +108,14 @@ public class Tell extends SlashCommand
     
     final int start = text.indexOf(toName) + toName.length();
     final String toSend = text.substring(start).trim();
+    
+    String message = PRIVATE_MESSAGE_FONT + UtilityFunctions.emitUserLink(core.getPlayer()) + " tells you: " + END_PRIVATE_MESSAGE_FONT + toSend;
 
-    GametableFrame.getGametableFrame().tell(toPlayer, toSend);
+    core.sendMessage(MessageType.CHAT, toPlayer, message);
     
     return null;
 	}
+	
+  private final static String    PRIVATE_MESSAGE_FONT     = "<font color=\"#009900\">";
+  private final static String    END_PRIVATE_MESSAGE_FONT = "</font>";
 }

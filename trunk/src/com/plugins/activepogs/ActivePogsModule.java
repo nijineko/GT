@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.w3c.dom.Element;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.data.XMLSerializeConverter;
 import com.galactanet.gametable.module.Module;
@@ -66,18 +67,24 @@ public class ActivePogsModule  extends Module
 	}
 	
 	/*
+	 * @see com.galactanet.gametable.module.Module#onInitializeCore(com.galactanet.gametable.data.GametableCore)
+	 */
+	@Override
+	public void onInitializeCore(GameTableCore core)
+	{
+		core.getNetworkModule().registerMessageType(NetSetMapElementOrder.getMessageType());
+	}
+	
+	/*
 	 * @see com.galactanet.gametable.module.Module#onInitializeUI()
 	 */
 	@Override
-	public void onInitializeUI()
+	public void onInitializeUI(GametableFrame frame)
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();		
 		PogWindow panelBar = frame.getTabbedPane();
 		
-		frame.getNetworkModule().registerMessageType(NetSetMapElementOrder.getMessageType());
-		
-		g_activePogsPanel = new ActivePogsPanel();
-    panelBar.addTab(g_activePogsPanel, frame.getLanguageResource().POG_ACTIVE);    
+		g_activePogsPanel = new ActivePogsPanel(frame);
+    panelBar.addTab(g_activePogsPanel, "Active Pogs");    
 	}
 	
 	/*
@@ -125,7 +132,7 @@ public class ActivePogsModule  extends Module
    * @see com.galactanet.gametable.module.ModuleIF#onToggleActiveMap(boolean)
    */
   @Override
-  public void onToggleActiveMap(boolean publicMap)
+  public void onActiveMapChange(boolean publicMap)
   {
   	g_activePogsPanel.showPublicMap(publicMap);
   }

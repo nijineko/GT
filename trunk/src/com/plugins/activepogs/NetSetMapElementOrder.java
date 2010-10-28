@@ -24,9 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -68,7 +68,7 @@ public class NetSetMapElementOrder implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeInt(orderChanges.size());

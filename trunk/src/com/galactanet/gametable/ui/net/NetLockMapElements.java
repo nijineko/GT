@@ -27,11 +27,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.GametableFrame.GameTableMapType;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -65,7 +64,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeInt(-1);
@@ -90,7 +89,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeInt(1);
@@ -116,7 +115,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(mapElements.size());
@@ -143,11 +142,11 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 		long qty = dis.readInt();		
     boolean locked = dis.readBoolean();
     
-    GametableFrame frame = GametableFrame.getGametableFrame();
+    GameTableCore core = GameTableCore.getCore();
     
     if (qty < 1)
     {
-    	frame.lockAllMapElements(GameTableMapType.PUBLIC, locked, event);
+    	core.lockAllMapElements(GameTableCore.MapType.PUBLIC, locked, event);
     	return;
     }
     
@@ -156,11 +155,11 @@ public class NetLockMapElements implements NetworkMessageTypeIF
     for (int i = 0; i < qty; i++)
     {
     	MapElementID id = MapElementID.fromNumeric(dis.readLong());
-    	MapElement element = frame.getMapElement(id);
+    	MapElement element = core.getMapElement(id);
     	mapElements.add(element);
     }
     
-    frame.lockMapElements(GameTableMapType.PUBLIC, mapElements, locked, event);
+    core.lockMapElements(GameTableCore.MapType.PUBLIC, mapElements, locked, event);
 	}
 	
 	/*

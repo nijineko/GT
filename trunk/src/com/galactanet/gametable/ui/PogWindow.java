@@ -15,10 +15,20 @@ import javax.swing.JTabbedPane;
 /**
  * PogWindow is the tabbed pane that holds the Pog Library, Active Pog and Macros tabs.
  
- * @author Eric Maziade
+ * 
  */
 public class PogWindow extends JTabbedPane
 {
+	private final GametableFrame m_frame;
+	
+	/**
+	 * 
+	 */
+	public PogWindow(GametableFrame frame)
+	{
+		m_frame = frame;
+	}
+	
 	/**
 	 * Add a tab to this window
 	 * @param component
@@ -67,8 +77,8 @@ public class PogWindow extends JTabbedPane
         
         m_floatWindow.add(this);
         m_floatWindow.setVisible(true);
-        
-        GametableFrame.getGametableFrame().validate();
+  
+        m_frame.validate();
         
         m_docked = false;        
     }
@@ -96,7 +106,7 @@ public class PogWindow extends JTabbedPane
             }   
         }
 
-        GametableFrame.getGametableFrame().validate();
+        m_frame.validate();
         
         m_docked = true;
     }

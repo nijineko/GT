@@ -20,7 +20,8 @@ package com.plugins.dicemacro;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -35,14 +36,16 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.xml.sax.SAXException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.module.Module;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.PogWindow;
 import com.galactanet.gametable.ui.chat.SlashCommands;
-import com.galactanet.gametable.util.Language;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
+import com.maziade.props.XProperties;
 import com.plugins.dicemacro.slashcmds.Macro;
 import com.plugins.dicemacro.slashcmds.MacroDelete;
 import com.plugins.dicemacro.slashcmds.PrivateRoll;
@@ -70,11 +73,7 @@ public class DiceMacroModule extends Module
 	 * Constructor
 	 */
 	private DiceMacroModule()
-	{
-		SlashCommands.registerChatCommand(new Macro());
-		SlashCommands.registerChatCommand(new MacroDelete());
-		SlashCommands.registerChatCommand(new PrivateRoll());
-		SlashCommands.registerChatCommand(new Roll());
+	{		
 	}
 
 	/*
@@ -85,18 +84,31 @@ public class DiceMacroModule extends Module
 	{
 		return DiceMacroModule.class.getName();
 	}
+	
+	private GametableFrame m_frame = null;
+	
+	/*
+	 * @see com.galactanet.gametable.module.Module#onInitializeCore(com.galactanet.gametable.data.GametableCore)
+	 */
+	@Override
+	public void onInitializeCore(GameTableCore core)
+	{
+		SlashCommands.registerChatCommand(new Macro());
+		SlashCommands.registerChatCommand(new MacroDelete());
+		SlashCommands.registerChatCommand(new PrivateRoll());
+		SlashCommands.registerChatCommand(new Roll());
+	}
 
 	/*
 	 * @see com.galactanet.gametable.module.Module#onInitializeUI()
 	 */
 	@Override
-	public void onInitializeUI()
+	public void onInitializeUI(GametableFrame frame)
 	{
-		g_macroPanel = new MacroPanel();
-
-		GametableFrame frame = GametableFrame.getGametableFrame();
+		g_macroPanel = new MacroPanel(frame);
+		m_frame = frame;
 		PogWindow panelBar = frame.getTabbedPane();
-		panelBar.addTab(g_macroPanel, frame.getLanguageResource().DICE_MACROS);
+		panelBar.addTab(g_macroPanel, "Dice Macros");
 	}
 
 	/*
@@ -133,8 +145,7 @@ public class DiceMacroModule extends Module
 		boolean res = newMacro.init(macro, name, parent); // initializes the macro with its name and code
 		if (!res) // if the macro creation failed, log the error and exit
 		{
-			GametableFrame frame = GametableFrame.getGametableFrame();
-			frame.getChatPanel().logAlertMessage(frame.getLanguageResource().MACRO_ERROR);
+			GameTableCore.getCore().sendMessageLocal(MessageType.ALERT, "Error in macro");
 			return;
 		}
 		addMacro(newMacro); // add the macro to the collection
@@ -194,11 +205,10 @@ public class DiceMacroModule extends Module
    */
 	private void saveMacros()
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		Language lang = frame.getLanguageResource();
+		GameTableCore core = GameTableCore.getCore();
 
 		final File oldFile = m_actingFileMacros;
-		m_actingFileMacros = UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "xml", true);
+		m_actingFileMacros = UtilityFunctions.doFileSaveDialog("Save as", "xml", true);
 		if (m_actingFileMacros == null)
 		{
 			m_actingFileMacros = oldFile;
@@ -208,7 +218,7 @@ public class DiceMacroModule extends Module
 		try
 		{
 			saveMacros(m_actingFileMacros);
-			frame.getChatPanel().logSystemMessage(lang.MACRO_SAVE_DONE + " " + m_actingFileMacros.getPath());
+			core.sendMessageLocal(MessageType.SYSTEM, "Wrote macros to" + " " + m_actingFileMacros.getPath());
 		}
 		catch (final IOException ioe)
 		{
@@ -289,7 +299,7 @@ public class DiceMacroModule extends Module
 	 * @see com.galactanet.gametable.module.Module#onSavePreferencesCompleted()
 	 */
 	@Override
-	public void onSavePreferencesCompleted()
+	public void onSavePropertiesCompleted()
 	{
 		try
 		{
@@ -305,8 +315,6 @@ public class DiceMacroModule extends Module
 	 */
 	protected void addDieMacro()
 	{
-		Language lang = GametableFrame.getGametableFrame().getLanguageResource();
-
 		// Create and display add macro dialog
 		final NewMacroDialog dialog = new NewMacroDialog();
 		dialog.setVisible(true);
@@ -321,8 +329,8 @@ public class DiceMacroModule extends Module
 			if (getMacro(name) != null) // if there is a macro with that name
 			{
 				// Confirm that the macro will be replaced
-				final int result = UtilityFunctions.yesNoDialog(GametableFrame.getGametableFrame(), lang.MACRO_EXISTS_1 + name + lang.MACRO_EXISTS_2 + macro
-						+ lang.MACRO_EXISTS_3, lang.MACRO_REPLACE);
+				final int result = UtilityFunctions.yesNoDialog(m_frame, "You already have a macro named \"" + name + "\", are you sure you want to replace it with \"" + macro
+						+ "\"?", "Replace Macro?");
 				if (result == UtilityFunctions.YES)
 				{
 					addMacro(name, macro, parent);
@@ -341,18 +349,17 @@ public class DiceMacroModule extends Module
 	 */
 	private void loadMacros()
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		Language lang = frame.getLanguageResource();
-
-		final File openFile = UtilityFunctions.doFileOpenDialog(lang.OPEN, "xml", true);
+		final File openFile = UtilityFunctions.doFileOpenDialog("Open", "xml", true);
 
 		if (openFile == null)
 		{
-			// they cancelled out of the open
+			// they canceled out of the open
 			return;
 		}
 
-		final int result = UtilityFunctions.yesNoDialog(frame, lang.MACRO_LOAD_WARN, lang.MACRO_LOAD_CONFIRM);
+		final int result = UtilityFunctions.yesNoDialog(m_frame, 
+				"This will load a macro file, replacing all your existing macros. Are you sure you want to do this?", 
+				"Confirm Load Macros");
 		if (result != UtilityFunctions.YES)
 		{
 			return;
@@ -365,7 +372,9 @@ public class DiceMacroModule extends Module
 			try
 			{
 				loadMacros(m_actingFileMacros);
-				frame.getChatPanel().logSystemMessage(lang.MACRO_LOAD_DONE + " " + m_actingFileMacros);
+				
+				GameTableCore core = GameTableCore.getCore();
+				core.sendMessageLocal(MessageType.SYSTEM, "Loaded macros from" + " " + m_actingFileMacros);
 			}
 			catch (final SAXException saxe)
 			{
@@ -378,7 +387,7 @@ public class DiceMacroModule extends Module
 	 * @see com.galactanet.gametable.module.Module#onLoadPreferencesCompleted()
 	 */
 	@Override
-	public void onLoadPreferencesCompleted()
+	public void onLoadPropertiesCompleted()
 	{
 
 		m_actingFileMacros = new File("macros.xml");
@@ -452,37 +461,32 @@ public class DiceMacroModule extends Module
 
 		return macro;
 	}
-
+	
 	/*
-	 * @see com.galactanet.gametable.module.Module#onLoadPreferences(org.omg.CORBA.DataInputStream)
+	 * @see com.galactanet.gametable.module.Module#onInitializeProperties(com.maziade.props.XProperties)
 	 */
 	@Override
-	public void onLoadPreferences(DataInputStream in)
+	public void onInitializeProperties(XProperties properties)
 	{
-		try
-		{
-			m_actingFileMacros = new File(in.readUTF());
-		}
-		catch (IOException e)
-		{
-			Log.log(Log.SYS, e);
-		}
+		properties.addTextProperty(PROP_ACTING_MACRO_FILE, new File("dice.xml").getAbsolutePath(), false, "macros", -1);
 	}
 
 	/*
-	 * @see com.galactanet.gametable.module.Module#onSavePreferences(java.io.DataOutputStream)
+	 * @see com.galactanet.gametable.module.Module#onApplyProperties(com.maziade.props.XProperties)
 	 */
 	@Override
-	public void onSavePreferences(DataOutputStream out)
+	public void onApplyProperties(XProperties properties)
 	{
-		try
-		{
-			out.writeUTF(m_actingFileMacros.getAbsolutePath());
-		}
-		catch (IOException e)
-		{
-			Log.log(Log.SYS, e);
-		}
+		m_actingFileMacros = new File(properties.getTextPropertyValue(PROP_ACTING_MACRO_FILE));
+	}
+
+	/*
+	 * @see com.galactanet.gametable.module.Module#onUpdateProperties(com.maziade.props.XProperties)
+	 */
+	@Override
+	public void onUpdateProperties(XProperties properties)
+	{
+		properties.setPropertyValue(PROP_ACTING_MACRO_FILE, m_actingFileMacros.getAbsolutePath());
 	}
 
 	/*
@@ -491,7 +495,7 @@ public class DiceMacroModule extends Module
 	@Override
 	public JMenu getModuleMenu()
 	{
-		final JMenu menu = new JMenu(GametableFrame.getGametableFrame().getLanguageResource().DICE);
+		final JMenu menu = new JMenu("Dice");
 		menu.add(getAddDiceMenuItem());
 		menu.add(getDeleteDiceMenuItem());
 		menu.add(getLoadDiceMenuItem());
@@ -505,7 +509,7 @@ public class DiceMacroModule extends Module
 	 */
 	private JMenuItem getAddDiceMenuItem()
 	{
-		final JMenuItem item = new JMenuItem(GametableFrame.getGametableFrame().getLanguageResource().MACRO_ADD);
+		final JMenuItem item = new JMenuItem("Add macro");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
@@ -520,7 +524,7 @@ public class DiceMacroModule extends Module
 	 */
 	private JMenuItem getLoadDiceMenuItem()
 	{
-		final JMenuItem item = new JMenuItem(GametableFrame.getGametableFrame().getLanguageResource().MACRO_LOAD);
+		final JMenuItem item = new JMenuItem("Load macros");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
@@ -536,16 +540,13 @@ public class DiceMacroModule extends Module
 	 */
 	private JMenuItem getDeleteDiceMenuItem()
 	{
-		final JMenuItem item = new JMenuItem(GametableFrame.getGametableFrame().getLanguageResource().MACRO_DELETE);
+		final JMenuItem item = new JMenuItem("Delete macro");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
-				GametableFrame frame = GametableFrame.getGametableFrame();
-				Language lang = frame.getLanguageResource();
-
 				final Object[] list = m_macroMap.values().toArray();
 				// give them a list of macros they can delete
-				final Object sel = JOptionPane.showInputDialog(frame, lang.MACRO_DELETE_INFO, lang.MACRO_DELETE, JOptionPane.PLAIN_MESSAGE, null, list,
+				final Object sel = JOptionPane.showInputDialog(m_frame, "Select Dice Macro to remove:", "Delete macro", JOptionPane.PLAIN_MESSAGE, null, list,
 						list[0]);
 				if (sel != null)
 				{
@@ -561,7 +562,7 @@ public class DiceMacroModule extends Module
 	 */
 	private JMenuItem getSaveAsDiceMenuItem()
 	{
-		final JMenuItem item = new JMenuItem(GametableFrame.getGametableFrame().getLanguageResource().MACRO_SAVE_AS);
+		final JMenuItem item = new JMenuItem("Save macros as");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
@@ -577,7 +578,7 @@ public class DiceMacroModule extends Module
 	 */
 	private JMenuItem getSaveDiceMenuItem()
 	{
-		final JMenuItem item = new JMenuItem(GametableFrame.getGametableFrame().getLanguageResource().MACRO_SAVE);
+		final JMenuItem item = new JMenuItem("Save macros");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e)
 			{
@@ -594,4 +595,8 @@ public class DiceMacroModule extends Module
 		return item;
 	}
 
+	/**
+	 * Property name holding the file where to save macros
+	 */
+	private final static String PROP_ACTING_MACRO_FILE = DiceMacro.class.getName() + ".acting_file";
 }

@@ -21,14 +21,15 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
-import com.galactanet.gametable.ui.GametableFrame.NetworkResponder;
+import com.galactanet.gametable.ui.GametableFrame.NetworkFrameResponder;
 import com.galactanet.gametable.util.Log;
 
 /**
  * Network message handling keeping tabs on who is currently typing
+ * 
  * @auditedby themaze75
  */
 public class NetSendTypingFlag implements NetworkMessageTypeIF
@@ -50,7 +51,7 @@ public class NetSendTypingFlag implements NetworkMessageTypeIF
 	 * @param responder Instance of NetworkResponder, called by GametableFrame only 
 	 * @return
 	 */
-	public static NetSendTypingFlag getMessageType(NetworkResponder responder)
+	public static NetSendTypingFlag getMessageType(NetworkFrameResponder responder)
 	{
 		getMessageType();		
 		g_messageType.m_responder = responder;
@@ -73,7 +74,7 @@ public class NetSendTypingFlag implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeInt(player.getID());
@@ -98,7 +99,8 @@ public class NetSendTypingFlag implements NetworkMessageTypeIF
 		int playerID = dis.readInt();
 		boolean typing = dis.readBoolean();
 
-		m_responder.updateTypingStatus(playerID, typing);
+		if (m_responder != null)
+			m_responder.updateTypingStatus(playerID, typing);
 	}
 
 	/*
@@ -133,5 +135,5 @@ public class NetSendTypingFlag implements NetworkMessageTypeIF
 
 	private static int		g_id		= 0;
 	private static String	g_name	= null;
-	private NetworkResponder m_responder = null;
+	private NetworkFrameResponder m_responder = null;
 }

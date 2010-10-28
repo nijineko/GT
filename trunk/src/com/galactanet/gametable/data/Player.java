@@ -29,6 +29,7 @@ import com.galactanet.gametable.net.NetworkEvent;
  * @author sephalon
  * 
  * @audited by themaze75
+ * TODO !! Clean up interface
  */
 public class Player
 {
@@ -316,6 +317,17 @@ public class Player
   public boolean removePlayerListener(PlayerListenerIF listener)
   {
   	return m_listeners.remove(listener);
+  }
+  
+  /*
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  public boolean equals(Player obj)
+  {
+  	if (obj == null)
+  		return false;
+  	
+  	return getID() == obj.getID();
   }
 	
 	private final List<PlayerListenerIF> m_listeners = new ArrayList<PlayerListenerIF>();

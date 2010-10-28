@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<comment>XProperties File</comment>
+<entry key="com.galactanet.gametable.data.GameTableCore.character_name">Anonymous</entry>
+<entry key="com.galactanet.gametable.data.GameTableCore.player_name">Eric</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.chat_divider_loc">489</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.column_divider_loc">194</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.rnd_rotate_elements">false</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.scroll_position">-251,-8</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.show_chat_mechanics">false</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.show_names">false</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.window_maximized">false</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.window_position">560,240</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.window_size">1095,695</entry>
+<entry key="com.galactanet.gametable.ui.GametableFrame.zoom_level">0</entry>
+<entry key="com.galactanet.gametable.ui.tools.PointerTool.drag">true</entry>
+<entry key="com.plugins.dicemacro.DiceMacro.acting_file">D:\dev\workspace.maze\gametable\dice.xml</entry>
+</properties>

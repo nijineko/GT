@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.net.NetRequestFile.FileName;
 import com.galactanet.gametable.ui.net.NetRequestFile.FileRequestInfo;
 import com.galactanet.gametable.util.Log;
@@ -72,7 +72,7 @@ public class NetSendFile implements NetworkMessageTypeIF
 
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeUTF(fileName.fileSource);

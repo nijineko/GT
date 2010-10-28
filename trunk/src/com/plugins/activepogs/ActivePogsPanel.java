@@ -27,7 +27,6 @@ import org.w3c.dom.Element;
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.net.NetworkStatus;
-import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
@@ -279,13 +278,20 @@ public class ActivePogsPanel extends JPanel
 	 * The scroll pane for the tree.
 	 */
 	private JScrollPane															scrollPane;
+	
+	/**
+	 * Gametable Frame
+	 */
+	private final GametableFrame m_frame;
 
 	/**
 	 * Constructor
 	 */
-	protected ActivePogsPanel()
+	protected ActivePogsPanel(GametableFrame frame)
 	{
 		super(new BorderLayout());
+		
+		m_frame = frame;
 		
 		g_iconSize = GametableApp.getIntegerProperty(GametableApp.PROPERTY_ICON_SIZE);
 		
@@ -376,14 +382,14 @@ public class ActivePogsPanel extends JPanel
 		if (sortEl == null)
 			return;
 
-		GametableFrame frame = GametableFrame.getGametableFrame();
+		GameTableCore core = GameTableCore.getCore();
 
 		for (Element itemEl : XMLUtils.getChildElementsByTagName(sortEl, "item"))
 		{
 			long lid = UtilityFunctions.parseLong(itemEl.getAttribute("id"), 0);
 			MapElementID elementID = converter.getMapElementID(lid);
 
-			MapElement mapEl = frame.getMapElement(elementID);
+			MapElement mapEl = core.getMapElement(elementID);
 			if (mapEl != null)
 			{
 				long val = UtilityFunctions.parseLong(itemEl.getAttribute("val"), 0);
@@ -404,12 +410,12 @@ public class ActivePogsPanel extends JPanel
 	 */
 	protected void reorderElements(final Map<MapElementID, Long> changes, boolean notifyNetwork)
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
+		GameTableCore core = GameTableCore.getCore();
 
-		if (notifyNetwork && frame.getGametableCanvas().isPublicMap())
+		if (notifyNetwork && core.isActiveMapPublic())
 		{
-			frame.sendBroadcast(NetSetMapElementOrder.makePacket(changes));
-			if (frame.getNetworkStatus() != NetworkStatus.CONNECTED)
+			core.sendBroadcast(NetSetMapElementOrder.makePacket(changes));
+			if (core.getNetworkStatus() != NetworkStatus.CONNECTED)
 			{
 				reorderElements(changes);
 			}
@@ -519,8 +525,6 @@ public class ActivePogsPanel extends JPanel
 	{
 		if (m_tree == null)
 		{
-			GametableCanvas canvas = GametableFrame.getGametableFrame().getGametableCanvas();
-			
 			TreeModelListener listener = new TreeModelAdapter() {
 				
 				/*
@@ -543,13 +547,15 @@ public class ActivePogsPanel extends JPanel
 				}
 			};
 
+			GameTableCore core = GameTableCore.getCore();
+			
 			// -------------------
-			GameTableMap map = canvas.getPublicMap();
+			GameTableMap map = core.getMap(GameTableCore.MapType.PUBLIC);
 			m_publicTreeModel = new GameTableMapTreeModel(map, m_elementSortIDs);
 			m_publicTreeModel.addTreeModelListener(listener);
 
 			// -------------------
-			map = canvas.getPrivateMap();
+			map = core.getMap(GameTableCore.MapType.PRIVATE);
 			m_privateTreeModel = new GameTableMapTreeModel(map, m_elementSortIDs);
 			m_privateTreeModel.addTreeModelListener(listener);
 
@@ -608,7 +614,7 @@ public class ActivePogsPanel extends JPanel
 						final MapElementNode node = getPogNode(e.getX(), e.getY());
 						if (node != null)
 						{
-							GametableFrame.getGametableFrame().getGametableCanvas().scrollToPog(node.getMapElement());
+							m_frame.scrollToPog(node.getMapElement());
 						}
 					}
 				}

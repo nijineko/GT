@@ -11,6 +11,7 @@ import java.util.Properties;
 
 import javax.swing.UIManager;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
@@ -85,8 +86,18 @@ public class GametableApp
 					Log.log(Log.SYS, VERSION);                          // Write the version name to the system log
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());    // Set the Look and Feel
 					Toolkit.getDefaultToolkit().setDynamicLayout(true); // Turns dynamic layout on
-					GametableFrame.getGametableFrame().setVisible(true);              // Creates an instance of the main UI object and shows it.
-                                                                // The app won't end until the main frame is closed
+					
+					// Initialize core
+					GameTableCore core = GameTableCore.getCore();
+					
+					// Initialize frame
+					m_frame = new GametableFrame();
+					
+					// Load properties
+					core.loadProperties();
+					
+					// Start the frame (autoload and show)
+					m_frame.start();
         }
         catch (final Throwable t)
         {
@@ -115,6 +126,7 @@ public class GametableApp
     }
     
     /**
+     * 
      * Get a system property value from the application
      * @param key Property key name
      * @return String value
@@ -141,5 +153,15 @@ public class GametableApp
     	}
     }
     
+    /**
+     * Get the user interface
+     * @return Pointer to use interface - could be null (ex: running in server mode)
+     */
+    static public GametableFrame getUserInterface()
+    {
+    	return m_frame;
+    }
+    
     private static Properties g_properties = new Properties();
+    private static GametableFrame m_frame = null;
 }

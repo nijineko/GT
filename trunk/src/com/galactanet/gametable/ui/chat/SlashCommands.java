@@ -8,7 +8,8 @@ package com.galactanet.gametable.ui.chat;
 
 import java.util.*;
 
-import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.ui.chat.commands.*;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -70,7 +71,7 @@ public class SlashCommands
 		{
 			String message = command.processCommand(words, text);
 			if (message != null)
-				GametableFrame.getGametableFrame().getChatPanel().logSystemMessage(message);
+				GameTableCore.getCore().sendMessageLocal(MessageType.SYSTEM, message);
 		}
 	}
 

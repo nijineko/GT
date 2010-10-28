@@ -21,12 +21,8 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementID;
-import com.galactanet.gametable.data.MapElementTypeIF;
-import com.galactanet.gametable.data.MapElementTypeLibrary;
+import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -63,7 +59,7 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeLong(mapElement.getID().numeric());
@@ -85,11 +81,11 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();
-		MapElementTypeLibrary typeLib = frame.getMapElementTypeLibrary();
+		GameTableCore core = GameTableCore.getCore();
+		MapElementTypeLibrary typeLib = core.getMapElementTypeLibrary();
 		
 		MapElementID mapElementID = MapElementID.fromNumeric(dis.readLong());
-		MapElement mapElement = frame.getMapElement(mapElementID);
+		MapElement mapElement = core.getMapElement(mapElementID);
 
 		String typeFQN = dis.readUTF();		
 		MapElementTypeIF type = typeLib.getMapElementType(typeFQN);

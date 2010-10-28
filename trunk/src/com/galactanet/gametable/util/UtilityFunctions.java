@@ -19,6 +19,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
+import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.ui.handler.gtuser.Handler;
 
 
@@ -143,6 +144,11 @@ public class UtilityFunctions
         {
             e.printStackTrace();
         }
+    }
+    
+    public static String emitUserLink(Player player)
+    {
+    	return emitUserLink(player.getCharacterName(), player.toString());
     }
     
     public static String emitUserLink(final String name)

@@ -29,7 +29,6 @@ import javax.naming.InvalidNameException;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -87,14 +86,14 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 * @param goupName Group name to perform action upon
 	 * @param newGroupName New group name (if rename action)
 	 * @param mapElementID Map Element ID (if add or remove actions) 
-	 * @param playerID Source player sending the message
+	 * @param player Source player sending the message
 	 * @return Data packet
 	 */
-	public static byte[] makePacket(Action action, String goupName, String newGroupName, MapElementID mapElementID, int playerID)
+	public static byte[] makePacket(Action action, String goupName, String newGroupName, MapElementID mapElementID, Player player)
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(action.ordinal());
@@ -118,7 +117,7 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	     		dos.writeLong(mapElementID.numeric());
       }
       
-      dos.writeInt(playerID);
+      dos.writeInt(player.getID());
 
 			return dos.toByteArray();
 		}
@@ -134,12 +133,12 @@ public class NetGroupAction implements NetworkMessageTypeIF
    * Convenience method to craete a rename packet
    * @param groupName Old group name
    * @param newGroupName New group name
-   * @param playerID player ID 
+   * @param player player sending the message 
    * @return
    */
-  public static byte[] makeRenamePacket(final String groupName, final String newGroupName, final int playerID) 
+  public static byte[] makeRenamePacket(final String groupName, final String newGroupName, final Player player) 
   {
-  	return makePacket(Action.RENAME, groupName, newGroupName, null, playerID);
+  	return makePacket(Action.RENAME, groupName, newGroupName, null, player);
   }
 	
 	/*
@@ -167,9 +166,9 @@ public class NetGroupAction implements NetworkMessageTypeIF
     }
     
     final int playerID = dis.readInt();
-    GametableFrame frame = GametableFrame.getGametableFrame();
+    GameTableCore core = GameTableCore.getCore();
     
-    if (frame.getMyPlayerId() == playerID)
+    if (core.getPlayerID() == playerID)
     	return;
     
     if (mapElementID != null)
@@ -192,9 +191,9 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 */
 	private void handleActionNetworkMessage(Action action, final String groupName, final MapElementID elementID, NetworkEvent netEvent)
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();		
-		GameTableMap map = frame.getGametableCanvas().getPublicMap();
-		GroupManager manager = frame.getPublicGroupManager();
+		GameTableCore core = GameTableCore.getCore();		
+		GameTableMap map = core.getMap(GameTableCore.MapType.PUBLIC);
+		GroupManager manager = core.getGroupManager(GameTableCore.MapType.PUBLIC);
 		
 		final MapElement element = map.getMapElement(elementID);
 
@@ -235,8 +234,8 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 */
 	private void handleRenameNetworkMessage(final String groupName, final String newGroupName, NetworkEvent netEvent)
 	{
-		GametableFrame frame = GametableFrame.getGametableFrame();		
-		GroupManager manager = frame.getPublicGroupManager();
+		GameTableCore core = GameTableCore.getCore();		
+		GroupManager manager = core.getGroupManager(GameTableCore.MapType.PUBLIC);
 		
 		Group g = manager.getGroup(groupName);
 

@@ -9,10 +9,11 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.io.File;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GridMode;
 import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.ui.GametableCanvas;
+import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.ImageCache;
 
 
@@ -24,10 +25,12 @@ import com.galactanet.gametable.util.ImageCache;
  */
 public class HexGridMode extends GridMode
 {
-    private final int[]   m_hexImageOffsets = new int[GametableCanvas.NUM_ZOOM_LEVELS];  // how far
+    private final int[]   m_hexImageOffsets = new int[GametableFrame.MAX_ZOOM_LEVEL];  // how far
 
     // data
-    private final Image[] m_hexImages       = new Image[GametableCanvas.NUM_ZOOM_LEVELS]; // one hex
+    private final Image[] m_hexImages       = new Image[GametableFrame.MAX_ZOOM_LEVEL]; // one hex
+    
+    private boolean m_initialized = false;
 
     public HexGridMode()
     {
@@ -39,7 +42,9 @@ public class HexGridMode extends GridMode
     @Override
     public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)
     {
-        if (m_canvas.getZoomLevel() == 4)
+    	GametableFrame frame = GametableApp.getUserInterface();
+    	
+        if (frame.getZoomLevel() == 4)
         {
             // we don't draw lines at the furthest zoom level
             return;
@@ -56,7 +61,7 @@ public class HexGridMode extends GridMode
         // mode,
         // we have to make our "tiling square size" twice as wide.
 
-        int tilingSquareX = m_canvas.getSquareSize();
+        int tilingSquareX = frame.getSquareSize();
         final int tilingSquareY = tilingSquareX;	// its a square, so same value
         tilingSquareX *= 2;
 
@@ -79,7 +84,7 @@ public class HexGridMode extends GridMode
         final int vLines = width / tilingSquareX + 2;
         final int hLines = height / tilingSquareY + 2;
         
-        int zoomLevel = m_canvas.getZoomLevel();
+        int zoomLevel = frame.getZoomLevel();
 
         // draw a hex grid
         final Image toTile = m_hexImages[zoomLevel];
@@ -106,7 +111,7 @@ public class HexGridMode extends GridMode
 
                 // the y location is much the same, except we need no x offset nudge.
                 final int y = linesYOffset + j * tilingSquareY;
-                g.drawImage(toTile, x, y, m_canvas);
+                g.drawImage(toTile, x, y, frame);
             }
         }
     }
@@ -137,11 +142,21 @@ public class HexGridMode extends GridMode
         return 0.866;
     }
 
+    
+    
+    /*
+     * @see com.galactanet.gametable.data.GridMode#initialize()
+     */
     @Override
-		public void init(final GametableCanvas canvas)
+		public synchronized void initialize()
     {
-        super.init(canvas);
-
+    	if (m_initialized)
+    		return;
+    	
+    	m_initialized = true;
+    	
+        // .todo resources in a jar file.  Loading only when necessary.
+        
         // init the hex images
         m_hexImages[0] = ImageCache.getImage(new File("assets/hexes_64.png"));
         m_hexImages[1] = ImageCache.getImage(new File("assets/hexes_48.png"));

@@ -31,9 +31,10 @@ import java.util.Map.Entry;
 
 import javax.swing.SwingUtilities;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.PeriodicExecutorThread;
 import com.plugins.network.NetworkThread.Packet;
@@ -118,9 +119,9 @@ public class NetworkModule implements NetworkModuleIF
 	private boolean m_connectAsHost = false;
 	
 	/**
-   * Pointer to GameTable frame
+   * Pointer to GameTable core
    */
-  private final GametableFrame m_frame;
+  private final GameTableCore m_core;
 	
   /**
    * IP Address currently in use
@@ -192,7 +193,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	private NetworkModule()
 	{
-		m_frame = GametableFrame.getGametableFrame();
+		m_core = GameTableCore.getCore();
 		setCoreMessagesTypes(m_messageTypes);
 	}
 	
@@ -264,8 +265,8 @@ public class NetworkModule implements NetworkModuleIF
 			
 			final String message = "Hosting on port: " + getPort();
 			
-			m_frame.getChatPanel().logSystemMessage(message);
-			m_frame.sendMechanicsMessageLocal(
+			m_core.sendMessageLocal(MessageType.SYSTEM, message);
+			m_core.sendMessageLocal(MessageType.MECHANIC,
 					"<a href=\"http://www.whatismyip.com\">" + 
 					"Click here to see the IP address you are hosting on." + 
 					"</a> (" + 
@@ -326,7 +327,7 @@ public class NetworkModule implements NetworkModuleIF
   		
   		if (id <= 0)
   		{
-	  		GametableFrame.getGametableFrame().getChatPanel().logAlertMessage("Creating an unregistered network message " + messageType.getName());
+	  		m_core.sendMessageLocal(MessageType.ALERT, "Creating an unregistered network message " + messageType.getName());
 				Log.log(Log.NET, "Creating an unregistered network message " + messageType.getName());
   		}
   	}
@@ -341,12 +342,12 @@ public class NetworkModule implements NetworkModuleIF
   		{
   			// We're using a plugin that the host does not have.
   			packet.writeInt(0);
-  			GametableFrame.getGametableFrame().getChatPanel().logAlertMessage("Host does not use " + messageType.getName());
+  			m_core.sendMessageLocal(MessageType.ALERT, "Host does not use " + messageType.getName());
   			Log.log(Log.NET, "Host does not use " + messageType.getName());
   		}
   	}
 
-  	int playerID = m_frame.getMyPlayerId();
+  	int playerID = m_core.getPlayerID();
   	packet.writeInt(playerID);
 
   	return packet;
@@ -568,7 +569,7 @@ public class NetworkModule implements NetworkModuleIF
 				
 				if (message == null)
 				{
-					GametableFrame.getGametableFrame().getChatPanel().logAlertMessage("Host uses missing unnamed network message (" + type + ")");
+					m_core.sendMessageLocal(MessageType.ALERT, "Host uses missing unnamed network message (" + type + ")");
 					Log.log(Log.NET, "Host uses missing unnamed network message (" + type + ")");
 					type = 0;
 				}
@@ -582,7 +583,7 @@ public class NetworkModule implements NetworkModuleIF
 			
 			// PLAYER ID INT
 			int sourcePlayerID = dis.readInt();			
-			Player sourcePlayer = m_frame.getPlayerByID(sourcePlayerID);
+			Player sourcePlayer = m_core.getPlayer(sourcePlayerID);
 
 			String name = getNetworkMessageName(type);
 			Log.log(Log.NET, "Received: " + name + ", length = " + packet.length);
@@ -596,7 +597,7 @@ public class NetworkModule implements NetworkModuleIF
 					NetworkEvent event = new NetworkEvent(sourcePlayer, broadcasted, message);					
 					message.processData(connectionSource, dis, event);			
 					
-					Player currentPlayer = m_frame.getMyPlayer();
+					Player currentPlayer = m_core.getPlayer();
 					
 					if (broadcasted && sourcePlayer != currentPlayer && m_networkStatus == NetworkStatus.HOSTING)
 						sendBroadcast(packet);

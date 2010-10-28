@@ -26,7 +26,7 @@ import java.io.DataOutputStream;
 import java.io.OutputStream;
 
 /**
- * todo: comment
+ * Abstract class to help handle data stream in network communications
  *
  * @author Eric Maziade
  */

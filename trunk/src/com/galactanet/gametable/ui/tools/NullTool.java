@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.data.prefs.PreferenceDescriptor;
+import com.galactanet.gametable.data.prefs.PropertyDescriptor;
 import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.ToolIF;
 
@@ -28,7 +28,7 @@ import com.galactanet.gametable.ui.ToolIF;
 public class NullTool implements ToolIF
 {
     /**
-     * Constructor.
+     * Constructor
      */
     public NullTool()
     {
@@ -57,7 +57,7 @@ public class NullTool implements ToolIF
     /*
      * @see com.galactanet.gametable.Tool#getPreferences()
      */
-    public List<PreferenceDescriptor> getPreferences()
+    public List<PropertyDescriptor> getPreferences()
     {
         return Collections.emptyList();
     }

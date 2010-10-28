@@ -11,8 +11,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -217,14 +218,14 @@ public class DiceMacro
 					outputString.append(",");
 				outputString.append(curResult.result[j]);
 			}
-			outputString.append("] = " + GametableFrame.DIEROLL_MESSAGE_FONT);
+			outputString.append("] = " + DIEROLL_MESSAGE_FONT);
 			for (int j = 0; j < curResult.value.length; j++)
 			{
 				if (j != 0)
 					outputString.append(",");
 				outputString.append(curResult.value[j]);
 			}
-			outputString.append(GametableFrame.END_DIEROLL_MESSAGE_FONT);
+			outputString.append(END_DIEROLL_MESSAGE_FONT);
 		}
 
 		ret.append(outputString);
@@ -345,15 +346,15 @@ public class DiceMacro
 		if (!isInitialized())
 			return;
 
-		final Player me = GametableFrame.getGametableFrame().getMyPlayer();
+		final Player me = GameTableCore.getCore().getPlayer();
 		final String name = me.getCharacterName();
 
 		final List<Result> result = roll();
 
 		if (priv)
-			GametableFrame.getGametableFrame().sendMechanicsMessageLocal(generateOutputString(null, result, getName()));
+			GameTableCore.getCore().sendMessageLocal(MessageType.MECHANIC, generateOutputString(null, result, getName()));
 		else
-			GametableFrame.getGametableFrame().sendMechanicsMessageBroadcast(generateOutputString(name, result, getName()));
+			GameTableCore.getCore().sendMessageBroadcast(MessageType.MECHANIC, generateOutputString(name, result, getName()));
 	}
 
 	public List<Result> runMacro()
@@ -781,13 +782,6 @@ public class DiceMacro
 		return rList;
 	}
 
-	public void sendTo(final String who)
-	{
-		final String fromName = GametableFrame.getGametableFrame().getMyPlayer().getCharacterName();
-		final String msg = UtilityFunctions.emitUserLink(fromName) + " privately rolled: " + outputString.toString();
-		GametableFrame.getGametableFrame().sendMechanicsMessage(who, msg);
-	}
-
 	public void serialize(final XmlSerializer out) throws IOException
 	{
 		out.startElement(DiceMacroSaxHandler.ELEMENT_DICE_MACRO);
@@ -849,5 +843,8 @@ public class DiceMacro
 		dos.writeUTF(getName());
 		dos.writeUTF(getMacro());
 	}
+
+	protected final static String		DIEROLL_MESSAGE_FONT			= "<b><font color=\"#990022\">";
+	protected final static String		END_DIEROLL_MESSAGE_FONT	= "</b></font>";
 
 }

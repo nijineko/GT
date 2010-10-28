@@ -9,6 +9,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.List;
 
+import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.ui.GametableCanvas;
@@ -25,6 +27,7 @@ import com.galactanet.gametable.ui.GametableFrame;
  */
 public class PenTool extends NullTool
 {
+	private final GametableFrame m_frame;
     private GametableCanvas m_canvas;
     private PenAsset        m_penAsset;
 
@@ -33,6 +36,7 @@ public class PenTool extends NullTool
      */
     public PenTool()
     {
+    	m_frame = GametableApp.getUserInterface();
     }
 
     /*
@@ -67,8 +71,7 @@ public class PenTool extends NullTool
     @Override
 		public void mouseButtonPressed(MapCoordinates modelPos, final int modifierMask)
     {
-        // @revise move m_drawColor into some more reasonable access point
-        m_penAsset = new PenAsset(GametableFrame.getGametableFrame().m_drawColor);
+        m_penAsset = new PenAsset(m_frame.getDrawColor());
         m_penAsset.addPoint(modelPos);
     }
 
@@ -82,7 +85,8 @@ public class PenTool extends NullTool
         {
             m_penAsset.smooth();
             List<LineSegment> lines = m_penAsset.getLineSegments();
-            m_canvas.getActiveMap().addLineSegments(lines);
+            
+            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
         }
         
         endAction();

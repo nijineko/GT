@@ -8,10 +8,11 @@ package com.galactanet.gametable.data.grid;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GridMode;
 import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.ui.GametableCanvas;
+import com.galactanet.gametable.ui.GametableFrame;
 
 
 
@@ -33,7 +34,9 @@ public class SquareGridMode extends GridMode
     @Override
     public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)    
     {
-        if (m_canvas.getZoomLevel() == 4)
+    	GametableFrame frame = GametableApp.getUserInterface();
+    	
+        if (frame.getZoomLevel() == 4)
         {
             // we don't draw lines at the furthest zoom level
             return;
@@ -50,7 +53,7 @@ public class SquareGridMode extends GridMode
         // mode,
         // we have to make our "tiling square size" twice as wide.
 
-        final int tilingSquareX = m_canvas.getSquareSize();
+        final int tilingSquareX = frame.getSquareSize();
         final int tilingSquareY = tilingSquareX;	// its a square, so same value
 
         int qx = Math.abs(topLeftX) / tilingSquareX;
@@ -75,9 +78,9 @@ public class SquareGridMode extends GridMode
         g.setColor(Color.GRAY);
 
         // draw a square grid
-        int squareSize = m_canvas.getSquareSize();
+        int squareSize = frame.getSquareSize();
         
-        if (m_canvas.getZoomLevel() < 4)
+        if (frame.getZoomLevel() < 4)
         {
             for (int i = 0; i < vLines; i++)
             {
@@ -90,12 +93,6 @@ public class SquareGridMode extends GridMode
                     * squareSize + linesYOffset);
             }
         }
-    }
-
-    @Override
-		public void init(final GametableCanvas canvas)
-    {
-        super.init(canvas);
     }
 
     @Override

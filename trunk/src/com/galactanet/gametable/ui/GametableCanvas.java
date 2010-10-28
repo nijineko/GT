@@ -9,11 +9,8 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
@@ -28,14 +25,12 @@ import javax.swing.text.JTextComponent;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.data.grid.HexGridMode;
-import com.galactanet.gametable.data.grid.SquareGridMode;
 import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.net.NetworkStatus;
-import com.galactanet.gametable.ui.net.*;
 import com.galactanet.gametable.ui.tools.NullTool;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
+import com.galactanet.gametable.util.SelectionHandler;
 import com.galactanet.gametable.util.UtilityFunctions;
 import com.plugins.network.PacketSourceState;
 
@@ -69,7 +64,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	public final static int			NUM_ZOOM_LEVELS					= 5;
+	/**
+	 * This is the number of screen pixels that are used per model 'pixel'. It's never less than 1
+	 */
+	private int									m_zoom									= 1;
 
 	private static final float	KEYBOARD_SCROLL_FACTOR	= 0.5f;
 	private static final int		KEYBOARD_SCROLL_TIME		= 300;
@@ -93,13 +91,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	private Image								m_mapBackground;
 
-	// this is the map (or layer) that all players share
-	private final GameTableMap	m_publicMap;
-	// this is the map (or layer) that is private to a specific player
-	private final GameTableMap	m_privateMap;
-	// this points to whichever map is presently active
-	private GameTableMap				m_activeMap;
-
 	private int									m_activeToolId					= -1;
 
 	private boolean							m_bAltKeyDown;
@@ -113,12 +104,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	// some cursors
 	private Cursor							m_emptyCursor;
 	// the frame
-	private GametableFrame			m_frame;
+	private final GametableFrame	m_frame;
 
-	GridMode										m_gridMode;
-	SquareGridMode							m_squareGridMode				= new SquareGridMode();
-	HexGridMode									m_hexGridMode						= new HexGridMode();
-	GridMode										m_noGridMode						= new GridMode();
 
 	private MapCoordinates			m_mouseModelFloat;
 
@@ -143,25 +130,16 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	private SelectionHandler		m_selectionPrivate;
 	private SelectionHandler		m_highlightedElements;	
 
-	/**
-	 * This is the number of screen pixels that are used per model pixel. It's never less than 1
-	 */
-	private int									m_zoom									= 1;
-
 	// the size of a square at the current zoom level
 	private int									m_squareSize						= 0;
 
 	/**
 	 * Constructor.
 	 */
-	public GametableCanvas()
+	public GametableCanvas(GametableFrame frame)
 	{
-		// @revise It would make the interface lighter if we proposed 'getHandler' methods instead of exposing 8+ member for
-		// every selection handler. Con: extra level of indirection.
-		
-		m_publicMap = new GameTableMap(true);
-		m_privateMap = new GameTableMap(false);
-
+		m_frame = frame;
+		m_core = GameTableCore.getCore();
 		m_selectionPublic = new SelectionHandler();
 		m_selectionPrivate = new SelectionHandler();
 		m_highlightedElements = new SelectionHandler();
@@ -194,29 +172,20 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		initializeKeys();
 
-		m_activeMap = m_publicMap;
-
 		updateSquareSize();
 
 		GameTableMapListenerIF mapListener = new CanvasMapListener();
+		MapElementListenerIF mapElementListener = new CanvasMapElementListener();
+
+		GameTableMap publicMap = m_core.getMap(GameTableCore.MapType.PUBLIC);
+		publicMap.addListener(mapListener);
+		publicMap.addMapElementListener(mapElementListener);
 		
-		m_publicMap.addListener(mapListener);
-		m_privateMap.addListener(mapListener);
-		
-		m_publicMap.addMapElementListener(new CanvasMapElementListener(true));
-		m_privateMap.addMapElementListener(new CanvasMapElementListener(false));
+		GameTableMap privateMap = m_core.getMap(GameTableCore.MapType.PRIVATE);
+		privateMap.addListener(mapListener);
+		privateMap.addMapElementListener(mapElementListener);
 	}
-	
-	/**
-	 * Verifies whether changes to the data should be propagated over the network
-	 * 
-	 * @param netEvent Network event that might have triggered the changes
-	 * @return True to propagate, false otherwise.
-	 */
-	private boolean shouldPropagateChanges(NetworkEvent netEvent)
-	{
-		return m_frame.shouldPropagateChanges(netEvent);
-	}
+
 
 	/**
 	 * Initializes all the keys for the canvas.
@@ -557,13 +526,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		});
 	}
 
-	public void addCardPog(final MapElement toAdd)
-	{
-		m_privateMap.addMapElement(toAdd);
-		// m_gametableFrame.refreshActivePogList();
-		repaint();
-	}
-
 	public void centerZoom(final int delta)
 	{
 		// can't do this at all if we're dragging
@@ -588,7 +550,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		Point pos = getScrollPosition();
 		final int scrX = pos.x - (presentCenterX - viewCenter.x);
 		final int scrY = pos.y - (presentCenterY - viewCenter.y);
-		setPrimaryScroll(getActiveMap(), scrX, scrY);
+		setPrimaryScroll(m_core.getMap(GameTableCore.MapType.ACTIVE), scrX, scrY);
 	}
 
 	/**
@@ -627,31 +589,34 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	// top left of the map area is in whatever coordinate system g is set up to be
 	public void drawMatte(final Graphics g, final int topLeftX, final int topLeftY, final int width, final int height)
 	{
-		// background image
-		int qx = Math.abs(topLeftX) / m_mapBackground.getWidth(null);
-		if (topLeftX < 0)
+		if (m_mapBackground != null)
 		{
-			qx++;
-			qx = -qx;
-		}
-
-		int qy = Math.abs(topLeftY) / m_mapBackground.getHeight(null);
-		if (topLeftY < 0)
-		{
-			qy++;
-			qy = -qy;
-		}
-
-		final int linesXOffset = qx * m_mapBackground.getWidth(null);
-		final int linesYOffset = qy * m_mapBackground.getHeight(null);
-		final int vLines = width / m_mapBackground.getWidth(null) + 2;
-		final int hLines = height / m_mapBackground.getHeight(null) + 2;
-
-		for (int i = 0; i < vLines; i++)
-		{
-			for (int j = 0; j < hLines; j++)
+			// background image
+			int qx = Math.abs(topLeftX) / m_mapBackground.getWidth(null);
+			if (topLeftX < 0)
 			{
-				g.drawImage(m_mapBackground, i * m_mapBackground.getWidth(null) + linesXOffset, j * m_mapBackground.getHeight(null) + linesYOffset, null);
+				qx++;
+				qx = -qx;
+			}
+	
+			int qy = Math.abs(topLeftY) / m_mapBackground.getHeight(null);
+			if (topLeftY < 0)
+			{
+				qy++;
+				qy = -qy;
+			}
+	
+			final int linesXOffset = qx * m_mapBackground.getWidth(null);
+			final int linesYOffset = qy * m_mapBackground.getHeight(null);
+			final int vLines = width / m_mapBackground.getWidth(null) + 2;
+			final int hLines = height / m_mapBackground.getHeight(null) + 2;
+	
+			for (int i = 0; i < vLines; i++)
+			{
+				for (int j = 0; j < hLines; j++)
+				{
+					g.drawImage(m_mapBackground, i * m_mapBackground.getWidth(null) + linesXOffset, j * m_mapBackground.getHeight(null) + linesYOffset, null);
+				}
 			}
 		}
 	}
@@ -672,25 +637,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		return new MapCoordinates(modelX, modelY);
 	}
 
-	public GameTableMap getActiveMap()
-	{
-		// if we're processing a packet, we want it to go to the
-		// public layer, even if they're presently on the private layer.
-		// HOWEVER, if we're in the process of opening a file, then that
-		// trumps net packet processing, and we want to return whatever
-		// map they're on.
-
-		if (PacketSourceState.isFileLoading())
-		{
-			return m_activeMap;
-		}
-		if (PacketSourceState.isNetPacketProcessing())
-		{
-			return m_publicMap;
-		}
-		return m_activeMap;
-	}
-
 	public ToolIF getActiveTool()
 	{
 		if (m_activeToolId < 0)
@@ -707,24 +653,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	public int getActiveToolId()
 	{
 		return m_activeToolId;
-	}
-
-	public GridMode getGridMode()
-	{
-		return m_gridMode;
-	}
-
-	public GridModeID getGridModeId()
-	{
-		if (m_gridMode == m_squareGridMode)
-		{
-			return GridModeID.SQUARES;
-		}
-		if (m_gridMode == m_hexGridMode)
-		{
-			return GridModeID.HEX;
-		}
-		return GridModeID.NONE;
 	}
 
 	// returns a good line width to draw things
@@ -884,33 +812,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		m_squareSize = ret;
 	}
 
-	public GameTableMap getPrivateMap()
+	protected void init()
 	{
-		return m_privateMap;
-	}
-
-	public GameTableMap getPublicMap()
-	{
-		return m_publicMap;
-	}
-
-	public void init(final GametableFrame frame)
-	{
-		m_frame = frame;
 		m_mapBackground = ImageCache.getImage(new File("assets/mapbk.png"));
-
 		m_pointingImage = ImageCache.getImage(new File("assets/whiteHand.png"));
 
-		// setPrimaryScroll(m_publicMap, 0, 0);
-
-		// set up the grid modes
-		m_squareGridMode.init(this);
-		m_hexGridMode.init(this);
-		m_noGridMode.init(this);
-		m_gridMode = m_squareGridMode;
-
 		addMouseWheelListener(this);
-		// setZoom(0);
+
 		setActiveTool(0);
 	}
 
@@ -956,26 +864,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		private final String	m_text;
 	}
-	
-	/**
-	 * @return The current background color or null if background is currently a map element
-	 */
-	public BackgroundColor getBackgroundColor()
-	{
-		return m_backgroundTypeMapElement ? null : m_backgroundColor;
-	}
-	
-	/**
-	 * @return The current background color or null if background is currently a specified color
-	 */
-	public MapElementTypeIF getBackgroundMapElementType()
-	{
-		return m_backgroundTypeMapElement ? m_backgroundElementType : null;
-	}
 
-	private BackgroundColor		m_backgroundColor						= BackgroundColor.DEFAULT;
-	private MapElementTypeIF	m_backgroundElementType			= null;
-	private boolean						m_backgroundTypeMapElement	= false;
 	
 	/**
 	 * Current scroll coordinates, relative to scroll origin
@@ -983,114 +872,70 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	private Point						m_scrollPos									= new Point(0, 0);
 
 	/**
-	 * Set the color of the background
+	 * Called by the frame when it is notified of a background change
+	 * @param isMapElementType
+	 * @param elementType
 	 * @param color
 	 */
-	private void changeBackground(final BackgroundColor color)
+	protected void onBackgroundChanged(boolean isMapElementType, MapElementTypeIF elementType, BackgroundColor color)
 	{
-		Image newBk = null;
-
-		// @revise all 'assets/' images should be within a jar.
-
-		switch (color)
+		if (isMapElementType)
 		{
-		case GREEN:
-			newBk = ImageCache.getImage(new File("assets/mapbk_green.png"));
-			break;
-		case DARK_GREY:
-			newBk = ImageCache.getImage(new File("assets/mapbk_dgrey.png"));
-			break;
-		case GREY:
-			newBk = ImageCache.getImage(new File("assets/mapbk_grey.png"));
-			break;
-		case BLUE:
-			newBk = ImageCache.getImage(new File("assets/mapbk_blue.png"));
-			break;
-		case BLACK:
-			newBk = ImageCache.getImage(new File("assets/mapbk_black.png"));
-			break;
-		case WHITE:
-			newBk = ImageCache.getImage(new File("assets/mapbk_white.png"));
-			break;
-		case DARK_BLUE:
-			newBk = ImageCache.getImage(new File("assets/mapbk_dblue.png"));
-			break;
-		case DARK_GREEN:
-			newBk = ImageCache.getImage(new File("assets/mapbk_dgreen.png"));
-			break;
-		case BROWN:
-			newBk = ImageCache.getImage(new File("assets/mapbk_brown.png"));
-			break;
-		default:
-			newBk = ImageCache.getImage(new File("assets/mapbk.png"));
-			break;
+			m_mapBackground = elementType.getImage();
 		}
-
-		if (newBk != null)
+		else
 		{
-			m_mapBackground = newBk;
-			m_backgroundColor = color;
-			m_backgroundTypeMapElement = false;
-			repaint();
-		}
-	}
+			Image newBk = null;
 
-	/**
-	 * Set the background's tile
-	 * @param type
-	 */
-	private void changeBackground(MapElementTypeIF type)
-	{
-		m_backgroundElementType = type;
-		m_mapBackground = type.getImage();
-		m_backgroundTypeMapElement = true;
-	}
+			// @revise all 'assets/' images should be within a jar.
 
-	/**
-	 * Change the canvas' background
-	 * @param color
-	 * @param netEvent
-	 */
-	protected void changeBackground(BackgroundColor color, NetworkEvent netEvent)
-	{
-		if (shouldPropagateChanges(netEvent))
-		{
-			m_frame.sendBroadcast(NetSetBackground.makePacket(color));
-		}
+			switch (color)
+			{
+			case GREEN:
+				newBk = ImageCache.getImage(new File("assets/mapbk_green.png"));
+				break;
+			case DARK_GREY:
+				newBk = ImageCache.getImage(new File("assets/mapbk_dgrey.png"));
+				break;
+			case GREY:
+				newBk = ImageCache.getImage(new File("assets/mapbk_grey.png"));
+				break;
+			case BLUE:
+				newBk = ImageCache.getImage(new File("assets/mapbk_blue.png"));
+				break;
+			case BLACK:
+				newBk = ImageCache.getImage(new File("assets/mapbk_black.png"));
+				break;
+			case WHITE:
+				newBk = ImageCache.getImage(new File("assets/mapbk_white.png"));
+				break;
+			case DARK_BLUE:
+				newBk = ImageCache.getImage(new File("assets/mapbk_dblue.png"));
+				break;
+			case DARK_GREEN:
+				newBk = ImageCache.getImage(new File("assets/mapbk_dgreen.png"));
+				break;
+			case BROWN:
+				newBk = ImageCache.getImage(new File("assets/mapbk_brown.png"));
+				break;
+			default:
+				newBk = ImageCache.getImage(new File("assets/mapbk.png"));
+				break;
+			}
 
-		if (netEvent != null)
-		{
-			Player player = netEvent.getSendingPlayer();
-			m_frame.sendSystemMessageLocal(player.getPlayerName() + " has changed the background.");
+			if (newBk != null)
+				m_mapBackground = newBk;
 		}
 		
-		changeBackground(color);
-	}
-
-	/**
-	 * Change the canvas' background
-	 * @param type
-	 * @param netEvent
-	 */
-	protected void changeBackground(MapElementTypeIF type, NetworkEvent netEvent)
-	{
-		if (shouldPropagateChanges(netEvent))
-		{
-			m_frame.sendBroadcast(NetSetBackground.makePacket(type));
-		}
-		
-		if (netEvent != null)
-		{
-			Player player = netEvent.getSendingPlayer();
-			m_frame.sendSystemMessageLocal(player.getPlayerName() + " has changed the background.");
-		}
-		
-		changeBackground(type);
+		repaint();
 	}
 
 	private boolean isPointing()
 	{
-		final Player me = m_frame.getMyPlayer();
+		final Player me = m_core.getPlayer();
+		if (me == null)
+			return false;
+		
 		return me.isPointing();
 	}
 
@@ -1118,11 +963,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			return false;
 		}
 		return true;
-	}
-
-	public boolean isPublicMap()
-	{
-		return (getActiveMap() == m_publicMap);
 	}
 
 	/**
@@ -1182,7 +1022,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public double modelToSquares(final double m)
 	{
-		return (m_frame.grid_multiplier * m / GameTableMap.getBaseSquareSize());
+		return (m_frame.getGridMultiplier() * m / GameTableMap.getBaseSquareSize());
 	}
 
 	public Point modelToView(final MapCoordinates modelPoint)
@@ -1311,11 +1151,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		// But we don't want them to double-move for a grouped + selected combo and would like an open arch to allow other grouping components
 		// later on.
 
-		final MapElement movingMapElement = getActiveMap().getMapElement(mapElementID);
+		GameTableMap activeMap = m_core.getMap(GameTableCore.MapType.ACTIVE);
+		
+		final MapElement movingMapElement = activeMap.getMapElement(mapElementID);
 		int diffx = position.x - movingMapElement.getPosition().x;
 		int diffy = position.y - movingMapElement.getPosition().y;
 
-		Group group = getActiveMap().getGroupManager().getGroup(movingMapElement);
+		Group group = activeMap.getGroupManager().getGroup(movingMapElement);
 
 		if (isSelected(movingMapElement))
 		{
@@ -1348,12 +1190,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	public void replacePogs(final MapElementTypeIF toReplace, final MapElementTypeIF replaceWith)
 	{
-		GameTableMap mapToReplace;
-		if (isPublicMap())
-			mapToReplace = m_publicMap;
-		else
-			mapToReplace = m_privateMap;
-
+		GameTableMap mapToReplace = m_core.getMap(GameTableCore.MapType.ACTIVE);
+		
 		for (MapElement pog : mapToReplace.getMapElements())
 		{
 			if (pog.getMapElementType() == toReplace)
@@ -1386,24 +1224,24 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		// if they're on the priavet layer, we draw the public layer on white at half alpha,
 		// then the private layer at full alpha
 
-		if (isPublicMap())
+		if (m_core.isActiveMapPublic())
 		{
 			// they are on the public map. Draw the public map as normal,
 			g.setColor(Color.WHITE);
 			g.fillRect(0, 0, width, height);
-			paintMap(g, m_publicMap, width, height);
+			paintMap(g, m_core.getMap(GameTableCore.MapType.PUBLIC), width, height);
 		}
 		else
 		{
 			// they're on the private map. First, draw the public map as normal.
 			// Then draw a 50% alpha sheet over it. then draw the private map
-			paintMap(g, getPublicMap(), width, height);
+			paintMap(g, m_core.getMap(GameTableCore.MapType.PUBLIC), width, height);
 
 			g.setColor(OVERLAY_COLOR); // OVERLAY_COLOR is white with 50% alpha
 			g.fillRect(0, 0, width, height);
 
 			// now draw the private layer
-			paintMap(g, m_privateMap, width, height);
+			paintMap(g, m_core.getMap(GameTableCore.MapType.PRIVATE), width, height);
 		}
 		g.dispose();
 	}
@@ -1418,7 +1256,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	public void exportMap(GameTableMap mapToExport, File outputFile) throws IOException
 	{
 		if (mapToExport == null)
-			mapToExport = getActiveMap();
+			mapToExport = m_core.getMap(GameTableCore.MapType.ACTIVE);
 
 		MapRectangle mapBoundsModel = mapToExport.getBounds();
 		Rectangle mapBounds = modelToDraw(mapBoundsModel);
@@ -1443,13 +1281,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	private void paintMap(final Graphics g, final GameTableMap mapToDraw, int width, int height)
 	{
 		Graphics2D g2 = (Graphics2D) g;
+		
+		boolean isActiveMap = mapToDraw == m_core.getMap(GameTableCore.MapType.ACTIVE);
 
 		Point scrollPos = getScrollPosition();
 
 		g.translate(-scrollPos.x, -scrollPos.y);
 
 		// we don't draw the matte if we're on the private map)
-		if (mapToDraw != m_privateMap)
+		if (mapToDraw.isPublicMap())
 		{
 			drawMatte(g, scrollPos.x, scrollPos.y, width, height);
 		}
@@ -1465,7 +1305,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		// we don't draw the underlay being dragged if we're not
 		// drawing the current map
-		if (mapToDraw == getActiveMap())
+		if (isActiveMap)
 		{
 			// if they're dragging an underlay, draw it here
 			// there could be a pog drag in progress
@@ -1494,9 +1334,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 
 		// we don't draw the grid if we're on the private map)
-		if (mapToDraw != m_privateMap)
+		if (mapToDraw.isPublicMap())
 		{
-			m_gridMode.drawLines(g2, scrollPos.x, scrollPos.y, width, height);
+			m_core.getGridMode().drawLines(g2, scrollPos.x, scrollPos.y, width, height);
 		}
 
 		// lines
@@ -1527,7 +1367,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		// we don't draw the pog being dragged if we're not
 		// drawing the current map
-		if (mapToDraw == getActiveMap())
+		if (isActiveMap)
 		{
 			// there could be a pog drag in progress
 			if (m_newPogIsBeingDragged)
@@ -1545,7 +1385,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 
 		// draw the cursor overlays
-		final List<Player> players = m_frame.getPlayers();
+		final List<Player> players = m_core.getPlayers();
 
 		for (Player plr : players)
 		{
@@ -1596,7 +1436,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			}
 		}
 
-		if (mapToDraw == getActiveMap())
+		if (isActiveMap)
 		{
 			getActiveTool().paint(g);
 		}
@@ -1667,7 +1507,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			if (isPointVisible(getPogDragMousePosition()))
 			{
 				// #randomrotate
-				if (GametableFrame.getGametableFrame().shouldRotatePogs())
+				if (m_frame.shouldRotatePogs())
 				{
 					boolean fh = false;
 					boolean fv = UtilityFunctions.getRandom(2) == 0 ? false : true;
@@ -1676,7 +1516,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 					pog.setAngleFlip(a, fh, fv);
 				}
 				// add this pog to the list
-				getActiveMap().addMapElement(pog);
+				m_core.getMap(GameTableCore.MapType.ACTIVE).addMapElement(pog);
 			}
 		}
 
@@ -1719,15 +1559,17 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	private void showPointerAt(final MapCoordinates pointLocation)
 	{
-		final Player me = m_frame.getMyPlayer();
-
-		if (pointLocation == null)
+		final Player me = m_core.getPlayer();
+		if (me != null)
 		{
-			me.setPointing(false, null);
-			return;
+			if (pointLocation == null)
+			{
+				me.setPointing(false, null);
+				return;
+			}
+	
+			me.setPointing(true, pointLocation);
 		}
-
-		me.setPointing(true, pointLocation);
 		setToolCursor(-1);
 	}
 
@@ -1736,13 +1578,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public NetworkStatus getNetworkStatus()
 	{
-		return m_frame.getNetworkStatus();
+		return m_core.getNetworkStatus();
 	}
 
 	public void scrollMapTo(MapCoordinates modelPoint)
 	{
 		final Point target = modelToDraw(modelPoint);
-		setPrimaryScroll(getActiveMap(), target.x, target.y);
+		setPrimaryScroll(m_core.getMap(GameTableCore.MapType.ACTIVE), target.x, target.y);
 		repaint();
 	}
 
@@ -1756,11 +1598,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		smoothScrollTo(pogModel);
 	}
 
-	public void setActiveMap(final GameTableMap map)
-	{
-		m_activeMap = map;
-	}
-
 	public void setActiveTool(final int index)
 	{
 		final ToolIF oldTool = getActiveTool();
@@ -1772,24 +1609,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		tool.activate(this);
 		setToolCursor(0);
 		m_frame.setToolSelected(m_activeToolId);
-	}
-
-	protected void setGridModeByID(final GridModeID id)
-	{
-		switch (id)
-		{
-		case NONE:
-			m_gridMode = m_noGridMode;
-			break;
-
-		case SQUARES:
-			m_gridMode = m_squareGridMode;
-			break;
-
-		case HEX:
-			m_gridMode = m_hexGridMode;
-			break;
-		}
 	}
 
 	/*
@@ -1841,9 +1660,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			zoomLevel = 0;
 		}
 
-		if (zoomLevel >= NUM_ZOOM_LEVELS)
+		if (zoomLevel >= GametableFrame.MAX_ZOOM_LEVEL)
 		{
-			zoomLevel = NUM_ZOOM_LEVELS - 1;
+			zoomLevel = GametableFrame.MAX_ZOOM_LEVEL - 1;
 		}
 
 		if (m_zoom != zoomLevel)
@@ -1865,12 +1684,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	public void snapMapElementToGrid(final MapElement pog)
 	{
-		m_gridMode.snapPogToGrid(pog);
+		m_core.getGridMode().snapPogToGrid(pog);
 	}
 
 	public MapCoordinates snapPoint(final MapCoordinates modelPoint)
 	{
-		return m_gridMode.getSnappedPixelCoordinates(modelPoint);
+		return m_core.getGridMode().getSnappedPixelCoordinates(modelPoint);
 	}
 
 	// --- Drawing ---
@@ -1878,7 +1697,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	public Point snapViewPoint(final Point viewPoint)
 	{
 		final MapCoordinates modelPoint = viewToModel(viewPoint);
-		final MapCoordinates modelSnap = m_gridMode.getSnappedPixelCoordinates(modelPoint);
+		final MapCoordinates modelSnap = m_core.getGridMode().getSnappedPixelCoordinates(modelPoint);
 		final Point viewSnap = modelToView(modelSnap);
 		return viewSnap;
 	}
@@ -1954,7 +1773,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	/**
 	 * Set the scroll position
 	 * 
-	 * @revise move to VIEW
 	 * @param x x coordinates of the scroll position
 	 * @param y y coordinates of the scroll position
 	 */
@@ -1966,7 +1784,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	/**
 	 * Set the scroll position
 	 * 
-	 * @revise move to VIEW
 	 * @param x x coordinates of the scroll position
 	 * @param y y coordinates of the scroll position
 	 */
@@ -1978,7 +1795,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	/**
 	 * Gets the X coordinate of the scroll position
 	 * 
-	 * @revise move to VIEW
 	 * @return
 	 */
 	public int getScrollX()
@@ -1989,7 +1805,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	/**
 	 * Gets the X coordinate of the scroll position
 	 * 
-	 * @revise move to VIEW
 	 * @return
 	 */
 	public int getScrollY()
@@ -2000,7 +1815,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	/**
 	 * Gets the X coordinate of the scroll position
 	 * 
-	 * @revise move to VIEW
 	 * @return
 	 */
 	public Point getScrollPosition()
@@ -2049,7 +1863,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public boolean isSelected(MapElement mapElement)
 	{
-		return isSelected(mapElement, isPublicMap());
+		return isSelected(mapElement, m_core.isActiveMapPublic());
 	}
 
 	/**
@@ -2060,7 +1874,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void selectMapElementInstance(MapElement mapElement, boolean select)
 	{
-		selectMapElementInstance(mapElement, isPublicMap(), select);
+		selectMapElementInstance(mapElement, m_core.isActiveMapPublic(), select);
 	}
 
 	/**
@@ -2071,7 +1885,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void selectMapElementInstances(final List<MapElement> mapElements, boolean select)
 	{
-		selectMapElementInstances(mapElements, isPublicMap(), select);
+		selectMapElementInstances(mapElements, m_core.isActiveMapPublic(), select);
 	}
 
 	/**
@@ -2079,7 +1893,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public void unselectAllMapElementInstances()
 	{
-		unselectAllMapElementInstances(isPublicMap());
+		unselectAllMapElementInstances(m_core.isActiveMapPublic());
 	}
 
 	/**
@@ -2089,7 +1903,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public List<MapElement> getSelectedMapElementInstances()
 	{
-		return getSelectedMapElementInstances(isPublicMap());
+		return getSelectedMapElementInstances(m_core.isActiveMapPublic());
 	}
 
 	/**
@@ -2169,7 +1983,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	public void highlightAllMapElementInstances(boolean highlight)
 	{
 		if (highlight)
-			m_highlightedElements.selectMapElements(getActiveMap().getMapElements(), highlight);
+			m_highlightedElements.selectMapElements(m_core.getMap(GameTableCore.MapType.ACTIVE).getMapElements(), highlight);
 		else
 			m_highlightedElements.unselectAllMapElements();
 
@@ -2210,29 +2024,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	}
 	
 	private class CanvasMapElementListener extends MapElementAdapter
-	{
-		/**
-		 * Constructor
-		 * @param publicMap True if this listener is linked to a public map 
-		 */
-		public CanvasMapElementListener(boolean publicMap)
-		{
-			m_listenToPublicMap = publicMap;
-		}
-		
+	{		
 		/*
 		 * @see com.galactanet.gametable.data.MapElementAdapter#onPositionChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
 		public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetMapElementPosition.makePacket(element, newPosition));
-			}
-
 			repaint();
 		}
 		
@@ -2242,13 +2040,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetMapElementLayer.makePacket(element, newLayer));
-			}
-
 			repaint();
 		}
 		
@@ -2258,13 +2049,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onElementTypeChanged(MapElement element, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetMapElementType.makePacket(element, element.getMapElementType()));
-			}
-
 			repaint();
 		}
 		
@@ -2274,13 +2058,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onFlipChanged(MapElement element, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetFlipMapElement.makePacket(element.getID(), element.getFlipH(), element.getFlipV()));
-			}
-
 			repaint();
 		}
 		
@@ -2290,13 +2067,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onAngleChanged(MapElement element, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetMapElementAngle.makePacket(element.getID(), element.getAngle()));
-			}
-
 			repaint();
 		}
 		
@@ -2306,13 +2076,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetMapElementSize.makePacket(element, element.getFaceSize()));
-			}
-
 			snapMapElementToGrid(element);
 			repaint();
 		}
@@ -2324,32 +2087,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue, boolean batch, NetworkEvent netEvent)
 		{
 			if (!batch)
-			{
-				if (m_listenToPublicMap)
-				{
-					// Broadcast only if we're not triggered by a network event
-					if (shouldPropagateChanges(netEvent))
-					{
-						Map<String, String> add = null;
-						List<String> remove = null;
-						
-						if (newValue == null)
-						{
-							remove = new ArrayList<String>();
-							remove.add(attributeName);
-						}
-						else
-						{
-							add = new HashMap<String, String>();
-							add.put(attributeName, newValue);
-						}
-							
-						m_frame.sendBroadcast(NetSetMapElementData.makePacket(element, null, add, remove));
-					}
-				}
-					
 				repaint();
-			}
 		}
 		
 		/*
@@ -2358,36 +2096,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onAttributesChanged(MapElement element, Map<String, String> attributes, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-				{
-					Map<String, String> add = null;
-					List<String> remove = null;
-					
-					for (Entry<String, String> entry : attributes.entrySet())
-					{
-						if (entry.getValue() == null)
-						{
-							if (remove == null)
-								remove = new ArrayList<String>();
-							
-							remove.add(entry.getKey());
-						}
-						else
-						{
-							if (add == null)
-								add = new HashMap<String, String>();
-							
-							add.put(entry.getKey(), entry.getValue());
-						}
-					}
-						
-					m_frame.sendBroadcast(NetSetMapElementData.makePacket(element, null, add, remove));
-				}
-			}
-				
 			repaint();
 		}
 		
@@ -2397,17 +2105,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onNameChanged(MapElement element, String newName, String oldName, NetworkEvent netEvent)
 		{
-			if (m_listenToPublicMap)
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetSetMapElementData.makeRenamePacket(element, newName));
-			}
-				
 			repaint();
 		}
-		
-		private final boolean m_listenToPublicMap;
 	}
 	
 	private class CanvasMapListener extends GameTableMapAdapter 
@@ -2422,11 +2121,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		{
 			if (!batch)
 			{
-				selectMapElementInstance(mapElement, map == m_publicMap, false);
+				selectMapElementInstance(mapElement, map.isPublicMap(), false);
 				highlightMapElementInstance(mapElement, false);
-				
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetRemoveMapElement.makePacket(mapElement));
 				
 				repaint();				
 			}
@@ -2440,12 +2136,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		{
 			for (MapElement mapElement : mapElements)
 			{
-				selectMapElementInstance(mapElement, map == m_publicMap, false);
+				selectMapElementInstance(mapElement, map.isPublicMap(), false);
 				highlightMapElementInstance(mapElement, false);
 			}
-			
-			if (shouldPropagateChanges(netEvent) && mapElements.size() > 0)
-				m_frame.sendBroadcast(NetRemoveMapElement.makePacket(mapElements));
 			
 			repaint();
 		}
@@ -2458,11 +2151,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onMapElementsCleared(GameTableMap map, NetworkEvent netEvent)
 		{
-			unselectAllMapElementInstances(map == m_publicMap);
+			unselectAllMapElementInstances(map.isPublicMap());
 			highlightAllMapElementInstances(false);
-			
-			if (shouldPropagateChanges(netEvent))
-				m_frame.sendBroadcast(NetRemoveMapElement.makeRemoveAllPacket());
 			
 			repaint();
 		}
@@ -2474,16 +2164,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		public void onLineSegmentAdded(GameTableMap map, LineSegment lineSegment, boolean batch, NetworkEvent netEvent)
 		{
 			if (!batch)
-			{
-				if (map.isPublicMap())
-				{
-					// Broadcast only if we're not triggered by a network event
-					if (shouldPropagateChanges(netEvent))
-						m_frame.sendBroadcast(NetAddLineSegments.makePacket(lineSegment));
-				}
-				
 				repaint();
-			}				
 		}
 
 		/*
@@ -2492,13 +2173,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onEraseLineSegments(GameTableMap map, MapRectangle rect, boolean colorSpecific, int color, NetworkEvent netEvent)
 		{
-			if (map.isPublicMap())
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetEraseLineSegments.makePacket(rect, colorSpecific, color));
-			}
-			
 			repaint();
 		}
 		
@@ -2508,13 +2182,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onLineSegmentsAdded(GameTableMap map, List<LineSegment> lineSegments, NetworkEvent netEvent)
 		{
-			if (map.isPublicMap())
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetAddLineSegments.makePacket(lineSegments));
-			}
-			
 			repaint();
 		}
 		
@@ -2524,13 +2191,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onClearLineSegments(GameTableMap map, NetworkEvent netEvent)
 		{
-			if (map.isPublicMap())
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetClearLineSegments.makePacket());
-			}
-			
 			repaint();
 		}		
 		
@@ -2540,14 +2200,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		@Override
 		public void onMapElementAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent)
 		{
-			if (map.isPublicMap())
-			{
-				// Broadcast only if we're not triggered by a network event
-				if (shouldPropagateChanges(netEvent))
-					m_frame.sendBroadcast(NetAddMapElement.makePacket(mapElement));
-			}
-			
 			repaint();
 		}
 	}
+	
+	private final GameTableCore m_core; 
 }

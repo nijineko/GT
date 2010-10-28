@@ -25,11 +25,11 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 
 /**
@@ -66,7 +66,7 @@ public class NetSetMapElementPosition implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeLong(mapElement.getID().numeric());
@@ -93,9 +93,9 @@ public class NetSetMapElementPosition implements NetworkMessageTypeIF
     
     MapCoordinates pos = new MapCoordinates(dis.readInt(), dis.readInt());
     
-    final GametableFrame gtFrame = GametableFrame.getGametableFrame();
+    final GameTableCore core = GameTableCore.getCore();
     
-    MapElement mapElement = gtFrame.getMapElement(mapElementID);
+    MapElement mapElement = core.getMapElement(mapElementID);
     if (mapElement != null)
     	mapElement.setPosition(pos, event);    
 	}

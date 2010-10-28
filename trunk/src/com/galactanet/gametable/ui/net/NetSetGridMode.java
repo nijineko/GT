@@ -25,8 +25,8 @@ package com.galactanet.gametable.ui.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
 import com.galactanet.gametable.util.Log;
 
@@ -64,7 +64,7 @@ public class NetSetGridMode implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeInt(gridMode.ordinal()); 
@@ -89,8 +89,8 @@ public class NetSetGridMode implements NetworkMessageTypeIF
 			gridMode  = GridModeID.NONE;
 
     // tell the model
-    final GametableFrame frame = GametableFrame.getGametableFrame();
-    frame.setGridMode(gridMode, event);
+    final GameTableCore core = GameTableCore.getCore();
+    core.setGridMode(gridMode, event);
 	}
 	
 	/*

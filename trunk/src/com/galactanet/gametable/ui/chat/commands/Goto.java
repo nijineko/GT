@@ -22,7 +22,10 @@
 
 package com.galactanet.gametable.ui.chat.commands;
 
+import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.chat.SlashCommand;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -52,16 +55,24 @@ public class Goto extends SlashCommand
     {
         return (words[0] + " usage: " + words[0] + " &lt;pog name&gt;");
     }
-
+		
+		GameTableCore core = GameTableCore.getCore();
+		GametableFrame frame = GametableApp.getUserInterface();
+		if (frame == null)
+		{
+    	core.sendMessageLocal(MessageType.ALERT, "User interface not initialized");
+      return null;
+    }
+		
     final String name = UtilityFunctions.stitchTogetherWords(words, 1);
-    final MapElement pog = GametableFrame.getGametableFrame().getGametableCanvas().getActiveMap().getMapElementByName(name);
+    final MapElement pog = core.getMap(GameTableCore.MapType.ACTIVE).getMapElementByName(name);
     if (pog == null)
     {
-    	GametableFrame.getGametableFrame().getChatPanel().logAlertMessage("Unable to find pog named \"" + name + "\".");
+    	core.sendMessageLocal(MessageType.ALERT, "Unable to find pog named \"" + name + "\".");
       return null;
     }
     
-    GametableFrame.getGametableFrame().getGametableCanvas().scrollToPog(pog);
+    frame.scrollToPog(pog);
     
     return null;
 	}

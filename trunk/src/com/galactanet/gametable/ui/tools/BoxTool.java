@@ -8,6 +8,8 @@ package com.galactanet.gametable.ui.tools;
 import java.awt.*;
 import java.util.ArrayList;
 
+import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapRectangle;
@@ -31,12 +33,14 @@ public class BoxTool extends NullTool
     private MapCoordinates            m_mouseFloat;
 
     private MapCoordinates            m_mousePosition;
+    private final GametableFrame m_frame;
 
     /**
      * Default Constructor.
      */
     public BoxTool()
     {
+    	 m_frame = GametableApp.getUserInterface();
     }
 
     /*
@@ -91,7 +95,7 @@ public class BoxTool extends NullTool
         if ((m_mouseAnchor != null) && !m_mouseAnchor.equals(m_mouseFloat))
         {
             // we're going to add 4 lines
-            final Color drawColor = GametableFrame.getGametableFrame().m_drawColor;
+            final Color drawColor = m_frame.getDrawColor();
             final MapCoordinates topLeft = m_mouseAnchor;
             final MapCoordinates bottomRight = m_mouseFloat;
             final MapCoordinates topRight = new MapCoordinates(bottomRight.x, topLeft.y);
@@ -108,7 +112,7 @@ public class BoxTool extends NullTool
             lines.add(right);
             lines.add(bottom);
 
-            m_canvas.getActiveMap().addLineSegments(lines);
+            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
         }
         endAction();
     }
@@ -146,7 +150,7 @@ public class BoxTool extends NullTool
 
             g2.addRenderingHints(Images.getRenderingHints());
 
-            final Color drawColor = GametableFrame.getGametableFrame().m_drawColor;
+            final Color drawColor = m_frame.getDrawColor();
             g2.setColor(new Color(drawColor.getRed(), drawColor.getGreen(), drawColor.getBlue(), 102));
             g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             final Rectangle drawRect = createRectangle(m_canvas.modelToDraw(m_mouseAnchor), m_canvas
@@ -168,7 +172,7 @@ public class BoxTool extends NullTool
                 g3.setFont(Font.decode("sans-12"));
 
                 // String s1 = squaresWidth + " x " + squaresHeight + "u";
-                final String sw = Double.toString(squaresWidth) + GametableFrame.getGametableFrame().grid_unit;
+                final String sw = Double.toString(squaresWidth) + m_frame.getGridUnit();
 
                 final FontMetrics fm = g3.getFontMetrics();
                 final Rectangle rect = fm.getStringBounds(sw, g3).getBounds();
@@ -204,7 +208,7 @@ public class BoxTool extends NullTool
                 final Graphics2D g4 = (Graphics2D)g.create();
                 squaresHeight = Math.round(squaresHeight * 100) / 100.0;
                 g4.setFont(Font.decode("sans-12"));
-                final String sh = Double.toString(squaresHeight) + GametableFrame.getGametableFrame().grid_unit;
+                final String sh = Double.toString(squaresHeight) + m_frame.getGridUnit();
                 final FontMetrics fm2 = g4.getFontMetrics();
                 final Rectangle rect2 = fm2.getStringBounds(sh, g4).getBounds();
                 rect2.grow(3, 1);

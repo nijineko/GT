@@ -11,9 +11,9 @@ import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.*;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.net.NetworkConnectionIF;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 
@@ -168,7 +168,7 @@ public class NetworkThread extends Thread
 	protected NetworkThread(NetworkModule module)
 	{
 		super(NetworkThread.class.getName());
-		m_frame = GametableFrame.getGametableFrame();
+		m_core = GameTableCore.getCore();
 		m_networkModule = module;
 		setPriority(NORM_PRIORITY + 1);
 		serverPort = -1;
@@ -181,7 +181,7 @@ public class NetworkThread extends Thread
 	public NetworkThread(NetworkModule module, final int port)
 	{
 		super(NetworkThread.class.getName());
-		m_frame = GametableFrame.getGametableFrame();
+		m_core = GameTableCore.getCore();
 		m_networkModule = module;
 		
 		setPriority(NORM_PRIORITY + 1);
@@ -533,12 +533,12 @@ public class NetworkThread extends Thread
 		 // Next int is player id
 		 NetworkConnectionIF playerConnection = null;
 		 
-		 NetworkConnectionIF myConnection = m_frame.getMyPlayer().getConnection();
+		 NetworkConnectionIF myConnection = m_core.getPlayer().getConnection();
 
 		 try
 		 {
 			 int playerID = UtilityFunctions.toInt(packet, 5);
-			 Player player = m_frame.getPlayerByID(playerID);
+			 Player player = m_core.getPlayer(playerID);
 			 if (player != null)
 				 playerConnection = player.getConnection();
 		 }
@@ -574,9 +574,9 @@ public class NetworkThread extends Thread
 	 }
 	 
 	 /**
-	  * Gametable Frame
+	  * Gametable Core
 	  */
-	 private final GametableFrame m_frame;
+	 private final GameTableCore m_core;
 	 
 	 /**
 	  * First connection that was added to the network.  When joining, this is the connection to the host

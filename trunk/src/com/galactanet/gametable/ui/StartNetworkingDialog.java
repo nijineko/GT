@@ -16,6 +16,7 @@ import java.awt.event.FocusListener;
 
 import javax.swing.*;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.NetworkParametersPanel;
 import com.galactanet.gametable.util.Log;
 
@@ -102,8 +103,7 @@ public class StartNetworkingDialog extends JDialog implements FocusListener
                 m_bAccepted = true;
 
                 // update the default names
-                m_frame.m_characterName = m_charNameEntry.getText();
-                m_frame.m_playerName = m_plrNameEntry.getText();
+                m_core.setPlayerInformation(m_plrNameEntry.getText(), m_charNameEntry.getText());
                 
                 if (m_networkPanel != null)
                 	m_networkPanel.processValues();
@@ -157,7 +157,7 @@ public class StartNetworkingDialog extends JDialog implements FocusListener
         outerBox.add(Box.createVerticalStrut(PADDING * 2));
 
         outerBox.add(m_hostPanel);
-        m_networkPanel = m_frame.getNetworkModule().getParametersPanel();
+        m_networkPanel = m_core.getNetworkModule().getParametersPanel();
         m_networkPanel.setDefautValues();
         
         nextBox = Box.createVerticalBox();
@@ -186,8 +186,8 @@ public class StartNetworkingDialog extends JDialog implements FocusListener
         outerBox.add(Box.createVerticalStrut(PADDING));
 
         // set default values
-        m_charNameEntry.setText(m_frame.m_characterName);
-        m_plrNameEntry.setText(m_frame.m_playerName);
+        m_charNameEntry.setText(m_core.getCharacterName());
+        m_plrNameEntry.setText(m_core.getPlayerName());
 
         // we want to know if any of those text entry areas get focus
         m_plrNameEntry.addFocusListener(this);
@@ -211,5 +211,5 @@ public class StartNetworkingDialog extends JDialog implements FocusListener
     }
     
     private NetworkParametersPanel m_networkPanel = null; 
-    private final GametableFrame m_frame = GametableFrame.getGametableFrame();
+    private final GameTableCore m_core = GameTableCore.getCore();
 }

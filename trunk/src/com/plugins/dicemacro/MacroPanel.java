@@ -16,7 +16,9 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.MatteBorder;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -85,7 +87,7 @@ public class MacroPanel extends JPanel
 				final DiceMacro existingMacro = DiceMacroModule.getModule().getMacro(name);
 				if ((existingMacro != null) && (existingMacro != macro))
 				{
-					final int result = UtilityFunctions.yesNoDialog(GametableFrame.getGametableFrame(), "You already have a macro named \"" + name + "\", "
+					final int result = UtilityFunctions.yesNoDialog(m_frame, "You already have a macro named \"" + name + "\", "
 							+ "are you sure you want to replace it with \"" + def + "\"?", "Replace Macro?");
 					if (result == UtilityFunctions.YES)
 					{
@@ -131,9 +133,9 @@ public class MacroPanel extends JPanel
 
 			case SEMIPRIVATE:
 			case SEMIPRIVATE_TO:
-				GametableFrame.getGametableFrame().sendChatMessageBroadcast(
-						GametableFrame.DIEROLL_MESSAGE_FONT + UtilityFunctions.emitUserLink(GametableFrame.getGametableFrame().getMyPlayer().getCharacterName())
-								+ " is rolling dice..." + GametableFrame.END_DIEROLL_MESSAGE_FONT);
+				GameTableCore.getCore().sendMessageBroadcast(MessageType.CHAT,
+						DiceMacro.DIEROLL_MESSAGE_FONT + UtilityFunctions.emitUserLink(GameTableCore.getCore().getPlayer())
+								+ " is rolling dice..." + DiceMacro.END_DIEROLL_MESSAGE_FONT);
 				macro.doMacro(true);
 				break;
 			}
@@ -329,14 +331,16 @@ public class MacroPanel extends JPanel
 	private JPanel						privateRolls			= null;
 	private JPanel						addMacro					= null;
 	private final JComboBox		sendTo						= new JComboBox();
+	private final GametableFrame m_frame;
 
 	// --- Constructors ----------------------------------------------------------------------------------------------
 
 	/**
 	 * This is the default constructor
 	 */
-	public MacroPanel()
+	public MacroPanel(GametableFrame frame)
 	{
+		m_frame = frame;
 		initialize();
 		refreshMacroList();
 	}
@@ -476,9 +480,9 @@ public class MacroPanel extends JPanel
 	public void init_sendTo()
 	{
 		sendTo.removeAllItems();
-		for (int i = 0; i < GametableFrame.getGametableFrame().getPlayers().size(); i++)
+		for (int i = 0; i < GameTableCore.getCore().getPlayers().size(); i++)
 		{
-			final Player player = GametableFrame.getGametableFrame().getPlayers().get(i);
+			final Player player = GameTableCore.getCore().getPlayers().get(i);
 			sendTo.addItem(player.getCharacterName());
 		}
 	}

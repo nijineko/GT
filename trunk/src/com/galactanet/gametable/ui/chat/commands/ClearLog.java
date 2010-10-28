@@ -22,7 +22,7 @@
 
 package com.galactanet.gametable.ui.chat.commands;
 
-import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.ui.chat.SlashCommand;
 
 /**
@@ -55,7 +55,7 @@ public class ClearLog extends SlashCommand
 	@Override
 	public String processCommand(String words[], String text)
 	{
-    GametableFrame.getGametableFrame().getChatPanel().clearText();
+    GameTableCore.getCore().clearMessages();
     
     return null;
 	}

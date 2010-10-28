@@ -26,10 +26,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.galactanet.gametable.data.GameTableMap;
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.data.XMLSerializeConverter;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.Log;
 import com.maziade.tools.XMLUtils;
 
@@ -124,7 +124,7 @@ public class NetLoadMap implements NetworkMessageTypeIF
 
 		try
 		{
-			NetworkModuleIF module = GametableFrame.getGametableFrame().getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeUTF(XMLUtils.xmlToString(doc, "UTF-8"));
@@ -168,14 +168,14 @@ public class NetLoadMap implements NetworkMessageTypeIF
 	{
 		String xml = dis.readUTF();
 		Document mapDocument = XMLUtils.parseXMLDocument(new StringReader(xml), null);
+		
+		GameTableCore core = GameTableCore.getCore();
 
-		GameTableMap map = GametableFrame.getGametableFrame().getGametableCanvas().getPublicMap();
+		GameTableMap map = core.getMap(GameTableCore.MapType.PUBLIC);
 		map.clearMap(event);
 
 		LoadMapSerializeConverter converter = new LoadMapSerializeConverter();
 		map.deserializeFromXML(mapDocument.getDocumentElement(), converter, event);
-
-		GametableFrame.getGametableFrame().repaint();
 	}
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#setID(int)

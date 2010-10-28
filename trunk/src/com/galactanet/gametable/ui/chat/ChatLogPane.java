@@ -26,7 +26,6 @@ import javax.swing.text.AbstractDocument.BranchElement;
 import javax.swing.text.html.HTMLDocument;
 
 import com.galactanet.gametable.GametableApp;
-import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.handler.gtuser.Handler;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.Log;
@@ -263,9 +262,12 @@ public class ChatLogPane extends JEditorPane
     /**
      * Default Constructor;
      */
-    public ChatLogPane(final int id, final boolean privMsg)
+    public ChatLogPane(ChatPanel chatPanel, final int id, final boolean privMsg)
     {        
         super("text/html", DEFAULT_TEXT);
+        
+        m_chatPanel = chatPanel;
+        
         setEditable(false);
         setFocusable(true);
         setLayout(null);
@@ -311,7 +313,7 @@ public class ChatLogPane extends JEditorPane
                     if (e.getURL().getProtocol().equals(Handler.PROTOCOL_NAME))
                     {
                         final String username = UtilityFunctions.urlDecode(e.getURL().getHost());
-                        GametableFrame.getGametableFrame().startTellTo(username);
+                        startTellTo(username);
                         return;
                     }
 
@@ -581,4 +583,20 @@ public class ChatLogPane extends JEditorPane
         playerB = test;
     }
     */
+    
+		private void startTellTo(String name)
+		{
+	        if (name.contains(" ") || name.contains("\"") || name.contains("\t"))
+	        {
+	            name = "\"" + name.replace("\"", "\\\"") + "\"";
+	        }
+		        
+      ChatLogEntryPane textEntry = m_chatPanel.getTextEntry();
+			textEntry.setText("/tell " + name + "<b> </b>");
+			textEntry.requestFocus();
+			textEntry.toggleStyle("bold");
+			textEntry.toggleStyle("bold");
+		}
+		
+		private final ChatPanel m_chatPanel;
 }

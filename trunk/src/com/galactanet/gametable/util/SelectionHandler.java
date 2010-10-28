@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui;
+package com.galactanet.gametable.util;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,16 +29,16 @@ import java.util.List;
 import com.galactanet.gametable.data.MapElement;
 
 /**
- * Handles selection operations for the canvas
+ * Utility to help handle selection operations 
  *
  * @author Eric Maziade
  */
 public class SelectionHandler
 {
 	/**
-	 * Constructor.  Should only be used by GametableCanvas 
+	 * Constructor.  
 	 */
-	protected SelectionHandler()
+	public SelectionHandler()
 	{
 		m_selectedElements = new ArrayList<MapElement>();
 		m_selectedElementsUnmodifiable = Collections.unmodifiableList(m_selectedElements);	
@@ -112,7 +112,7 @@ public class SelectionHandler
 	/**
 	 * Lists the currently selected elements
 	 */
-	private final List<MapElement>					m_selectedElements;
+	private final List<MapElement>	m_selectedElements;
 	
 	/**
 	 * Unmodifiable version of selected elements

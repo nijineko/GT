@@ -22,15 +22,15 @@
 
 package com.galactanet.gametable.module;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-
 import javax.swing.JMenu;
 
 import org.w3c.dom.Element;
 
+import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.XMLSerializeConverter;
+import com.galactanet.gametable.ui.GametableFrame;
+import com.maziade.props.XProperties;
 
 
 /**
@@ -48,14 +48,21 @@ public abstract class Module
 	
 	/**
 	 * Initialize the user interface - this is the opportunity to add custom UI to the environment.
+	 * Initialize UI components only - use onInitializeCore for non-UI components (it will be called first)
 	 */
-	public void onInitializeUI() {}
+	public void onInitializeUI(GametableFrame frame) {}
+	
+	/**
+	 * Initialize the core module.
+	 * Initialize all non-UI components (use onInitializeUI for UI components).
+	 */
+	public void onInitializeCore(GameTableCore core) {}
 	
 	/**
 	 * Notifies that the interface has switched to or from public map
 	 * @param publicMap true if we have switched to public map
 	 */
-	public void onToggleActiveMap(boolean publicMap) {}
+	public void onActiveMapChange(boolean publicMap) {}
 	
 	/**
 	 * Load from an XML DOM node
@@ -94,30 +101,35 @@ public abstract class Module
 	public void onPlayerRemoved(Player oldPlayer) {}
 	
 	/**
-	 * Called after the preference file has been stored to disk.
-	 * Certain modules might want to keep their own preferences. 
+	 * Called after the properties file has been stored to disk.
+	 * Certain modules might want to keep their own properties. 
 	 */
-	public void onSavePreferencesCompleted() {}
+	public void onSavePropertiesCompleted() {}
 	
 	/**
-	 * Called after the preference file has been loaded from disk.
-	 * Certain modules might want to keep their own preferences. 
+	 * Called after the properties file has been loaded from disk.
+	 * Certain modules might want to keep their own properties. 
 	 */
-	public void onLoadPreferencesCompleted() {}
+	public void onLoadPropertiesCompleted() {}
 	
 	/**
-	 * TODO !! Preferences to XML
-	 * Called when saving preferences for the application
-	 * @param out
+	 * Called when properties are initialized - allows to set the global information of the 
+	 * properties and decide if they should be displayed in the properties dialog.
+	 * @param properties Properties handler
 	 */
-	public void onSavePreferences(DataOutputStream out) {}
+	public void onInitializeProperties(XProperties properties) {}
 	
 	/**
-	 * TODO !! Preferences to XML
-	 * Called when loading preferences for the application
-	 * @param in
+	 * Called when properties should be updated - right before save
+	 * @param properties Properties handler
 	 */
-	public void onLoadPreferences(DataInputStream in) {}
+	public void onUpdateProperties(XProperties properties) {}
+	
+	/**
+	 * Properties have been loaded and should be inspected and acted upon by modules
+	 * @param properties Properties handler
+	 */
+	public void onApplyProperties(XProperties properties) {}
 	
 	/**
 	 * TODO Revise how we actually want to handle menu modification by modules (this is temporary solution)

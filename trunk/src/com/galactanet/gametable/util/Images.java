@@ -24,7 +24,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.PixelGrabber;
 
-import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.GametableApp;
 
 /**
  * Collection of static methods to use for image manipulations
@@ -339,7 +339,7 @@ public class Images
 
 	public static void waitForImage(final Image image)
 	{
-		final MediaTracker tracker = new MediaTracker(GametableFrame.getGametableFrame());
+		final MediaTracker tracker = new MediaTracker(GametableApp.getUserInterface());
 		tracker.addImage(image, 0);
 		try
 		{
