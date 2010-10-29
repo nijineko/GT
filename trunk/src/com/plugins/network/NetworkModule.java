@@ -246,6 +246,7 @@ public class NetworkModule implements NetworkModuleIF
 			
 			startProcessorThread();
 
+			// TODO !!!! Dual notification?
 			for (NetworkListenerIF listener : m_listeners)
 				listener.connectionEstablished(null);
 			
@@ -573,8 +574,6 @@ public class NetworkModule implements NetworkModuleIF
 
 			String name = getNetworkMessageName(type);
 			Log.log(Log.NET, "Received: " + name + ", length = " + packet.length);
-
-			PacketSourceState.beginNetPacketProcessing();
 			
 			if (message != null)
 			{
@@ -597,10 +596,6 @@ public class NetworkModule implements NetworkModuleIF
 		catch (final IOException ex)
 		{
 			Log.log(Log.SYS, ex);
-		}
-		finally
-		{
-			PacketSourceState.endNetPacketProcessing();
 		}
 	}
 
@@ -702,6 +697,7 @@ public class NetworkModule implements NetworkModuleIF
 		for (NetworkListenerIF listener : m_listeners)
 			listener.networkStatusChange(NetworkStatus.CONNECTED);
 		
+		// TODO !!!! Dual notification?
 		for (NetworkListenerIF listener : m_listeners)
 			listener.connectionEstablished(conn);
 	}

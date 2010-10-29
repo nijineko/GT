@@ -24,6 +24,7 @@ package com.galactanet.gametable.data;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -54,7 +55,6 @@ import com.plugins.activepogs.ActivePogsModule;
 import com.plugins.cards.CardModule;
 import com.plugins.dicemacro.DiceMacroModule;
 import com.plugins.network.NetworkModule;
-import com.plugins.network.PacketSourceState;
 
 /**
  * Core data class
@@ -126,11 +126,13 @@ public class GameTableCore implements MapElementRepositoryIF
 	}
 	
 	/**
-	 * Initialize the core
+	 * Initialize the core - NB Properties are not loaded automatically
 	 * @throws IOException
 	 */
 	private void initialize() throws IOException
 	{
+		Thread.setDefaultUncaughtExceptionHandler(new CoreUncaughtExceptionHandler());
+
 		m_squareGridMode = new SquareGridMode();
 		m_hexGridMode = new HexGridMode();
 		m_noGridMode = new GridMode();
@@ -152,8 +154,6 @@ public class GameTableCore implements MapElementRepositoryIF
 		
 		for (Module module : g_modules)
 			module.onInitializeCore(this);
-
-		loadProperties();		
 				
 		addPlayer(new Player(m_playerName, m_characterName, -1, true));
 	}
@@ -315,10 +315,6 @@ public class GameTableCore implements MapElementRepositoryIF
 		clearAllPlayers();
 		final Player me = new Player(m_playerName, m_characterName, -1, true);
 		addPlayer(me);
-		
-		// TODO #Networking what is this dumping thing?
-		// we might have disconnected during initial data receipt
-		PacketSourceState.endHostDump();
 	}
 	
 	/**
@@ -364,14 +360,10 @@ public class GameTableCore implements MapElementRepositoryIF
 				send(NetSendPlayerInfoToHost.makePacket(me, m_networkModule.getPassword()), conn);
 				
 				m_loggingIn = false;
-
-				// TODO #Networking What is this?
-				PacketSourceState.beginHostDump();
 			}
 			catch (final Exception ex)
 			{
 				Log.log(Log.SYS, ex);
-				PacketSourceState.endHostDump();
 			}
 		}
 	}
@@ -703,70 +695,64 @@ public class GameTableCore implements MapElementRepositoryIF
 		@Override
 		public void onRemoveMapElementFromGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent)
 		{
-			// We don't want to re-broadcast if the source is not user action
-			if (netEvent == null)			
-				send(Action.REMOVE_ELEMENT, group, mapElementID);
+			// NB : send checks network event to prevent rebroadcasts 
+			send(Action.REMOVE_ELEMENT, group, mapElementID, netEvent);
 		}
 		
 		@Override
 		public void onRemoveGroup(Group group, NetworkEvent netEvent)
 		{
-			if (netEvent == null)
-				send(Action.DELETE, group, null);
+			// NB : send checks network event to prevent rebroadcasts
+			send(Action.DELETE, group, null, netEvent);
 		}
 		
 		@Override
 		public void onGroupRename(Group group, String oldGroupName, NetworkEvent netEvent)
 		{
-			if (netEvent == null)
-				sendRename(group, oldGroupName, group.getName());
+			// NB : send checks network event to prevent rebroadcasts
+			sendRename(group, oldGroupName, group.getName(), netEvent);
 		}
 		
 		@Override
 		public void onAddMapElementToGroup(Group group, MapElementID mapElementID, NetworkEvent netEvent)
-		{
-			if (netEvent == null)
-				send(Action.ADD_ELEMENT, group, mapElementID);
+		{		
+			// NB : send checks network event to prevent rebroadcasts
+			send(Action.ADD_ELEMENT, group, mapElementID, netEvent);
 		}
 
 		/**
-		 * Send a network packet
+		 * Send a network packet. Checks network event to prevent rebroadcasts
 		 * 
 		 * @param action Network action to perform
 		 * @param groupName Name of the affected group
 		 * @param elementID Unique element ID, if the action is related to an element.
+		 * @param netEvent Triggering event
 		 */
-		private void send(NetGroupAction.Action action, final Group group, final MapElementID elementID)
+		private void send(NetGroupAction.Action action, final Group group, final MapElementID elementID, NetworkEvent netEvent)
 		{
-			if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
+			if (!shouldPropagateChanges(netEvent))
 				return;
-
-			// Make sure we are not processing the packet.
+				
 			// Ignore if editing the private map (publish action will handle networking when needed)
-			
-			if (isActiveMapPublic() && !PacketSourceState.isNetPacketProcessing())
-			{
+			if (isActiveMapPublic())
 				GameTableCore.this.sendBroadcast(NetGroupAction.makePacket(action, group == null ? "" : group.getName(), null, elementID, getPlayer()));
-			}
 		}
 
 		/**
-		 * Send a network packet
-		 * 
-		 * @param group group
-		 * @param newName new name
+		 * Send a network rename packet. Checks network event to prevent rebroadcasts
+		 * @param group Group to rename
+		 * @param oldName Old name
+		 * @param newName New name 
+		 * @param netEvent Triggering event
 		 */
-		private void sendRename(final Group group, String oldName, String newName)
+		private void sendRename(final Group group, String oldName, String newName, NetworkEvent netEvent)
 		{
-			if (getNetworkStatus() == NetworkStatus.DISCONNECTED)
+			if (!shouldPropagateChanges(netEvent))
 				return;
 
-			// Make sure we are not processing the packet
 			// Ignore if editing the protected map (publish action will handle networking when needed)
-			if (isActiveMapPublic() && !PacketSourceState.isNetPacketProcessing())
-			{
+			if (isActiveMapPublic())
 				GameTableCore.this.sendBroadcast(NetGroupAction.makeRenamePacket(oldName, newName, getPlayer()));
-			}
 		}
 	}
 	
@@ -1861,56 +1847,48 @@ public class GameTableCore implements MapElementRepositoryIF
 		if (!root.getTagName().equals("gt"))
 			throw new MapFormatException(file);
 
-		try
+		if (loadPrivate && loadPublic)
+			MapElementID.clear();
+
+		XMLSerializeConverter converter = new XMLSerializeConverter();
+
+		if (loadPublic)
 		{
-			PacketSourceState.beginFileLoad();
+			Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
+			getMap(GameTableCore.MapType.PUBLIC).deserializeFromXML(publicEl, converter, null);
+		}
 
-			if (loadPrivate && loadPublic)
-				MapElementID.clear();
+		if (loadPrivate)
+		{
+			Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
+			getMap(GameTableCore.MapType.PRIVATE).deserializeFromXML(privateEl, converter, null);
+		}
 
-			XMLSerializeConverter converter = new XMLSerializeConverter();
+		if (loadPublic && loadPrivate)
+		{
+			loadGridFromXML(root, converter);
+			loadLockedElementsFromXML(root, converter);
 
-			if (loadPublic)
+			// Hook for modules to load data from save file
+			Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
+
+			if (modulesEl != null)
 			{
-				Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
-				getMap(GameTableCore.MapType.PUBLIC).deserializeFromXML(publicEl, converter, null);
-			}
-
-			if (loadPrivate)
-			{
-				Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
-				getMap(GameTableCore.MapType.PRIVATE).deserializeFromXML(privateEl, converter, null);
-			}
-
-			if (loadPublic && loadPrivate)
-			{
-				loadGridFromXML(root, converter);
-				loadLockedElementsFromXML(root, converter);
-
-				// Hook for modules to load data from save file
-				Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
-
-				if (modulesEl != null)
+				for (Module module : getRegisteredModules())
 				{
-					for (Module module : getRegisteredModules())
+					if (module.canSaveToXML())
 					{
-						if (module.canSaveToXML())
-						{
-							Element moduleEl = XMLUtils.findFirstChildElement(modulesEl, "module", "name", module.getModuleName());
+						Element moduleEl = XMLUtils.findFirstChildElement(modulesEl, "module", "name", module.getModuleName());
 
-							if (moduleEl != null)
-							{
-								module.loadFromXML(moduleEl, converter);
-							}
+						if (moduleEl != null)
+						{
+							module.loadFromXML(moduleEl, converter);
 						}
 					}
 				}
 			}
 		}
-		finally
-		{
-			PacketSourceState.endFileLoad();
-		}
+
 	}
 	
 	/**
@@ -2093,6 +2071,24 @@ public class GameTableCore implements MapElementRepositoryIF
 		else
 		{
 			bkEl.setAttribute("color", getBackgroundColor().name());
+		}
+	}
+	
+	/**
+	 * Handles uncaught exceptions in the core's thread
+	 *
+	 * @author Eric Maziade
+	 */
+	private class CoreUncaughtExceptionHandler implements UncaughtExceptionHandler
+	{
+		/*
+		 * @see java.lang.Thread.UncaughtExceptionHandler#uncaughtException(java.lang.Thread, java.lang.Throwable)
+		 */
+		@Override
+		public void uncaughtException(Thread t, Throwable e)
+		{
+			Log.log(Log.SYS, "Uncaught exception!" + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 }

@@ -97,7 +97,7 @@ public class NetRecenterMap implements NetworkMessageTypeIF
     final int zoom = dis.readInt();
 
     // tell the model
-    frame.centerView(pos, zoom);
+    frame.centerView(pos, zoom, event);
 	}
 		
 	/*

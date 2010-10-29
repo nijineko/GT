@@ -32,7 +32,6 @@ import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.SelectionHandler;
 import com.galactanet.gametable.util.UtilityFunctions;
-import com.plugins.network.PacketSourceState;
 
 /**
  * The main map view of Gametable.
@@ -575,14 +574,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		// that is our new scroll position
 		final MapCoordinates newModelPoint = viewToModel(tlX, tlY);
-		if (PacketSourceState.isHostDumping())
-		{
-			scrollMapTo(newModelPoint);
-		}
-		else
-		{
-			smoothScrollTo(newModelPoint);
-		}
+		//	scrollMapTo(newModelPoint);
+		
+		smoothScrollTo(newModelPoint);
 	}
 
 	// topLeftX and topLeftY are the coordinates of where the

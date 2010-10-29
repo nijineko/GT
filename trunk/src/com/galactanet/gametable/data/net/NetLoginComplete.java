@@ -28,7 +28,6 @@ import java.io.IOException;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
-import com.plugins.network.PacketSourceState;
 
 /**
  * Sends a network message telling that we have finished handling a new connection
@@ -81,14 +80,7 @@ public class NetLoginComplete implements NetworkMessageTypeIF
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
     // there's no data in a login_complete packet.
-
-		// TODO #Networking Not liking a message calling directly in a network module implementation.  Will most likely be cleared when we investigate PacketStourceState
-		
-		// this packet is never redistributed.
-		// all we do in response to this allow pog text
-		// highlights. The pogs don't know the difference between
-		// inital data and actual player changes.
-		PacketSourceState.endHostDump();
+		// TODO #Networking Potentially useless message.
 	}
 	
 	/*
