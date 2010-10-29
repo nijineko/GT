@@ -9,6 +9,7 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +46,6 @@ import com.maziade.messages.MessageListener;
 import com.maziade.messages.MessagePriority;
 import com.maziade.props.XProperties;
 import com.plugins.cards.CardModule;
-import com.plugins.network.PacketSourceState;
 
 /**
  * The main Gametable Frame class. This class handles the display of the application objects and the response to user
@@ -63,15 +63,6 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	public GametableFrame() throws IOException
 	{
 		m_core = GameTableCore.getCore();
-		
-		try
-		{			
-			initialize(); // Create the menu, controls, etc.
-		}
-		catch (final Exception e)
-		{
-			Log.log(Log.SYS, e);
-		}
 	}
 	
 	/**
@@ -440,10 +431,32 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 */
 	public void centerView(MapCoordinates modelCenter, final int zoomLevel)
 	{
-		if (m_core.getNetworkStatus() != NetworkStatus.DISCONNECTED)
+		centerView(modelCenter, zoomLevel);
+	}
+	
+	/**
+	 * Center the view on the map at given coordinates
+	 * @param modelCenter Coordinates we want to center on 
+	 * @param zoomLevel Requested zoom level
+	 * @param netEvent Network event
+	 */
+	public void centerView(MapCoordinates modelCenter, final int zoomLevel, NetworkEvent netEvent)
+	{
+		if (shouldPropagateChanges(netEvent))
 			m_core.sendBroadcast(NetRecenterMap.makePacket(modelCenter, zoomLevel));
 		
 		m_gametableCanvas.centerView(modelCenter, zoomLevel);
+	}
+	
+	/**
+	 * Verifies whether changes to the data should be propagated over the network
+	 * 
+	 * @param netEvent Network event that might have triggered the changes
+	 * @return True to propagate, false otherwise.
+	 */
+	private boolean shouldPropagateChanges(NetworkEvent netEvent)
+	{
+		return m_core.getNetworkStatus() != NetworkStatus.DISCONNECTED && netEvent == null && !m_core.isLoggingIn();
 	}
 
 	/**
@@ -1881,310 +1894,316 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Performs initialization. This draws all the controls in the Frame and sets up listener to react to user actions.
 	 * 
-	 * @throws IOException
 	 */
-	private void initialize() throws IOException
+	public void initialize() 
 	{
-		ImageCache.startCacheDaemon();
-		
-		SlashCommands.registerDefaultChatCommands();
-		
-		m_networkResponder = new NetworkFrameResponder();
-		
-		// Set network responder to our messages
-		NetSendTypingFlag.getMessageType(m_networkResponder);
-		
-		initializeCoreListeners();
-
-		buildActions();
-
-		if (DEBUG_FOCUS) // if debugging
+		try
 		{
-			final KeyboardFocusManager man = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-			man.addPropertyChangeListener(new PropertyChangeListener() {
-				/*
-				 * If debugging,show changes to properties in the console
-				 * 
-				 * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-				 */
-				public void propertyChange(final PropertyChangeEvent e)
-				{
-					System.out.println(e.getPropertyName() + ":\n    " + e.getOldValue() + "\n -> " + e.getNewValue());
-				}
-
-			});
-		}
-
-		// Configure chat panel
-		m_chatPanel = new ChatPanel(this);
-		
-		m_core.registerChatEngine(m_chatPanel);
-		
-		m_textEntry = m_chatPanel.getTextEntry();
-
-		setContentPane(new JPanel(new BorderLayout())); // Set the main UI object with a Border Layout
-		setDefaultCloseOperation(EXIT_ON_CLOSE); // Ensure app ends with this frame is closed
-		setTitle(GametableApp.VERSION); // Set frame title to the current version
-		setJMenuBar(getMainMenuBar()); // Set the main MenuBar
-
-		// Set this class to handle events from changing grid types
-		m_noGridModeMenuItem.addActionListener(this);
-		m_squareGridModeMenuItem.addActionListener(this);
-		m_hexGridModeMenuItem.addActionListener(this);
-
-		// Configure the panel containing the map and the chat window
-		m_mapChatSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-		m_mapChatSplitPane.setContinuousLayout(true);
-		m_mapChatSplitPane.setResizeWeight(1.0);
-		m_mapChatSplitPane.setBorder(null);
-
-		// Configure the panel that splits the map and the pog list
-		m_mapPogSplitPane.setContinuousLayout(true);
-		m_mapPogSplitPane.setBorder(null);
-
-		// Configure the color dropdown
-		m_colorCombo.setMaximumSize(new Dimension(100, 21));
-		m_colorCombo.setFocusable(false);
-
-		// Configure the toolbar
-		m_toolBar.setFloatable(false);
-		m_toolBar.setRollover(true);
-		m_toolBar.setBorder(new EmptyBorder(2, 5, 2, 5));
-		m_toolBar.add(m_colorCombo, null);
-		m_toolBar.add(Box.createHorizontalStrut(5));
-
-		initializeTools();
-
-		m_toolBar.add(Box.createHorizontalStrut(5));
-
-		/*
-		 * Added in order to accomodate grid unit multiplier
-		 */
-		m_gridunitmultiplier = new JTextField("5", 3);
-		m_gridunitmultiplier.setMaximumSize(new Dimension(42, 21));
-
-		// Configure the units dropdown
-		final String[] units = { "ft", "m", "u" };
-		m_gridunit = new JComboBox(units);
-		m_gridunit.setMaximumSize(new Dimension(42, 21));
-		m_toolBar.add(m_gridunitmultiplier);
-		m_toolBar.add(m_gridunit);
-
-		// Add methods to react to changes to the unit multiplier
-		// todo : this is definitely better somewhere else
-		m_gridunitmultiplier.getDocument().addDocumentListener(new DocumentListener() {
-			// todo exceptions should be captured
-			public void changedUpdate(final DocumentEvent e)
-			{
-				m_gridMultiplier = Double.parseDouble(m_gridunitmultiplier.getText());
-			}
-
-			public void insertUpdate(final DocumentEvent e)
-			{
-				m_gridMultiplier = Double.parseDouble(m_gridunitmultiplier.getText());
-			}
-
-			public void removeUpdate(final DocumentEvent e)
-			{
-				// Commented out to fix grid measurement size error
-				// grid_multiplier = Double.parseDouble(m_gridunitmultiplier.getText());
-			}
-		});
-		m_gridunit.addActionListener(this);
-
-		// Configure the checkbox to show names
-		m_showNamesCheckbox.setFocusable(false);
-
-		// @revise consider to place this somewhere else in UI
-		m_showNamesCheckbox.addActionListener(new ActionListener() {
-			/*
-			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-			 */
-			public void actionPerformed(final ActionEvent e)
-			{
-				m_gametableCanvas.repaint();
-			}
-		});
-		m_toolBar.add(Box.createHorizontalStrut(5));
-		m_toolBar.add(m_showNamesCheckbox);
-		m_toolBar.add(Box.createHorizontalStrut(5));
-		m_toolBar.add(m_randomRotate); // #randomrotate
-
-		getContentPane().add(m_toolBar, BorderLayout.NORTH);
-
-//		getGametableCanvas().init(this);
-//		
-//		initializeGroupManager();
-//
-		initializeMapElementTypeLibrary();
-		
-		// pogWindow
-		m_pogPanel = new PogPanel(m_core.getMapElementTypeLibrary(), getGametableCanvas());
-		m_pogsTabbedPane.addTab(m_pogPanel, getLanguageResource().POG_LIBRARY);
-
-		for (Module module : m_core.getRegisteredModules())
-		{
-			// todo #Plugins consider abstracting "PogsTabbedPane" through an interface.
-			module.onInitializeUI(this);
-		}
-
-		m_pogsTabbedPane.setFocusable(false);
-		m_canvasPane.setBorder(new CompoundBorder(new BevelBorder(BevelBorder.LOWERED), new EmptyBorder(1, 1, 1, 1)));
-		m_canvasPane.add(getGametableCanvas(), BorderLayout.CENTER);
-		m_mapChatSplitPane.add(m_canvasPane, JSplitPane.TOP);
-		m_mapChatSplitPane.add(m_chatPanel, JSplitPane.BOTTOM);
-
-		m_mapPogSplitPane.add(m_pogsTabbedPane, JSplitPane.LEFT);
-		m_mapPogSplitPane.add(m_mapChatSplitPane, JSplitPane.RIGHT);
-		getContentPane().add(m_mapPogSplitPane, BorderLayout.CENTER);
-		m_status.setBorder(new EtchedBorder(EtchedBorder.RAISED));
-		getContentPane().add(m_status, BorderLayout.SOUTH);
-		updateStatus();
-
-		m_disconnectMenuItem.setEnabled(false); // when the program starts we are disconnected so disable this menu item
-
-		final ColorComboCellRenderer renderer = new ColorComboCellRenderer();
-		m_colorCombo.setRenderer(renderer);
+			Thread.setDefaultUncaughtExceptionHandler(new FrameUncaughtExceptionHandler());
+			
+			ImageCache.startCacheDaemon();
+			
+			SlashCommands.registerDefaultChatCommands();
+			
+			m_networkResponder = new NetworkFrameResponder();
+			
+			// Set network responder to our messages
+			NetSendTypingFlag.getMessageType(m_networkResponder);
+			
+			initializeCoreListeners();
 	
-		m_colorCombo.addActionListener(this);
-		updateGridModeMenu();
-
-		addComponentListener(new ComponentAdapter() {
-			/*
-			 * @see java.awt.event.ComponentListener#componentMoved(java.awt.event.ComponentEvent)
-			 */
-			public void componentMoved(final ComponentEvent e)
+			buildActions();
+	
+			if (DEBUG_FOCUS) // if debugging
 			{
-				updateWindowInfo();
-			}
-
-			/*
-			 * @see java.awt.event.ComponentListener#componentResized(java.awt.event.ComponentEvent)
-			 */
-			public void componentResized(final ComponentEvent event)
-			{
-				updateWindowInfo();
-			}
-
-		});
-
-		// handle window events
-		addWindowListener(new WindowAdapter() {
-			/*
-			 * @see java.awt.event.WindowListener#windowClosed(java.awt.event.WindowEvent)
-			 */
-			public void windowClosed(final WindowEvent e)
-			{
-				saveAll();
-			}
-
-			/*
-			 * @see java.awt.event.WindowAdapter#windowClosing(java.awt.event.WindowEvent)
-			 */
-			public void windowClosing(final WindowEvent e)
-			{
-				saveAll();
-			}
-		});
-
-		/*
-		 * // change the default component traverse settings // we do this cause we don't really care about those //
-		 * settings, but we want to be able to use the tab key KeyboardFocusManager focusMgr =
-		 * KeyboardFocusManager.getCurrentKeyboardFocusManager(); Set set = new
-		 * HashSet(focusMgr.getDefaultFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS)); set.clear(); //
-		 * set.add(KeyStroke.getKeyStroke('\t', 0, false));
-		 * focusMgr.setDefaultFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, set); set = new
-		 * HashSet(focusMgr.getDefaultFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS)); set.clear(); //
-		 * set.add(KeyStroke.getKeyStroke('\t', 0, false));
-		 * focusMgr.setDefaultFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, set);
-		 */
-
-		m_gametableCanvas.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed SLASH"), "startSlash");
-		m_gametableCanvas.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed ENTER"), "startText");
-		m_gametableCanvas.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control pressed R"), "reply");
-
-		m_gametableCanvas.getActionMap().put("startSlash", new AbstractAction() {
-			/*
-			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-			 */
-			public void actionPerformed(final ActionEvent e)
-			{
-				if (m_gametableCanvas.isTextFieldFocused())
-				{
-					return;
-				}
-
-				// only do this at the start of a line
-				if (m_textEntry.getText().length() == 0)
-				{
-					// furthermore, only do the set text and focusing if we don't have
-					// focus (otherwise, we end up with two slashes. One from the user typing it, and
-					// another from us setting the text, cause our settext happens first.)
-					if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != m_textEntry)
+				final KeyboardFocusManager man = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+				man.addPropertyChangeListener(new PropertyChangeListener() {
+					/*
+					 * If debugging,show changes to properties in the console
+					 * 
+					 * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+					 */
+					public void propertyChange(final PropertyChangeEvent e)
 					{
-						m_textEntry.setText("/");
+						System.out.println(e.getPropertyName() + ":\n    " + e.getOldValue() + "\n -> " + e.getNewValue());
 					}
-				}
-				m_textEntry.requestFocus();
+	
+				});
 			}
-		});
-
-		m_gametableCanvas.getActionMap().put("startText", new AbstractAction() {
+	
+			// Configure chat panel
+			m_chatPanel = new ChatPanel(this);
+			
+			m_core.registerChatEngine(m_chatPanel);
+			
+			m_textEntry = m_chatPanel.getTextEntry();
+	
+			setContentPane(new JPanel(new BorderLayout())); // Set the main UI object with a Border Layout
+			setDefaultCloseOperation(EXIT_ON_CLOSE); // Ensure app ends with this frame is closed
+			setTitle(GametableApp.VERSION); // Set frame title to the current version
+			setJMenuBar(getMainMenuBar()); // Set the main MenuBar
+	
+			// Set this class to handle events from changing grid types
+			m_noGridModeMenuItem.addActionListener(this);
+			m_squareGridModeMenuItem.addActionListener(this);
+			m_hexGridModeMenuItem.addActionListener(this);
+	
+			// Configure the panel containing the map and the chat window
+			m_mapChatSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+			m_mapChatSplitPane.setContinuousLayout(true);
+			m_mapChatSplitPane.setResizeWeight(1.0);
+			m_mapChatSplitPane.setBorder(null);
+	
+			// Configure the panel that splits the map and the pog list
+			m_mapPogSplitPane.setContinuousLayout(true);
+			m_mapPogSplitPane.setBorder(null);
+	
+			// Configure the color dropdown
+			m_colorCombo.setMaximumSize(new Dimension(100, 21));
+			m_colorCombo.setFocusable(false);
+	
+			// Configure the toolbar
+			m_toolBar.setFloatable(false);
+			m_toolBar.setRollover(true);
+			m_toolBar.setBorder(new EmptyBorder(2, 5, 2, 5));
+			m_toolBar.add(m_colorCombo, null);
+			m_toolBar.add(Box.createHorizontalStrut(5));
+	
+			initializeTools();
+	
+			m_toolBar.add(Box.createHorizontalStrut(5));
+	
 			/*
-			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+			 * Added in order to accomodate grid unit multiplier
 			 */
-			public void actionPerformed(final ActionEvent e)
+			m_gridunitmultiplier = new JTextField("5", 3);
+			m_gridunitmultiplier.setMaximumSize(new Dimension(42, 21));
+	
+			// Configure the units dropdown
+			final String[] units = { "ft", "m", "u" };
+			m_gridunit = new JComboBox(units);
+			m_gridunit.setMaximumSize(new Dimension(42, 21));
+			m_toolBar.add(m_gridunitmultiplier);
+			m_toolBar.add(m_gridunit);
+	
+			// Add methods to react to changes to the unit multiplier
+			// todo : this is definitely better somewhere else
+			m_gridunitmultiplier.getDocument().addDocumentListener(new DocumentListener() {
+				// todo exceptions should be captured
+				public void changedUpdate(final DocumentEvent e)
+				{
+					m_gridMultiplier = Double.parseDouble(m_gridunitmultiplier.getText());
+				}
+	
+				public void insertUpdate(final DocumentEvent e)
+				{
+					m_gridMultiplier = Double.parseDouble(m_gridunitmultiplier.getText());
+				}
+	
+				public void removeUpdate(final DocumentEvent e)
+				{
+					// Commented out to fix grid measurement size error
+					// grid_multiplier = Double.parseDouble(m_gridunitmultiplier.getText());
+				}
+			});
+			m_gridunit.addActionListener(this);
+	
+			// Configure the checkbox to show names
+			m_showNamesCheckbox.setFocusable(false);
+	
+			// @revise consider to place this somewhere else in UI
+			m_showNamesCheckbox.addActionListener(new ActionListener() {
+				/*
+				 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+				 */
+				public void actionPerformed(final ActionEvent e)
+				{
+					m_gametableCanvas.repaint();
+				}
+			});
+			m_toolBar.add(Box.createHorizontalStrut(5));
+			m_toolBar.add(m_showNamesCheckbox);
+			m_toolBar.add(Box.createHorizontalStrut(5));
+			m_toolBar.add(m_randomRotate); // #randomrotate
+	
+			getContentPane().add(m_toolBar, BorderLayout.NORTH);
+	
+	//		getGametableCanvas().init(this);
+	//		
+	//		initializeGroupManager();
+	//
+			initializeMapElementTypeLibrary();
+			
+			// pogWindow
+			m_pogPanel = new PogPanel(m_core.getMapElementTypeLibrary(), getGametableCanvas());
+			m_pogsTabbedPane.addTab(m_pogPanel, getLanguageResource().POG_LIBRARY);
+	
+			for (Module module : m_core.getRegisteredModules())
 			{
-				if (m_gametableCanvas.isTextFieldFocused())
-				{
-					return;
-				}
-
-				if (m_textEntry.getText().length() == 0)
-				{
-					// furthermore, only do the set text and focusing if we don't have
-					// focus (otherwise, we end up with two slashes. One from the user typing it, and
-					// another from us setting the text, cause our settext happens first.)
-					if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != m_textEntry)
-					{
-						m_textEntry.setText("");
-					}
-				}
-				m_textEntry.requestFocus();
+				// todo #Plugins consider abstracting "PogsTabbedPane" through an interface.
+				module.onInitializeUI(this);
 			}
-		});
-
-		// m_gametableCanvas.getActionMap().put("reply", new AbstractAction()
-		// {
-		// /*
-		// * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-		// */
-		// public void actionPerformed(final ActionEvent e)
-		// {
-		// // we don't do this if there's already text in the entry field
-		// if (m_textEntry.getText().length() == 0)
-		// {
-		// // if they've never received a tell, just tell them that
-		// if (m_lastPrivateMessageSender == null)
-		// {
-		// // they've received no tells yet
-		// m_chatPanel.logAlertMessage("You cannot reply until you receive a /tell from another player.");
-		// }
-		// else
-		// {
-		// startTellTo(m_lastPrivateMessageSender);
-		// }
-		// }
-		// m_textEntry.requestFocus();
-		// }
-		// });
+	
+			m_pogsTabbedPane.setFocusable(false);
+			m_canvasPane.setBorder(new CompoundBorder(new BevelBorder(BevelBorder.LOWERED), new EmptyBorder(1, 1, 1, 1)));
+			m_canvasPane.add(getGametableCanvas(), BorderLayout.CENTER);
+			m_mapChatSplitPane.add(m_canvasPane, JSplitPane.TOP);
+			m_mapChatSplitPane.add(m_chatPanel, JSplitPane.BOTTOM);
+	
+			m_mapPogSplitPane.add(m_pogsTabbedPane, JSplitPane.LEFT);
+			m_mapPogSplitPane.add(m_mapChatSplitPane, JSplitPane.RIGHT);
+			getContentPane().add(m_mapPogSplitPane, BorderLayout.CENTER);
+			m_status.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+			getContentPane().add(m_status, BorderLayout.SOUTH);
+			updateStatus();
+	
+			m_disconnectMenuItem.setEnabled(false); // when the program starts we are disconnected so disable this menu item
+	
+			final ColorComboCellRenderer renderer = new ColorComboCellRenderer();
+			m_colorCombo.setRenderer(renderer);
 		
-		m_gametableCanvas.init();
+			m_colorCombo.addActionListener(this);
+			updateGridModeMenu();
+	
+			addComponentListener(new ComponentAdapter() {
+				/*
+				 * @see java.awt.event.ComponentListener#componentMoved(java.awt.event.ComponentEvent)
+				 */
+				public void componentMoved(final ComponentEvent e)
+				{
+					updateWindowInfo();
+				}
+	
+				/*
+				 * @see java.awt.event.ComponentListener#componentResized(java.awt.event.ComponentEvent)
+				 */
+				public void componentResized(final ComponentEvent event)
+				{
+					updateWindowInfo();
+				}
+	
+			});
+	
+			// handle window events
+			addWindowListener(new WindowAdapter() {
+				/*
+				 * @see java.awt.event.WindowListener#windowClosed(java.awt.event.WindowEvent)
+				 */
+				public void windowClosed(final WindowEvent e)
+				{
+					saveAll();
+				}
+	
+				/*
+				 * @see java.awt.event.WindowAdapter#windowClosing(java.awt.event.WindowEvent)
+				 */
+				public void windowClosing(final WindowEvent e)
+				{
+					saveAll();
+				}
+			});
+	
+			/*
+			 * // change the default component traverse settings // we do this cause we don't really care about those //
+			 * settings, but we want to be able to use the tab key KeyboardFocusManager focusMgr =
+			 * KeyboardFocusManager.getCurrentKeyboardFocusManager(); Set set = new
+			 * HashSet(focusMgr.getDefaultFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS)); set.clear(); //
+			 * set.add(KeyStroke.getKeyStroke('\t', 0, false));
+			 * focusMgr.setDefaultFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, set); set = new
+			 * HashSet(focusMgr.getDefaultFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS)); set.clear(); //
+			 * set.add(KeyStroke.getKeyStroke('\t', 0, false));
+			 * focusMgr.setDefaultFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, set);
+			 */
+	
+			m_gametableCanvas.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed SLASH"), "startSlash");
+			m_gametableCanvas.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("pressed ENTER"), "startText");
+			m_gametableCanvas.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control pressed R"), "reply");
+	
+			m_gametableCanvas.getActionMap().put("startSlash", new AbstractAction() {
+				/*
+				 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+				 */
+				public void actionPerformed(final ActionEvent e)
+				{
+					if (m_gametableCanvas.isTextFieldFocused())
+					{
+						return;
+					}
+	
+					// only do this at the start of a line
+					if (m_textEntry.getText().length() == 0)
+					{
+						// furthermore, only do the set text and focusing if we don't have
+						// focus (otherwise, we end up with two slashes. One from the user typing it, and
+						// another from us setting the text, cause our settext happens first.)
+						if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != m_textEntry)
+						{
+							m_textEntry.setText("/");
+						}
+					}
+					m_textEntry.requestFocus();
+				}
+			});
+	
+			m_gametableCanvas.getActionMap().put("startText", new AbstractAction() {
+				/*
+				 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+				 */
+				public void actionPerformed(final ActionEvent e)
+				{
+					if (m_gametableCanvas.isTextFieldFocused())
+					{
+						return;
+					}
+	
+					if (m_textEntry.getText().length() == 0)
+					{
+						// furthermore, only do the set text and focusing if we don't have
+						// focus (otherwise, we end up with two slashes. One from the user typing it, and
+						// another from us setting the text, cause our settext happens first.)
+						if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != m_textEntry)
+						{
+							m_textEntry.setText("");
+						}
+					}
+					m_textEntry.requestFocus();
+				}
+			});
+	
+			// m_gametableCanvas.getActionMap().put("reply", new AbstractAction()
+			// {
+			// /*
+			// * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+			// */
+			// public void actionPerformed(final ActionEvent e)
+			// {
+			// // we don't do this if there's already text in the entry field
+			// if (m_textEntry.getText().length() == 0)
+			// {
+			// // if they've never received a tell, just tell them that
+			// if (m_lastPrivateMessageSender == null)
+			// {
+			// // they've received no tells yet
+			// m_chatPanel.logAlertMessage("You cannot reply until you receive a /tell from another player.");
+			// }
+			// else
+			// {
+			// startTellTo(m_lastPrivateMessageSender);
+			// }
+			// }
+			// m_textEntry.requestFocus();
+			// }
+			// });
+			
+			m_gametableCanvas.init();
+	
+			initializeExecutorThread();
 
-		initializeExecutorThread();
-
-		// Load frame preferences
-		m_core.loadProperties();
+		}
+		catch (final Exception e)
+		{
+			Log.log(Log.SYS, e);
+		}
 	}
 
 	/**
@@ -2644,20 +2663,32 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	public void start()
 	{
 		setVisible(true);
-	
-		// TODO !!! PacketSourceState
 		
 		// load the primary map
-		PacketSourceState.beginFileLoad();
 		File autoSave = getAutoSaveXMLFile();
 		if (autoSave.exists())
 			loadMapFromXML(autoSave, true, true);//
-		PacketSourceState.endFileLoad();
-		
-		// END of WTF
-	
 	}
 	
 	private final int DEFAULT_WINDOWSIZE_WIDTH = 800;
 	private final int DEFAULT_WINDOWSIZE_HEIGHT = 600;
+	
+	/**
+	 * Handles uncaught exceptions in the frame's thread
+	 *
+	 * @author Eric Maziade
+	 */
+	private class FrameUncaughtExceptionHandler implements UncaughtExceptionHandler
+	{
+		/*
+		 * @see java.lang.Thread.UncaughtExceptionHandler#uncaughtException(java.lang.Thread, java.lang.Throwable)
+		 */
+		@Override
+		public void uncaughtException(Thread t, Throwable e)
+		{
+			Log.log(Log.SYS, "Uncaught exception!" + e.getMessage());
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(GametableFrame.this, e.getMessage(), "Uncaught exception", JOptionPane.ERROR_MESSAGE);
+		}
+	}
 }
