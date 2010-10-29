@@ -16,32 +16,37 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.data.MapElementTypeIF;
+import com.galactanet.gametable.data.MapElementTypeLibrary;
 import com.galactanet.gametable.net.*;
+import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message requesting a change of size for a map element
+ * Network message to communicate a change in map background
  * 
  * @author Eric Maziade
+ * 
+ * TODO #AUDIT
  */
-public class NetSetMapElementSize implements NetworkMessageTypeIF
+public class NetSetBackground implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSetMapElementSize getMessageType()
+	public static NetSetBackground getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSetMapElementSize();
+			g_messageType = new NetSetBackground();
 		
 		return g_messageType;
 	}
@@ -49,26 +54,51 @@ public class NetSetMapElementSize implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSetMapElementSize g_messageType = null;
+	private static NetSetBackground g_messageType = null;
 	
-
-	/**
-	 * Make a data packet for a size change request
-	 * @param mapElement Map element to change
-	 * @param faceSize size Face size in tiles
-	 * @return
+/**
+	 * Create a data packet to set the background to a predefined color
+	 * 
+	 * @param color Desired color
+	 * @return data packet
 	 */
-	public static byte[] makePacket(MapElement mapElement, float faceSize)
+	public static byte[] makePacket(BackgroundColor color)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
-
-			dos.writeLong(mapElement.getID().numeric());
-			dos.writeFloat(faceSize);
+			
+			dos.writeInt(Type.COLOR.ordinal());
+			dos.writeInt(color.ordinal());
 
 			return dos.toByteArray();
+		}
+		catch (final IOException ex)
+		{
+			Log.log(Log.SYS, ex);
+			return null;
+		}
+	}
+
+	/**
+	 * Create a data packet to set the background tile
+	 * 
+	 * @param elementType
+	 * @return data packet
+	 */
+	public static byte[] makePacket(MapElementTypeIF elementType)
+	{
+		try
+		{
+			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			final DataOutputStream dos = new DataOutputStream(baos);
+
+			dos.writeInt(g_id); // type
+			dos.writeInt(Type.ELEMENT_TYPE.ordinal());
+			dos.writeUTF(elementType.getFullyQualifiedName());
+
+			return baos.toByteArray();
 		}
 		catch (final IOException ex)
 		{
@@ -84,17 +114,27 @@ public class NetSetMapElementSize implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		long id = dis.readLong();
-		MapElementID mapElementID = MapElementID.fromNumeric(id);
-		
-		final float faceSize = dis.readFloat();
+		int iType = dis.readInt();
 
-		// tell the model
-		MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
-		if (mapElement != null)
+		if (iType == Type.ELEMENT_TYPE.ordinal())
 		{
-			mapElement.setFaceSize(faceSize, event);
-			
+			String mapElementTypeFQN = dis.readUTF();
+			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(mapElementTypeFQN);
+			if (type != null)
+			{
+				GameTableCore.getCore().setBackgroundMapElementType(type, event);
+			}
+			else
+			{
+				Log.log(Log.SYS, "Map element type not found: " + mapElementTypeFQN);
+			}
+		}
+		else
+		{
+			int colorID = dis.readInt();
+			BackgroundColor color = BackgroundColor.fromOrdinal(colorID);
+
+			GameTableCore.getCore().setBackgroundColor(color, event);
 		}
 	}
 
@@ -130,4 +170,9 @@ public class NetSetMapElementSize implements NetworkMessageTypeIF
 
 	private static int		g_id		= 0;
 	private static String	g_name	= null;
+
+	private static enum Type
+	{
+		COLOR, ELEMENT_TYPE;
+	}
 }

@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;

@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -28,48 +28,54 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.data.LineSegment;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Handles network messages requesting to lock map elements
+ * Networking message to send line segments over the network
+ * 
+ * @auditedby themaze75
  */
-public class NetLockMapElements implements NetworkMessageTypeIF
+public class NetAddLineSegments implements NetworkMessageTypeIF
 {
 	/**
-	 * Singleton factory method
+	 * Get singleton instance of message type
 	 * @return
 	 */
-	public static NetLockMapElements getMessageType()
+	public static NetAddLineSegments getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetLockMapElements();
+			g_messageType = new NetAddLineSegments();
 		
 		return g_messageType;
 	}
 	
 	/**
-	 * Singleton instance
+	 * Private constructor
 	 */
-	private static NetLockMapElements g_messageType = null;
+	private NetAddLineSegments()
+	{
+	}
 	
-/**
-	 * Create a network message requesting to lock all map elements
-	 * @param lock True to lock, false to unlock
+	/**
+	 * Make a data packet to send a new batch of line segments 
+	 * @param lines Line segments
 	 * @return data packet
 	 */
-	public static byte[] makeLockAllPacket(final boolean lock)
+	public static byte[] makePacket(List<LineSegment> lines)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeInt(-1);
-      dos.writeBoolean(lock);
-
+		  dos.writeInt(lines.size());
+		  
+		  for (LineSegment line : lines)
+		  {
+		      line.writeToPacket(dos);
+		  }
 			return dos.toByteArray();
 		}
 		catch (final IOException ex)
@@ -78,51 +84,22 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 			return null;
 		}
 	}
-	
-	/**
-	 * Create a network message packet requesting to lock a single map element
-	 * @param mapElement Map element to lock or unlock
-	 * @param lock True to lock, false to unlock
+
+  /**
+	 * Make a data packet to send a new of line segments 
+	 * @param line Line segment
 	 * @return data packet
 	 */
-	public static byte[] makePacket(MapElement mapElement, final boolean lock)
-	{
-		try
-		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
-			DataPacketStream dos = module.createDataPacketStream(getMessageType());
-
-			dos.writeInt(1);
-      dos.writeBoolean(lock);
-      dos.writeLong(mapElement.getID().numeric());
-
-			return dos.toByteArray();
-		}
-		catch (final IOException ex)
-		{
-			Log.log(Log.SYS, ex);
-			return null;
-		}
-	}
-	
-	/**
-	 * Create a network message packet requesting to lock multiple map elements
-	 * @param mapElements List of map elements to lock or unlock
-	 * @param lock True to lock, false to unlock
-	 * @return data packet
-	 */
-	public static byte[] makePacket(List<MapElement> mapElements, final boolean lock)
+	public static byte[] makePacket(LineSegment line)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-			dos.writeInt(mapElements.size());
-			dos.writeBoolean(lock);
-			
-			for (MapElement mapElement : mapElements)
-				dos.writeLong(mapElement.getID().numeric());
+      dos.writeInt(1);
+      
+      line.writeToPacket(dos);
 
 			return dos.toByteArray();
 		}
@@ -139,29 +116,20 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		long qty = dis.readInt();		
-    boolean locked = dis.readBoolean();
+    final int numLines = dis.readInt();
     
-    GameTableCore core = GameTableCore.getCore();
+    List<LineSegment> lines = new ArrayList<LineSegment>(numLines);
     
-    if (qty < 1)
+    for (int i = 0; i < numLines; i++)
     {
-    	core.lockAllMapElements(GameTableCore.MapType.PUBLIC, locked, event);
-    	return;
+    	lines.add(new LineSegment(dis));
     }
-    
-    List<MapElement> mapElements = new ArrayList<MapElement>();
-    
-    for (int i = 0; i < qty; i++)
-    {
-    	MapElementID id = MapElementID.fromNumeric(dis.readLong());
-    	MapElement element = core.getMapElement(id);
-    	mapElements.add(element);
-    }
-    
-    core.lockMapElements(GameTableCore.MapType.PUBLIC, mapElements, locked, event);
+
+    // tell the model
+    final GameTableCore core = GameTableCore.getCore();
+    core.getMap(GameTableCore.MapType.PUBLIC).addLineSegments(lines, event);
 	}
-	
+		
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */
@@ -193,5 +161,6 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	}
 	
 	private static int g_id = 0;
-	private static String g_name = null;	
+	private static String g_name = null;
+	private static NetAddLineSegments g_messageType = null;
 }

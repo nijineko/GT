@@ -1,7 +1,7 @@
 /*
- * MsgAddMapElement.java
+ * Net.java
  *
- * @created 2010-08-30
+ * @created 2010-09-05
  *
  * Copyright (C) 1999-2010 Open Source Game Table Project
  * 
@@ -20,33 +20,33 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementTypeIF;
+import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * todo: comment
- *
- * @author Eric Maziade
+ * Network message to move around map elements
+ * 
+ * TODO #AUDIT
  */
-public class NetAddMapElement implements NetworkMessageTypeIF
-{
+public class NetSetMapElementPosition implements NetworkMessageTypeIF
+{	
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetAddMapElement getMessageType()
+	public static NetSetMapElementPosition getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetAddMapElement();
+			g_messageType = new NetSetMapElementPosition();
 		
 		return g_messageType;
 	}
@@ -54,33 +54,24 @@ public class NetAddMapElement implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetAddMapElement g_messageType = null;
+	private static NetSetMapElementPosition g_messageType = null;
 	
-	/**
-	 * Create a data packet to add an element to the public layer
-	 * @param mapElement Map element to add
+/**
+	 * Create a data packet requesting a map element be moved to specific coordinates
+	 * @param mapElement Map Element
+	 * @param modelPos Map coordinates
 	 * @return data packet
 	 */
-	public static byte[] makePacket(MapElement mapElement)
-  {
-		return makePacket(mapElement, true);
-  }
-	
-	/**
-	 * Create a data packet to add an element to a specified layer
-	 * @param mapElement Map element to add
-	 * @param publicLayer True if element is to be added to public layer
-	 * @return data packet
-	 */
-	public static byte[] makePacket(MapElement mapElement, boolean publicLayer)
-  {
+	public static byte[] makePacket(final MapElement mapElement, MapCoordinates modelPos)
+	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
-
-			dos.writeBoolean(publicLayer); // layer
-			mapElement.writeToPacket(dos);
+			
+      dos.writeLong(mapElement.getID().numeric());
+      dos.writeInt(modelPos.x);
+      dos.writeInt(modelPos.y);
 
 			return dos.toByteArray();
 		}
@@ -91,6 +82,24 @@ public class NetAddMapElement implements NetworkMessageTypeIF
 		}
 	}
 	
+	/*
+	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#processData(com.galactanet.gametable.data.net.Connection, java.io.DataInputStream)
+	 */
+	@Override
+	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
+	{
+		long id = dis.readLong();
+    MapElementID mapElementID = MapElementID.fromNumeric(id);
+    
+    MapCoordinates pos = new MapCoordinates(dis.readInt(), dis.readInt());
+    
+    final GameTableCore core = GameTableCore.getCore();
+    
+    MapElement mapElement = core.getMapElement(mapElementID);
+    if (mapElement != null)
+    	mapElement.setPosition(pos, event);    
+	}
+		
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */
@@ -111,37 +120,7 @@ public class NetAddMapElement implements NetworkMessageTypeIF
 		
 		return g_name;
 	}
-	
-	/*
-	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#processData(java.io.DataInputStream)
-	 */
-	@Override
-	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
-	{
-		boolean addToPublicLayer = dis.readBoolean(); 
 
-		final MapElement element = new MapElement(dis);
-		
-		if (element.isCorrupted())
-		{
-			// for one reason or another, this element is corrupt and should be ignored
-			return;
-		}
-
-		// If map element is not loaded, we'll need to request it
-		MapElementTypeIF type = element.getMapElementType();
-		if (!type.isLoaded())
-		{
-			type.loadDataFromNetwork(sourceConnection);
-		}
-
-		// Have the model react
-		GameTableCore core = GameTableCore.getCore();
-		GameTableMap map = core.getMap(addToPublicLayer ? GameTableCore.MapType.PUBLIC : GameTableCore.MapType.PRIVATE);
-		
-		map.addMapElement(element, event);
-	}
-	
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#setID(int)
 	 */

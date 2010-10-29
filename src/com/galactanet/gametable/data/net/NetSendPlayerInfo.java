@@ -20,29 +20,32 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
-import com.plugins.network.PacketSourceState;
 
 /**
- * Sends a network message telling that we have finished handling a new connection
+ * Network message to broadcast information updates about a player
+ * 
+ * @auditedby themaze75
  */
-public class NetLoginComplete implements NetworkMessageTypeIF
+public class NetSendPlayerInfo implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetLoginComplete getMessageType()
+	public static NetSendPlayerInfo getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetLoginComplete();
+			g_messageType = new NetSendPlayerInfo();
 		
 		return g_messageType;
 	}
@@ -50,20 +53,23 @@ public class NetLoginComplete implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetLoginComplete g_messageType = null;
+	private static NetSendPlayerInfo g_messageType = null;
 	
 	/**
-	 * Create a network data packet containing message information
-	 * @return
+	 * Create a network data packet
+	 * @param player Player object containing information
+	 * @return data packet
 	 */
-	public static byte[] makePacket()
+	public static byte[] makePacket(final Player player)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-			// there's actually no additional data. Just the info that the login is complete
+      dos.writeInt(player.getID());
+      dos.writeUTF(player.getCharacterName());
+      dos.writeUTF(player.getPlayerName());
 
 			return dos.toByteArray();
 		}
@@ -80,17 +86,29 @@ public class NetLoginComplete implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-    // there's no data in a login_complete packet.
-
-		// TODO #Networking Not liking a message calling directly in a network module implementation.  Will most likely be cleared when we investigate PacketStourceState
+		int playerID = dis.readInt();
+		String playerName = dis.readUTF();
+		String characterName = dis.readUTF();
 		
-		// this packet is never redistributed.
-		// all we do in response to this allow pog text
-		// highlights. The pogs don't know the difference between
-		// inital data and actual player changes.
-		PacketSourceState.endHostDump();
+		GameTableCore core = GameTableCore.getCore();
+		Player player = core.getPlayer(playerID);
+		
+		if (player != null)
+		{
+			String message = player.getCharacterName() + "(" + player.getPlayerName() + ") is now " + characterName + " (" + playerName + ")";
+			core.sendMessageLocal(MessageType.ALERT, message);
+			Log.log(Log.PLAY, message);
+			
+			if (player == core.getPlayer())
+				core.setPlayerInformation(playerName, characterName, event);
+			else
+			{
+				player.setCharacterName(characterName);
+				player.setPlayerName(playerName);
+			}
+		}
 	}
-	
+		
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */
@@ -122,5 +140,5 @@ public class NetLoginComplete implements NetworkMessageTypeIF
 	}
 	
 	private static int g_id = 0;
-	private static String g_name = null;	
+	private static String g_name = null;
 }

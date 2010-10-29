@@ -30,13 +30,13 @@ import org.w3c.dom.Element;
 
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
+import com.galactanet.gametable.data.net.NetAddMapElement;
 import com.galactanet.gametable.module.Module;
 import com.galactanet.gametable.net.NetworkConnectionIF;
 import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.net.NetworkModuleIF;
 import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.chat.SlashCommands;
-import com.galactanet.gametable.ui.net.NetAddMapElement;
 import com.galactanet.gametable.util.UtilityFunctions;
 import com.maziade.messages.MessageDefinition;
 import com.maziade.messages.MessageID;

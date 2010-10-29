@@ -16,30 +16,28 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message requesting that a map element be rotated
+ * Network message for requesting changes in map element type
  */
-public class NetSetMapElementAngle implements NetworkMessageTypeIF
+public class NetSetMapElementType implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSetMapElementAngle getMessageType()
+	public static NetSetMapElementType getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSetMapElementAngle();
+			g_messageType = new NetSetMapElementType();
 		
 		return g_messageType;
 	}
@@ -47,24 +45,25 @@ public class NetSetMapElementAngle implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSetMapElementAngle g_messageType = null;
+	private static NetSetMapElementType g_messageType = null;
 	
 /**
-	 * Create a network data packet requesting that a map element be rotated
+	 * Create a network data packet requesting that a map element changes type with the type used by another given map
+	 * element
 	 * 
-	 * @param mapElementID ID of the map element to rotate
-	 * @param angle Requested angle of rotation, in degrees
+	 * @param mapElement Map Element to change
+	 * @param mapElementType ID of a map element using the type we want to use
 	 * @return data packet
 	 */
-	public static byte[] makePacket(MapElementID mapElementID, double angle)
+	public static byte[] makePacket(final MapElement mapElement, final MapElementTypeIF mapElementType)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
-			dos.writeLong(mapElementID.numeric());
-			dos.writeDouble(angle);
+			dos.writeLong(mapElement.getID().numeric());
+			dos.writeUTF(mapElementType.getFullyQualifiedName());
 
 			return dos.toByteArray();
 		}
@@ -82,14 +81,19 @@ public class NetSetMapElementAngle implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		long id = dis.readLong();
-		MapElementID mapElementID = MapElementID.fromNumeric(id);
+		GameTableCore core = GameTableCore.getCore();
+		MapElementTypeLibrary typeLib = core.getMapElementTypeLibrary();
+		
+		MapElementID mapElementID = MapElementID.fromNumeric(dis.readLong());
+		MapElement mapElement = core.getMapElement(mapElementID);
 
-		final double angle = dis.readDouble();
-
-		MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
-		if (mapElement != null)
-			mapElement.setAngle(angle, event);
+		String typeFQN = dis.readUTF();		
+		MapElementTypeIF type = typeLib.getMapElementType(typeFQN);
+		
+		if (mapElement != null && type != null)
+		{
+			mapElement.setMapElementType(type, event);
+		}
 	}
 
 	/*

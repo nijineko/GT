@@ -16,56 +16,84 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.List;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementID;
-import com.galactanet.gametable.data.MapElementTypeIF.Layer;
+import com.galactanet.gametable.data.Player;
+import com.galactanet.gametable.data.GameTableCore.NetworkResponderCore;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message requesting that a map element be set to a specific layer
+ * Network message handling the distribution of the player list 
+ * 
+ * @auditedby themaze75
  */
-public class NetSetMapElementLayer implements NetworkMessageTypeIF
+public class NetSendPlayersList implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSetMapElementLayer getMessageType()
+	public static NetSendPlayersList getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSetMapElementLayer();
+			g_messageType = new NetSendPlayersList();
 		
 		return g_messageType;
 	}
 	
 	/**
+	 * Singleton factory method
+	 * @return
+	 */
+	public static NetSendPlayersList getMessageType(NetworkResponderCore responder)
+	{
+		NetSendPlayersList info = getMessageType();
+		info.m_responder = responder;
+		
+		return info;
+	}
+	
+	/**
 	 * Singleton instance
 	 */
-	private static NetSetMapElementLayer g_messageType = null;
+	private static NetSendPlayersList g_messageType = null;
 	
 /**
-	 * Build a message data packet requesting that a map element be set to a specific layer
+	 * Create the data packet for sending information about all players, telling the recipient which one contains his own
+	 * information
 	 * 
-	 * @param mapElement Map Element for which to change the layer
-	 * @param layer requested layer
+	 * @param recipient Player to whom we're sending the packet
 	 * @return data packet
 	 */
-	public static byte[] makePacket(MapElement mapElement, Layer layer)
+	public static byte[] makePacket(Player recipient)
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			// create a packet with all the players in it
+			final GameTableCore core = GameTableCore.getCore();
+			
+			NetworkModuleIF module = core.getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
-			dos.writeLong(mapElement.getID().numeric());
-			dos.writeInt(layer.ordinal());
+			final List<Player> players = core.getPlayers();
+			dos.writeInt(players.size());
+
+			for (Player player : players)
+			{
+				dos.writeUTF(player.getCharacterName());
+				dos.writeUTF(player.getPlayerName());
+				dos.writeInt(player.getID());
+				dos.writeBoolean(player.isHostPlayer());
+			}
+
+			// finally, tell the recipient which player he is
+			dos.writeInt(recipient.getID());
 
 			return dos.toByteArray();
 		}
@@ -83,15 +111,24 @@ public class NetSetMapElementLayer implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		long id = dis.readLong();
-		MapElementID mapElementID = MapElementID.fromNumeric(id);
+		final int numPlayers = dis.readInt();
+		final Player[] players = new Player[numPlayers];
 		
-		final Layer layer = Layer.fromOrdinal(dis.readInt());
-		
-		final MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
-		
-		if (mapElement != null)
-	    mapElement.setLayer(layer, event);
+		for (int i = 0; i < numPlayers; i++)
+		{
+			final String charName = dis.readUTF();
+			final String playerName = dis.readUTF();
+			final int playerID = dis.readInt();
+			players[i] = new Player(playerName, charName, playerID, false);
+			players[i].setIsHostPlayer(dis.readBoolean());
+		}
+
+		// get which ID we are
+		int ourPlayerID = dis.readInt();
+
+		// this is only ever received by players
+		if (m_responder != null)
+			m_responder.setPlayersInformation(players, ourPlayerID);
 	}
 
 	/*
@@ -126,4 +163,9 @@ public class NetSetMapElementLayer implements NetworkMessageTypeIF
 
 	private static int		g_id		= 0;
 	private static String	g_name	= null;
+	
+	/**
+	 * Responder interface to communicate with 'hidden' features of the core
+	 */
+	private NetworkResponderCore m_responder = null;
 }

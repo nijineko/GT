@@ -16,37 +16,30 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapElementTypeIF;
-import com.galactanet.gametable.data.MapElementTypeLibrary;
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message to communicate a change in map background
- * 
- * @author Eric Maziade
- * 
- * TODO #AUDIT
+ * Network message requesting that a map element be rotated
  */
-public class NetSetBackground implements NetworkMessageTypeIF
+public class NetSetMapElementAngle implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSetBackground getMessageType()
+	public static NetSetMapElementAngle getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSetBackground();
+			g_messageType = new NetSetMapElementAngle();
 		
 		return g_messageType;
 	}
@@ -54,51 +47,26 @@ public class NetSetBackground implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSetBackground g_messageType = null;
+	private static NetSetMapElementAngle g_messageType = null;
 	
 /**
-	 * Create a data packet to set the background to a predefined color
+	 * Create a network data packet requesting that a map element be rotated
 	 * 
-	 * @param color Desired color
+	 * @param mapElementID ID of the map element to rotate
+	 * @param angle Requested angle of rotation, in degrees
 	 * @return data packet
 	 */
-	public static byte[] makePacket(BackgroundColor color)
+	public static byte[] makePacket(MapElementID mapElementID, double angle)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
-			
-			dos.writeInt(Type.COLOR.ordinal());
-			dos.writeInt(color.ordinal());
+
+			dos.writeLong(mapElementID.numeric());
+			dos.writeDouble(angle);
 
 			return dos.toByteArray();
-		}
-		catch (final IOException ex)
-		{
-			Log.log(Log.SYS, ex);
-			return null;
-		}
-	}
-
-	/**
-	 * Create a data packet to set the background tile
-	 * 
-	 * @param elementType
-	 * @return data packet
-	 */
-	public static byte[] makePacket(MapElementTypeIF elementType)
-	{
-		try
-		{
-			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			final DataOutputStream dos = new DataOutputStream(baos);
-
-			dos.writeInt(g_id); // type
-			dos.writeInt(Type.ELEMENT_TYPE.ordinal());
-			dos.writeUTF(elementType.getFullyQualifiedName());
-
-			return baos.toByteArray();
 		}
 		catch (final IOException ex)
 		{
@@ -114,28 +82,14 @@ public class NetSetBackground implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		int iType = dis.readInt();
+		long id = dis.readLong();
+		MapElementID mapElementID = MapElementID.fromNumeric(id);
 
-		if (iType == Type.ELEMENT_TYPE.ordinal())
-		{
-			String mapElementTypeFQN = dis.readUTF();
-			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(mapElementTypeFQN);
-			if (type != null)
-			{
-				GameTableCore.getCore().setBackgroundMapElementType(type, event);
-			}
-			else
-			{
-				Log.log(Log.SYS, "Map element type not found: " + mapElementTypeFQN);
-			}
-		}
-		else
-		{
-			int colorID = dis.readInt();
-			BackgroundColor color = BackgroundColor.fromOrdinal(colorID);
+		final double angle = dis.readDouble();
 
-			GameTableCore.getCore().setBackgroundColor(color, event);
-		}
+		MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
+		if (mapElement != null)
+			mapElement.setAngle(angle, event);
 	}
 
 	/*
@@ -170,9 +124,4 @@ public class NetSetBackground implements NetworkMessageTypeIF
 
 	private static int		g_id		= 0;
 	private static String	g_name	= null;
-
-	private static enum Type
-	{
-		COLOR, ELEMENT_TYPE;
-	}
 }

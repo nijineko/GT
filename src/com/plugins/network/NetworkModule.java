@@ -37,6 +37,7 @@ import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.PeriodicExecutorThread;
+import com.maziade.props.XProperties;
 import com.plugins.network.NetworkThread.Packet;
 
 /**
@@ -114,20 +115,10 @@ public class NetworkModule implements NetworkModuleIF
 	}
 	
 	/**
-	 * Internal flag requesting that the next "connection" made be made as a host (hosting mode)
-	 */
-	private boolean m_connectAsHost = false;
-	
-	/**
    * Pointer to GameTable core
    */
   private final GameTableCore m_core;
-	
-  /**
-   * IP Address currently in use
-   */
-	private String m_ipAddress = DEFAULT_IP_ADDRESS;
-	
+		
 	/**
 	 * Last time a ping packet has been sent
 	 */
@@ -177,11 +168,6 @@ public class NetworkModule implements NetworkModuleIF
 	 * Session's password
 	 */
 	private String m_password = DEFAULT_PASSWORD;
-	
-	/**
-	 * Network port currently in use
-	 */
-	private int m_port = DEFAULT_PORT;
 
 	/**
 	 * Thread processing messages
@@ -246,7 +232,7 @@ public class NetworkModule implements NetworkModuleIF
 		if (getConnectAsHost())
 		{		
 			// Hosting
-			m_networkThread = new NetworkThread(this, m_port);
+			m_networkThread = new NetworkThread(this, getPort());
 			m_networkThread.start();
 			
 			m_networkStatus = NetworkStatus.HOSTING;
@@ -385,7 +371,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	public boolean getConnectAsHost()
 	{
-		return m_connectAsHost;
+		return m_core.getProperties().getBooleanPropertyValue(PROP_CONNECT_AS_HOST);
 	}
 	
 	/**
@@ -393,7 +379,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	public String getIpAddress()
 	{
-		return m_ipAddress;
+		return m_core.getProperties().getTextPropertyValue(PROP_ID_ADDRESS);
 	}
 	
 	/*
@@ -462,7 +448,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	public int getPort()
 	{
-		return m_port;
+		return m_core.getProperties().getNumberPropertyValue(PROP_PORT);
 	}
 
 	/*
@@ -512,7 +498,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	public void setConnectAsHost(boolean connectAsHost)
 	{
-		m_connectAsHost = connectAsHost;
+		m_core.getProperties().setBooleanPropertyValue(PROP_CONNECT_AS_HOST, connectAsHost);
 	}
   
   /**
@@ -521,7 +507,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	public void setIpAddress(String ipAddress)
 	{
-		m_ipAddress = ipAddress;
+		m_core.getProperties().setTextPropertyValue(PROP_ID_ADDRESS, ipAddress);
 	}
   
   /**
@@ -538,7 +524,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	public void setPort(int port)
 	{
-		m_port = port;
+		m_core.getProperties().setNumberPropertyValue(PROP_PORT, port);
 	}
   
   /**
@@ -743,4 +729,58 @@ public class NetworkModule implements NetworkModuleIF
 	 * Message IDs as mapped on the host network
 	 */
 	private final Map<NetworkMessageTypeIF, Integer> m_messageTypeHostReverseMapping = new HashMap<NetworkMessageTypeIF, Integer>();
+	
+	/*
+	 * @see com.galactanet.gametable.net.NetworkModuleIF#onApplyProperties(com.maziade.props.XProperties)
+	 */
+	@Override
+	public void onApplyProperties(XProperties properties)
+	{
+		// nothing to do
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.net.NetworkModuleIF#onInitializeProperties(com.maziade.props.XProperties)
+	 */
+	@Override
+	public void onInitializeProperties(XProperties properties)
+	{
+		properties.addTextProperty(PROP_ID_ADDRESS, 				DEFAULT_IP_ADDRESS, true, "network", -1);
+		properties.addNumberProperty(PROP_PORT, 						DEFAULT_PORT, true, "network", -1);
+//		properties.addTextProperty(PROP_PASSWORD, 					getPassword(), true, "network", -1);
+		properties.addBooleanProperty(PROP_CONNECT_AS_HOST, false, true, "network", -1);		
+	}
+
+	/**
+	 * IP Address property 
+	 */
+	public final static String PROP_ID_ADDRESS = NetworkModule.class.getName() + ".ip_address";
+	
+	/**
+	 * Port property
+	 */
+	public final static String PROP_PORT = NetworkModule.class.getName() + ".port";
+	
+	/**
+	 * Hosting property
+	 */
+	public final static String PROP_CONNECT_AS_HOST = NetworkModule.class.getName() + ".hosting";
+	
+	/*
+	 * @see com.galactanet.gametable.net.NetworkModuleIF#onLoadPropertiesCompleted()
+	 */
+	@Override
+	public void onLoadPropertiesCompleted()
+	{
+		// nothing to do
+	}
+	
+	/*
+	 * @see com.galactanet.gametable.net.NetworkModuleIF#onUpdateProperties(com.maziade.props.XProperties)
+	 */
+	@Override
+	public void onUpdateProperties(XProperties properties)
+	{
+		// nothing to do
+	}
 }

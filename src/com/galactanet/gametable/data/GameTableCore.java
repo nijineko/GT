@@ -35,14 +35,15 @@ import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.grid.HexGridMode;
 import com.galactanet.gametable.data.grid.SquareGridMode;
+import com.galactanet.gametable.data.net.*;
+import com.galactanet.gametable.data.net.NetGroupAction.Action;
 import com.galactanet.gametable.module.Module;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
-import com.galactanet.gametable.ui.chat.SlashCommands;
-import com.galactanet.gametable.ui.net.*;
-import com.galactanet.gametable.ui.net.NetGroupAction.Action;
+import com.galactanet.gametable.ui.net.NetRecenterMap;
+import com.galactanet.gametable.ui.net.NetSendTypingFlag;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.SelectionHandler;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -64,9 +65,8 @@ public class GameTableCore implements MapElementRepositoryIF
 {
 
 	/**
-	 * todo #Plugins Might be nice if it returned an interface to clean up API for plugins
-	 * 
-	 * @return The global GametableFrame instance.
+	 * Get the core interface instance.
+	 * @return GameTableCore
 	 */
 	public static GameTableCore getCore()
 	{
@@ -139,8 +139,6 @@ public class GameTableCore implements MapElementRepositoryIF
 		m_gridMode = m_squareGridMode;
 		
 		initializeNetworkModule();
-				
-		SlashCommands.registerDefaultChatCommands();	// TODO Chat UI vs Chat DATA
 
 		// todo #Plugins Automated module loading mechanism
 
@@ -148,19 +146,14 @@ public class GameTableCore implements MapElementRepositoryIF
 		registerModule(DiceMacroModule.getModule());
 		registerModule(ActivePogsModule.getModule());
 		
-//		getGametableCanvas().init(this);
-		
 		initializeGroupManager();
 
 		initializeMapElementTypeLibrary();
 		
 		for (Module module : g_modules)
-		{
-			// todo #Plugins consider abstracting "PogsTabbedPane" through an interface.
 			module.onInitializeCore(this);
-		}
 
-		loadProperties();
+		loadProperties();		
 				
 		addPlayer(new Player(m_playerName, m_characterName, -1, true));
 	}
@@ -210,7 +203,6 @@ public class GameTableCore implements MapElementRepositoryIF
 	{
 		m_networkModule = NetworkModule.getNetworkModule();	// .todo Allow other network modules
 
-		// TODO ! Which messages are UI, Core and Net?
 		m_networkModule.registerMessageType(NetAddLineSegments.getMessageType());
 		m_networkModule.registerMessageType(NetAddMapElement.getMessageType());
 		m_networkModule.registerMessageType(NetClearLineSegments.getMessageType());
@@ -230,7 +222,8 @@ public class GameTableCore implements MapElementRepositoryIF
 		m_networkModule.registerMessageType(NetRequestFile.getMessageType());
 		m_networkModule.registerMessageType(NetSendFile.getMessageType());
 		
-		m_networkModule.registerMessageType(NetSendPlayerInfo.getMessageType(m_networkResponder));
+		m_networkModule.registerMessageType(NetSendPlayerInfoToHost.getMessageType(m_networkResponder));
+		m_networkModule.registerMessageType(NetSendPlayerInfo.getMessageType());
 		m_networkModule.registerMessageType(NetSendPlayersList.getMessageType(m_networkResponder));
 		m_networkModule.registerMessageType(NetSendTypingFlag.getMessageType());
 		m_networkModule.registerMessageType(NetSetBackground.getMessageType());
@@ -368,7 +361,7 @@ public class GameTableCore implements MapElementRepositoryIF
 				getMap(GameTableCore.MapType.PUBLIC).clearMap(null);
 				
 				// Send player info to the host
-				send(NetSendPlayerInfo.makePacket(me, m_networkModule.getPassword()), conn);
+				send(NetSendPlayerInfoToHost.makePacket(me, m_networkModule.getPassword()), conn);
 				
 				m_loggingIn = false;
 
@@ -1156,10 +1149,27 @@ public class GameTableCore implements MapElementRepositoryIF
 	 */
 	public void setPlayerInformation(String playerName, String characterName)
 	{
+		setPlayerInformation(playerName, characterName, null);
+	}
+	
+	/**
+	 * Set the player's information
+	 * @param playerName Player's name
+	 * @param characterName Players' character name
+	 * @param netEvent Network event that triggered the change or null
+	 */
+	public void setPlayerInformation(String playerName, String characterName, NetworkEvent netEvent)
+	{
     m_characterName = characterName;
     m_playerName = playerName;
     
-    // TODO ! trigger network notification (player information change)
+    Player player = getPlayer();
+    player.setCharacterName(m_characterName);
+    player.setPlayerName(m_playerName);
+    
+    if (shouldPropagateChanges(netEvent))
+    	sendBroadcast(NetSendPlayerInfo.makePacket(getPlayer()));
+
     for (GameTableCoreListenerIF listener : m_listeners)
     	listener.onPlayerNameChanged(getPlayer(), playerName, characterName, null);
 	}
@@ -1616,15 +1626,18 @@ public class GameTableCore implements MapElementRepositoryIF
 	}
 
 	/**
-	 * TODO ! Rethink preferences 
-	 * @return The preferences object.
+	 * TODO #Properties Rethink properties 
+	 * @return The properties object.
 	 */
 	public XProperties getProperties()
 	{
-		return m_preferences;
+		return m_properties;
 	}
 
-	private final XProperties m_preferences	= new XProperties();
+	/**
+	 * Application's properties
+	 */
+	private final XProperties m_properties	= new XProperties();
 	
 	/**
 	 * Initiate a network connection
@@ -1726,8 +1739,6 @@ public class GameTableCore implements MapElementRepositoryIF
 			// Send all current map elements to the new player
 			for (MapElement pog : m_publicMap.getMapElements())
 				send(NetAddMapElement.makePacket(pog), player);
-
-			// TODO #Networking see if this is necessary... network module already knows of this and we have the following listener call to handle modules.
 			
 			for (GameTableCoreListenerIF listener : m_listeners)
 				listener.onPlayerJoined(player);
@@ -1740,7 +1751,6 @@ public class GameTableCore implements MapElementRepositoryIF
 	private final NetworkResponderCore m_networkResponder = new NetworkResponderCore();
 	
 	/**
-	 * TODO ! Rename preferences to properties
 	 * Save properties to disk
 	 * Goes through all modules to make sure properties are up to date and saves to disk
 	 */
@@ -1770,12 +1780,11 @@ public class GameTableCore implements MapElementRepositoryIF
 		{
 			frame.updateProperties();
 		}
-		
-		// TODO #Networking Save networking preferences
 
-		// ...
 		for (Module module : getRegisteredModules())
 			module.onUpdateProperties(props);
+		
+		m_networkModule.onUpdateProperties(props);
 	}
 	
 	/**
@@ -1786,8 +1795,6 @@ public class GameTableCore implements MapElementRepositoryIF
 		XProperties props = getProperties();
 		
 		setPlayerInformation(props.getTextPropertyValue(PROP_PLAYER_NAME), props.getTextPropertyValue(PROP_CHARACTER_NAME));
-		
-		// TODO #Networking Load networking preferences
 
 		GametableFrame frame = GametableApp.getUserInterface();
 		if (frame != null)
@@ -1795,6 +1802,8 @@ public class GameTableCore implements MapElementRepositoryIF
 
 		for (Module module : getRegisteredModules())
 			module.onApplyProperties(props);
+		
+		m_networkModule.onApplyProperties(props);
 	}
 	
 	/**
@@ -1813,6 +1822,8 @@ public class GameTableCore implements MapElementRepositoryIF
 		
 		for (Module module : getRegisteredModules())
 			module.onInitializeProperties(props);
+		
+		m_networkModule.onInitializeProperties(props);
 	}
 	
 	/**
@@ -1826,6 +1837,8 @@ public class GameTableCore implements MapElementRepositoryIF
 		
 		for (Module module : getRegisteredModules())
 			module.onLoadPropertiesCompleted();
+
+		m_networkModule.onLoadPropertiesCompleted();
 		
 		applyProperties();
 	}

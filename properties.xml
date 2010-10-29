@@ -16,4 +16,7 @@
 <entry key="com.galactanet.gametable.ui.GametableFrame.zoom_level">0</entry>
 <entry key="com.galactanet.gametable.ui.tools.PointerTool.drag">true</entry>
 <entry key="com.plugins.dicemacro.DiceMacro.acting_file">D:\dev\workspace.maze\gametable\dice.xml</entry>
+<entry key="com.plugins.network.NetworkModule.hosting">true</entry>
+<entry key="com.plugins.network.NetworkModule.ip_address">localhost</entry>
+<entry key="com.plugins.network.NetworkModule.port">6812</entry>
 </properties>

@@ -20,33 +20,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message to move around map elements
- * 
- * TODO #AUDIT
+ * Sends a request to flip a map element 
+ * @author Eric Maziade
  */
-public class NetSetMapElementPosition implements NetworkMessageTypeIF
-{	
+public class NetFlipMapElement implements NetworkMessageTypeIF
+{
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSetMapElementPosition getMessageType()
+	public static NetFlipMapElement getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSetMapElementPosition();
+			g_messageType = new NetFlipMapElement();
 		
 		return g_messageType;
 	}
@@ -54,24 +52,26 @@ public class NetSetMapElementPosition implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSetMapElementPosition g_messageType = null;
+	private static NetFlipMapElement g_messageType = null;
 	
-/**
-	 * Create a data packet requesting a map element be moved to specific coordinates
-	 * @param mapElement Map Element
-	 * @param modelPos Map coordinates
-	 * @return data packet
+
+	/**
+	 * Create a message packet
+	 * @param mapElementID Map element to flip
+	 * @param horizontal True to flip horizontally
+	 * @param vertical True to flip vertically
+	 * @return Data packet
 	 */
-	public static byte[] makePacket(final MapElement mapElement, MapCoordinates modelPos)
+	public static byte[] makePacket(final MapElementID mapElementID, final boolean horizontal, final boolean vertical)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeLong(mapElement.getID().numeric());
-      dos.writeInt(modelPos.x);
-      dos.writeInt(modelPos.y);
+      dos.writeLong(mapElementID.numeric());
+      dos.writeBoolean(horizontal);
+      dos.writeBoolean(vertical);
 
 			return dos.toByteArray();
 		}
@@ -88,18 +88,24 @@ public class NetSetMapElementPosition implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		long id = dis.readLong();
-    MapElementID mapElementID = MapElementID.fromNumeric(id);
+		final long pid = dis.readLong();            
+    MapElementID id = MapElementID.fromNumeric(pid);
     
-    MapCoordinates pos = new MapCoordinates(dis.readInt(), dis.readInt());
+    final boolean flipH = dis.readBoolean();
+    final boolean flipV = dis.readBoolean();
     
-    final GameTableCore core = GameTableCore.getCore();
+    GameTableCore core = GameTableCore.getCore();
+    MapElement mapElement = core.getMap(GameTableCore.MapType.PUBLIC).getMapElement(id);
     
-    MapElement mapElement = core.getMapElement(mapElementID);
-    if (mapElement != null)
-    	mapElement.setPosition(pos, event);    
-	}
+		if (mapElement == null)
+		{
+			Log.log(Log.NET, "Cannot flip because element " + id + " not found");
+			return;
+		}
 		
+		mapElement.setFlip(flipH, flipV, event);        
+	}
+	
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */

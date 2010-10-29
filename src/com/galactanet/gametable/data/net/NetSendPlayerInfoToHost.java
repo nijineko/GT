@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -36,16 +36,16 @@ import com.galactanet.gametable.util.Log;
  * 
  * @auditedby themaze75
  */
-public class NetSendPlayerInfo implements NetworkMessageTypeIF
+public class NetSendPlayerInfoToHost implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSendPlayerInfo getMessageType()
+	public static NetSendPlayerInfoToHost getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSendPlayerInfo();
+			g_messageType = new NetSendPlayerInfoToHost();
 		
 		return g_messageType;
 	}
@@ -54,9 +54,9 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSendPlayerInfo getMessageType(NetworkResponderCore responder)
+	public static NetSendPlayerInfoToHost getMessageType(NetworkResponderCore responder)
 	{
-		NetSendPlayerInfo info = getMessageType();
+		NetSendPlayerInfoToHost info = getMessageType();
 		info.m_responder = responder;
 		
 		return info;
@@ -65,7 +65,7 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSendPlayerInfo g_messageType = null;
+	private static NetSendPlayerInfoToHost g_messageType = null;
 	
 	/**
 	 * Create a network data packet
