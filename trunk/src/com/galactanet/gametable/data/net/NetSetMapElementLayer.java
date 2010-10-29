@@ -16,28 +16,31 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message for requesting changes in map element type
+ * Network message requesting that a map element be set to a specific layer
  */
-public class NetSetMapElementType implements NetworkMessageTypeIF
+public class NetSetMapElementLayer implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSetMapElementType getMessageType()
+	public static NetSetMapElementLayer getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSetMapElementType();
+			g_messageType = new NetSetMapElementLayer();
 		
 		return g_messageType;
 	}
@@ -45,17 +48,16 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSetMapElementType g_messageType = null;
+	private static NetSetMapElementLayer g_messageType = null;
 	
 /**
-	 * Create a network data packet requesting that a map element changes type with the type used by another given map
-	 * element
+	 * Build a message data packet requesting that a map element be set to a specific layer
 	 * 
-	 * @param mapElement Map Element to change
-	 * @param mapElementType ID of a map element using the type we want to use
+	 * @param mapElement Map Element for which to change the layer
+	 * @param layer requested layer
 	 * @return data packet
 	 */
-	public static byte[] makePacket(final MapElement mapElement, final MapElementTypeIF mapElementType)
+	public static byte[] makePacket(MapElement mapElement, Layer layer)
 	{
 		try
 		{
@@ -63,7 +65,7 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeLong(mapElement.getID().numeric());
-			dos.writeUTF(mapElementType.getFullyQualifiedName());
+			dos.writeInt(layer.ordinal());
 
 			return dos.toByteArray();
 		}
@@ -81,19 +83,15 @@ public class NetSetMapElementType implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		GameTableCore core = GameTableCore.getCore();
-		MapElementTypeLibrary typeLib = core.getMapElementTypeLibrary();
+		long id = dis.readLong();
+		MapElementID mapElementID = MapElementID.fromNumeric(id);
 		
-		MapElementID mapElementID = MapElementID.fromNumeric(dis.readLong());
-		MapElement mapElement = core.getMapElement(mapElementID);
-
-		String typeFQN = dis.readUTF();		
-		MapElementTypeIF type = typeLib.getMapElementType(typeFQN);
+		final Layer layer = Layer.fromOrdinal(dis.readInt());
 		
-		if (mapElement != null && type != null)
-		{
-			mapElement.setMapElementType(type, event);
-		}
+		final MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
+		
+		if (mapElement != null)
+	    mapElement.setLayer(layer, event);
 	}
 
 	/*

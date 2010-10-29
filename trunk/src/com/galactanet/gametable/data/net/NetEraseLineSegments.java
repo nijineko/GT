@@ -20,31 +20,32 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.data.ChatEngineIF.MessageType;
+import com.galactanet.gametable.data.MapCoordinates;
+import com.galactanet.gametable.data.MapRectangle;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message handling sending text message to the mechanics window
+ * Broadcast a request to erase all line segments within a given rectangle
+ * 
  * @auditedby themaze75
  */
-public class NetSendChatText implements NetworkMessageTypeIF
+public class NetEraseLineSegments implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSendChatText getMessageType()
+	public static NetEraseLineSegments getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSendChatText();
+			g_messageType = new NetEraseLineSegments();
 		
 		return g_messageType;
 	}
@@ -52,44 +53,29 @@ public class NetSendChatText implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSendChatText g_messageType = null;
+	private static NetEraseLineSegments g_messageType = null;
 	
-/**
-	 * Utility method to create a broadcasting data packet  
-	 * @param msgType Message type
-	 * @param text Text to send to the chat window
-	 * @return data packet
+
+	/**	
+	 * Create a packet to request erasing a given rectangle
+   * @param rect Rectangular region of the map to erase
+   * @param colorSpecific If true, will erase line segments of matching color
+   * @param color Color of the line segments to erase (if colorSpecific is true)
+	 * @return
 	 */
-	public static byte[] makeBroadcastPacket(MessageType msgType, String text)
-	{
-		return makePacket(msgType, null, text);
-	}
-	
-	/**
-	 * Makes a data packet to send mechanics text targeting a specific player
-	 * @param msgType Message type
-	 * @param targetPlayer Specifies the target player or null/empty string to broadcast 
-	 * @param text Text to send to the chat window
-	 * @return data packet
-	 */
-	public static byte[] makePacket(MessageType msgType, Player targetPlayer, String text)
+	public static byte[] makePacket(final MapRectangle rect, final boolean colorSpecific, final int color)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-			if (text == null)
-				text = "";
-			
-			dos.writeInt(msgType.ordinal());
-
-			if (targetPlayer == null)
-				dos.writeInt(-1);
-			else
-				dos.writeInt(targetPlayer.getID());
-			
-      dos.writeUTF(text);
+      dos.writeInt(rect.topLeft.x);
+      dos.writeInt(rect.topLeft.y);
+      dos.writeInt(rect.width);
+      dos.writeInt(rect.height);
+      dos.writeBoolean(colorSpecific);
+      dos.writeInt(color);
 
 			return dos.toByteArray();
 		}
@@ -106,50 +92,17 @@ public class NetSendChatText implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-    
-    GameTableCore core = GameTableCore.getCore();
+    final MapRectangle r = new MapRectangle(
+    		new MapCoordinates(dis.readInt(), dis.readInt()),
+    		dis.readInt(), dis.readInt());
 
-    // Message type
-		MessageType msgType = MessageType.fromOrdinal(dis.readInt());
-		if (msgType == null)
-			msgType = MessageType.CHAT;
-		
-		// Player
-		int playerID = dis.readInt();
-		Player toPlayer = null;
-		if (playerID > 0)
-			toPlayer = core.getPlayer(playerID);
-		
-    final String text = dis.readUTF();
-    
-    // Broadcast
-    if (toPlayer == null)
-    {
-    	core.sendMessageLocal(msgType, text);
-  		return;
-    }
-    
-    // If the current player's name has come up, display text
-    if (toPlayer.equals(core.getPlayer()))
-		{
-    	core.sendMessage(msgType, toPlayer, text);
-			return;
-		}
+    final boolean bColorSpecific = dis.readBoolean();
+    final int color = dis.readInt();
 
-    // If hosting, dispatch the message directly to the appropriate player - helps prevent useless broadcasting
-    if (!event.isBroadcast())
-    {
-	    if (core.getNetworkStatus() == NetworkStatus.HOSTING)
-	    {
-	    	for (Player player : core.getPlayers())
-				{
-					if (player.equals(toPlayer))
-						core.send(makePacket(msgType, toPlayer, text), player.getConnection());
-				}
-			}
-		}
+		// erase the lines
+		GameTableCore.getCore().getMap(GameTableCore.MapType.PUBLIC).removeLineSegments(r, bColorSpecific, color, event);
 	}
-
+	
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */

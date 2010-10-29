@@ -24,6 +24,8 @@ package com.galactanet.gametable.net;
 
 import java.io.IOException;
 
+import com.maziade.props.XProperties;
+
 /**
  * Network Module specific interface
  *
@@ -113,4 +115,30 @@ public interface NetworkModuleIF
 	 * @throws IOException If an error occurs
 	 */
 	public DataPacketStream createDataPacketStream(NetworkMessageTypeIF messageType) throws IOException;
+	
+	
+	/**
+	 * Called after the properties file has been loaded from disk.
+	 * Certain modules might want to keep their own properties. 
+	 */
+	public void onLoadPropertiesCompleted();
+	
+	/**
+	 * Called when properties are initialized - allows to set the global information of the 
+	 * properties and decide if they should be displayed in the properties dialog.
+	 * @param properties Properties handler
+	 */
+	public void onInitializeProperties(XProperties properties);
+	
+	/**
+	 * Called when properties should be updated - right before save
+	 * @param properties Properties handler
+	 */
+	public void onUpdateProperties(XProperties properties);
+	
+	/**
+	 * Properties have been loaded and should be inspected and acted upon by modules
+	 * @param properties Properties handler
+	 */
+	public void onApplyProperties(XProperties properties);
 }

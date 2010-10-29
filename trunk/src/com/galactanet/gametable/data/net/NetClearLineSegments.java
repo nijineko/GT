@@ -20,31 +20,30 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message to communicate a change in grid mode
- *
- * @author Eric Maziade
+ * Broadcast a request to erase all line segments within the public map
+ * 
+ * @auditedby themaze75
  */
-public class NetSetGridMode implements NetworkMessageTypeIF
+public class NetClearLineSegments implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSetGridMode getMessageType()
+	public static NetClearLineSegments getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSetGridMode();
+			g_messageType = new NetClearLineSegments();
 		
 		return g_messageType;
 	}
@@ -52,22 +51,21 @@ public class NetSetGridMode implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetSetGridMode g_messageType = null;
+	private static NetClearLineSegments g_messageType = null;
 	
 
-	/**
-	 * Create a data packet for the set grid mode message
-	 * @param gridMode Requested grid mode
-	 * @return data packet
+	/**	
+	 * Create a packet to clear
+	 * @return
 	 */
-	public static byte[] makePacket(GridModeID gridMode)
+	public static byte[] makePacket()
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeInt(gridMode.ordinal()); 
+      // Contains no actual data
 
 			return dos.toByteArray();
 		}
@@ -84,13 +82,8 @@ public class NetSetGridMode implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		GridModeID gridMode = GridModeID.fromOrdinal(dis.readInt());
-		if (gridMode == null)
-			gridMode  = GridModeID.NONE;
-
-    // tell the model
-    final GameTableCore core = GameTableCore.getCore();
-    core.setGridMode(gridMode, event);
+		// erase the lines
+		GameTableCore.getCore().getMap(GameTableCore.MapType.PUBLIC).removeLineSegments(event);
 	}
 	
 	/*

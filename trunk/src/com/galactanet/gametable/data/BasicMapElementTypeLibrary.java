@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.util.*;
 
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
-import com.galactanet.gametable.ui.net.NetRequestFile;
-import com.galactanet.gametable.ui.net.NetRequestFile.FileSourceIF;
+import com.galactanet.gametable.data.net.NetRequestFile;
+import com.galactanet.gametable.data.net.NetRequestFile.FileSourceIF;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**

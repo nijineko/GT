@@ -120,8 +120,6 @@ public class PeerNetworkParametersPanel extends NetworkParametersPanel
   @Override
   public void setDefautValues()
   {  	
-  	// TODO #Look within preferences
-  	
     m_ipAddress.setText(m_networkModule.getIpAddress());
     m_portEntry.setText(String.valueOf(m_networkModule.getPort()));
     m_passwordEntry.setText(m_networkModule.getPassword());
@@ -142,8 +140,6 @@ public class PeerNetworkParametersPanel extends NetworkParametersPanel
     {
     	m_networkModule.setPort(NetworkModule.DEFAULT_PORT);
     }
-    
-    // TODO #Set values to preferences
     
     m_networkModule.setIpAddress(m_ipAddress.getText());
     m_networkModule.setPassword(m_passwordEntry.getText());

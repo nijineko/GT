@@ -20,31 +20,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message informing of a rejection from a network connection
- * 
+ * Network message handling sending text message to the mechanics window
  * @auditedby themaze75
  */
-public class NetLoginRejected implements NetworkMessageTypeIF
+public class NetSendChatText implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetLoginRejected getMessageType()
+	public static NetSendChatText getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetLoginRejected();
+			g_messageType = new NetSendChatText();
 		
 		return g_messageType;
 	}
@@ -52,48 +52,45 @@ public class NetLoginRejected implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetLoginRejected g_messageType = null;
+	private static NetSendChatText g_messageType = null;
 	
 /**
-	 * Possible connection rejection values
+	 * Utility method to create a broadcasting data packet  
+	 * @param msgType Message type
+	 * @param text Text to send to the chat window
+	 * @return data packet
 	 */
-	public static enum RejectReason 
-	{ 
-		INVALID_PASSWORD, VERSION_MISMATCH;
-		
-		/**
-		 * Get RejectReason from ordinal value
-		 * 
-		 * @param ord
-		 * @return
-		 */
-		public static RejectReason fromOrdinal(int ord)
-		{
-			for (RejectReason t : RejectReason.values())
-			{
-				if (t.ordinal() == ord)
-					return t;
-			}
-
-			return null;
-		}
-		
+	public static byte[] makeBroadcastPacket(MessageType msgType, String text)
+	{
+		return makePacket(msgType, null, text);
 	}
 	
 	/**
-	 * Create a network data packet informing a player that he has been rejected from joining your game
-	 * @param reason Reason for the rejection
+	 * Makes a data packet to send mechanics text targeting a specific player
+	 * @param msgType Message type
+	 * @param targetPlayer Specifies the target player or null/empty string to broadcast 
+	 * @param text Text to send to the chat window
 	 * @return data packet
 	 */
-	public static byte[] makePacket(NetLoginRejected.RejectReason reason)
+	public static byte[] makePacket(MessageType msgType, Player targetPlayer, String text)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-			dos.writeInt(reason.ordinal());
+			if (text == null)
+				text = "";
 			
+			dos.writeInt(msgType.ordinal());
+
+			if (targetPlayer == null)
+				dos.writeInt(-1);
+			else
+				dos.writeInt(targetPlayer.getID());
+			
+      dos.writeUTF(text);
+
 			return dos.toByteArray();
 		}
 		catch (final IOException ex)
@@ -109,24 +106,50 @@ public class NetLoginRejected implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final RejectReason reason = RejectReason.fromOrdinal(dis.readInt());
-
-    final GameTableCore core = GameTableCore.getCore();
     
-		switch (reason)
-		{
-		case INVALID_PASSWORD:
-			core.sendMessageLocal(MessageType.ALERT, "Invalid Password. Connection refused.");
-			break;
+    GameTableCore core = GameTableCore.getCore();
 
-		case VERSION_MISMATCH:
-			core.sendMessageLocal(MessageType.ALERT, "The host is using a different version of the Gametable network protocol. Connection aborted.");
-			break;
+    // Message type
+		MessageType msgType = MessageType.fromOrdinal(dis.readInt());
+		if (msgType == null)
+			msgType = MessageType.CHAT;
+		
+		// Player
+		int playerID = dis.readInt();
+		Player toPlayer = null;
+		if (playerID > 0)
+			toPlayer = core.getPlayer(playerID);
+		
+    final String text = dis.readUTF();
+    
+    // Broadcast
+    if (toPlayer == null)
+    {
+    	core.sendMessageLocal(msgType, text);
+  		return;
+    }
+    
+    // If the current player's name has come up, display text
+    if (toPlayer.equals(core.getPlayer()))
+		{
+    	core.sendMessage(msgType, toPlayer, text);
+			return;
 		}
-		
-		core.disconnect();
+
+    // If hosting, dispatch the message directly to the appropriate player - helps prevent useless broadcasting
+    if (!event.isBroadcast())
+    {
+	    if (core.getNetworkStatus() == NetworkStatus.HOSTING)
+	    {
+	    	for (Player player : core.getPlayers())
+				{
+					if (player.equals(toPlayer))
+						core.send(makePacket(msgType, toPlayer, text), player.getConnection());
+				}
+			}
+		}
 	}
-		
+
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */

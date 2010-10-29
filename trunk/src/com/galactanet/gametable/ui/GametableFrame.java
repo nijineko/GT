@@ -24,6 +24,7 @@ import javax.swing.filechooser.FileFilter;
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
+import com.galactanet.gametable.data.net.NetLoadMap;
 import com.galactanet.gametable.data.prefs.PropertyDescriptor;
 import com.galactanet.gametable.module.Module;
 import com.galactanet.gametable.net.NetworkConnectionIF;
@@ -35,7 +36,6 @@ import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
 import com.galactanet.gametable.ui.chat.ChatPanel;
 import com.galactanet.gametable.ui.chat.SlashCommands;
-import com.galactanet.gametable.ui.net.NetLoadMap;
 import com.galactanet.gametable.ui.net.NetRecenterMap;
 import com.galactanet.gametable.ui.net.NetSendTypingFlag;
 import com.galactanet.gametable.util.*;
@@ -1887,6 +1887,8 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	{
 		ImageCache.startCacheDaemon();
 		
+		SlashCommands.registerDefaultChatCommands();
+		
 		m_networkResponder = new NetworkFrameResponder();
 		
 		// Set network responder to our messages
@@ -1895,7 +1897,6 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		initializeCoreListeners();
 
 		buildActions();
-	
 
 		if (DEBUG_FOCUS) // if debugging
 		{
@@ -1916,6 +1917,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 
 		// Configure chat panel
 		m_chatPanel = new ChatPanel(this);
+		
 		m_core.registerChatEngine(m_chatPanel);
 		
 		m_textEntry = m_chatPanel.getTextEntry();
@@ -2316,6 +2318,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 
 			if (m_core.getNetworkStatus() == NetworkStatus.HOSTING)
 			{
+				// TODO !!! NetLoadMap!!
 				// Send data to other connected players (host only)
 				m_core.sendBroadcast(NetLoadMap.makePacket(m_core.getMap(GameTableCore.MapType.PUBLIC)));
 			}

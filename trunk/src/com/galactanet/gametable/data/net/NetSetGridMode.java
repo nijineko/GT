@@ -20,32 +20,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.net.*;
+import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message handling showing and hiding the player map pointers
- * 
- * @auditedby themaze75
+ * Network message to communicate a change in grid mode
+ *
+ * @author Eric Maziade
  */
-public class NetShowPointingMarker implements NetworkMessageTypeIF
+public class NetSetGridMode implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetShowPointingMarker getMessageType()
+	public static NetSetGridMode getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetShowPointingMarker();
+			g_messageType = new NetSetGridMode();
 		
 		return g_messageType;
 	}
@@ -53,26 +52,22 @@ public class NetShowPointingMarker implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetShowPointingMarker g_messageType = null;
+	private static NetSetGridMode g_messageType = null;
 	
-/**
-	 * Create a network data packet requesting that the pointer be shown or hidden
-	 * @param player Player showing or hiding his pointer
-	 * @param point The coordinates at which the pointer is to be shown
-	 * @param showPointer True to show the pointer, false to hide it
+
+	/**
+	 * Create a data packet for the set grid mode message
+	 * @param gridMode Requested grid mode
 	 * @return data packet
 	 */
-	public static byte[] makePacket(Player player, MapCoordinates point, boolean showPointer)
+	public static byte[] makePacket(GridModeID gridMode)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeInt(player.getID());
-      dos.writeInt(point.x);
-      dos.writeInt(point.y);
-      dos.writeBoolean(showPointer);
+      dos.writeInt(gridMode.ordinal()); 
 
 			return dos.toByteArray();
 		}
@@ -89,24 +84,15 @@ public class NetShowPointingMarker implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final int playerID = dis.readInt();
+		GridModeID gridMode = GridModeID.fromOrdinal(dis.readInt());
+		if (gridMode == null)
+			gridMode  = GridModeID.NONE;
 
-    MapCoordinates point = new MapCoordinates(dis.readInt(), dis.readInt());
-    
-    final boolean showPointer = dis.readBoolean();
-
+    // tell the model
     final GameTableCore core = GameTableCore.getCore();
-    
-    // Do not show current player's pointer
-		if (playerID != core.getPlayerID())
-		{
-			final Player player = core.getPlayer(playerID);
-			
-			if (player != null)
-				player.setPointing(showPointer, point, event);
-		}
+    core.setGridMode(gridMode, event);
 	}
-		
+	
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */

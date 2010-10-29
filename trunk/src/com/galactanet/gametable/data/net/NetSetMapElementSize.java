@@ -16,84 +16,57 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.List;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.Player;
-import com.galactanet.gametable.data.GameTableCore.NetworkResponderCore;
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Network message handling the distribution of the player list 
+ * Network message requesting a change of size for a map element
  * 
- * @auditedby themaze75
+ * @author Eric Maziade
  */
-public class NetSendPlayersList implements NetworkMessageTypeIF
+public class NetSetMapElementSize implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetSendPlayersList getMessageType()
+	public static NetSetMapElementSize getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetSendPlayersList();
+			g_messageType = new NetSetMapElementSize();
 		
 		return g_messageType;
 	}
 	
 	/**
-	 * Singleton factory method
-	 * @return
-	 */
-	public static NetSendPlayersList getMessageType(NetworkResponderCore responder)
-	{
-		NetSendPlayersList info = getMessageType();
-		info.m_responder = responder;
-		
-		return info;
-	}
-	
-	/**
 	 * Singleton instance
 	 */
-	private static NetSendPlayersList g_messageType = null;
+	private static NetSetMapElementSize g_messageType = null;
 	
-/**
-	 * Create the data packet for sending information about all players, telling the recipient which one contains his own
-	 * information
-	 * 
-	 * @param recipient Player to whom we're sending the packet
-	 * @return data packet
+
+	/**
+	 * Make a data packet for a size change request
+	 * @param mapElement Map element to change
+	 * @param faceSize size Face size in tiles
+	 * @return
 	 */
-	public static byte[] makePacket(Player recipient)
+	public static byte[] makePacket(MapElement mapElement, float faceSize)
 	{
 		try
 		{
-			// create a packet with all the players in it
-			final GameTableCore core = GameTableCore.getCore();
-			
-			NetworkModuleIF module = core.getNetworkModule();
+			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
-			final List<Player> players = core.getPlayers();
-			dos.writeInt(players.size());
-
-			for (Player player : players)
-			{
-				dos.writeUTF(player.getCharacterName());
-				dos.writeUTF(player.getPlayerName());
-				dos.writeInt(player.getID());
-				dos.writeBoolean(player.isHostPlayer());
-			}
-
-			// finally, tell the recipient which player he is
-			dos.writeInt(recipient.getID());
+			dos.writeLong(mapElement.getID().numeric());
+			dos.writeFloat(faceSize);
 
 			return dos.toByteArray();
 		}
@@ -111,24 +84,18 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final int numPlayers = dis.readInt();
-		final Player[] players = new Player[numPlayers];
+		long id = dis.readLong();
+		MapElementID mapElementID = MapElementID.fromNumeric(id);
 		
-		for (int i = 0; i < numPlayers; i++)
+		final float faceSize = dis.readFloat();
+
+		// tell the model
+		MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
+		if (mapElement != null)
 		{
-			final String charName = dis.readUTF();
-			final String playerName = dis.readUTF();
-			final int playerID = dis.readInt();
-			players[i] = new Player(playerName, charName, playerID, false);
-			players[i].setIsHostPlayer(dis.readBoolean());
+			mapElement.setFaceSize(faceSize, event);
+			
 		}
-
-		// get which ID we are
-		int ourPlayerID = dis.readInt();
-
-		// this is only ever received by players
-		if (m_responder != null)
-			m_responder.setPlayersInformation(players, ourPlayerID);
 	}
 
 	/*
@@ -163,9 +130,4 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 
 	private static int		g_id		= 0;
 	private static String	g_name	= null;
-	
-	/**
-	 * Responder interface to communicate with 'hidden' features of the core
-	 */
-	private NetworkResponderCore m_responder = null;
 }

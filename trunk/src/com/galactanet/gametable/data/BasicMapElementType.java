@@ -24,9 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.galactanet.gametable.GametableApp;
+import com.galactanet.gametable.data.net.NetRequestFile;
+import com.galactanet.gametable.data.net.NetRequestFile.FileRequestListenerIF;
 import com.galactanet.gametable.net.NetworkConnectionIF;
-import com.galactanet.gametable.ui.net.NetRequestFile;
-import com.galactanet.gametable.ui.net.NetRequestFile.FileRequestListenerIF;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
 import com.galactanet.gametable.util.UtilityFunctions;

@@ -20,87 +20,80 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.LineSegment;
+import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Networking message to send line segments over the network
+ * Network message informing of a rejection from a network connection
  * 
  * @auditedby themaze75
  */
-public class NetAddLineSegments implements NetworkMessageTypeIF
+public class NetLoginRejected implements NetworkMessageTypeIF
 {
 	/**
-	 * Get singleton instance of message type
+	 * Singleton factory method
 	 * @return
 	 */
-	public static NetAddLineSegments getMessageType()
+	public static NetLoginRejected getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetAddLineSegments();
+			g_messageType = new NetLoginRejected();
 		
 		return g_messageType;
 	}
 	
 	/**
-	 * Private constructor
+	 * Singleton instance
 	 */
-	private NetAddLineSegments()
-	{
+	private static NetLoginRejected g_messageType = null;
+	
+/**
+	 * Possible connection rejection values
+	 */
+	public static enum RejectReason 
+	{ 
+		INVALID_PASSWORD, VERSION_MISMATCH;
+		
+		/**
+		 * Get RejectReason from ordinal value
+		 * 
+		 * @param ord
+		 * @return
+		 */
+		public static RejectReason fromOrdinal(int ord)
+		{
+			for (RejectReason t : RejectReason.values())
+			{
+				if (t.ordinal() == ord)
+					return t;
+			}
+
+			return null;
+		}
+		
 	}
 	
 	/**
-	 * Make a data packet to send a new batch of line segments 
-	 * @param lines Line segments
+	 * Create a network data packet informing a player that he has been rejected from joining your game
+	 * @param reason Reason for the rejection
 	 * @return data packet
 	 */
-	public static byte[] makePacket(List<LineSegment> lines)
+	public static byte[] makePacket(NetLoginRejected.RejectReason reason)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-		  dos.writeInt(lines.size());
-		  
-		  for (LineSegment line : lines)
-		  {
-		      line.writeToPacket(dos);
-		  }
-			return dos.toByteArray();
-		}
-		catch (final IOException ex)
-		{
-			Log.log(Log.SYS, ex);
-			return null;
-		}
-	}
-
-  /**
-	 * Make a data packet to send a new of line segments 
-	 * @param line Line segment
-	 * @return data packet
-	 */
-	public static byte[] makePacket(LineSegment line)
-	{
-		try
-		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
-			DataPacketStream dos = module.createDataPacketStream(getMessageType());
+			dos.writeInt(reason.ordinal());
 			
-      dos.writeInt(1);
-      
-      line.writeToPacket(dos);
-
 			return dos.toByteArray();
 		}
 		catch (final IOException ex)
@@ -116,18 +109,22 @@ public class NetAddLineSegments implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-    final int numLines = dis.readInt();
-    
-    List<LineSegment> lines = new ArrayList<LineSegment>(numLines);
-    
-    for (int i = 0; i < numLines; i++)
-    {
-    	lines.add(new LineSegment(dis));
-    }
+		final RejectReason reason = RejectReason.fromOrdinal(dis.readInt());
 
-    // tell the model
     final GameTableCore core = GameTableCore.getCore();
-    core.getMap(GameTableCore.MapType.PUBLIC).addLineSegments(lines, event);
+    
+		switch (reason)
+		{
+		case INVALID_PASSWORD:
+			core.sendMessageLocal(MessageType.ALERT, "Invalid Password. Connection refused.");
+			break;
+
+		case VERSION_MISMATCH:
+			core.sendMessageLocal(MessageType.ALERT, "The host is using a different version of the Gametable network protocol. Connection aborted.");
+			break;
+		}
+		
+		core.disconnect();
 	}
 		
 	/*
@@ -161,6 +158,5 @@ public class NetAddLineSegments implements NetworkMessageTypeIF
 	}
 	
 	private static int g_id = 0;
-	private static String g_name = null;
-	private static NetAddLineSegments g_messageType = null;
+	private static String g_name = null;	
 }

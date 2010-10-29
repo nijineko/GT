@@ -1,7 +1,7 @@
 /*
- * Net.java
+ * MsgAddMapElement.java
  *
- * @created 2010-09-05
+ * @created 2010-08-30
  *
  * Copyright (C) 1999-2010 Open Source Game Table Project
  * 
@@ -20,30 +20,33 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.MapElement;
+import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Broadcast a request to erase all line segments within the public map
- * 
- * @auditedby themaze75
+ * todo: comment
+ *
+ * @author Eric Maziade
  */
-public class NetClearLineSegments implements NetworkMessageTypeIF
+public class NetAddMapElement implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetClearLineSegments getMessageType()
+	public static NetAddMapElement getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetClearLineSegments();
+			g_messageType = new NetAddMapElement();
 		
 		return g_messageType;
 	}
@@ -51,21 +54,33 @@ public class NetClearLineSegments implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetClearLineSegments g_messageType = null;
+	private static NetAddMapElement g_messageType = null;
 	
-
-	/**	
-	 * Create a packet to clear
-	 * @return
+	/**
+	 * Create a data packet to add an element to the public layer
+	 * @param mapElement Map element to add
+	 * @return data packet
 	 */
-	public static byte[] makePacket()
-	{
+	public static byte[] makePacket(MapElement mapElement)
+  {
+		return makePacket(mapElement, true);
+  }
+	
+	/**
+	 * Create a data packet to add an element to a specified layer
+	 * @param mapElement Map element to add
+	 * @param publicLayer True if element is to be added to public layer
+	 * @return data packet
+	 */
+	public static byte[] makePacket(MapElement mapElement, boolean publicLayer)
+  {
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
-			
-      // Contains no actual data
+
+			dos.writeBoolean(publicLayer); // layer
+			mapElement.writeToPacket(dos);
 
 			return dos.toByteArray();
 		}
@@ -74,16 +89,6 @@ public class NetClearLineSegments implements NetworkMessageTypeIF
 			Log.log(Log.SYS, ex);
 			return null;
 		}
-	}
-	
-	/*
-	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#processData(com.galactanet.gametable.data.net.Connection, java.io.DataInputStream)
-	 */
-	@Override
-	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
-	{
-		// erase the lines
-		GameTableCore.getCore().getMap(GameTableCore.MapType.PUBLIC).removeLineSegments(event);
 	}
 	
 	/*
@@ -106,7 +111,37 @@ public class NetClearLineSegments implements NetworkMessageTypeIF
 		
 		return g_name;
 	}
+	
+	/*
+	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#processData(java.io.DataInputStream)
+	 */
+	@Override
+	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
+	{
+		boolean addToPublicLayer = dis.readBoolean(); 
 
+		final MapElement element = new MapElement(dis);
+		
+		if (element.isCorrupted())
+		{
+			// for one reason or another, this element is corrupt and should be ignored
+			return;
+		}
+
+		// If map element is not loaded, we'll need to request it
+		MapElementTypeIF type = element.getMapElementType();
+		if (!type.isLoaded())
+		{
+			type.loadDataFromNetwork(sourceConnection);
+		}
+
+		// Have the model react
+		GameTableCore core = GameTableCore.getCore();
+		GameTableMap map = core.getMap(addToPublicLayer ? GameTableCore.MapType.PUBLIC : GameTableCore.MapType.PRIVATE);
+		
+		map.addMapElement(element, event);
+	}
+	
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#setID(int)
 	 */

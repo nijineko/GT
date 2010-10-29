@@ -16,7 +16,7 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.net.NetRequestFile.FileName;
+import com.galactanet.gametable.data.net.NetRequestFile.FileRequestInfo;
 import com.galactanet.gametable.net.*;
-import com.galactanet.gametable.ui.net.NetRequestFile.FileName;
-import com.galactanet.gametable.ui.net.NetRequestFile.FileRequestInfo;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.UtilityFunctions;
 

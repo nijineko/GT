@@ -20,31 +20,32 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package com.galactanet.gametable.ui.net;
+package com.galactanet.gametable.data.net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.data.GameTableCore;
-import com.galactanet.gametable.data.MapElement;
-import com.galactanet.gametable.data.MapElementID;
+import com.galactanet.gametable.data.MapCoordinates;
+import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
 /**
- * Sends a request to flip a map element 
- * @author Eric Maziade
+ * Network message handling showing and hiding the player map pointers
+ * 
+ * @auditedby themaze75
  */
-public class NetFlipMapElement implements NetworkMessageTypeIF
+public class NetShowPointingMarker implements NetworkMessageTypeIF
 {
 	/**
 	 * Singleton factory method
 	 * @return
 	 */
-	public static NetFlipMapElement getMessageType()
+	public static NetShowPointingMarker getMessageType()
 	{
 		if (g_messageType == null)
-			g_messageType = new NetFlipMapElement();
+			g_messageType = new NetShowPointingMarker();
 		
 		return g_messageType;
 	}
@@ -52,26 +53,26 @@ public class NetFlipMapElement implements NetworkMessageTypeIF
 	/**
 	 * Singleton instance
 	 */
-	private static NetFlipMapElement g_messageType = null;
+	private static NetShowPointingMarker g_messageType = null;
 	
-
-	/**
-	 * Create a message packet
-	 * @param mapElementID Map element to flip
-	 * @param horizontal True to flip horizontally
-	 * @param vertical True to flip vertically
-	 * @return Data packet
+/**
+	 * Create a network data packet requesting that the pointer be shown or hidden
+	 * @param player Player showing or hiding his pointer
+	 * @param point The coordinates at which the pointer is to be shown
+	 * @param showPointer True to show the pointer, false to hide it
+	 * @return data packet
 	 */
-	public static byte[] makePacket(final MapElementID mapElementID, final boolean horizontal, final boolean vertical)
+	public static byte[] makePacket(Player player, MapCoordinates point, boolean showPointer)
 	{
 		try
 		{
 			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
-      dos.writeLong(mapElementID.numeric());
-      dos.writeBoolean(horizontal);
-      dos.writeBoolean(vertical);
+      dos.writeInt(player.getID());
+      dos.writeInt(point.x);
+      dos.writeInt(point.y);
+      dos.writeBoolean(showPointer);
 
 			return dos.toByteArray();
 		}
@@ -88,24 +89,24 @@ public class NetFlipMapElement implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		final long pid = dis.readLong();            
-    MapElementID id = MapElementID.fromNumeric(pid);
+		final int playerID = dis.readInt();
+
+    MapCoordinates point = new MapCoordinates(dis.readInt(), dis.readInt());
     
-    final boolean flipH = dis.readBoolean();
-    final boolean flipV = dis.readBoolean();
+    final boolean showPointer = dis.readBoolean();
+
+    final GameTableCore core = GameTableCore.getCore();
     
-    GameTableCore core = GameTableCore.getCore();
-    MapElement mapElement = core.getMap(GameTableCore.MapType.PUBLIC).getMapElement(id);
-    
-		if (mapElement == null)
+    // Do not show current player's pointer
+		if (playerID != core.getPlayerID())
 		{
-			Log.log(Log.NET, "Cannot flip because element " + id + " not found");
-			return;
+			final Player player = core.getPlayer(playerID);
+			
+			if (player != null)
+				player.setPointing(showPointer, point, event);
 		}
-		
-		mapElement.setFlip(flipH, flipV, event);        
 	}
-	
+		
 	/*
 	 * @see com.galactanet.gametable.data.net.NetworkMessageIF#getID()
 	 */

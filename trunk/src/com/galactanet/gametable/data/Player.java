@@ -61,7 +61,7 @@ public class Player
 	/**
 	 * The player's real name
 	 */
-	private final String		m_playerName;
+	private String		m_playerName;
 
 	/**
 	 * Whether this player is currently pointing on the map
@@ -206,6 +206,21 @@ public class Player
 			m_characterName = "";
 		else
 			m_characterName = name;
+
+		m_displayName = null;
+	}
+	
+	/**
+	 * Set this character's name
+	 * 
+	 * @param name Name of this character
+	 */
+	public void setPlayerName(String name)
+	{
+		if (name == null)
+			m_playerName = "";
+		else
+			m_playerName = name;
 
 		m_displayName = null;
 	}
