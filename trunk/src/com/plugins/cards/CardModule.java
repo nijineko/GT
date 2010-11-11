@@ -309,11 +309,10 @@ public class CardModule extends Module implements MessageListener
 	}
 
 	/*
-	 * @see com.galactanet.gametable.module.ModuleSaveIF#loadFromXML(org.w3c.dom.Element,
-	 * com.galactanet.gametable.data.XMLSerializeConverter)
+	 * @see com.galactanet.gametable.module.Module#loadFromXML(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter, com.galactanet.gametable.net.NetworkEvent)
 	 */
 	@Override
-	public void loadFromXML(Element node, XMLSerializeConverter converter)
+	public void loadFromXML(Element node, XMLSerializeConverter converter, NetworkEvent netEvent)
 	{
 		Card.g_cardMap.clear();
 
@@ -975,8 +974,6 @@ public class CardModule extends Module implements MessageListener
 
 	/**
 	 * Remove pogs linked to cards
-	 * 
-	 * @revise move to Card Module
 	 * @param discards
 	 */
 	private void removeCardPogsForCards(GameTableMap map, final Card discards[])

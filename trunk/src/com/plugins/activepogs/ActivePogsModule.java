@@ -30,6 +30,7 @@ import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.data.XMLSerializeConverter;
 import com.galactanet.gametable.module.Module;
+import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.PogWindow;
 
@@ -88,15 +89,15 @@ public class ActivePogsModule  extends Module
 	}
 	
 	/*
-	* @see com.galactanet.gametable.module.ModuleSaveIF#loadFromXML(org.w3c.dom.Element)
-	*/
+	 * @see com.galactanet.gametable.module.Module#loadFromXML(org.w3c.dom.Element, com.galactanet.gametable.data.XMLSerializeConverter, com.galactanet.gametable.net.NetworkEvent)
+	 */
 	@Override
-	public void loadFromXML(Element node, XMLSerializeConverter converter)
+	public void loadFromXML(Element node, XMLSerializeConverter converter, NetworkEvent netEvent)
 	{		
 		if (g_activePogsPanel == null)
 			return;
 		
-		g_activePogsPanel.loadFromXML(node, converter);		
+		g_activePogsPanel.loadFromXML(node, converter, netEvent);		
 	}
 	
 	/*

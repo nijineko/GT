@@ -172,7 +172,6 @@ public class StartNetworkingDialog extends JDialog implements FocusListener
 
         nextBox = Box.createHorizontalBox();
         outerBox.add(nextBox);
-// TODO ?? host / join?
         
         outerBox.add(Box.createVerticalStrut(PADDING * 3));
         outerBox.add(Box.createVerticalGlue());

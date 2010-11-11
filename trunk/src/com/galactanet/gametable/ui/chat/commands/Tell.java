@@ -86,7 +86,7 @@ public class Tell extends SlashCommand
     List<Player> players = core.getPlayers();
     for (Player player : players)
     {
-        if (player.hasName(toName))
+        if (player.isNamed(toName))
         {
             toPlayer = player;
             break;

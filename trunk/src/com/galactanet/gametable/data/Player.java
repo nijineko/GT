@@ -5,14 +5,14 @@
  * 
  * Copyright (C) 1999-2010 Open Source Game Table Project
  * 
- * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General private
  * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
  * version.
  * 
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General private License for more details.
  * 
- * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * You should have received a copy of the GNU General private License along with this program; if not, write to the Free
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 package com.galactanet.gametable.data;
@@ -29,7 +29,6 @@ import com.galactanet.gametable.net.NetworkEvent;
  * @author sephalon
  * 
  * @audited by themaze75
- * TODO !! Clean up interface
  */
 public class Player
 {
@@ -41,7 +40,7 @@ public class Player
 	/**
 	 * The network connection
 	 */
-	private NetworkConnectionIF			m_connection;
+	private  NetworkConnectionIF			m_connection;
 
 	/**
 	 * Holds display name
@@ -51,12 +50,12 @@ public class Player
 	/**
 	 * Whether this player is the player hosting the network session
 	 */
-	private boolean					m_hostPlayer						= false;
+	private final boolean 	m_hostPlayer						= false;
 
 	/**
 	 * The player's unique ID
 	 */
-	private int							m_id;
+	private int	m_id;
 
 	/**
 	 * The player's real name
@@ -73,10 +72,6 @@ public class Player
 	 */
 	private MapCoordinates	m_pointingLocation			= null;
 
-	/**
-	 * The previous location on the map where the player was pointing
-	 */
-	private MapCoordinates	m_pointingLocationPrev	= null;
 
 	/**
 	 * Constructor
@@ -84,15 +79,13 @@ public class Player
 	 * @param playerName Name of the player (cannot be set once changed)
 	 * @param characterName Name of the player's character
 	 * @param id Unique id
-	 * @param localPlayer true if this is the local player instance
+	 * @param isHost true if this player is host
 	 */
-	public Player(final String playerName, final String characterName, final int id, final boolean localPlayer)
+	public Player(String playerName, String characterName, int id, boolean isHost)
 	{
 		m_playerName = playerName;
 		m_characterName = characterName;
 		m_id = id;
-		
-		m_localPlayer = localPlayer;
 	}
 
 	/**
@@ -136,47 +129,20 @@ public class Player
 	}
 
 	/**
-	 * @param The location on the map where the player was previously pointing (or null)
-	 */
-	public MapCoordinates getPrevPoint()
-	{
-		return m_pointingLocationPrev;
-	}
-
-	/**
 	 * Checks if this player's name or character name fits a given name (case insensitive)
 	 * 
 	 * @param name Name to look for
 	 * @return true if matching. False otherwise.
 	 */
-	public boolean hasName(final String name)
+	public boolean isNamed(final String name)
 	{
-		String lname = name.toLowerCase();
-
-		if (lname.equalsIgnoreCase(m_playerName))
+		if (name.equalsIgnoreCase(m_playerName))
 			return true;
 
-		if (lname.equalsIgnoreCase(m_characterName))
+		if (name.equalsIgnoreCase(m_characterName))
 			return true;
 
 		return false;
-	}
-	
-	/**
-	 * @return True if this is the local (non-remote) player
-	 */
-	public boolean isLocalPlayer()
-	{
-		return m_localPlayer;
-	}
-	
-	/**
-	 * Sets whether this player is to be considered the local (non-remote) player
-	 * @param localPlayer
-	 */
-	public void setLocalPlayer(boolean localPlayer)
-	{
-		m_localPlayer = localPlayer;
 	}
 
 	/**
@@ -236,16 +202,6 @@ public class Player
 	}
 
 	/**
-	 * Set this player as the host
-	 * 
-	 * @param hostPlayer True to set this host as player
-	 */
-	public void setIsHostPlayer(final boolean hostPlayer)
-	{
-		m_hostPlayer = hostPlayer;
-	}
-
-	/**
 	 * Set this player's ID
 	 * 
 	 * @param id Id of this player
@@ -278,10 +234,7 @@ public class Player
 		m_pointing = pointing;
 		
 		if (modelPos != null)
-		{
-			m_pointingLocationPrev = m_pointingLocation;
 			m_pointingLocation = modelPos;
-		}
 		
 		for (PlayerListenerIF listener : m_listeners)
 			listener.onPointingLocationChanged(this, pointing, modelPos, netEvent);
@@ -345,7 +298,8 @@ public class Player
   	return getID() == obj.getID();
   }
 	
+  /**
+   * Collection of listeners to this player object
+   */
 	private final List<PlayerListenerIF> m_listeners = new ArrayList<PlayerListenerIF>();
-	private boolean m_localPlayer;
-
 }

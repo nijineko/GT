@@ -30,7 +30,6 @@ import com.maziade.tools.XMLUtils;
 
 /**
  * todo: comment
- * TODO #Groups Send group composition when initiating a network session
  * 
  * @author Eric Maziade
  */

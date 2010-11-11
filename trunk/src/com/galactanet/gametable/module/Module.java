@@ -29,6 +29,7 @@ import org.w3c.dom.Element;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.XMLSerializeConverter;
+import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.maziade.props.XProperties;
 
@@ -68,9 +69,10 @@ public abstract class Module
 	 * Load from an XML DOM node
 	 * @see canSaveToXML
 	 * @param node An XML node located by the engine.
-	 * @param converter to convert stored MapElementIDs to actual map element IDs	 * 
+	 * @param converter to convert stored MapElementIDs to actual map element IDs	
+	 * @param netEvent Network event that triggered the load (or null) 
 	 */
-	public void loadFromXML(Element node, XMLSerializeConverter converter) {}
+	public void loadFromXML(Element node, XMLSerializeConverter converter, NetworkEvent netEvent) {}
 	
 	/**
 	 * Save to an XML DOM node

@@ -189,21 +189,6 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 			}
 		}
 
-		// Go through all types and reload them
-		// for (BasicMapElementType type : m_types)
-		// {
-		// try
-		// {
-		// type.load();
-		// }
-		// catch (Exception e) // TODO should be IOException. Should be thrown by load in the model
-		// {
-		// lastException = e;
-		// if (errors != null)
-		// errors += "\n" + e.getMessage();
-		// }
-		// }
-
 		try
 		{
 			super.refresh(recurse);

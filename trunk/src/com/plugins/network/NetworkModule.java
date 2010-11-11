@@ -246,9 +246,9 @@ public class NetworkModule implements NetworkModuleIF
 			
 			startProcessorThread();
 
-			// TODO !!!! Dual notification?
-			for (NetworkListenerIF listener : m_listeners)
-				listener.connectionEstablished(null);
+			// Connection notification is sent once dictionary is received
+//			for (NetworkListenerIF listener : m_listeners)
+//				listener.connectionEstablished(null);
 			
 			final String message = "Hosting on port: " + getPort();
 			
@@ -697,7 +697,6 @@ public class NetworkModule implements NetworkModuleIF
 		for (NetworkListenerIF listener : m_listeners)
 			listener.networkStatusChange(NetworkStatus.CONNECTED);
 		
-		// TODO !!!! Dual notification?
 		for (NetworkListenerIF listener : m_listeners)
 			listener.connectionEstablished(conn);
 	}

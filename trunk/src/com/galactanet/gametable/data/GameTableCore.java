@@ -43,8 +43,6 @@ import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
-import com.galactanet.gametable.ui.net.NetRecenterMap;
-import com.galactanet.gametable.ui.net.NetSendTypingFlag;
 import com.galactanet.gametable.util.Log;
 import com.galactanet.gametable.util.SelectionHandler;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -215,7 +213,6 @@ public class GameTableCore implements MapElementRepositoryIF
 		m_networkModule.registerMessageType(NetLockMapElements.getMessageType());
 		m_networkModule.registerMessageType(NetLoginComplete.getMessageType());
 		m_networkModule.registerMessageType(NetLoginRejected.getMessageType());
-		m_networkModule.registerMessageType(NetRecenterMap.getMessageType());
 		m_networkModule.registerMessageType(NetRemoveMapElement.getMessageType());
 		m_networkModule.registerMessageType(NetSendChatText.getMessageType());
 		
@@ -225,7 +222,7 @@ public class GameTableCore implements MapElementRepositoryIF
 		m_networkModule.registerMessageType(NetSendPlayerInfoToHost.getMessageType(m_networkResponder));
 		m_networkModule.registerMessageType(NetSendPlayerInfo.getMessageType());
 		m_networkModule.registerMessageType(NetSendPlayersList.getMessageType(m_networkResponder));
-		m_networkModule.registerMessageType(NetSendTypingFlag.getMessageType());
+		
 		m_networkModule.registerMessageType(NetSetBackground.getMessageType());
 		m_networkModule.registerMessageType(NetSetGridMode.getMessageType());
 		m_networkModule.registerMessageType(NetSetMapElementAngle.getMessageType());
@@ -327,12 +324,10 @@ public class GameTableCore implements MapElementRepositoryIF
 		{
 			// clear out all players
 			clearAllPlayers();
-			final Player me = new Player(m_playerName, m_characterName, 0, true); // this means the host is always
+			final Player me = new Player(m_playerName, m_characterName, 0, true); // this means the host is always at ID 0
 			m_nextPlayerId = 1;
 			m_player = me;
 			addPlayer(me);
-
-			me.setIsHostPlayer(true);
 
 			// Advise listeners 
 			for (GameTableCoreListenerIF listener : m_listeners)
@@ -1834,11 +1829,13 @@ public class GameTableCore implements MapElementRepositoryIF
 	 * @param file XML File from which to load the map
 	 * @param loadPublic true to load the public map within the file.
 	 * @param loadPrivate true to load the private map within the file.
+	 * @param netEvent Network event that triggered the load (or null)
 	 * 
 	 * @throws IOException
 	 * @throws MapFormatException
+   *
 	 */
-	public void loadMapFromXML(File file, boolean loadPublic, boolean loadPrivate) throws IOException
+	public void loadMapFromXML(File file, boolean loadPublic, boolean loadPrivate, NetworkEvent netEvent) throws IOException
 	{
 		Document doc;
 		doc = XMLUtils.parseXMLDocument(file);
@@ -1855,19 +1852,19 @@ public class GameTableCore implements MapElementRepositoryIF
 		if (loadPublic)
 		{
 			Element publicEl = XMLUtils.getFirstChildElementByTagName(root, "public_map");
-			getMap(GameTableCore.MapType.PUBLIC).deserializeFromXML(publicEl, converter, null);
+			getMap(GameTableCore.MapType.PUBLIC).deserializeFromXML(publicEl, converter, netEvent);
 		}
 
 		if (loadPrivate)
 		{
 			Element privateEl = XMLUtils.getFirstChildElementByTagName(root, "private_map");
-			getMap(GameTableCore.MapType.PRIVATE).deserializeFromXML(privateEl, converter, null);
+			getMap(GameTableCore.MapType.PRIVATE).deserializeFromXML(privateEl, converter, netEvent);
 		}
 
 		if (loadPublic && loadPrivate)
 		{
-			loadGridFromXML(root, converter);
-			loadLockedElementsFromXML(root, converter);
+			loadGridFromXML(root, converter, netEvent);
+			loadLockedElementsFromXML(root, converter, netEvent);
 
 			// Hook for modules to load data from save file
 			Element modulesEl = XMLUtils.getFirstChildElementByTagName(root, "modules");
@@ -1882,7 +1879,7 @@ public class GameTableCore implements MapElementRepositoryIF
 
 						if (moduleEl != null)
 						{
-							module.loadFromXML(moduleEl, converter);
+							module.loadFromXML(moduleEl, converter, netEvent);
 						}
 					}
 				}
@@ -1895,8 +1892,9 @@ public class GameTableCore implements MapElementRepositoryIF
 	 * Load saved grid information from XML file
 	 * @param root XML root element
 	 * @param converter Converter class
+	 * @param netEvent Network event that triggered the load (or null)
 	 */
-	private void loadGridFromXML(Element root, XMLSerializeConverter converter)
+	private void loadGridFromXML(Element root, XMLSerializeConverter converter, NetworkEvent netEvent)
 	{
 		// grid
 		Element gridEl = XMLUtils.getFirstChildElementByTagName(root, "grid");
@@ -1913,7 +1911,7 @@ public class GameTableCore implements MapElementRepositoryIF
 			}
 				
 			//, GridModeID.NONE.ordinal()));
-			setGridMode(gridMode);
+			setGridMode(gridMode, netEvent);
 
 			// grid background
 			Element bkEl = XMLUtils.getFirstChildElementByTagName(gridEl, "background");
@@ -1921,7 +1919,7 @@ public class GameTableCore implements MapElementRepositoryIF
 			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(typeFQN);
 			if (type != null)
 			{
-				setBackgroundMapElementType(type, null);
+				setBackgroundMapElementType(type, netEvent);
 			}
 			else
 			{
@@ -1941,7 +1939,7 @@ public class GameTableCore implements MapElementRepositoryIF
 					// stick to default
 				}
 
-				setBackgroundColor(bkColor, null);
+				setBackgroundColor(bkColor, netEvent);
 			}
 		}
 	}
@@ -1951,10 +1949,11 @@ public class GameTableCore implements MapElementRepositoryIF
 	 * 
 	 * @param root Root element
 	 * @param converter converter helper class
+	 * @parma netEvent Network event that triggered the load (or null)
 	 */
-	private void loadLockedElementsFromXML(Element root, XMLSerializeConverter converter)
+	private void loadLockedElementsFromXML(Element root, XMLSerializeConverter converter, NetworkEvent netEvent)
 	{
-		lockAllMapElements(GameTableCore.MapType.ACTIVE, false, null);
+		lockAllMapElements(GameTableCore.MapType.ACTIVE, false, netEvent);
 		Element listEl = XMLUtils.getFirstChildElementByTagName(root, "locked");
 		if (listEl == null)
 			return;
@@ -1967,7 +1966,7 @@ public class GameTableCore implements MapElementRepositoryIF
 			{
 				MapElement mapEl = getMapElement(elID);
 				if (mapEl != null)
-					lockMapElement(GameTableCore.MapType.ACTIVE, mapEl, true, null);
+					lockMapElement(GameTableCore.MapType.ACTIVE, mapEl, true, netEvent);
 			}
 		}
 	}

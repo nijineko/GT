@@ -1632,7 +1632,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	}
 
 	/**
-	 * Get current zoom level TODO type safe zoom level
+	 * Get current zoom level
 	 * 
 	 * @return
 	 */
