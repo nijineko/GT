@@ -26,6 +26,7 @@ import org.w3c.dom.Element;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.net.NetworkEvent;
 import com.galactanet.gametable.net.NetworkStatus;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.ImageCache;
@@ -372,8 +373,9 @@ public class ActivePogsPanel extends JPanel
 	 * 
 	 * @param node An XML node located by the engine.
 	 * @param converter to convert stored MapElementIDs to actual map element IDs
+	 * @param netEvent Network event that triggered the load (or null)
 	 */
-	protected void loadFromXML(Element node, XMLSerializeConverter converter)
+	protected void loadFromXML(Element node, XMLSerializeConverter converter, NetworkEvent netEvent)
 	{
 		m_elementSortIDs.clear();
 		g_nextSortID = 0;

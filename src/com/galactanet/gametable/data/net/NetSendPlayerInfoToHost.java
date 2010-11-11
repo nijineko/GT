@@ -116,8 +116,7 @@ public class NetSendPlayerInfoToHost implements NetworkMessageTypeIF
     final String password = dis.readUTF();
     final String characterName = dis.readUTF();
     final String playerName = dis.readUTF();
-    final Player newPlayer = new Player(playerName, characterName, -1, false);
-    newPlayer.setIsHostPlayer(dis.readBoolean());
+    final Player newPlayer = new Player(playerName, characterName, -1, dis.readBoolean());
 
     if (m_responder != null)
     	m_responder.onPlayerJoined(sourceConnection, newPlayer, password);

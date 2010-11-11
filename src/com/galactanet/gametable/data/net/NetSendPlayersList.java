@@ -119,8 +119,7 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 			final String charName = dis.readUTF();
 			final String playerName = dis.readUTF();
 			final int playerID = dis.readInt();
-			players[i] = new Player(playerName, charName, playerID, false);
-			players[i].setIsHostPlayer(dis.readBoolean());
+			players[i] = new Player(playerName, charName, playerID, dis.readBoolean());
 		}
 
 		// get which ID we are

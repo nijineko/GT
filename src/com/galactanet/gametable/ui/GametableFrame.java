@@ -28,10 +28,7 @@ import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.data.net.NetLoadMap;
 import com.galactanet.gametable.data.prefs.PropertyDescriptor;
 import com.galactanet.gametable.module.Module;
-import com.galactanet.gametable.net.NetworkConnectionIF;
-import com.galactanet.gametable.net.NetworkEvent;
-import com.galactanet.gametable.net.NetworkListenerIF;
-import com.galactanet.gametable.net.NetworkStatus;
+import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableCanvas.BackgroundColor;
 import com.galactanet.gametable.ui.GametableCanvas.GridModeID;
 import com.galactanet.gametable.ui.chat.ChatLogEntryPane;
@@ -63,6 +60,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	public GametableFrame() throws IOException
 	{
 		m_core = GameTableCore.getCore();
+		initialize();
 	}
 	
 	/**
@@ -377,8 +375,6 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			// adjust the canvas accordingly
 			// Set the Gametable canvas in "Square Grid mode"
 			
-			// TODO #NETWORK - broadcast gridmode changes
-			
 			m_core.setGridMode(GridModeID.SQUARES);
 
 			// Check and uncheck menu items
@@ -627,12 +623,13 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 * @param file XML File from which to load the map
 	 * @param loadPublic true to load the public map within the file.
 	 * @param loadPrivate true to load the private map within the file.
+	 * @param netEvent Network event that triggered the load (or null)
 	 */
-	public void loadMapFromXML(File file, boolean loadPublic, boolean loadPrivate)
+	public void loadMapFromXML(File file, boolean loadPublic, boolean loadPrivate, NetworkEvent netEvent)
 	{
 		try
 		{
-			m_core.loadMapFromXML(file, loadPublic, loadPrivate);
+			m_core.loadMapFromXML(file, loadPublic, loadPrivate, netEvent);
 		}
 		catch (MapFormatException e)
 		{
@@ -642,7 +639,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		catch (IOException e)
 		{
 			JOptionPane.showMessageDialog(this, "Error loading " + file.getName() + " : " + e.getMessage(), null, JOptionPane.ERROR_MESSAGE);
-			// todo proper error handling
+			// .todo better error handling?
 			return;
 		}
 	}
@@ -735,7 +732,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		}
 		catch (IOException e)
 		{
-			// .todo proper error handling
+			// .todo better error handling?
 			Log.log(Log.SYS, e.getMessage());
 		}
 		
@@ -1895,7 +1892,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 * Performs initialization. This draws all the controls in the Frame and sets up listener to react to user actions.
 	 * 
 	 */
-	public void initialize() 
+	private void initialize() 
 	{
 		try
 		{
@@ -1907,8 +1904,10 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			
 			m_networkResponder = new NetworkFrameResponder();
 			
-			// Set network responder to our messages
-			NetSendTypingFlag.getMessageType(m_networkResponder);
+			// Initialize network module
+			NetworkModuleIF networkModule = m_core.getNetworkModule();
+			networkModule.registerMessageType(NetRecenterMap.getMessageType());
+			networkModule.registerMessageType(NetSendTypingFlag.getMessageType(m_networkResponder));
 			
 			initializeCoreListeners();
 	
@@ -2040,7 +2039,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	
 			for (Module module : m_core.getRegisteredModules())
 			{
-				// todo #Plugins consider abstracting "PogsTabbedPane" through an interface.
+				// @revise #Plugins consider abstracting "PogsTabbedPane" through an interface.
 				module.onInitializeUI(this);
 			}
 	
@@ -2333,11 +2332,16 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 
 		if (openFile != null)
 		{
-			loadMapFromXML(openFile, loadPublic, loadPrivate);
+			// Build an event - will prevent triggering network messages, we'll handle this on our end.
+			NetworkEvent netEvent = null;
+			
+			if (m_core.getNetworkStatus() == NetworkStatus.HOSTING)
+				netEvent = new NetworkEvent(m_core.getPlayer(), true, NetLoadMap.getMessageType());
+			
+			loadMapFromXML(openFile, loadPublic, loadPrivate, netEvent);
 
 			if (m_core.getNetworkStatus() == NetworkStatus.HOSTING)
 			{
-				// TODO !!! NetLoadMap!!
 				// Send data to other connected players (host only)
 				m_core.sendBroadcast(NetLoadMap.makePacket(m_core.getMap(GameTableCore.MapType.PUBLIC)));
 			}
@@ -2667,7 +2671,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		// load the primary map
 		File autoSave = getAutoSaveXMLFile();
 		if (autoSave.exists())
-			loadMapFromXML(autoSave, true, true);//
+			loadMapFromXML(autoSave, true, true, null);//
 	}
 	
 	private final int DEFAULT_WINDOWSIZE_WIDTH = 800;
