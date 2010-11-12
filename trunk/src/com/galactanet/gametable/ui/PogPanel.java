@@ -809,7 +809,7 @@ public class PogPanel extends JPanel
 							// Only do this on Private Maps, or if not in a network game as this would cause problems
 							// with no easy solutions atm.
 
-							GameTableCore core = GameTableCore.getCore();
+							GameTableCore core = GametableApp.getCore();
 							if ((core.getNetworkStatus() == NetworkStatus.DISCONNECTED) || (!core.isActiveMapPublic()))
 							{
 								// Only set to mark on unknown pogs, or other pogs if one is marked

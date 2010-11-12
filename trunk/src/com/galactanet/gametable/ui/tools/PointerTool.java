@@ -121,7 +121,7 @@ public class PointerTool extends NullTool
 	public PointerTool()
 	{
 		m_frame = GametableApp.getUserInterface();
-		m_core = GameTableCore.getCore();
+		m_core = GametableApp.getCore();
 	}
 
 	/*

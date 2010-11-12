@@ -21,7 +21,7 @@ package com.plugins.cards;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
@@ -51,7 +51,7 @@ public class NetDiscardCards implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeUTF(playerName); // the player doing the discarding

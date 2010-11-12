@@ -112,7 +112,7 @@ public class CircleTool extends NullTool
             // m_penAsset.smooth();
             java.util.List<LineSegment> lines = m_penAsset.getLineSegments();
             
-            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
+            GametableApp.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
         }
         endAction();
     }
@@ -151,7 +151,7 @@ public class CircleTool extends NullTool
             //g2.addRenderingHints(UtilityFunctions.STANDARD_RENDERING_HINTS);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            GameTableCore core = GameTableCore.getCore();
+            GameTableCore core = GametableApp.getCore();
             
             double dist = core.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
                 m_mouseAnchor.y);

@@ -21,7 +21,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.net.*;
@@ -60,7 +60,7 @@ public class NetSetMapElementAngle implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeLong(mapElementID.numeric());
@@ -87,7 +87,7 @@ public class NetSetMapElementAngle implements NetworkMessageTypeIF
 
 		final double angle = dis.readDouble();
 
-		MapElement mapElement = GameTableCore.getCore().getMapElement(mapElementID);
+		MapElement mapElement = GametableApp.getCore().getMapElement(mapElementID);
 		if (mapElement != null)
 			mapElement.setAngle(angle, event);
 	}

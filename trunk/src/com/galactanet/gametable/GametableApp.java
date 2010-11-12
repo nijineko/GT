@@ -88,7 +88,7 @@ public class GametableApp
 					Toolkit.getDefaultToolkit().setDynamicLayout(true); // Turns dynamic layout on
 					
 					// Initialize core
-					GameTableCore core = GameTableCore.getCore();
+					GameTableCore core = GametableApp.getCore();
 					
 					// Initialize frame
 					m_frame = new GametableFrame();
@@ -164,4 +164,33 @@ public class GametableApp
     
     private static Properties g_properties = new Properties();
     private static GametableFrame m_frame = null;
+
+
+		/**
+		 * Get the core interface instance.
+		 * @return GameTableCore
+		 */
+		public static GameTableCore getCore()
+		{
+			if (GametableApp.g_gameTableCore == null)
+			{
+				GametableApp.g_gameTableCore = new GameTableCore(); 
+		
+				try
+				{
+					GametableApp.g_gameTableCore.initialize(); 
+				}
+				catch (final Exception e)
+				{
+					Log.log(Log.SYS, e);
+				}
+			}
+			
+			return GametableApp.g_gameTableCore;
+		}
+
+		/**
+		 * The global core instance.
+		 */
+		private static GameTableCore	g_gameTableCore;
 }

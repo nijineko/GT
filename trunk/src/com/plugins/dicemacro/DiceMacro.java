@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.util.Log;
@@ -346,15 +346,15 @@ public class DiceMacro
 		if (!isInitialized())
 			return;
 
-		final Player me = GameTableCore.getCore().getPlayer();
+		final Player me = GametableApp.getCore().getPlayer();
 		final String name = me.getCharacterName();
 
 		final List<Result> result = roll();
 
 		if (priv)
-			GameTableCore.getCore().sendMessageLocal(MessageType.MECHANIC, generateOutputString(null, result, getName()));
+			GametableApp.getCore().sendMessageLocal(MessageType.MECHANIC, generateOutputString(null, result, getName()));
 		else
-			GameTableCore.getCore().sendMessageBroadcast(MessageType.MECHANIC, generateOutputString(name, result, getName()));
+			GametableApp.getCore().sendMessageBroadcast(MessageType.MECHANIC, generateOutputString(name, result, getName()));
 	}
 
 	public List<Result> runMacro()

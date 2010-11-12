@@ -36,6 +36,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.xml.sax.SAXException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
@@ -145,7 +146,7 @@ public class DiceMacroModule extends Module
 		boolean res = newMacro.init(macro, name, parent); // initializes the macro with its name and code
 		if (!res) // if the macro creation failed, log the error and exit
 		{
-			GameTableCore.getCore().sendMessageLocal(MessageType.ALERT, "Error in macro");
+			GametableApp.getCore().sendMessageLocal(MessageType.ALERT, "Error in macro");
 			return;
 		}
 		addMacro(newMacro); // add the macro to the collection
@@ -205,7 +206,7 @@ public class DiceMacroModule extends Module
    */
 	private void saveMacros()
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		final File oldFile = m_actingFileMacros;
 		m_actingFileMacros = UtilityFunctions.doFileSaveDialog("Save as", "xml", true);
@@ -373,7 +374,7 @@ public class DiceMacroModule extends Module
 			{
 				loadMacros(m_actingFileMacros);
 				
-				GameTableCore core = GameTableCore.getCore();
+				GameTableCore core = GametableApp.getCore();
 				core.sendMessageLocal(MessageType.SYSTEM, "Loaded macros from" + " " + m_actingFileMacros);
 			}
 			catch (final SAXException saxe)

@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElement;
@@ -76,7 +77,7 @@ public class NetAddMapElement implements NetworkMessageTypeIF
   {
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeBoolean(publicLayer); // layer
@@ -136,7 +137,7 @@ public class NetAddMapElement implements NetworkMessageTypeIF
 		}
 
 		// Have the model react
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 		GameTableMap map = core.getMap(addToPublicLayer ? GameTableCore.MapType.PUBLIC : GameTableCore.MapType.PRIVATE);
 		
 		map.addMapElement(element, event);

@@ -5,6 +5,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.ui.GametableCanvas;
 
@@ -36,7 +37,7 @@ public class PublishTool extends NullTool
      */
     public PublishTool()
     {
-    	m_core = GameTableCore.getCore();
+    	m_core = GametableApp.getCore();
     }
 
     /*

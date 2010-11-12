@@ -117,7 +117,7 @@ public class RulerTool extends NullTool
     {
         if (m_mouseAnchor != null)
         {
-        	GameTableCore core = GameTableCore.getCore();
+        	GameTableCore core = GametableApp.getCore();
         	
             final Graphics2D g2 = (Graphics2D)g.create();
 

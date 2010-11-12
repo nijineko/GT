@@ -94,7 +94,7 @@ public class LineTool extends NullTool
             final LineSegment ls = new LineSegment(m_mouseAnchor, m_mouseFloat,
                 m_frame.getDrawColor());
             
-            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegment(ls);
+            GametableApp.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegment(ls);
         }
 
         endAction();
@@ -133,7 +133,7 @@ public class LineTool extends NullTool
 
             g2.addRenderingHints(Images.getRenderingHints());
 
-            GameTableCore core = GameTableCore.getCore();
+            GameTableCore core = GametableApp.getCore();
             
             final double dist = core.getGridMode().getDistance(m_mouseFloat.x, m_mouseFloat.y, m_mouseAnchor.x,
                 m_mouseAnchor.y);

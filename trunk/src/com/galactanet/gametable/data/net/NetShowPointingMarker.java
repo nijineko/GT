@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.Player;
@@ -66,7 +67,7 @@ public class NetShowPointingMarker implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeInt(player.getID());
@@ -95,7 +96,7 @@ public class NetShowPointingMarker implements NetworkMessageTypeIF
     
     final boolean showPointer = dis.readBoolean();
 
-    final GameTableCore core = GameTableCore.getCore();
+    final GameTableCore core = GametableApp.getCore();
     
     // Do not show current player's pointer
 		if (playerID != core.getPlayerID())

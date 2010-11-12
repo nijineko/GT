@@ -96,7 +96,7 @@ public class EraseTool extends NullTool
     {
         if ((m_mouseAnchor != null) && !m_mouseAnchor.equals(m_mouseFloat))
         {
-        	GameTableCore core = GameTableCore.getCore();
+        	GameTableCore core = GametableApp.getCore();
         	GameTableMap activeMap = core.getMap(GameTableCore.MapType.ACTIVE);
         	
             if (m_bEraseColor)

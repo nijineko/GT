@@ -23,6 +23,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.text.JTextComponent;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.net.NetworkEvent;
@@ -138,7 +139,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	public GametableCanvas(GametableFrame frame)
 	{
 		m_frame = frame;
-		m_core = GameTableCore.getCore();
+		m_core = GametableApp.getCore();
 		m_selectionPublic = new SelectionHandler();
 		m_selectionPrivate = new SelectionHandler();
 		m_highlightedElements = new SelectionHandler();

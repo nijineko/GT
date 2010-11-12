@@ -16,7 +16,7 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.MatteBorder;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -133,8 +133,8 @@ public class MacroPanel extends JPanel
 
 			case SEMIPRIVATE:
 			case SEMIPRIVATE_TO:
-				GameTableCore.getCore().sendMessageBroadcast(MessageType.CHAT,
-						DiceMacro.DIEROLL_MESSAGE_FONT + UtilityFunctions.emitUserLink(GameTableCore.getCore().getPlayer())
+				GametableApp.getCore().sendMessageBroadcast(MessageType.CHAT,
+						DiceMacro.DIEROLL_MESSAGE_FONT + UtilityFunctions.emitUserLink(GametableApp.getCore().getPlayer())
 								+ " is rolling dice..." + DiceMacro.END_DIEROLL_MESSAGE_FONT);
 				macro.doMacro(true);
 				break;
@@ -480,9 +480,9 @@ public class MacroPanel extends JPanel
 	public void init_sendTo()
 	{
 		sendTo.removeAllItems();
-		for (int i = 0; i < GameTableCore.getCore().getPlayers().size(); i++)
+		for (int i = 0; i < GametableApp.getCore().getPlayers().size(); i++)
 		{
-			final Player player = GameTableCore.getCore().getPlayers().get(i);
+			final Player player = GametableApp.getCore().getPlayers().get(i);
 			sendTo.addItem(player.getCharacterName());
 		}
 	}

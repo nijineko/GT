@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapElement;
@@ -66,7 +67,7 @@ public class NetSetMapElementPosition implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeLong(mapElement.getID().numeric());
@@ -93,7 +94,7 @@ public class NetSetMapElementPosition implements NetworkMessageTypeIF
     
     MapCoordinates pos = new MapCoordinates(dis.readInt(), dis.readInt());
     
-    final GameTableCore core = GameTableCore.getCore();
+    final GameTableCore core = GametableApp.getCore();
     
     MapElement mapElement = core.getMapElement(mapElementID);
     if (mapElement != null)

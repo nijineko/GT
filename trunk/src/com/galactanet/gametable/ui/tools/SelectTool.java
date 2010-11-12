@@ -3,6 +3,7 @@ package com.galactanet.gametable.ui.tools;
 
 import java.awt.*;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.ui.GametableCanvas;
 
@@ -23,7 +24,7 @@ public class SelectTool extends NullTool
      */
     public SelectTool()
     {
-    	m_core = GameTableCore.getCore();
+    	m_core = GametableApp.getCore();
     }
 
     /*

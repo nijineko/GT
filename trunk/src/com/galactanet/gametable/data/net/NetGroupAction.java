@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import javax.naming.InvalidNameException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
@@ -93,7 +94,7 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(action.ordinal());
@@ -166,7 +167,7 @@ public class NetGroupAction implements NetworkMessageTypeIF
     }
     
     final int playerID = dis.readInt();
-    GameTableCore core = GameTableCore.getCore();
+    GameTableCore core = GametableApp.getCore();
     
     if (core.getPlayerID() == playerID)
     	return;
@@ -191,7 +192,7 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 */
 	private void handleActionNetworkMessage(Action action, final String groupName, final MapElementID elementID, NetworkEvent netEvent)
 	{
-		GameTableCore core = GameTableCore.getCore();		
+		GameTableCore core = GametableApp.getCore();		
 		GameTableMap map = core.getMap(GameTableCore.MapType.PUBLIC);
 		GroupManager manager = core.getGroupManager(GameTableCore.MapType.PUBLIC);
 		
@@ -234,7 +235,7 @@ public class NetGroupAction implements NetworkMessageTypeIF
 	 */
 	private void handleRenameNetworkMessage(final String groupName, final String newGroupName, NetworkEvent netEvent)
 	{
-		GameTableCore core = GameTableCore.getCore();		
+		GameTableCore core = GametableApp.getCore();		
 		GroupManager manager = core.getGroupManager(GameTableCore.MapType.PUBLIC);
 		
 		Group g = manager.getGroup(groupName);

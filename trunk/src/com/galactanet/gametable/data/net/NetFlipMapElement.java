@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
@@ -66,7 +67,7 @@ public class NetFlipMapElement implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeLong(mapElementID.numeric());
@@ -94,7 +95,7 @@ public class NetFlipMapElement implements NetworkMessageTypeIF
     final boolean flipH = dis.readBoolean();
     final boolean flipV = dis.readBoolean();
     
-    GameTableCore core = GameTableCore.getCore();
+    GameTableCore core = GametableApp.getCore();
     MapElement mapElement = core.getMap(GameTableCore.MapType.PUBLIC).getMapElement(id);
     
 		if (mapElement == null)

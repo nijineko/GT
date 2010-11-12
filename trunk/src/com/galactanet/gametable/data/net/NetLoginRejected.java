@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
@@ -89,7 +90,7 @@ public class NetLoginRejected implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(reason.ordinal());
@@ -111,7 +112,7 @@ public class NetLoginRejected implements NetworkMessageTypeIF
 	{
 		final RejectReason reason = RejectReason.fromOrdinal(dis.readInt());
 
-    final GameTableCore core = GameTableCore.getCore();
+    final GameTableCore core = GametableApp.getCore();
     
 		switch (reason)
 		{

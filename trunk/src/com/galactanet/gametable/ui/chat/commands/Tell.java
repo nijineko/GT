@@ -24,6 +24,7 @@ package com.galactanet.gametable.ui.chat.commands;
 
 import java.util.List;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
@@ -60,7 +61,7 @@ public class Tell extends SlashCommand
 	@Override
 	public String processCommand(String words[], String text)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 		
 		 // send a private message to another player
     if (words.length < 3)

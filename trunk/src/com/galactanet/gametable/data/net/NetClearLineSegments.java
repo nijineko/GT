@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
@@ -62,7 +63,7 @@ public class NetClearLineSegments implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       // Contains no actual data
@@ -83,7 +84,7 @@ public class NetClearLineSegments implements NetworkMessageTypeIF
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
 		// erase the lines
-		GameTableCore.getCore().getMap(GameTableCore.MapType.PUBLIC).removeLineSegments(event);
+		GametableApp.getCore().getMap(GameTableCore.MapType.PUBLIC).removeLineSegments(event);
 	}
 	
 	/*

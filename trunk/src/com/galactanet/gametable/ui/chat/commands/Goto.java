@@ -56,7 +56,7 @@ public class Goto extends SlashCommand
         return (words[0] + " usage: " + words[0] + " &lt;pog name&gt;");
     }
 		
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 		GametableFrame frame = GametableApp.getUserInterface();
 		if (frame == null)
 		{
