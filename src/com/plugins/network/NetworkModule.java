@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 
 import javax.swing.SwingUtilities;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
@@ -179,7 +180,7 @@ public class NetworkModule implements NetworkModuleIF
 	 */
 	private NetworkModule()
 	{
-		m_core = GameTableCore.getCore();
+		m_core = GametableApp.getCore();
 		setCoreMessagesTypes(m_messageTypes);
 	}
 	

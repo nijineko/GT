@@ -86,7 +86,7 @@ public class PenTool extends NullTool
             m_penAsset.smooth();
             List<LineSegment> lines = m_penAsset.getLineSegments();
             
-            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
+            GametableApp.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
         }
         
         endAction();

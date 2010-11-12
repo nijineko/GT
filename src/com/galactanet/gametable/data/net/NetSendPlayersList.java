@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.List;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.GameTableCore.NetworkResponderCore;
@@ -76,7 +77,7 @@ public class NetSendPlayersList implements NetworkMessageTypeIF
 		try
 		{
 			// create a packet with all the players in it
-			final GameTableCore core = GameTableCore.getCore();
+			final GameTableCore core = GametableApp.getCore();
 			
 			NetworkModuleIF module = core.getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());

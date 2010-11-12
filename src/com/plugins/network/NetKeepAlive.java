@@ -25,7 +25,7 @@ package com.plugins.network;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
@@ -66,7 +66,7 @@ public class NetKeepAlive implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			// there's actually no additional data.

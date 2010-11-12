@@ -18,7 +18,7 @@
 
 package com.plugins.dicemacro.slashcmds;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.ui.chat.SlashCommand;
 import com.plugins.dicemacro.DiceMacro;
@@ -118,7 +118,7 @@ public class Roll extends SlashCommand
 		}
 		else
 		{
-			GameTableCore.getCore().sendMessageLocal(MessageType.MECHANIC, "<b><font color=\"#880000\">Error in Macro String.</font></b>");
+			GametableApp.getCore().sendMessageLocal(MessageType.MECHANIC, "<b><font color=\"#880000\">Error in Macro String.</font></b>");
 		}
 
 		return null;

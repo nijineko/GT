@@ -25,6 +25,7 @@ import java.io.StringReader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElementID;
@@ -124,7 +125,7 @@ public class NetLoadMap implements NetworkMessageTypeIF
 
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeUTF(XMLUtils.xmlToString(doc, "UTF-8"));
@@ -169,7 +170,7 @@ public class NetLoadMap implements NetworkMessageTypeIF
 		String xml = dis.readUTF();
 		Document mapDocument = XMLUtils.parseXMLDocument(new StringReader(xml), null);
 		
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		GameTableMap map = core.getMap(GameTableCore.MapType.PUBLIC);
 		map.clearMap(event);

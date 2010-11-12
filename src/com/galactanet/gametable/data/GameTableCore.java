@@ -63,32 +63,9 @@ public class GameTableCore implements MapElementRepositoryIF
 {
 
 	/**
-	 * Get the core interface instance.
-	 * @return GameTableCore
+	 * Constructor - should only be called by GametableApp 
 	 */
-	public static GameTableCore getCore()
-	{
-		if (g_gameTableCore == null)
-		{
-			g_gameTableCore = new GameTableCore(); 
-
-			try
-			{
-				g_gameTableCore.initialize(); 
-			}
-			catch (final Exception e)
-			{
-				Log.log(Log.SYS, e);
-			}
-		}
-		
-		return g_gameTableCore;
-	}
-	
-	/**
-	 * Private constructor 
-	 */
-	private GameTableCore()
+	public GameTableCore()
 	{
 		m_publicMap = new GameTableMap(true);
 		m_privateMap = new GameTableMap(false);
@@ -127,7 +104,7 @@ public class GameTableCore implements MapElementRepositoryIF
 	 * Initialize the core - NB Properties are not loaded automatically
 	 * @throws IOException
 	 */
-	private void initialize() throws IOException
+	public void initialize() throws IOException
 	{
 		Thread.setDefaultUncaughtExceptionHandler(new CoreUncaughtExceptionHandler());
 
@@ -167,11 +144,6 @@ public class GameTableCore implements MapElementRepositoryIF
 	{
 		return getNetworkStatus() != NetworkStatus.DISCONNECTED && netEvent == null && !isLoggingIn();
 	}
-
-	/**
-	 * The global core instance.
-	 */
-	private static GameTableCore	g_gameTableCore;
 
 	/**
 	 * Holds data about which element is locked
@@ -1522,7 +1494,7 @@ public class GameTableCore implements MapElementRepositoryIF
 			if (this == PUBLIC)
 				return true;
 			
-			if (this == ACTIVE && getCore().isActiveMapPublic())
+			if (this == ACTIVE && GametableApp.getCore().isActiveMapPublic())
 				return true;
 			
 			return false;

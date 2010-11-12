@@ -14,8 +14,8 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.ChatEngineIF;
-import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.ui.FloatingWindow;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -98,8 +98,8 @@ public class ChatPanel extends JPanel implements ChatEngineIF
 
     private void init_sendTo() {
         pmSendTo.removeAllItems();
-        for(int i = 0;i < GameTableCore.getCore().getPlayers().size(); i++) {
-            final Player player = GameTableCore.getCore().getPlayers().get(i);
+        for(int i = 0;i < GametableApp.getCore().getPlayers().size(); i++) {
+            final Player player = GametableApp.getCore().getPlayers().get(i);
             pmSendTo.addItem(player.getCharacterName());
         }
     }

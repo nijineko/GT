@@ -16,6 +16,7 @@ import java.awt.event.FocusListener;
 
 import javax.swing.*;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.net.NetworkParametersPanel;
 import com.galactanet.gametable.util.Log;
@@ -210,5 +211,5 @@ public class StartNetworkingDialog extends JDialog implements FocusListener
     }
     
     private NetworkParametersPanel m_networkPanel = null; 
-    private final GameTableCore m_core = GameTableCore.getCore();
+    private final GameTableCore m_core = GametableApp.getCore();
 }

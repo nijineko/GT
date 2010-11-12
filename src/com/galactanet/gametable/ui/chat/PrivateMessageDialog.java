@@ -13,7 +13,7 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.util.Log;
 
@@ -147,9 +147,9 @@ public class PrivateMessageDialog extends JDialog implements FocusListener
     class SendToListener implements ItemListener {
         public void itemStateChanged(ItemEvent e) {
             final String toName = (String)e.getItem();
-            for (int i = 0; i < GameTableCore.getCore().getPlayers().size(); i++)
+            for (int i = 0; i < GametableApp.getCore().getPlayers().size(); i++)
             {
-                final Player player = GameTableCore.getCore().getPlayers().get(i);
+                final Player player = GametableApp.getCore().getPlayers().get(i);
                 if (player.isNamed(toName))
                 {
                     m_pmToID = player.getID();

@@ -384,7 +384,7 @@ public class ActivePogsPanel extends JPanel
 		if (sortEl == null)
 			return;
 
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		for (Element itemEl : XMLUtils.getChildElementsByTagName(sortEl, "item"))
 		{
@@ -412,7 +412,7 @@ public class ActivePogsPanel extends JPanel
 	 */
 	protected void reorderElements(final Map<MapElementID, Long> changes, boolean notifyNetwork)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		if (notifyNetwork && core.isActiveMapPublic())
 		{
@@ -549,7 +549,7 @@ public class ActivePogsPanel extends JPanel
 				}
 			};
 
-			GameTableCore core = GameTableCore.getCore();
+			GameTableCore core = GametableApp.getCore();
 			
 			// -------------------
 			GameTableMap map = core.getMap(GameTableCore.MapType.PUBLIC);

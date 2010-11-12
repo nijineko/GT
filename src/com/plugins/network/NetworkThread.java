@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.*;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.net.NetworkConnectionIF;
@@ -168,7 +169,7 @@ public class NetworkThread extends Thread
 	protected NetworkThread(NetworkModule module)
 	{
 		super(NetworkThread.class.getName());
-		m_core = GameTableCore.getCore();
+		m_core = GametableApp.getCore();
 		m_networkModule = module;
 		setPriority(NORM_PRIORITY + 1);
 		serverPort = -1;
@@ -181,7 +182,7 @@ public class NetworkThread extends Thread
 	public NetworkThread(NetworkModule module, final int port)
 	{
 		super(NetworkThread.class.getName());
-		m_core = GameTableCore.getCore();
+		m_core = GametableApp.getCore();
 		m_networkModule = module;
 		
 		setPriority(NORM_PRIORITY + 1);

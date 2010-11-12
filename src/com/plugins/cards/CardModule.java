@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.data.net.NetAddMapElement;
@@ -117,7 +118,7 @@ public class CardModule extends Module implements MessageListener
 	 */
 	public void deckListPacketReceived(final String[] deckNames)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		// if we're the host, this is a packet we should never get
 		if (core.getNetworkStatus() == NetworkStatus.HOSTING)
@@ -150,7 +151,7 @@ public class CardModule extends Module implements MessageListener
 			return;
 		}
 
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		// only the host should get this
 		if (core.getNetworkStatus() != NetworkStatus.HOSTING)
@@ -213,7 +214,7 @@ public class CardModule extends Module implements MessageListener
 	 */
 	public Card[] getCards(final String deckName, final int num)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		int numCards = num;
 
@@ -393,7 +394,7 @@ public class CardModule extends Module implements MessageListener
 
 	public void receiveCards(final Card cards[])
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		if (cards.length == 0)
 		{
@@ -434,7 +435,7 @@ public class CardModule extends Module implements MessageListener
 
 	public void requestCardsPacketReceived(final NetworkConnectionIF conn, final String deckName, final int numCards)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		if (core.getNetworkStatus() != NetworkStatus.HOSTING)
 		{
@@ -499,7 +500,7 @@ public class CardModule extends Module implements MessageListener
 	 */
 	protected void deckCommand(final String[] words)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 		
 		// we need to be in a network game to issue deck commands
 		// otherwise log the error and exit
@@ -844,7 +845,7 @@ public class CardModule extends Module implements MessageListener
 	 */
 	private void discardCards(final Card discards[])
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		if (core.getNetworkStatus() == NetworkStatus.CONNECTED)
 		{
@@ -906,7 +907,7 @@ public class CardModule extends Module implements MessageListener
 	 */
 	private void drawCards(final String deckName, final int numToDraw)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		if (core.getNetworkStatus() == NetworkStatus.CONNECTED)
 		{
@@ -939,7 +940,7 @@ public class CardModule extends Module implements MessageListener
 	// makes a card pog out of the sent in card
 	private MapElement makeCardPog(final Card card)
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		// there might not be a pog associated with this card
 		if (card.getCardFile().length() == 0)
@@ -962,7 +963,7 @@ public class CardModule extends Module implements MessageListener
 	}
 	private void removeCardPogsForCards(final Card discards[])
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 
 		GameTableMap publicMap = core.getMap(GameTableCore.MapType.PUBLIC);
 		GameTableMap privateMap = core.getMap(GameTableCore.MapType.PRIVATE);
@@ -1003,7 +1004,7 @@ public class CardModule extends Module implements MessageListener
 
 	private void showDeckUsage()
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 		
 		core.sendMessageLocal(MessageType.SYSTEM, "/deck usage: ");
 		core.sendMessageLocal(MessageType.SYSTEM, "---/deck create [decktype] [deckname]: create a new deck. [decktype] is the name of a deck in the decks directory. It will be named [deckname]");
@@ -1018,7 +1019,7 @@ public class CardModule extends Module implements MessageListener
 	
 	void sendDeckList()
 	{
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 		core.sendBroadcast(NetSendDeckList.makePacket(m_decks));
 	}
 

@@ -23,7 +23,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.data.MapElementTypeLibrary;
 import com.galactanet.gametable.net.*;
@@ -66,7 +66,7 @@ public class NetSetBackground implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(Type.COLOR.ordinal());
@@ -122,7 +122,7 @@ public class NetSetBackground implements NetworkMessageTypeIF
 			MapElementTypeIF type = MapElementTypeLibrary.getMasterLibrary().getMapElementType(mapElementTypeFQN);
 			if (type != null)
 			{
-				GameTableCore.getCore().setBackgroundMapElementType(type, event);
+				GametableApp.getCore().setBackgroundMapElementType(type, event);
 			}
 			else
 			{
@@ -134,7 +134,7 @@ public class NetSetBackground implements NetworkMessageTypeIF
 			int colorID = dis.readInt();
 			BackgroundColor color = BackgroundColor.fromOrdinal(colorID);
 
-			GameTableCore.getCore().setBackgroundColor(color, event);
+			GametableApp.getCore().setBackgroundColor(color, event);
 		}
 	}
 

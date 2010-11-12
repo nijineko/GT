@@ -22,7 +22,7 @@
 
 package com.galactanet.gametable.ui.chat.commands;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.ui.chat.SlashCommand;
 import com.galactanet.gametable.util.UtilityFunctions;
@@ -52,18 +52,18 @@ public class Who extends SlashCommand
 		
     buffer.append("<b><u>Who's connected</u></b><br>");
     
-    for (int i = 0, size = GameTableCore.getCore().getPlayers().size(); i < size; ++i)
+    for (int i = 0, size = GametableApp.getCore().getPlayers().size(); i < size; ++i)
     {
-        final Player player = GameTableCore.getCore().getPlayers().get(i);
+        final Player player = GametableApp.getCore().getPlayers().get(i);
         buffer.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
         buffer.append(UtilityFunctions.emitUserLink(player));
         buffer.append("<br>");
     }
     
     buffer.append("<b>");
-    buffer.append(GameTableCore.getCore().getPlayers().size());
+    buffer.append(GametableApp.getCore().getPlayers().size());
     buffer.append(" player");
-    buffer.append((GameTableCore.getCore().getPlayers().size() > 1 ? "s" : ""));
+    buffer.append((GametableApp.getCore().getPlayers().size() > 1 ? "s" : ""));
     buffer.append("</b>");
     
     return buffer.toString();

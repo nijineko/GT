@@ -17,6 +17,7 @@ import java.util.List;
 
 import javax.swing.*;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Group;
 import com.galactanet.gametable.data.GroupManager;
@@ -152,7 +153,7 @@ public class GroupingDialog extends JDialog implements FocusListener
         panel.add(b_cancel);        
         outerBox.add(Box.createVerticalStrut(PADDING));
         
-        List<String> groupNames = GameTableCore.getCore().getGroupManager(GameTableCore.MapType.ACTIVE).getGroupNames(null);
+        List<String> groupNames = GametableApp.getCore().getGroupManager(GameTableCore.MapType.ACTIVE).getGroupNames(null);
         
         for (String groupName : groupNames)
             m_groups.addItem(groupName);
@@ -177,7 +178,7 @@ public class GroupingDialog extends JDialog implements FocusListener
      */
     public Group getGroup() {
       String n = newGroup.getText();
-      GroupManager manager = GameTableCore.getCore().getGroupManager(GameTableCore.MapType.ACTIVE);
+      GroupManager manager = GametableApp.getCore().getGroupManager(GameTableCore.MapType.ACTIVE);
       if((n == null) || (n.length() == 0)) return manager.getGroup((String)m_groups.getSelectedItem(), m_newGroupMode);
       return manager.getGroup(n, m_newGroupMode);
     }

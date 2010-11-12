@@ -24,6 +24,7 @@ import javax.swing.text.*;
 import javax.swing.text.AbstractDocument.LeafElement;
 import javax.swing.text.html.HTMLDocument;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.NetworkStatus;
@@ -180,7 +181,7 @@ public class ChatLogEntryPane extends JEditorPane
     public ChatLogEntryPane(GametableFrame frame)
     {
         super("text/html", ChatLogPane.DEFAULT_TEXT);
-        m_core = GameTableCore.getCore();
+        m_core = GametableApp.getCore();
         m_frame = frame;
         initialize();
         clear();

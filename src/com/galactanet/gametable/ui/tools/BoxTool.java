@@ -112,7 +112,7 @@ public class BoxTool extends NullTool
             lines.add(right);
             lines.add(bottom);
 
-            GameTableCore.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
+            GametableApp.getCore().getMap(GameTableCore.MapType.ACTIVE).addLineSegments(lines);
         }
         endAction();
     }

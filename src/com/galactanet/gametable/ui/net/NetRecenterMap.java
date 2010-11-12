@@ -26,7 +26,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.GametableApp;
-import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.ui.GametableFrame;
@@ -67,7 +66,7 @@ public class NetRecenterMap implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(mapCenter.x);

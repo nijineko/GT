@@ -1,5 +1,5 @@
 /*
- * GametableFrame.java: GameTable is in the Public Domain.
+ * GametableFrame.java: GameTable is in the private Domain.
  */
 
 package com.galactanet.gametable.ui;
@@ -51,15 +51,18 @@ import com.plugins.cards.CardModule;
  * @author sephalon
  * 
  *         #GT-AUDIT GametableFrame
+ *         
+ *         @revise extract interface to help prevent unwanted operations on the frame
  */
 public class GametableFrame extends JFrame implements ActionListener, MessageListener
 {
 	/**
-	 * 
+	 * Constructor - should only be called by GameTableApp
+	 * @throws IOException
 	 */
 	public GametableFrame() throws IOException
 	{
-		m_core = GameTableCore.getCore();
+		m_core = GametableApp.getCore();
 		initialize();
 	}
 	
@@ -69,11 +72,15 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	class ToolButtonAbstractAction extends AbstractAction
 	{
 		/**
-     * 
+     * Serial number 
      */
 		private static final long	serialVersionUID	= 6185807427550145052L;
 
-		int												m_id;																		// Which user triggers this action
+		/**
+		 * TODO deprecate?
+		 */
+		@Deprecated
+		private int												m_id;																		// Which user triggers this action
 
 		/**
 		 * Constructor
@@ -85,6 +92,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			m_id = id;
 		}
 
+		@Override
 		public void actionPerformed(final ActionEvent event)
 		{
 			if (getFocusOwner() instanceof JTextField)
@@ -113,10 +121,8 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		{
 			m_id = id;
 		}
-
-		/*
-		 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-		 */
+		
+		@Override
 		public void actionPerformed(final ActionEvent e)
 		{
 			getGametableCanvas().setActiveTool(m_id);
@@ -126,12 +132,14 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Array of standard colors used
 	 */
-	public final static Integer[]	COLORS										= { new Integer(new Color(0, 0, 0).getRGB()),
+	public final static Integer[]	COLORS	= { 
+			new Integer(new Color(0, 0, 0).getRGB()),
 			new Integer(new Color(198, 198, 198).getRGB()), new Integer(new Color(0, 0, 255).getRGB()), new Integer(new Color(0, 255, 0).getRGB()),
 			new Integer(new Color(0, 255, 255).getRGB()), new Integer(new Color(255, 0, 0).getRGB()), new Integer(new Color(255, 0, 255).getRGB()),
 			new Integer(new Color(255, 255, 0).getRGB()), new Integer(new Color(255, 255, 255).getRGB()), new Integer(new Color(0, 0, 132).getRGB()),
 			new Integer(new Color(0, 132, 0).getRGB()), new Integer(new Color(0, 132, 132).getRGB()), new Integer(new Color(132, 0, 0).getRGB()),
-			new Integer(new Color(132, 0, 132).getRGB()), new Integer(new Color(132, 132, 0).getRGB()), new Integer(new Color(132, 132, 132).getRGB()) };
+			new Integer(new Color(132, 0, 132).getRGB()), new Integer(new Color(132, 132, 0).getRGB()), new Integer(new Color(132, 132, 132).getRGB()) 
+		};
 
 	/**
 	 * The version of the communications protocol used by this build. This needs to change whenever an incompatibility
@@ -189,23 +197,17 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 
 	private String										m_gridUnit									= "ft";
 
-	public File											m_actingFilePublic;
+	private File											m_actingFileprivate;
 
 	
 
-	public Color										m_drawColor								= Color.BLACK;
-
-	
-	// the id that will be assigned to the change made
-	public int											m_nextStateId;
-
-	
+	private Color										m_drawColor								= Color.BLACK;
 	
 	private javax.swing.Action						m_actionLoadMap;
 
 	private javax.swing.Action						m_actionLoadPrivateMap;
 
-	private javax.swing.Action						m_actionLoadPublicMap;
+	private javax.swing.Action						m_actionLoadprivateMap;
 
 	private boolean									m_bMaximized;																																						// Is
 																																																														// the
@@ -340,6 +342,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * actionPerformed is an event handler for some of the controls in the frame
 	 */
+	@Override
 	public void actionPerformed(final ActionEvent e)
 	{
 		/*
@@ -404,7 +407,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Updates the frame size and position based on the preferences stored.
 	 */
-	public void applyWindowInfo()
+	private void applyWindowInfo()
 	{
 		final Point locCopy = new Point(m_windowPos);
 		setSize(m_windowSize);
@@ -425,7 +428,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 * @param modelCenter Coordinates we want to center on 
 	 * @param zoomLevel Requested zoom level
 	 */
-	public void centerView(MapCoordinates modelCenter, final int zoomLevel)
+	private void centerView(MapCoordinates modelCenter, final int zoomLevel)
 	{
 		centerView(modelCenter, zoomLevel);
 	}
@@ -466,15 +469,10 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		m_core.getMap(GameTableCore.MapType.ACTIVE).addMapElement(newMapElement);
 	}
 
-	public ChatPanel getChatPanel()
-	{
-		return m_chatPanel;
-	}
-
 	/**
 	 * @return Returns the gametableCanvas.
 	 */
-	public GametableCanvas getGametableCanvas()
+	private GametableCanvas getGametableCanvas()
 	{
 		return m_gametableCanvas;
 	}
@@ -488,17 +486,6 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	}
 
 	/**
-	 * gets and id for a state
-	 * 
-	 * @return the next id number
-	 */
-	public int getNewStateId()
-	{
-		return m_nextStateId++;
-	}
-
-
-	/**
 	 * @return The pog panel.
 	 */
 	public PogPanel getPogPanel()
@@ -507,36 +494,28 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	}
 
 	/**
-	 * @return The pog window
-	 */
-	public JFrame getPogWindow()
-	{
-		return pogWindow;
-	}
-
-
-	/**
 	 * builds and returns the "Save map as" menu item
 	 * 
 	 * @return the menu item
 	 */
-	public JMenuItem getSaveAsMapMenuItem()
+	private JMenuItem getSaveAsMapMenuItem()
 	{
 		final JMenuItem item = new JMenuItem(getLanguageResource().MAP_SAVE_AS);
 		item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " shift pressed S"));
 		item.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
-				m_actingFilePublic = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
-				if (m_actingFilePublic != null)
-					saveMapToXML(m_actingFilePublic);
+				m_actingFileprivate = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
+				if (m_actingFileprivate != null)
+					saveMapToXML(m_actingFileprivate);
 
 				/*
 				 * 
 				 * 
-				 * if (getGametableCanvas().isPublicMap()) { m_actingFilePublic =
-				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); if (m_actingFilePublic != null) {
-				 * saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE), m_actingFilePublic); } } else { m_actingFilePrivate =
+				 * if (getGametableCanvas().isprivateMap()) { m_actingFileprivate =
+				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); if (m_actingFileprivate != null) {
+				 * saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE), m_actingFileprivate); } } else { m_actingFilePrivate =
 				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); if (m_actingFilePrivate != null) {
 				 * saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE), m_actingFilePrivate); } }
 				 */
@@ -551,7 +530,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 * 
 	 * @return the menu item
 	 */
-	public JMenuItem getSaveMapMenuItem()
+	private JMenuItem getSaveMapMenuItem()
 	{
 		final JMenuItem item = new JMenuItem(getLanguageResource().MAP_SAVE);
 		item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed S"));
@@ -561,18 +540,18 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			 */
 			public void actionPerformed(final ActionEvent e)
 			{
-				if (m_actingFilePublic == null)
-					m_actingFilePublic = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
+				if (m_actingFileprivate == null)
+					m_actingFileprivate = UtilityFunctions.doFileSaveDialog(getLanguageResource().SAVE_AS, "xml", true);
 
-				if (m_actingFilePublic != null)
-					saveMapToXML(m_actingFilePublic);
+				if (m_actingFileprivate != null)
+					saveMapToXML(m_actingFileprivate);
 
 				/*
-				 * if (getGametableCanvas().isPublicMap()) { if (m_actingFilePublic == null) { m_actingFilePublic =
+				 * if (getGametableCanvas().isprivateMap()) { if (m_actingFileprivate == null) { m_actingFileprivate =
 				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); }
 				 * 
-				 * if (m_actingFilePublic != null) { // save the file saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE),
-				 * m_actingFilePublic); } } else { if (m_actingFilePrivate == null) { m_actingFilePrivate =
+				 * if (m_actingFileprivate != null) { // save the file saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE),
+				 * m_actingFileprivate); } } else { if (m_actingFilePrivate == null) { m_actingFilePrivate =
 				 * UtilityFunctions.doFileSaveDialog(lang.SAVE_AS, "grm", true); }
 				 * 
 				 * if (m_actingFilePrivate != null) { // save the file saveState(m_core.getGameTableMap(GameTableMapType.ACTIVE),
@@ -621,15 +600,15 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Load a map file from file (goes through core, but handles errors through UI)
 	 * @param file XML File from which to load the map
-	 * @param loadPublic true to load the public map within the file.
+	 * @param loadprivate true to load the private map within the file.
 	 * @param loadPrivate true to load the private map within the file.
 	 * @param netEvent Network event that triggered the load (or null)
 	 */
-	public void loadMapFromXML(File file, boolean loadPublic, boolean loadPrivate, NetworkEvent netEvent)
+	private void loadMapFromXML(File file, boolean loadprivate, boolean loadPrivate, NetworkEvent netEvent)
 	{
 		try
 		{
-			m_core.loadMapFromXML(file, loadPublic, loadPrivate, netEvent);
+			m_core.loadMapFromXML(file, loadprivate, loadPrivate, netEvent);
 		}
 		catch (MapFormatException e)
 		{
@@ -644,7 +623,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		}
 	}
 
-	public void loadPog()
+	private void loadPog()
 	{
 		final File openFile = UtilityFunctions.doFileOpenDialog(getLanguageResource().OPEN, ".pog", true);
 
@@ -739,21 +718,6 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		m_pogPanel.populateChildren();
 		repaint();
 	}
-	
-	public boolean runHostDialog()
-	{
-		final StartNetworkingDialog dialog = new StartNetworkingDialog();
-		dialog.setUpForHostDlg();
-		dialog.setLocationRelativeTo(m_gametableCanvas);
-		dialog.setVisible(true);
-
-		if (!dialog.m_bAccepted)
-		{
-			// they cancelled out
-			return false;
-		}
-		return true;
-	}
 
 	/**
 	 * @param file
@@ -841,7 +805,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 * Save the current maps to XML.  Goes through core, but handles exceptions through UI)
 	 * @param file
 	 */
-	public void saveMapToXML(final File file)
+	private void saveMapToXML(final File file)
 	{
 		try
 		{
@@ -861,7 +825,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		m_toolButtons[toolId].setSelected(true);
 	}
 
-	// public void openPrivateMessageWindow()
+	// private void openPrivateMessageWindow()
 	// {
 	// }
 
@@ -880,7 +844,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		return m_showNamesCheckbox.isSelected();
 	}
 
-//	public void startTellTo(String name)
+//	private void startTellTo(String name)
 //	{
 //        if (name.contains(" ") || name.contains("\"") || name.contains("\t"))
 //        {
@@ -899,7 +863,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 //	 * @param target Player to address message to.
 //	 * @param text Message to send.
 //	 */
-//	public void tell(final Player target, final String text)
+//	private void tell(final Player target, final String text)
 //	{
 //		if (target.getID() == m_core.getMyPlayer().getID())
 //		{
@@ -921,14 +885,14 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Toggles between the two layers.
 	 */
-	public void toggleLayer()
+	private void toggleLayer()
 	{
 		// toggle the map we're on
-		boolean publicMap = m_core.isActiveMapPublic();
-		m_core.setActiveMap(publicMap ? GameTableCore.MapType.PRIVATE : GameTableCore.MapType.PUBLIC);
+		boolean privateMap = m_core.isActiveMapPublic();
+		m_core.setActiveMap(privateMap ? GameTableCore.MapType.PRIVATE : GameTableCore.MapType.PUBLIC);
 	}
 
-	public void updateGridModeMenu()
+	private void updateGridModeMenu()
 	{
 		switch (m_core.getGridModeID())
 		{			
@@ -966,28 +930,28 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			newStatusText = getLanguageResource().DISCONNECTED;
 			m_actionLoadMap.setEnabled(true);
 			m_actionLoadPrivateMap.setEnabled(true);
-			m_actionLoadPublicMap.setEnabled(true);
+			m_actionLoadprivateMap.setEnabled(true);
 			break;
 
 		case CONNECTED:
 			newStatusText = getLanguageResource().CONNECTED;
 			m_actionLoadMap.setEnabled(false);
 			m_actionLoadPrivateMap.setEnabled(true);
-			m_actionLoadPublicMap.setEnabled(false);
+			m_actionLoadprivateMap.setEnabled(false);
 			break;
 
 		case HOSTING:
 			newStatusText = getLanguageResource().HOSTING;
 			m_actionLoadMap.setEnabled(true);
 			m_actionLoadPrivateMap.setEnabled(true);
-			m_actionLoadPublicMap.setEnabled(true);
+			m_actionLoadprivateMap.setEnabled(true);
 			break;
 
 		default:
 			newStatusText = getLanguageResource().UNKNOWN_STATE;
 			m_actionLoadMap.setEnabled(false);
 			m_actionLoadPrivateMap.setEnabled(true);
-			m_actionLoadPublicMap.setEnabled(false);
+			m_actionLoadprivateMap.setEnabled(false);
 			break;
 		}
 
@@ -1028,7 +992,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Records the current state of the window.
 	 */
-	public void updateWindowInfo()
+	private void updateWindowInfo()
 	{
 		// we only update our internal size and
 		// position variables if we aren't maximized.
@@ -1065,7 +1029,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			}
 		};
 
-		m_actionLoadPublicMap = new AbstractAction("Load Public Map") {
+		m_actionLoadprivateMap = new AbstractAction("Load private Map") {
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -1293,7 +1257,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
 		menu.add(item);
 
-		item = new JMenuItem(m_actionLoadPublicMap);
+		item = new JMenuItem(m_actionLoadprivateMap);
 		// item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
 		menu.add(item);
 
@@ -2323,10 +2287,10 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Load map
 	 * 
-	 * @param loadPublic Load public map from file
+	 * @param loadprivate Load private map from file
 	 * @param loadPrivate Load private map from file
 	 */
-	private void loadMap(boolean loadPublic, boolean loadPrivate)
+	private void loadMap(boolean loadprivate, boolean loadPrivate)
 	{
 		final File openFile = UtilityFunctions.doFileOpenDialog(getLanguageResource().OPEN, "xml", true);
 
@@ -2338,7 +2302,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			if (m_core.getNetworkStatus() == NetworkStatus.HOSTING)
 				netEvent = new NetworkEvent(m_core.getPlayer(), true, NetLoadMap.getMessageType());
 			
-			loadMapFromXML(openFile, loadPublic, loadPrivate, netEvent);
+			loadMapFromXML(openFile, loadprivate, loadPrivate, netEvent);
 
 			if (m_core.getNetworkStatus() == NetworkStatus.HOSTING)
 			{
@@ -2546,13 +2510,13 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			}
 			
 			@Override
-			public void onMapElementsLocked(boolean onPublicMap, List<MapElement> mapElements, boolean locked, NetworkEvent netEvent)
+			public void onMapElementsLocked(boolean onprivateMap, List<MapElement> mapElements, boolean locked, NetworkEvent netEvent)
 			{
 				repaint();				
 			}
 			
 			@Override
-			public void onMapElementLocked(boolean onPublicMap, MapElement mapElement, boolean locked, NetworkEvent netEvent)
+			public void onMapElementLocked(boolean onprivateMap, MapElement mapElement, boolean locked, NetworkEvent netEvent)
 			{
 				repaint();
 			}
@@ -2577,13 +2541,13 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			}
 			
 			@Override
-			public void onAllMapElementsLocked(boolean onPublicMap, boolean locked, NetworkEvent netEvent)
+			public void onAllMapElementsLocked(boolean onprivateMap, boolean locked, NetworkEvent netEvent)
 			{
 				repaint();
 			}
 			
 			@Override
-			public void onActiveMapChange(boolean publicMap)
+			public void onActiveMapChange(boolean privateMap)
 			{
 				// if they toggled the layer, whatever tool they're using is cancelled
 				getToolManager().cancelToolAction();

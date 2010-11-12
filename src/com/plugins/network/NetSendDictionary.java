@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
 import com.galactanet.gametable.net.*;
@@ -70,7 +71,7 @@ public class NetSendDictionary implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			Collection<NetworkMessageTypeIF> types = ((NetworkModule)module).getRegisteredMessageTypes();
@@ -98,7 +99,7 @@ public class NetSendDictionary implements NetworkMessageTypeIF
 	@Override
 	public void processData(NetworkConnectionIF sourceConnection, DataInputStream dis, NetworkEvent event) throws IOException
 	{
-		GameTableCore core = GameTableCore.getCore(); 
+		GameTableCore core = GametableApp.getCore(); 
 		NetworkModule module = (NetworkModule)core.getNetworkModule();
 		Collection<NetworkMessageTypeIF> registeredTypes = module.getRegisteredMessageTypes();
 		Map<Integer, NetworkMessageTypeIF> mapping = new HashMap<Integer, NetworkMessageTypeIF>();

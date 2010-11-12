@@ -25,7 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.net.*;
 import com.galactanet.gametable.util.Log;
 
@@ -59,7 +59,7 @@ public class NetLoginComplete implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			// there's actually no additional data. Just the info that the login is complete

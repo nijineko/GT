@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementID;
@@ -64,7 +65,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeInt(-1);
@@ -89,7 +90,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 
 			dos.writeInt(1);
@@ -115,7 +116,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
 			dos.writeInt(mapElements.size());
@@ -142,7 +143,7 @@ public class NetLockMapElements implements NetworkMessageTypeIF
 		long qty = dis.readInt();		
     boolean locked = dis.readBoolean();
     
-    GameTableCore core = GameTableCore.getCore();
+    GameTableCore core = GametableApp.getCore();
     
     if (qty < 1)
     {

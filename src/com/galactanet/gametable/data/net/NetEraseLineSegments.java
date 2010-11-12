@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.MapCoordinates;
 import com.galactanet.gametable.data.MapRectangle;
@@ -67,7 +68,7 @@ public class NetEraseLineSegments implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeInt(rect.topLeft.x);
@@ -100,7 +101,7 @@ public class NetEraseLineSegments implements NetworkMessageTypeIF
     final int color = dis.readInt();
 
 		// erase the lines
-		GameTableCore.getCore().getMap(GameTableCore.MapType.PUBLIC).removeLineSegments(r, bColorSpecific, color, event);
+		GametableApp.getCore().getMap(GameTableCore.MapType.PUBLIC).removeLineSegments(r, bColorSpecific, color, event);
 	}
 	
 	/*

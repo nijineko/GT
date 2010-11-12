@@ -25,6 +25,7 @@ package com.galactanet.gametable.data.net;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableCore;
 import com.galactanet.gametable.data.Player;
 import com.galactanet.gametable.data.ChatEngineIF.MessageType;
@@ -64,7 +65,7 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 	{
 		try
 		{
-			NetworkModuleIF module = GameTableCore.getCore().getNetworkModule();
+			NetworkModuleIF module = GametableApp.getCore().getNetworkModule();
 			DataPacketStream dos = module.createDataPacketStream(getMessageType());
 			
       dos.writeInt(player.getID());
@@ -90,7 +91,7 @@ public class NetSendPlayerInfo implements NetworkMessageTypeIF
 		String playerName = dis.readUTF();
 		String characterName = dis.readUTF();
 		
-		GameTableCore core = GameTableCore.getCore();
+		GameTableCore core = GametableApp.getCore();
 		Player player = core.getPlayer(playerID);
 		
 		if (player != null)

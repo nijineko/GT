@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.data.net.NetRequestFile;
 import com.galactanet.gametable.data.net.NetRequestFile.FileSourceIF;
@@ -130,7 +131,7 @@ public class BasicMapElementTypeLibrary extends MapElementTypeLibrary
 				
 				parts[1] = UtilityFunctions.unEscapeString(parts[1]);
 				
-				MapElementTypeLibrary lib = GameTableCore.getCore().getMapElementTypeLibrary().getLibraryFromFQN(parts[0]);
+				MapElementTypeLibrary lib = GametableApp.getCore().getMapElementTypeLibrary().getLibraryFromFQN(parts[0]);
 				if (lib == null)
 					return null;
 				
