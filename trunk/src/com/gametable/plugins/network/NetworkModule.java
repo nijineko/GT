@@ -47,6 +47,9 @@ import com.maziade.props.XProperties;
  */
 public class NetworkModule implements NetworkModuleIF
 {
+	private final static String PROPERTY_BUNDLE = "com.gametable.plugins.network";
+	public static final String RESOURCE_PATH = "com.gametable.plugins.network.resources";
+	
 	private class DataPacket extends DataPacketStream
   {
   	/**
@@ -741,26 +744,26 @@ public class NetworkModule implements NetworkModuleIF
 	@Override
 	public void onInitializeProperties(XProperties properties)
 	{
-		properties.addTextProperty(PROP_ID_ADDRESS, 				DEFAULT_IP_ADDRESS, true, "network", -1);
-		properties.addNumberProperty(PROP_PORT, 						DEFAULT_PORT, true, "network", -1);
+		properties.addTextProperty(PROP_ID_ADDRESS, 				DEFAULT_IP_ADDRESS, true, "network", -1, RESOURCE_PATH);
+		properties.addNumberProperty(PROP_PORT, 						DEFAULT_PORT, true, "network", -1, RESOURCE_PATH);
 //		properties.addTextProperty(PROP_PASSWORD, 					getPassword(), true, "network", -1);
-		properties.addBooleanProperty(PROP_CONNECT_AS_HOST, false, true, "network", -1);		
+		properties.addBooleanProperty(PROP_CONNECT_AS_HOST, false, true, "network", -1, RESOURCE_PATH);		
 	}
 
 	/**
 	 * IP Address property 
 	 */
-	public final static String PROP_ID_ADDRESS = NetworkModule.class.getName() + ".ip_address";
+	public final static String PROP_ID_ADDRESS = PROPERTY_BUNDLE + ".ip_address";
 	
 	/**
 	 * Port property
 	 */
-	public final static String PROP_PORT = NetworkModule.class.getName() + ".port";
+	public final static String PROP_PORT = PROPERTY_BUNDLE + ".port";
 	
 	/**
 	 * Hosting property
 	 */
-	public final static String PROP_CONNECT_AS_HOST = NetworkModule.class.getName() + ".hosting";
+	public final static String PROP_CONNECT_AS_HOST = PROPERTY_BUNDLE + ".hosting";
 	
 	/*
 	 * @see com.galactanet.gametable.net.NetworkModuleIF#onLoadPropertiesCompleted()
@@ -779,4 +782,6 @@ public class NetworkModule implements NetworkModuleIF
 	{
 		// nothing to do
 	}
+	
+	
 }

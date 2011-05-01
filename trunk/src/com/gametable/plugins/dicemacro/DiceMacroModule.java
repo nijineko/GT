@@ -56,7 +56,7 @@ import com.maziade.props.XProperties;
  * 
  */
 public class DiceMacroModule extends Module
-{
+{	
 	/**
 	 * Singleton getter
 	 * 
@@ -469,7 +469,7 @@ public class DiceMacroModule extends Module
 	@Override
 	public void onInitializeProperties(XProperties properties)
 	{
-		properties.addTextProperty(PROP_ACTING_MACRO_FILE, new File("dice.xml").getAbsolutePath(), false, "macros", -1);
+		properties.addTextProperty(PROP_ACTING_MACRO_FILE, new File("dice.xml").getAbsolutePath(), false, "macros", -1, DiceMacro.RESOURCE_PATH);
 	}
 
 	/*

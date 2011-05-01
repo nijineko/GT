@@ -46,6 +46,8 @@ import com.maziade.messages.MessageID;
 import com.maziade.messages.MessageListener;
 import com.maziade.messages.MessagePriority;
 import com.maziade.props.XProperties;
+import com.maziade.props.ui.XPropertiesDialog;
+import com.maziade.tools.ui.ModalDialog.ReturnValue;
 
 /**
  * The main Gametable Frame class. This class handles the display of the application objects and the response to user
@@ -59,6 +61,11 @@ import com.maziade.props.XProperties;
  */
 public class GametableFrame extends JFrame implements ActionListener, MessageListener
 {
+	
+	private static final String PROPERTY_BUNDLE_NAME = "com.gametable.ui.GametableFrame";	// Set as string not to hard link to class name (in case of refactoring)
+
+	public static final String RESOURCE_PATH = "com.gametable.ui.resources";
+	
 	private static String getMenuAccelerator()
 	{
 		switch (Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())
@@ -748,19 +755,19 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		XProperties props = m_core.getProperties();
 		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
-		props.addBooleanProperty(PROP_SHOW_NAMES_ON_MAP, false, true, "map_options", -1);
-		props.addBooleanProperty(PROP_USE_CHAT_MECHANICS, false, true, "map_options", -1);
-		props.addBooleanProperty(PROP_RANDOM_ROTATE, false, true, "map_options", -1);
+		props.addBooleanProperty(PROP_SHOW_NAMES_ON_MAP, false, true, "map_options", -1, RESOURCE_PATH);
+		props.addBooleanProperty(PROP_USE_CHAT_MECHANICS, false, true, "map_options", -1, RESOURCE_PATH);
+		props.addBooleanProperty(PROP_RANDOM_ROTATE, false, true, "map_options", -1, RESOURCE_PATH);
 
-		props.addTextProperty(PROP_SCROLL_POSITION, XProperties.fromPoint(new Point(0, 0)), false, "window", -1);
-		props.addNumberProperty(PROP_ZOOM_LEVEL, 0, false, "window", -1);
-		props.addTextProperty(PROP_WINDOW_SIZE, XProperties.fromDimension(new Dimension(800, 600)), false, "window", -1);
+		props.addTextProperty(PROP_SCROLL_POSITION, XProperties.fromPoint(new Point(0, 0)), false, "window", -1, RESOURCE_PATH);
+		props.addNumberProperty(PROP_ZOOM_LEVEL, 0, false, "window", -1, RESOURCE_PATH);
+		props.addTextProperty(PROP_WINDOW_SIZE, XProperties.fromDimension(new Dimension(800, 600)), false, "window", -1, RESOURCE_PATH);
 
 		props.addTextProperty(PROP_WINDOW_POSITION, XProperties.fromPoint(new Point((screenSize.width - DEFAULT_WINDOWSIZE_WIDTH) / 2,
-				(screenSize.height - DEFAULT_WINDOWSIZE_HEIGHT) / 2)), false, "window", -1);
-		props.addBooleanProperty(PROP_MAXIMIZED, false, false, "window", -1);
-		props.addNumberProperty(PROP_CHAT_SPLIT, 0.7f, false, "window", -1);
-		props.addNumberProperty(PROP_COLUMN_SPLIT, 150, false, "window", -1);
+				(screenSize.height - DEFAULT_WINDOWSIZE_HEIGHT) / 2)), false, "window", -1, RESOURCE_PATH);
+		props.addBooleanProperty(PROP_MAXIMIZED, false, false, "window", -1, RESOURCE_PATH);
+		props.addNumberProperty(PROP_CHAT_SPLIT, 0.7f, false, "window", -1, RESOURCE_PATH);
+		props.addNumberProperty(PROP_COLUMN_SPLIT, 150, false, "window", -1, RESOURCE_PATH);
 	}
 
 	/**
@@ -1369,7 +1376,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	{
 		// todo Add File->New
 
-		final JMenu menu = new JMenu(getLanguageResource().FILE);
+		final JMenu menu = new JMenu("File");
 
 		JMenuItem item = new JMenuItem(m_actionLoadMap);
 		item.setAccelerator(KeyStroke.getKeyStroke(MENU_ACCELERATOR + " pressed O"));
@@ -1386,6 +1393,9 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		menu.add(getSaveMapMenuItem());
 		menu.add(getSaveAsMapMenuItem());
 		menu.add(getScanForPogsMenuItem());
+		
+		menu.add(getPropertiesMenuItem());
+		
 		menu.add(getQuitMenuItem());
 
 		return menu;
@@ -1980,6 +1990,36 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			public void actionPerformed(final ActionEvent e)
 			{
 				MSG_REFRESH_MAP_LIBRARY.addMessage(GametableFrame.this, "scan");
+			}
+		});
+
+		return item;
+	}
+	
+	/**
+	 * builds and returns the "Scan for pogs" menu item
+	 * 
+	 * @return the menu item
+	 */
+	private JMenuItem getPropertiesMenuItem()
+	{
+		final JMenuItem item = new JMenuItem("Properties...");
+		//item.setAccelerator(KeyStroke.getKeyStroke("F5"));
+		item.addActionListener(new ActionListener() {
+			public void actionPerformed(final ActionEvent e)
+			{
+				XProperties props = m_core.getProperties();
+				XPropertiesDialog dlg = new XPropertiesDialog(GametableFrame.this, props);
+				
+				// XProperties - resource bundle ResourceBundle TODO #ResourceBundle class for language strings
+				
+				// Okay, I want a GameTable ResourceBundle class - it should be able to use multiple bundles.  PropertyResourceBundle
+
+				
+				if (dlg.showModal() == ReturnValue.OK)
+				{
+					props.copyAllPropertiesFrom(dlg.getProperties());					
+				}
 			}
 		});
 
@@ -2776,31 +2816,31 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 */
 	private static MessageID						MSGID_REFRESH_MAP_LIBRARY;
 
-	private static final String					PROP_CHAT_SPLIT						= GametableFrame.class.getName() + ".chat_divider_loc";
+	private static final String					PROP_CHAT_SPLIT						= PROPERTY_BUNDLE_NAME + ".chat_divider_loc";
 
-	private static final String					PROP_COLUMN_SPLIT					= GametableFrame.class.getName() + ".column_divider_loc";
+	private static final String					PROP_COLUMN_SPLIT					= PROPERTY_BUNDLE_NAME + ".column_divider_loc";
 
-	private static final String					PROP_MAXIMIZED						= GametableFrame.class.getName() + ".window_maximized";
+	private static final String					PROP_MAXIMIZED						= PROPERTY_BUNDLE_NAME + ".window_maximized";
 
-	private final static String					PROP_RANDOM_ROTATE				= GametableFrame.class.getName() + ".rnd_rotate_elements";
+	private final static String					PROP_RANDOM_ROTATE				= PROPERTY_BUNDLE_NAME + ".rnd_rotate_elements";
 
-	private static final String					PROP_SCROLL_POSITION			= GametableFrame.class.getName() + ".scroll_position";
-	private final static String					PROP_SHOW_NAMES_ON_MAP		= GametableFrame.class.getName() + ".show_names";
+	private static final String					PROP_SCROLL_POSITION			= PROPERTY_BUNDLE_NAME + ".scroll_position";
+	private final static String					PROP_SHOW_NAMES_ON_MAP		= PROPERTY_BUNDLE_NAME + ".show_names";
 
-	private final static String					PROP_USE_CHAT_MECHANICS		= GametableFrame.class.getName() + ".show_chat_mechanics";
+	private final static String					PROP_USE_CHAT_MECHANICS		= PROPERTY_BUNDLE_NAME + ".show_chat_mechanics";
 
-	private static final String					PROP_WINDOW_POSITION			= GametableFrame.class.getName() + ".window_position";
+	private static final String					PROP_WINDOW_POSITION			= PROPERTY_BUNDLE_NAME + ".window_position";
 
-	private static final String					PROP_WINDOW_SIZE					= GametableFrame.class.getName() + ".window_size";
+	private static final String					PROP_WINDOW_SIZE					= PROPERTY_BUNDLE_NAME + ".window_size";
 
-	private static final String					PROP_ZOOM_LEVEL						= GametableFrame.class.getName() + ".zoom_level";
+	private static final String					PROP_ZOOM_LEVEL						= PROPERTY_BUNDLE_NAME + ".zoom_level";
 
 	/**
      * 
      */
 	private static final long						serialVersionUID					= -1997597054204909759L;
 
-	public final String									ACTION_DEFAULT_AS_BUTTON	= GametableFrame.class.getCanonicalName() + ".DEFAULT_AS_BUTTON";
+	public final String									ACTION_DEFAULT_AS_BUTTON	= PROPERTY_BUNDLE_NAME + ".DEFAULT_AS_BUTTON";
 
 	private final int										DEFAULT_WINDOWSIZE_HEIGHT	= 600;
 

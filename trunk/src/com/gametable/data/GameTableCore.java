@@ -61,6 +61,7 @@ import com.maziade.tools.XMLUtils.XMLOutputProperties;
  */
 public class GameTableCore implements MapElementRepositoryIF
 {
+	public static final String RESOURCE_PATH = "com.gametable.data.resources";
 
 	/**
 	 * Constructor - should only be called by GametableApp 
@@ -1766,8 +1767,8 @@ public class GameTableCore implements MapElementRepositoryIF
 	{
 		XProperties props = getProperties();
 		
-		props.addTextProperty(PROP_PLAYER_NAME, getPlayerName(), true, "player", -1);
-		props.addTextProperty(PROP_CHARACTER_NAME, getCharacterName(), true, "player", -1);
+		props.addTextProperty(PROP_PLAYER_NAME, getPlayerName(), true, "player", -1, RESOURCE_PATH);
+		props.addTextProperty(PROP_CHARACTER_NAME, getCharacterName(), true, "player", -1, RESOURCE_PATH);
 		
 		GametableFrame frame = GametableApp.getUserInterface();
 		if (frame != null)
