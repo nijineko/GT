@@ -926,7 +926,7 @@ public class PogPanel extends JPanel
 		m_grabbedPog = new MapElement(p);
 		m_grabbedPogPosition = pos;
 		m_grabbedPogOffset = offset;
-		m_canvas.pogDrag();
+		m_canvas.mapElementDrag();
 		repaint();
 	}
 
@@ -949,7 +949,7 @@ public class PogPanel extends JPanel
 		if (m_grabbedPog != null)
 		{
 			m_grabbedPogPosition = pos;
-			m_canvas.pogDrag();
+			m_canvas.mapElementDrag();
 			repaint();
 		}
 	}
@@ -977,8 +977,8 @@ public class PogPanel extends JPanel
 		else if ((m_hoverPog != null) && (m_mousePosition != null))
 		{
 			Image hoverImage = m_hoverPog.getImage();
-			int height = hoverImage == null ? GameTableMap.getBaseSquareSize() : hoverImage.getHeight(null);
-			int width = hoverImage == null ? GameTableMap.getBaseSquareSize() : hoverImage.getWidth(null);
+			int height = hoverImage == null ? GameTableMap.getBaseTileSize() : hoverImage.getHeight(null);
+			int width = hoverImage == null ? GameTableMap.getBaseTileSize() : hoverImage.getWidth(null);
 
 			final Graphics2D g2 = (Graphics2D) g;
 			int drawX = m_mousePosition.x;

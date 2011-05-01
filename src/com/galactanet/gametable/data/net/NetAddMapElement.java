@@ -26,8 +26,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.galactanet.gametable.GametableApp;
-import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapElement;
 import com.galactanet.gametable.data.MapElementTypeIF;
 import com.galactanet.gametable.net.*;

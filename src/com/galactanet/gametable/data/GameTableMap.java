@@ -48,7 +48,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	 * Returns the number of map units found within a square
 	 * @return Number of map units - NOT DIRECTLY RELATED TO PIXELS
 	 */
-	public final static int getBaseSquareSize()
+	public final static int getBaseTileSize()
 	{
 		return GameTableMap.BASE_SQUARE_SIZE;
 	}
@@ -96,7 +96,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	{
 		m_publicMap = publicMap;
 
-		m_lines = new ArrayList<LineSegment>();
+		m_lines = new CopyOnWriteArrayList<LineSegment>();
 		m_linesUnmodifiable = Collections.unmodifiableList(m_lines);
 
 		m_mapElements = new ArrayList<MapElement>();
@@ -270,6 +270,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	 */
 	public void addMapElement(MapElement mapElement, NetworkEvent netEvent)
 	{
+System.out.println("Add mapElement"); // TODO #Remove		
 		m_mapElements.add(mapElement);
 		
 		mapElement.addListener(m_elementListener);
@@ -333,6 +334,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	{
 		ArrayList<MapElement> mapElements = new ArrayList<MapElement>(m_mapElements);
 		
+		System.out.println("Clear mapElement"); // TODO #Remove		
 		m_mapElements.clear();
 		
 		for (GameTableMapListenerIF listener : m_listeners)
@@ -598,6 +600,7 @@ public class GameTableMap implements MapElementRepositoryIF
 	 */
 	public void removeMapElement(final MapElement mapElement, NetworkEvent netEvent)
 	{
+		System.out.println("Remove mapElement"); // TODO #Remove		
 		m_mapElements.remove(mapElement);
 		
 		mapElement.removeListener(m_elementListener);
@@ -628,6 +631,7 @@ public class GameTableMap implements MapElementRepositoryIF
 		List<MapElement> instances = new ArrayList<MapElement>(mapElements);
 		
 		// Remove
+		System.out.println("Remvoe all mapElement"); // TODO #Remove		
 		m_mapElements.removeAll(instances);			
 
 		// Clear listeners

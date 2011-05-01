@@ -28,17 +28,9 @@ import com.galactanet.gametable.ui.GametableCanvas;
 public class PenAsset
 {
 
-    public final static int    MINIMUM_MOVE_DISTANCE = 1;
-    public final static double WIGGLE_TOLERANCE      = 2.0;
-
-    GametableCanvas            m_canvas;
-    Color                      m_color;
-    List<MapCoordinates>                       m_points              = new ArrayList<MapCoordinates>();
-
     public PenAsset()
     {
     }
-
     public PenAsset(final Color color)
     {
         init(color);
@@ -64,39 +56,6 @@ public class PenAsset
 
         m_points.add(toAdd);
     }
-
-    private double distanceToLine(final MapCoordinates lineStart, final MapCoordinates lineEnd, final MapCoordinates point)
-    {
-        // zero everything. put lineStart at the origin
-        final Point vectorB = new Point();
-        vectorB.x = lineEnd.x - lineStart.x;
-        vectorB.y = lineEnd.y - lineStart.y;
-
-        final Point vectorA = new Point();
-        vectorA.x = point.x - lineStart.x;
-        vectorA.y = point.y - lineStart.y;
-
-        // A dot B divided by the length of B is A's projection along B
-        // in this case, A is the vector to the point
-        final double A_dot_B = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
-        final double normB = Math.sqrt(vectorB.x * vectorB.x + vectorB.y * vectorB.y);
-        final double proj = A_dot_B / normB;
-
-        // now we need to find the point that is "proj" along vector B
-        final double ratioProj = (proj / normB);
-        final double projPointX = ratioProj * vectorB.x;
-        final double projPointY = ratioProj * vectorB.y;
-
-        // proj is the distance along vector B that A projects to. Now we
-        // need to get the distance between it and the sent in point
-        // (which is now vector A)
-        final double dx = projPointX - vectorA.x;
-        final double dy = projPointY - vectorA.y;
-        final double dist = Math.sqrt(dx * dx + dy * dy);
-
-        return dist;
-    }
-
     public void draw(final Graphics g, final GametableCanvas canvas)
     {
         List<LineSegment> lines = getLineSegments();
@@ -105,7 +64,6 @@ public class PenAsset
             line.drawToCanvas(g, canvas);
         }
     }
-
     public Color getColor()
     {
         return m_color;
@@ -129,6 +87,39 @@ public class PenAsset
         }
 
         return lines;
+    }
+
+    public void init(final Color color)
+    {
+        m_color = color;
+    }
+
+    /**
+     * Cull out unneeded points.
+     */
+    public void smooth()
+    {
+        // We can't reduce to less than 2 points.
+        if (m_points.size() < 2)
+        {
+            return;
+        }
+
+        final List<MapCoordinates> newPoints = new ArrayList<MapCoordinates>(m_points.size());
+
+        // no matter what, the first point will have to be in there
+        newPoints.add(m_points.get(0));
+
+        int currentIdx = 0;
+        final int maxIdx = m_points.size() - 1;
+        while (currentIdx < maxIdx)
+        {
+            currentIdx = getNextUsefulPoint(currentIdx);
+            newPoints.add(m_points.get(currentIdx));
+        }
+
+        // we're done.
+        m_points = newPoints;
     }
 
     protected int getNextUsefulPoint(final int startIdx)
@@ -172,11 +163,6 @@ public class PenAsset
         return m_points.size() - 1;
     }
 
-    public void init(final Color color)
-    {
-        m_color = color;
-    }
-
     protected boolean pointsOutsideDirectLine(final int startIdx, final int endIdx)
     {
         final MapCoordinates checkStart = m_points.get(startIdx);
@@ -196,31 +182,45 @@ public class PenAsset
         return false;
     }
 
-    /**
-     * Cull out unneeded points.
-     */
-    public void smooth()
+    private double distanceToLine(final MapCoordinates lineStart, final MapCoordinates lineEnd, final MapCoordinates point)
     {
-        // We can't reduce to less than 2 points.
-        if (m_points.size() < 2)
-        {
-            return;
-        }
+        // zero everything. put lineStart at the origin
+        final Point vectorB = new Point();
+        vectorB.x = lineEnd.x - lineStart.x;
+        vectorB.y = lineEnd.y - lineStart.y;
 
-        final List<MapCoordinates> newPoints = new ArrayList<MapCoordinates>(m_points.size());
+        final Point vectorA = new Point();
+        vectorA.x = point.x - lineStart.x;
+        vectorA.y = point.y - lineStart.y;
 
-        // no matter what, the first point will have to be in there
-        newPoints.add(m_points.get(0));
+        // A dot B divided by the length of B is A's projection along B
+        // in this case, A is the vector to the point
+        final double A_dot_B = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+        final double normB = Math.sqrt(vectorB.x * vectorB.x + vectorB.y * vectorB.y);
+        final double proj = A_dot_B / normB;
 
-        int currentIdx = 0;
-        final int maxIdx = m_points.size() - 1;
-        while (currentIdx < maxIdx)
-        {
-            currentIdx = getNextUsefulPoint(currentIdx);
-            newPoints.add(m_points.get(currentIdx));
-        }
+        // now we need to find the point that is "proj" along vector B
+        final double ratioProj = (proj / normB);
+        final double projPointX = ratioProj * vectorB.x;
+        final double projPointY = ratioProj * vectorB.y;
 
-        // we're done.
-        m_points = newPoints;
+        // proj is the distance along vector B that A projects to. Now we
+        // need to get the distance between it and the sent in point
+        // (which is now vector A)
+        final double dx = projPointX - vectorA.x;
+        final double dy = projPointY - vectorA.y;
+        final double dist = Math.sqrt(dx * dx + dy * dy);
+
+        return dist;
     }
+
+    public final static int    MINIMUM_MOVE_DISTANCE = 1;
+
+    public final static double WIGGLE_TOLERANCE      = 2.0;
+
+    GametableCanvas            m_canvas;
+
+    Color                      m_color;
+
+    List<MapCoordinates>                       m_points              = new ArrayList<MapCoordinates>();
 }

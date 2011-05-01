@@ -72,7 +72,7 @@ public class Goto extends SlashCommand
       return null;
     }
     
-    frame.scrollToPog(pog);
+    frame.scrollToMapElement(pog);
     
     return null;
 	}

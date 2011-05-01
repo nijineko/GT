@@ -92,6 +92,7 @@ public class GametableApp
 					
 					// Initialize frame
 					m_frame = new GametableFrame();
+					m_frame.initialize();
 
 					// Load properties
 					core.loadProperties();

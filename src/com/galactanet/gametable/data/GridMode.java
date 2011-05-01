@@ -19,6 +19,8 @@ package com.galactanet.gametable.data;
 
 import java.awt.Graphics2D;
 
+import com.galactanet.gametable.ui.GametableCanvas;
+
 /**
  * @author sephalon
  * 
@@ -34,8 +36,9 @@ public class GridMode
 	 * @param topLeftY y Coordinate of the region we need to draw lines in
 	 * @param width Width of the region we need to draw lines in
 	 * @param height Height of the region we need to draw lines in
+	 * @param canvas GameTableCanvas instance 
 	 */
-	public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)
+	public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height, GametableCanvas canvas)
 	{
 		// default behavior is to not draw anything
 	}
@@ -43,7 +46,7 @@ public class GridMode
 	/**
 	 * Get the distance, in squares, between two set of map coordinates.
 	 * 
-	 * Base implementation does basic hypotenuse trig.
+	 * Base implementation does basic hypothenuse trigonometry.
 	 * 
 	 * @param x1 x Coordinate of point 1
 	 * @param y1 y Coordinate of point 1
@@ -88,9 +91,9 @@ public class GridMode
 	 * @param pog Pog to reposition
 	 * 
 	 */
-	public void snapPogToGrid(final MapElement pog)
+	public void snapMapElementToGrid(final MapElement pog)
 	{
-		MapCoordinates snappedPoint = getSnappedMapCoordinates(pog.getPosition(), true, (int)(GameTableMap.getBaseSquareSize() * pog.getFaceSize()));
+		MapCoordinates snappedPoint = getSnappedMapCoordinates(pog.getPosition(), true, (int)(GameTableMap.getBaseTileSize() * pog.getFaceSize()));
 		pog.setPosition(snappedPoint);
 	}
 
@@ -101,7 +104,7 @@ public class GridMode
 	 * 
 	 * @return new set of map coordinates, snapped to grid
 	 */
-	public MapCoordinates getSnappedPixelCoordinates(final MapCoordinates modelCoordinates)
+	public MapCoordinates getSnappedMapCoordinates(final MapCoordinates modelCoordinates)
 	{
 		return getSnappedMapCoordinates(modelCoordinates, false, 0);
 	}
@@ -138,7 +141,7 @@ public class GridMode
 		// NB : The second division is made as integer, actually rounding the pixel coordinates to map coordinates.  
 		// The following multiplication converts back to pixels after rounding. 
 		
-		int squareSize = GameTableMap.getBaseSquareSize();
+		int squareSize = GameTableMap.getBaseTileSize();
 		
 		if (mapCoordinate < 0)
 			return ((mapCoordinate - squareSize / 2) / squareSize) * squareSize;

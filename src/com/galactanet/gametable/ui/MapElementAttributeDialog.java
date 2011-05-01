@@ -23,7 +23,7 @@ import javax.swing.*;
  * 
  * #GT-AUDIT SetPogAttributeDialog
  */
-public class SetPogAttributeDialog extends JDialog
+public class MapElementAttributeDialog extends JDialog
 {
 
     /**
@@ -54,7 +54,7 @@ public class SetPogAttributeDialog extends JDialog
     /**
      * This is the default constructor
      */
-    public SetPogAttributeDialog(final boolean edit)
+    public MapElementAttributeDialog(final boolean edit)
     {
         super();
         b_edit = edit;

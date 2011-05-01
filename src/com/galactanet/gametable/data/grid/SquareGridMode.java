@@ -8,11 +8,10 @@ package com.galactanet.gametable.data.grid;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
-import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GridMode;
 import com.galactanet.gametable.data.MapCoordinates;
-import com.galactanet.gametable.ui.GametableFrame;
+import com.galactanet.gametable.ui.GametableCanvas;
 
 
 
@@ -32,11 +31,9 @@ public class SquareGridMode extends GridMode
     * @see com.galactanet.gametable.data.GridMode#drawLines(java.awt.Graphics2D, int, int, int, int)
     */
     @Override
-    public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)    
+    public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height, GametableCanvas canvas)    
     {
-    	GametableFrame frame = GametableApp.getUserInterface();
-    	
-        if (frame.getZoomLevel() == 4)
+        if (canvas.getZoomLevel() == 4)
         {
             // we don't draw lines at the furthest zoom level
             return;
@@ -53,7 +50,7 @@ public class SquareGridMode extends GridMode
         // mode,
         // we have to make our "tiling square size" twice as wide.
 
-        final int tilingSquareX = frame.getSquareSize();
+        final int tilingSquareX = canvas.getTileSize();
         final int tilingSquareY = tilingSquareX;	// its a square, so same value
 
         int qx = Math.abs(topLeftX) / tilingSquareX;
@@ -78,9 +75,9 @@ public class SquareGridMode extends GridMode
         g.setColor(Color.GRAY);
 
         // draw a square grid
-        int squareSize = frame.getSquareSize();
+        int squareSize = canvas.getTileSize();
         
-        if (frame.getZoomLevel() < 4)
+        if (canvas.getZoomLevel() < 4)
         {
             for (int i = 0; i < vLines; i++)
             {
@@ -108,7 +105,7 @@ public class SquareGridMode extends GridMode
         // Otherwise allow center snapping as well.
         MapCoordinates closest = null;
         final MapCoordinates candidates[] = new MapCoordinates[5];
-        int foo = GameTableMap.getBaseSquareSize()/2;
+        int foo = GameTableMap.getBaseTileSize()/2;
         candidates[0] = new MapCoordinates( x, y ); // Me
         candidates[1] = new MapCoordinates( x-foo, y-foo ); // Nearby center
         candidates[2] = new MapCoordinates( x+foo, y-foo ); // Nearby center

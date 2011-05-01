@@ -74,7 +74,7 @@ public class BasicMapElementType implements MapElementTypeIF
 
 		if (faceSize > 3)
 		{
-			final int size = faceSize * GameTableMap.getBaseSquareSize();
+			final int size = faceSize * GameTableMap.getBaseTileSize();
 			image = Images.getScaledInstance(image, size, size);
 		}
 
@@ -284,7 +284,7 @@ public class BasicMapElementType implements MapElementTypeIF
 	public int getImageHeight()
 	{
 		if (m_image == null)
-			return GameTableMap.getBaseSquareSize();
+			return GameTableMap.getBaseTileSize();
 
 		return m_image.getHeight(null);
 	}
@@ -297,7 +297,7 @@ public class BasicMapElementType implements MapElementTypeIF
 	public int getImageWidth()
 	{
 		if (m_image == null)
-			return GameTableMap.getBaseSquareSize();
+			return GameTableMap.getBaseTileSize();
 
 		return m_image.getWidth(null);
 	}
@@ -454,7 +454,7 @@ public class BasicMapElementType implements MapElementTypeIF
 			int pixelSize = Math.max(m_image.getWidth(null), m_image.getHeight(null));
 
 			// Convert to map size (squares)
-			m_faceSize = (int) Math.ceil(pixelSize / (float) GameTableMap.getBaseSquareSize());
+			m_faceSize = (int) Math.ceil(pixelSize / (float) GameTableMap.getBaseTileSize());
 		}
 
 		if (m_faceSize < 1)

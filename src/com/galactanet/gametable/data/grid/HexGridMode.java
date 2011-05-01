@@ -13,6 +13,7 @@ import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GridMode;
 import com.galactanet.gametable.data.MapCoordinates;
+import com.galactanet.gametable.ui.GametableCanvas;
 import com.galactanet.gametable.ui.GametableFrame;
 import com.galactanet.gametable.util.ImageCache;
 
@@ -40,11 +41,11 @@ public class HexGridMode extends GridMode
     * @see com.galactanet.gametable.data.GridMode#drawLines(java.awt.Graphics2D, int, int, int, int)
     */
     @Override
-    public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height)
+    public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height, GametableCanvas canvas)
     {
     	GametableFrame frame = GametableApp.getUserInterface();
     	
-        if (frame.getZoomLevel() == 4)
+        if (canvas.getZoomLevel() == 4)
         {
             // we don't draw lines at the furthest zoom level
             return;
@@ -61,7 +62,7 @@ public class HexGridMode extends GridMode
         // mode,
         // we have to make our "tiling square size" twice as wide.
 
-        int tilingSquareX = frame.getSquareSize();
+        int tilingSquareX = canvas.getTileSize();
         final int tilingSquareY = tilingSquareX;	// its a square, so same value
         tilingSquareX *= 2;
 
@@ -84,7 +85,7 @@ public class HexGridMode extends GridMode
         final int vLines = width / tilingSquareX + 2;
         final int hLines = height / tilingSquareY + 2;
         
-        int zoomLevel = frame.getZoomLevel();
+        int zoomLevel = canvas.getZoomLevel();
 
         // draw a hex grid
         final Image toTile = m_hexImages[zoomLevel];
@@ -217,7 +218,7 @@ public class HexGridMode extends GridMode
         // start with the grid snap location for the x coordinate
         int x = getSnappedMapCoordinates(modelPoint.x);
         
-        int baseSquareSize = GameTableMap.getBaseSquareSize();
+        int baseSquareSize = GameTableMap.getBaseTileSize();
 
         // from that, get the grid location.
         final int gridX = x / baseSquareSize;

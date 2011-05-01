@@ -13,7 +13,7 @@ import com.maziade.props.XPropertyType;
  * @author iffy
  * 
  * #GT-AUDIT PreferenceDescriptor
- * TODO ! Deprecate
+ * TODO #Deprecate
  */
 public class PropertyDescriptor
 {
