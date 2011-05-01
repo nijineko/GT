@@ -616,7 +616,7 @@ public class ActivePogsPanel extends JPanel
 						final MapElementNode node = getPogNode(e.getX(), e.getY());
 						if (node != null)
 						{
-							m_frame.scrollToPog(node.getMapElement());
+							m_frame.scrollToMapElement(node.getMapElement());
 						}
 					}
 				}

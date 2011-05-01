@@ -1,0 +1,25 @@
+Currently cleaning up the UI package
+
+Done
+[x] 'tools' now modes
+
+Still to do
+[ ] Properties dialog
+[ ] Dynamic module system
+[ ] Cleanup frame
+[ ] PogPanel - move to module?
+[ ] PogWindow - tabbed pane - Find a name for that.  It is the docked window on the left side (default).  Might change to an 'outlook'-style bar in later version, so tabbed pane is not good.  Find a name based on function, not design
+[ ] Grouping Dialog
+[ ] Attribute dialog
+[ ] Start documenting architecture
+[ ] Re-extract language resources
+[ ] Fix nomenclature
+[ ] Check tagged 'TODO' and '@' notations
+[ ] Consider using log4j as full-featured logging system (debug only, game logging is better served with a simpler system, I would suppose)
+[ ] Turn 'random rotate' into module/plugin
+[ ] Build menu as plugin
+[ ] Build a legit pog library (can't verify most of these files' source - pretty certain they're not all public domain) 
+
+Wish list
+[ ] Configure tool bar
+[ ] Configure keyboard shortcuts

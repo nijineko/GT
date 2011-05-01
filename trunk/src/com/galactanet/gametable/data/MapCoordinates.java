@@ -140,6 +140,16 @@ public class MapCoordinates
 		parent.appendChild(el);
 	}	
 	
+	/*
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString()
+	{
+		// todo Auto-generated method stub
+		return "MapCoordinates: " + x + "," + y;
+	}
+	
 	/**
 	 * x Coordinate
 	 */

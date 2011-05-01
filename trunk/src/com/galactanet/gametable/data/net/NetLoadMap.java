@@ -26,8 +26,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.galactanet.gametable.GametableApp;
-import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.GameTableCore;
+import com.galactanet.gametable.data.GameTableMap;
 import com.galactanet.gametable.data.MapElementID;
 import com.galactanet.gametable.data.XMLSerializeConverter;
 import com.galactanet.gametable.net.*;

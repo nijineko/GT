@@ -1,5 +1,18 @@
 /*
- * java: GameTable is in the Public Domain.
+ * GametableCanvas.java
+ * 
+ * Copyright (C) 1999-2011 Open Source Game Table Project
+ * 
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * 
  */
 
 package com.galactanet.gametable.ui;
@@ -25,124 +38,37 @@ import javax.swing.text.JTextComponent;
 
 import com.galactanet.gametable.GametableApp;
 import com.galactanet.gametable.data.*;
+import com.galactanet.gametable.data.GameTableCore.MapType;
 import com.galactanet.gametable.data.MapElementTypeIF.Layer;
 import com.galactanet.gametable.net.NetworkEvent;
-import com.galactanet.gametable.net.NetworkStatus;
-import com.galactanet.gametable.ui.tools.NullTool;
+import com.galactanet.gametable.ui.tools.HandMode;
+import com.galactanet.gametable.ui.tools.MapElementMode;
 import com.galactanet.gametable.util.ImageCache;
 import com.galactanet.gametable.util.Images;
-import com.galactanet.gametable.util.SelectionHandler;
 import com.galactanet.gametable.util.UtilityFunctions;
 
 /**
- * The main map view of Gametable.
+ * Component handling the display of the public and private maps.
  * 
- * #GT-AUDIT GametableCanvas
+ * This component is passed along to other components when required.
+ * 
+ * All methods dealing with pixels are found within GametableCanvas
+ * 
+ * @author sogetsu
+ * 
+ *         #GT-AUDIT GametableCanvas
  */
 public class GametableCanvas extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener
 {
-	// grid modes
-	public static enum GridModeID
-	{
-		NONE, SQUARES, HEX;
-
-		/**
-		 * Convert from ordinal to enum
-		 * 
-		 * @param value
-		 * @return
-		 */
-		public static GridModeID fromOrdinal(int value)
-		{
-			for (GridModeID gid : GridModeID.values())
-			{
-				if (gid.ordinal() == value)
-					return gid;
-			}
-
-			return NONE;
-		}
-	}
-
 	/**
-	 * This is the number of screen pixels that are used per model 'pixel'. It's never less than 1
+	 * Constructor
+	 * 
+	 * @param frame gametable frame
 	 */
-	private int									m_zoom									= 1;
-
-	private static final float	KEYBOARD_SCROLL_FACTOR	= 0.5f;
-	private static final int		KEYBOARD_SCROLL_TIME		= 300;
-
-	private static final Font		MAIN_FONT								= Font.decode("sans-12");
-	/**
-	 * A singleton instance of the NULL tool.
-	 */
-	private static final ToolIF	NULL_TOOL								= new NullTool();
-
-	/**
-	 * This is the color used to overlay on top of the public layer when the user is on the private layer. It's white with
-	 * 50% alpha
-	 */
-	private static final Color	OVERLAY_COLOR						= new Color(255, 255, 255, 128);
-
-	/**
-     *
-     */
-	private static final long		serialVersionUID				= 6250860728974514790L;
-
-	private Image								m_mapBackground;
-
-	private int									m_activeToolId					= -1;
-
-	private boolean							m_bAltKeyDown;
-	private boolean							m_bControlKeyDown;
-	private boolean							m_bMouseOnView;
-	private boolean							m_bShiftKeyDown;
-
-	// misc flags
-	private boolean							m_bSpaceKeyDown;
-	private MapCoordinates			m_deltaScroll;
-	// some cursors
-	private Cursor							m_emptyCursor;
-	// the frame
-	private final GametableFrame	m_frame;
-
-
-	private MapCoordinates			m_mouseModelFloat;
-
-	private boolean							m_newPogIsBeingDragged;
-	private MapElement					m_pogMouseOver;
-	private Image								m_pointingImage;
-	/**
-	 * the id of the tool that we switched out of to go to hand tool for a right-click
-	 */
-	private int									m_previousToolId;
-
-	/**
-	 * true if the current mouse action was initiated with a right-click
-	 */
-	private boolean							m_rightClicking;
-	private MapCoordinates			m_startScroll;
-	private boolean							m_scrolling;
-	private long								m_scrollTime;
-	private long								m_scrollTimeTotal;
-
-	private SelectionHandler		m_selectionPublic;
-	private SelectionHandler		m_selectionPrivate;
-	private SelectionHandler		m_highlightedElements;	
-
-	// the size of a square at the current zoom level
-	private int									m_squareSize						= 0;
-
-	/**
-	 * Constructor.
-	 */
-	public GametableCanvas(GametableFrame frame)
+	protected GametableCanvas(GametableFrame frame)
 	{
 		m_frame = frame;
 		m_core = GametableApp.getCore();
-		m_selectionPublic = new SelectionHandler();
-		m_selectionPrivate = new SelectionHandler();
-		m_highlightedElements = new SelectionHandler();
 
 		setFocusable(true);
 		setRequestFocusEnabled(true);
@@ -153,6 +79,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			/*
 			 * @see java.awt.event.FocusListener#focusGained(java.awt.event.FocusEvent)
 			 */
+			@Override
 			public void focusGained(final FocusEvent e)
 			{
 				final JPanel panel = (JPanel) getParent();
@@ -162,6 +89,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			/*
 			 * @see java.awt.event.FocusListener#focusLost(java.awt.event.FocusEvent)
 			 */
+			@Override
 			public void focusLost(final FocusEvent e)
 			{
 				final JPanel panel = (JPanel) getParent();
@@ -172,7 +100,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		initializeKeys();
 
-		updateSquareSize();
+		updateTileSize();
 
 		GameTableMapListenerIF mapListener = new CanvasMapListener();
 		MapElementListenerIF mapElementListener = new CanvasMapElementListener();
@@ -180,15 +108,874 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		GameTableMap publicMap = m_core.getMap(GameTableCore.MapType.PUBLIC);
 		publicMap.addListener(mapListener);
 		publicMap.addMapElementListener(mapElementListener);
-		
+
 		GameTableMap privateMap = m_core.getMap(GameTableCore.MapType.PRIVATE);
 		privateMap.addListener(mapListener);
 		privateMap.addMapElementListener(mapElementListener);
 	}
 
+	/**
+	 * Draw a faded copy of the map element onto the provided canvas
+	 * 
+	 * @param g
+	 * @param canvas
+	 */
+	public void drawGhostlyToCanvas(MapElement el, Graphics g)
+	{
+		final Graphics2D g2 = (Graphics2D) g.create();
+		g2.setComposite(UtilityFunctions.getGhostlyComposite());
+		el.getRenderer().drawToCanvas(g2, this);
+		g2.dispose();
+	}
+
+	/**
+	 * Return visible line width, based on zoom level
+	 * 
+	 * @return line width in pixel
+	 */
+	public int getLineStrokeWidth()
+	{
+		switch (m_zoom)
+		{
+		case 0:
+			return 3;
+
+		case 1:
+			return 2;
+
+		case 2:
+			return 2;
+
+		case 3:
+			return 1;
+
+		default:
+			return 1;
+		}
+	}
+
+	/**
+	 * Gets the current scroll position
+	 * 
+	 * @return
+	 */
+	public Point getScrollPosition()
+	{
+		return m_scrollPosition;
+	}
+
+	/**
+	 * Gets the X coordinate of the scroll position
+	 * 
+	 * @return
+	 */
+	public int getScrollX()
+	{
+		return m_scrollPosition.x;
+	}
+
+	/**
+	 * Gets the X coordinate of the scroll position
+	 * 
+	 * @return
+	 */
+	public int getScrollY()
+	{
+		return m_scrollPosition.y;
+	}
+
+	/**
+	 * Get actual square size based on current zoom level
+	 * 
+	 * @return Size of a square, in pixels (view coordinates)
+	 */
+	public int getTileSize()
+	{
+		return m_tileSize;
+	}
+
+	/**
+	 * Get the visible range within the map, based on the given zoom level
+	 * 
+	 * @param zoomLevel
+	 * @return rectangle in model coordinates
+	 */
+	public MapRectangle getVisibleCanvasRect(final int zoomLevel)
+	{
+		final MapCoordinates topLeft = viewToModel(0, 0);
+
+		int canvasW = 0;
+		int canvasH = 0;
+
+		switch (zoomLevel)
+		{
+		case 0:
+			canvasW = getWidth();
+			canvasH = getHeight();
+			break;
+
+		case 1:
+			canvasW = (getWidth() * 4) / 3;
+			canvasH = (getHeight() * 4) / 3;
+			break;
+
+		case 2:
+			canvasW = getWidth() * 2;
+			canvasH = getHeight() * 2;
+			break;
+
+		case 3:
+			canvasW = getWidth() * 4;
+			canvasH = getHeight() * 4;
+			break;
+
+		case 4:
+			canvasW = getWidth() * 8;
+			canvasH = getHeight() * 8;
+			break;
+		}
+
+		final MapRectangle visbleCanvas = new MapRectangle(topLeft, canvasW, canvasH);
+
+		return visbleCanvas;
+	}
+
+	/**
+	 * Get current zoom level
+	 * 
+	 * @return
+	 */
+	public int getZoomLevel()
+	{
+		return m_zoom;
+	}
+
+	/**
+	 * Verifies if view coordinates are visible within the canvas.
+	 * 
+	 * @param viewX
+	 * @param viewY
+	 * @return
+	 */
+	public boolean isPointVisible(int viewX, int viewY)
+	{
+		if (viewX < 0 || viewY < 0)
+			return false;
+
+		if (viewX > getWidth())
+			return false;
+
+		if (viewY > getHeight())
+			return false;
+
+		return true;
+	}
+
+	/**
+	 * Convert coordinates from map coordinates to Graphics device coordinates
+	 * 
+	 * @param modelPoint Map coordinates
+	 * @return view coordinates
+	 */
+	public Point modelToView(final MapCoordinates modelPoint)
+	{
+		return new Point(modelToView(modelPoint.x), modelToView(modelPoint.y));
+	}
+
+	/**
+	 * Convert coordinates from map coordinates to Graphics device coordinates
+	 * 
+	 * @param modelPoint
+	 * @return
+	 */
+	public Rectangle modelToView(MapRectangle modelRect)
+	{
+		Point topLeft = modelToView(modelRect.topLeft);
+		Point bottomRight = new Point(modelToView(modelRect.topLeft.x + modelRect.width), modelToView(modelRect.topLeft.y + modelRect.height));
+		
+		return new Rectangle(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+	}
+
+	/*
+	 * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseClicked(final MouseEvent e)
+	{
+		// Ignored - java's click support is not sufficient for our needs
+	}
+
+	/*
+	 * @see java.awt.event.MouseMotionListener#mouseDragged(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseDragged(final MouseEvent e)
+	{
+		// Push to our own drag handling
+		mouseMoved(e);
+	}
+
+	/*
+	 * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseEntered(final MouseEvent e)
+	{
+		m_bMouseOnView = true;
+	}
+
+	/*
+	 * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseExited(final MouseEvent e)
+	{
+		m_bMouseOnView = false;
+	}
+
+	/*
+	 * @see java.awt.event.MouseMotionListener#mouseMoved(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseMoved(final MouseEvent e)
+	{
+		int x = e.getX() + m_scrollPosition.x;
+		int y = e.getY() + m_scrollPosition.y;
+
+		m_mousePositionModel = viewToModel(x, y);
+		if (isPointing())
+			return;
+
+		UIModeListener listener = m_frame.getUIModeListener(null);
+		if (listener != null)
+			listener.mouseMoved(this, x, y, e.getModifiersEx());
+	}
+
+	/*
+	 * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mousePressed(final MouseEvent e)
+	{
+		int x = e.getX() + m_scrollPosition.x;
+		int y = e.getY() + m_scrollPosition.y;
+
+		requestFocus();
+		m_mousePositionModel = viewToModel(x, y);
+		if (isPointing())
+		{
+			return;
+		}
+
+		// this code deals with making a right click automatically be the hand tool
+		if (e.getButton() == MouseEvent.BUTTON3)
+		{
+			m_rightClicking = true;
+			m_modePrevious = m_frame.setUIMode(HandMode.getUIMode());
+
+			UIModeListener listener = m_frame.getUIModeListener(null);
+			if (listener != null)
+				listener.mouseButtonPressed(this, x, y, e.getModifiersEx());
+		}
+		else
+		{
+			m_rightClicking = false;
+			if (e.getButton() == MouseEvent.BUTTON1)
+			{
+				UIModeListener listener = m_frame.getUIModeListener(null);
+				if (listener != null)
+					listener.mouseButtonPressed(this, x, y, e.getModifiersEx());
+			}
+		}
+
+	}
+
+	/*
+	 * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseReleased(final MouseEvent e)
+	{
+		int x = e.getX() + m_scrollPosition.x;
+		int y = e.getY() + m_scrollPosition.y;
+
+		m_mousePositionModel = viewToModel(x, y);
+		if (isPointing())
+			return;
+
+		UIModeListener listener = m_frame.getUIModeListener(null);
+		if (listener != null)
+			listener.mouseButtonReleased(this, x, y, e.getModifiersEx());
+
+		if (m_rightClicking)
+		{
+			// return to arrow too
+			if (m_modePrevious != null)
+				m_frame.setUIMode(m_modePrevious);
+
+			m_rightClicking = false;
+		}
+	}
+
+	/*
+	 * @see java.awt.event.MouseWheelListener#mouseWheelMoved(java.awt.event.MouseWheelEvent)
+	 */
+	@Override
+	public void mouseWheelMoved(final MouseWheelEvent e)
+	{
+		if (e.getWheelRotation() < 0)
+		{
+			// zoom in
+			centerZoom(-1);
+		}
+		else if (e.getWheelRotation() > 0)
+		{
+			// zoom out
+			centerZoom(1);
+		}
+		repaint();
+	}
+
+	/**
+	 * Move the canvas' scroll position
+	 * 
+	 * @param dx
+	 * @param dy
+	 */
+	public void moveScrollPosition(int dx, int dy)
+	{
+		setScrollPosition(m_scrollPosition.x + dx, m_scrollPosition.y + dy);
+		repaint();
+	}
+
+	/*
+	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
+	 */
+	@Override
+	public void paintComponent(final Graphics graphics)
+	{
+		paintComponent(graphics, getWidth(), getHeight());
+	}
+
+	/**
+	 * Set the scroll position
+	 * 
+	 * @param x x coordinates of the scroll position
+	 * @param y y coordinates of the scroll position
+	 */
+	public void setScrollPosition(int x, int y)
+	{
+		m_scrollPosition.setLocation(x, y);
+	}
+
+	/**
+	 * Set the scroll position
+	 *
+	 * @param newPos coordinates of the new scroll position
+	 * 	 
+	 */
+	public void setScrollPosition(Point newPos)
+	{
+		m_scrollPosition.setLocation(newPos);
+	}
+
+	/**
+	 * Snap view coordinates to the grid.  Adjusts the coordinates to fit on the tiles' current grid mode.
+	 * 
+	 * @param mapPos
+	 * @return Snapped coordinates
+	 */
+	public Point snapToGrid(final Point point)
+	{
+		MapCoordinates c = viewToModel(point.x, point.y);
+		c = m_core.getGridMode().getSnappedMapCoordinates(c);
+		return modelToView(c);
+	}
+
+	/**
+	 * Converts a distance in pixels (view coordinates) to a distance in map coordinates
+	 * 
+	 * @param pixels Number of pixels
+	 * @return Number of map units
+	 * 
+	 */
+	public int viewToModel(int pixels)
+	{
+		double squares = pixels / (double) m_tileSize;
+		return (int) (squares * GameTableMap.getBaseTileSize());
+	}
+
+	/**
+	 * Convert view coordinates to map coordinates
+	 * 
+	 * @param viewX
+	 * @param viewY
+	 * @return
+	 */
+	public MapCoordinates viewToModel(final int viewX, final int viewY)
+	{
+		return new MapCoordinates(viewToModel(viewX), viewToModel(viewY));
+	}
+
+	/**
+	 * Converts coordinates in pixels (view) to map coordinates
+	 * 
+	 * @param viewPoint
+	 * @return
+	 */
+	public MapCoordinates viewToModel(final Point viewPoint)
+	{
+		return viewToModel(viewPoint.x, viewPoint.y);
+	}
+
+	/**
+	 * Do the actual centering
+	 * 
+	 * @param modelCenter
+	 * @param zoomLevel
+	 */
+	protected void centerView(MapCoordinates modelCenter, final int zoomLevel)
+	{
+		// if you re-center for any reason, your tool action is canceled
+
+		UIModeListener listener = m_frame.getUIModeListener(null);
+		if (listener != null)
+			listener.cancelMode();
+
+		// make the sent in x and y our center, ad the sent in zoom.
+		// So start with the zoom
+		setZoomLevel(zoomLevel);
+
+		final Point viewCenter = modelToView(modelCenter);
+
+		// find where the top left would have to be, based on our size
+		final int tlX = viewCenter.x - getWidth() / 2;
+		final int tlY = viewCenter.y - getHeight() / 2;
+
+		// that is our new scroll position
+		final MapCoordinates newModelPoint = viewToModel(tlX, tlY);
+		// scrollMapTo(newModelPoint);
+
+		smoothScrollTo(newModelPoint);
+	}
+
+	/**
+	 * export the map to a jpeg image
+	 * 
+	 * @param mapToExport instance of the map that should be exported. If null will use the active map
+	 * @param outputFile file where to save the result
+	 * @throws IOException if file saving causes an error
+	 */
+	protected void exportMap(GameTableMap mapToExport, File outputFile) throws IOException
+	{
+		if (mapToExport == null)
+			mapToExport = m_core.getMap(GameTableCore.MapType.ACTIVE);
+
+		MapRectangle mapBoundsModel = mapToExport.getBounds();
+		Rectangle mapBounds = modelToView(mapBoundsModel);
+
+		int squareSize = getTileSize();
+		mapBounds.grow(squareSize, squareSize);
+
+		BufferedImage image = new BufferedImage(mapBounds.width, mapBounds.height, BufferedImage.TYPE_INT_RGB);
+		Graphics g = image.getGraphics();
+
+		Point scrollPos = getScrollPosition();
+
+		setScrollPosition(mapBounds.x, mapBounds.y);
+
+		paintComponent(g, mapBounds.width, mapBounds.height);
+
+		setScrollPosition(scrollPos);
+
+		ImageIO.write(image, "jpg", outputFile);
+	}
+
+	/**
+	 * Initialize canvas (called by frame, when proper)
+	 */
+	protected void init()
+	{
+		m_mapBackground = ImageCache.getImage(new File("assets/mapbk.png"));
+		m_pointingImage = ImageCache.getImage(new File("assets/whiteHand.png"));
+
+		addMouseWheelListener(this);
+
+		m_frame.setUIMode(MapElementMode.getUIMode());
+	}
+
+	/**
+	 * Verifies if map coordinates are visible within the canvas. Plug-ins should call the method from GametableFrame
+	 * 
+	 * @param modelPoint
+	 * @return
+	 * 
+	 * TODO #Move to Frame?
+	 */
+	protected boolean isPointVisible(final MapCoordinates modelPoint)
+	{
+		
+		MapRectangle rect = new MapRectangle(
+				viewToModel(0, 0),
+				viewToModel(getWidth()),
+				viewToModel(getHeight())
+				);
+		
+		return rect.contains(modelPoint);
+	}
+
+	/**
+	 * Verifies if a text component currently has focus
+	 * @return true if a text component currently has focus
+	 */
+	protected boolean isTextFieldFocused()
+	{
+		final Component focused = m_frame.getFocusOwner();
+		if (focused instanceof JTextComponent)
+		{
+			final JTextComponent textComponent = (JTextComponent) focused;
+			return textComponent.isEditable();
+		}
+
+		return false;
+	}
+
+	/**
+	 * called by the pogs area when a pog is being dragged
+	 * TODO #PogPanel Should not be here
+	 */
+	protected void mapElementDrag()
+	{
+		m_newMapElementIsBeingDragged = true;
+		updateMapElementDropLocation();
+
+		repaint();
+	}
+
+	/**
+	 * Called by the frame when it is notified of a background change
+	 * 
+	 * @param isMapElementType
+	 * @param elementType
+	 * @param color
+	 */
+	protected void onBackgroundChanged(boolean isMapElementType, MapElementTypeIF elementType, BackgroundColor color)
+	{
+		if (isMapElementType)
+		{
+			m_mapBackground = elementType.getImage();
+		}
+		else
+		{
+			Image newBk = null;
+
+			// @revise should all 'assets/' images be within a jar instead?
+
+			switch (color)
+			{
+			case GREEN:
+				newBk = ImageCache.getImage(new File("assets/mapbk_green.png"));
+				break;
+				
+			case DARK_GREY:
+				newBk = ImageCache.getImage(new File("assets/mapbk_dgrey.png"));
+				break;
+				
+			case GREY:
+				newBk = ImageCache.getImage(new File("assets/mapbk_grey.png"));
+				break;
+				
+			case BLUE:
+				newBk = ImageCache.getImage(new File("assets/mapbk_blue.png"));
+				break;
+				
+			case BLACK:
+				newBk = ImageCache.getImage(new File("assets/mapbk_black.png"));
+				break;
+				
+			case WHITE:
+				newBk = ImageCache.getImage(new File("assets/mapbk_white.png"));
+				break;
+				
+			case DARK_BLUE:
+				newBk = ImageCache.getImage(new File("assets/mapbk_dblue.png"));
+				break;
+				
+			case DARK_GREEN:
+				newBk = ImageCache.getImage(new File("assets/mapbk_dgreen.png"));
+				break;
+				
+			case BROWN:
+				newBk = ImageCache.getImage(new File("assets/mapbk_brown.png"));
+				break;
+				
+			default:
+				newBk = ImageCache.getImage(new File("assets/mapbk.png"));
+				break;
+			}
+
+			if (newBk != null)
+				m_mapBackground = newBk;
+		}
+
+		repaint();
+	}
+
+	/**
+	 * Called at the end of a drag & drop operation from the MapElementPanel
+	 * TODO #PogPanel - This should not be here.
+	 */
+	protected void onReleaseMapElement()
+	{
+		m_newMapElementIsBeingDragged = false;
+		updateMapElementDropLocation();
+
+		final MapElement pog = getPogPanel().getGrabbedPog();
+		if (pog != null)
+		{
+			// only add the pog if it's in the viewport
+			if (isPointVisible(getDraggedMapElementMousePosition()))
+			{
+				// #randomrotate
+				if (m_frame.shouldRotateMapElements())
+				{
+					boolean fh = false;
+					boolean fv = UtilityFunctions.getRandom(2) == 0 ? false : true;
+
+					int a = UtilityFunctions.getRandom(24) * 15;
+					pog.setAngleFlip(a, fh, fv);
+				}
+				// add this pog to the list
+				m_core.getMap(GameTableCore.MapType.ACTIVE).addMapElement(pog);
+			}
+		}
+
+		// make the arrow the current tool
+		m_frame.setUIMode(null);
+	}
+
+	/**
+	 * TODO #PogPanel Should not be here
+	 * @param toReplace
+	 * @param replaceWith
+	 */
+	protected void replacePogs(final MapElementTypeIF toReplace, final MapElementTypeIF replaceWith)
+	{
+		GameTableMap mapToReplace = m_core.getMap(GameTableCore.MapType.ACTIVE);
+
+		for (MapElement pog : mapToReplace.getMapElements())
+		{
+			if (pog.getMapElementType() == toReplace)
+			{
+				pog.setMapElementType(replaceWith);
+			}
+		}
+	}
+
+	/**
+	 * Scroll map to given position
+	 * 
+	 * @param modelPoint
+	 */
+	protected void scrollMapTo(MapCoordinates modelPoint)
+	{
+		final Point target = modelToView(modelPoint);
+		setScrollPosition(target.x, target.y);
+		repaint();
+	}
+
+	/**
+	 * Scroll the map so the specified map element is centered on screen
+	 * @param mapElement
+	 */
+	protected void scrollToMapElement(final MapElement mapElement)
+	{
+		MapCoordinates modelPos = new MapCoordinates(
+				mapElement.getPosition().x + (mapElement.getWidth() / 2), 
+				mapElement.getPosition().y + (mapElement.getHeight() / 2));
+		
+		final Point viewPos = modelToView(modelPos);
+		
+		viewPos.x -= (getWidth() / 2);
+		viewPos.y -= (getHeight() / 2);
+		
+		modelPos = viewToModel(viewPos);
+		smoothScrollTo(modelPos);
+	}
+
+	/**
+	 * Set the current zoom level
+	 * 
+	 * @param zoomLevel
+	 * 
+	 * TODO #ZoomLevel Consider using enums instead of numbers
+	 */
+	protected void setZoomLevel(int zoomLevel)
+	{
+		if (zoomLevel < 0)
+			zoomLevel = 0;
+
+		if (zoomLevel >= GametableFrame.MAX_ZOOM_LEVEL)
+			zoomLevel = GametableFrame.MAX_ZOOM_LEVEL - 1;
+
+		if (m_zoom != zoomLevel)
+		{
+			m_zoom = zoomLevel;
+			updateTileSize();
+			repaint();
+		}
+	}
+
+	/**
+	 * Tick of the internal status timer
+	 * @param ms
+	 */
+	protected void tick(final long ms)
+	{
+		if (m_scrolling)
+		{
+			m_scrollTime += ms;
+			float pos = m_scrollTime / (float) m_scrollTimeTotal;
+			if (pos >= 1f)
+			{
+				scrollMapTo(m_startScroll.delta(m_scrollDelta));
+				m_scrolling = false;
+			}
+			else
+			{
+				pos = (float) (Math.sin((pos * Math.PI) - (Math.PI / 2)) + 1) / 2;
+
+				MapCoordinates point = m_startScroll.delta(Math.round(m_scrollDelta.x * pos), Math.round(m_scrollDelta.y * pos));
+				scrollMapTo(point);
+			}
+		}
+	}
+
+	/**
+	 * Modify zoom level, keeping the map centered
+	 * @param delta
+	 */
+	private void centerZoom(final int delta)
+	{
+		// can't do this at all if we're dragging
+		if (m_newMapElementIsBeingDragged)
+		{
+			return;
+		}
+		// note the model location of the center
+		final MapCoordinates modelCenter = viewToModel(getWidth() / 2, getHeight() / 2);
+
+		// do the zoom
+		setZoomLevel(m_zoom + delta);
+
+		// note the view location of the model center
+		final Point viewCenter = modelToView(modelCenter);
+
+		// note the present actual center
+		final int presentCenterX = getWidth() / 2;
+		final int presentCenterY = getHeight() / 2;
+
+		// set up the scroll to enforce the center being where it's supposed to be
+		Point pos = getScrollPosition();
+		final int scrX = pos.x - (presentCenterX - viewCenter.x);
+		final int scrY = pos.y - (presentCenterY - viewCenter.y);
+		
+		setScrollPosition(scrX, scrY);
+	}
+
+	//TODO #Cleanup
+//	private MapCoordinates drawToModel(final int modelX, final int modelY)
+//	{
+//		return drawToModel(new Point(modelX, modelY));
+//	}
+//
+//	private MapCoordinates drawToModel(final Point drawPoint)
+//	{
+//		final double squaresX = (double) (drawPoint.x) / (double) m_squareSize;
+//		final double squaresY = (double) (drawPoint.y) / (double) m_squareSize;
+//
+//		final int modelX = (int) (squaresX * GameTableMap.getBaseSquareSize());
+//		final int modelY = (int) (squaresY * GameTableMap.getBaseSquareSize());
+//
+//		return new MapCoordinates(modelX, modelY);
+//	}
+
+	//
+	// protected ToolIF getActiveTool()
+	// {
+	// if (m_activeToolId < 0)
+	// {
+	// return NULL_TOOL;
+	// }
+	// return m_frame.getToolManager().getToolInfo(m_activeToolId).getTool();
+	// }
+
+	/**
+	 * Draw the map background
+	 * @param g graphics device
+	 * @param topLeftX
+	 * @param topLeftY
+	 * @param width
+	 * @param height
+	 */
+	private void drawMapBackground(final Graphics g, final int topLeftX, final int topLeftY, final int width, final int height)
+	{
+		if (m_mapBackground != null)
+		{
+			// background image
+			int qx = Math.abs(topLeftX) / m_mapBackground.getWidth(null);
+			if (topLeftX < 0)
+			{
+				qx++;
+				qx = -qx;
+			}
+
+			int qy = Math.abs(topLeftY) / m_mapBackground.getHeight(null);
+			if (topLeftY < 0)
+			{
+				qy++;
+				qy = -qy;
+			}
+
+			final int linesXOffset = qx * m_mapBackground.getWidth(null);
+			final int linesYOffset = qy * m_mapBackground.getHeight(null);
+			final int vLines = width / m_mapBackground.getWidth(null) + 2;
+			final int hLines = height / m_mapBackground.getHeight(null) + 2;
+
+			for (int i = 0; i < vLines; i++)
+			{
+				for (int j = 0; j < hLines; j++)
+				{
+					g.drawImage(m_mapBackground, i * m_mapBackground.getWidth(null) + linesXOffset, j * m_mapBackground.getHeight(null) + linesYOffset, null);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Return the current position of the map element that is being dragged
+	 */
+	private MapCoordinates getDraggedMapElementMousePosition()
+	{
+		final Point screenMousePoint = getPogPanel().getGrabPosition();
+		final Point canvasView = UtilityFunctions.getComponentCoordinates(this, screenMousePoint);
+
+		return viewToModel(canvasView);
+	}
+
+	/**
+	 * TODO #PogPanel Move this
+	 * @return
+	 */
+	private PogPanel getPogPanel()
+	{
+		return m_frame.getPogPanel();
+	}
 
 	/**
 	 * Initializes all the keys for the canvas.
+	 * 
+	 * TODO #WishList Make keystrokes configurable
 	 */
 	private void initializeKeys()
 	{
@@ -221,14 +1008,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke("pressed KP_RIGHT"), "scrollRight");
 
 		getActionMap().put("startPointing", new AbstractAction() {
-			/**
-             * 
-             */
-			private static final long	serialVersionUID	= -1053248611112843772L;
-
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (isTextFieldFocused())
@@ -236,7 +1019,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 					return;
 				}
 
-				if (!m_bMouseOnView || getActiveTool().isBeingUsed())
+				if (!m_bMouseOnView || m_frame.getUIMode().isActive())
 				{
 					// no pointing if the mouse is outside the view area, or the active tool is
 					// being used.
@@ -249,36 +1032,38 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				{
 					m_bSpaceKeyDown = true;
 
-					showPointerAt(m_mouseModelFloat);
+					showPointerAt(m_mousePositionModel);
 				}
 			}
-		});
 
-		getActionMap().put("stopPointing", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= -8422918377090083512L;
+			private static final long	serialVersionUID	= -1053248611112843772L;
+		});
 
+		getActionMap().put("stopPointing", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				m_bSpaceKeyDown = false;
 				showPointerAt(null);
 			}
-		});
 
-		getActionMap().put("shiftDown", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= 3881440237209743033L;
+			private static final long	serialVersionUID	= -8422918377090083512L;
+		});
 
+		getActionMap().put("shiftDown", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (isTextFieldFocused())
@@ -289,81 +1074,86 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				m_bShiftKeyDown = true;
 				repaint();
 			}
-		});
 
-		getActionMap().put("shiftUp", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= 4458628987043121905L;
+			private static final long	serialVersionUID	= 3881440237209743033L;
+		});
 
+		getActionMap().put("shiftUp", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				m_bShiftKeyDown = false;
 				repaint();
 			}
-		});
 
-		getActionMap().put("controlDown", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= 7483132144245136048L;
+			private static final long	serialVersionUID	= 4458628987043121905L;
+		});
 
+		getActionMap().put("controlDown", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				m_bControlKeyDown = true;
 				repaint();
 			}
-		});
 
-		getActionMap().put("controlUp", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= -3685986269044575610L;
+			private static final long	serialVersionUID	= 7483132144245136048L;
+		});
 
+		getActionMap().put("controlUp", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				m_bControlKeyDown = false;
 				repaint();
 			}
-		});
 
-		getActionMap().put("altDown", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= 1008551504896354075L;
+			private static final long	serialVersionUID	= -3685986269044575610L;
+		});
 
+		getActionMap().put("altDown", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				m_bAltKeyDown = true;
 				repaint();
 			}
-		});
 
-		getActionMap().put("altUp", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= -5789160422348881793L;
+			private static final long	serialVersionUID	= 1008551504896354075L;
+		});
 
+		getActionMap().put("altUp", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (m_bAltKeyDown)
@@ -372,17 +1162,18 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 					repaint();
 				}
 			}
-		});
 
-		getActionMap().put("zoomIn", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= -6378089523552259896L;
+			private static final long	serialVersionUID	= -5789160422348881793L;
+		});
 
+		getActionMap().put("zoomIn", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (isTextFieldFocused())
@@ -392,17 +1183,18 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 				centerZoom(1);
 			}
-		});
 
-		getActionMap().put("zoomOut", new AbstractAction() {
 			/**
              * 
              */
-			private static final long	serialVersionUID	= 3489902228064051594L;
+			private static final long	serialVersionUID	= -6378089523552259896L;
+		});
 
+		getActionMap().put("zoomOut", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (isTextFieldFocused())
@@ -412,17 +1204,46 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 				centerZoom(-1);
 			}
+
+			/**
+             * 
+             */
+			private static final long	serialVersionUID	= 3489902228064051594L;
 		});
 
 		getActionMap().put("scrollUp", new AbstractAction() {
+			/*
+			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+			 */
+			@Override
+			public void actionPerformed(final ActionEvent e)
+			{
+				if (isTextFieldFocused())
+				{
+					return;
+				}
+
+				if (m_scrolling)
+				{
+					return;
+				}
+
+				Point pos = getScrollPosition();
+				final MapCoordinates p = viewToModel(pos.x, pos.y - Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
+				smoothScrollTo(p);
+			}
+
 			/**
              * 
              */
 			private static final long	serialVersionUID	= 3255081196222471923L;
+		});
 
+		getActionMap().put("scrollDown", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (isTextFieldFocused())
@@ -436,20 +1257,22 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				}
 
 				Point pos = getScrollPosition();
-				final MapCoordinates p = drawToModel(pos.x, pos.y - Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
+				final MapCoordinates p = viewToModel(pos.x, pos.y + Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
+
 				smoothScrollTo(p);
 			}
-		});
 
-		getActionMap().put("scrollDown", new AbstractAction() {
 			/**
              * 
              */
 			private static final long	serialVersionUID	= 2041156257507421225L;
+		});
 
+		getActionMap().put("scrollLeft", new AbstractAction() {
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (isTextFieldFocused())
@@ -463,49 +1286,22 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				}
 
 				Point pos = getScrollPosition();
-				final MapCoordinates p = drawToModel(pos.x, pos.y + Math.round(getHeight() * KEYBOARD_SCROLL_FACTOR));
+				final MapCoordinates p = viewToModel(pos.x - Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), pos.y);
 
 				smoothScrollTo(p);
 			}
-		});
 
-		getActionMap().put("scrollLeft", new AbstractAction() {
 			/**
              * 
              */
 			private static final long	serialVersionUID	= -2772860909080008403L;
-
-			/*
-			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-			 */
-			public void actionPerformed(final ActionEvent e)
-			{
-				if (isTextFieldFocused())
-				{
-					return;
-				}
-
-				if (m_scrolling)
-				{
-					return;
-				}
-
-				Point pos = getScrollPosition();
-				final MapCoordinates p = drawToModel(pos.x - Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), pos.y);
-
-				smoothScrollTo(p);
-			}
 		});
 
 		getActionMap().put("scrollRight", new AbstractAction() {
-			/**
-             *
-             */
-			private static final long	serialVersionUID	= -4782758632637647018L;
-
 			/*
 			 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 			 */
+			@Override
 			public void actionPerformed(final ActionEvent e)
 			{
 				if (isTextFieldFocused())
@@ -519,686 +1315,39 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				}
 
 				Point pos = getScrollPosition();
-				final MapCoordinates p = drawToModel(pos.x + Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), pos.y);
+				final MapCoordinates p = viewToModel(pos.x + Math.round(getWidth() * KEYBOARD_SCROLL_FACTOR), pos.y);
 
 				smoothScrollTo(p);
 			}
+
+			private static final long	serialVersionUID	= -4782758632637647018L;
 		});
 	}
 
-	public void centerZoom(final int delta)
-	{
-		// can't do this at all if we're dragging
-		if (m_newPogIsBeingDragged)
-		{
-			return;
-		}
-		// note the model location of the center
-		final MapCoordinates modelCenter = viewToModel(getWidth() / 2, getHeight() / 2);
-
-		// do the zoom
-		setZoomLevel(m_zoom + delta);
-
-		// note the view location of the model center
-		final Point viewCenter = modelToView(modelCenter);
-
-		// note the present actual center
-		final int presentCenterX = getWidth() / 2;
-		final int presentCenterY = getHeight() / 2;
-
-		// set up the scroll to enforce the center being where it's supposed to be
-		Point pos = getScrollPosition();
-		final int scrX = pos.x - (presentCenterX - viewCenter.x);
-		final int scrY = pos.y - (presentCenterY - viewCenter.y);
-		setPrimaryScroll(m_core.getMap(GameTableCore.MapType.ACTIVE), scrX, scrY);
-	}
-
 	/**
-	 * Do the actual centering
-	 * @param modelCenter
-	 * @param zoomLevel
+	 * @return true if the current player is currently pointing
 	 */
-	public void centerView(MapCoordinates modelCenter, final int zoomLevel)
-	{
-		// if you recenter for any reason, your tool action is cancelled
-		m_frame.getToolManager().cancelToolAction();
-
-		// make the sent in x and y our center, ad the sent in zoom.
-		// So start with the zoom
-		setZoomLevel(zoomLevel);
-
-		final Point viewCenter = modelToView(modelCenter);
-
-		// find where the top left would have to be, based on our size
-		final int tlX = viewCenter.x - getWidth() / 2;
-		final int tlY = viewCenter.y - getHeight() / 2;
-
-		// that is our new scroll position
-		final MapCoordinates newModelPoint = viewToModel(tlX, tlY);
-		//	scrollMapTo(newModelPoint);
-		
-		smoothScrollTo(newModelPoint);
-	}
-
-	// topLeftX and topLeftY are the coordinates of where the
-	// top left of the map area is in whatever coordinate system g is set up to be
-	public void drawMatte(final Graphics g, final int topLeftX, final int topLeftY, final int width, final int height)
-	{
-		if (m_mapBackground != null)
-		{
-			// background image
-			int qx = Math.abs(topLeftX) / m_mapBackground.getWidth(null);
-			if (topLeftX < 0)
-			{
-				qx++;
-				qx = -qx;
-			}
-	
-			int qy = Math.abs(topLeftY) / m_mapBackground.getHeight(null);
-			if (topLeftY < 0)
-			{
-				qy++;
-				qy = -qy;
-			}
-	
-			final int linesXOffset = qx * m_mapBackground.getWidth(null);
-			final int linesYOffset = qy * m_mapBackground.getHeight(null);
-			final int vLines = width / m_mapBackground.getWidth(null) + 2;
-			final int hLines = height / m_mapBackground.getHeight(null) + 2;
-	
-			for (int i = 0; i < vLines; i++)
-			{
-				for (int j = 0; j < hLines; j++)
-				{
-					g.drawImage(m_mapBackground, i * m_mapBackground.getWidth(null) + linesXOffset, j * m_mapBackground.getHeight(null) + linesYOffset, null);
-				}
-			}
-		}
-	}
-
-	public MapCoordinates drawToModel(final int modelX, final int modelY)
-	{
-		return drawToModel(new Point(modelX, modelY));
-	}
-
-	public MapCoordinates drawToModel(final Point drawPoint)
-	{
-		final double squaresX = (double) (drawPoint.x) / (double) m_squareSize;
-		final double squaresY = (double) (drawPoint.y) / (double) m_squareSize;
-
-		final int modelX = (int) (squaresX * GameTableMap.getBaseSquareSize());
-		final int modelY = (int) (squaresY * GameTableMap.getBaseSquareSize());
-
-		return new MapCoordinates(modelX, modelY);
-	}
-
-	public ToolIF getActiveTool()
-	{
-		if (m_activeToolId < 0)
-		{
-			return NULL_TOOL;
-		}
-		return m_frame.getToolManager().getToolInfo(m_activeToolId).getTool();
-	}
-
-	/**
-	 * 
-	 * @return
-	 */
-	public int getActiveToolId()
-	{
-		return m_activeToolId;
-	}
-
-	// returns a good line width to draw things
-	public int getLineStrokeWidth()
-	{
-		switch (m_zoom)
-		{
-		case 0:
-			{
-				return 3;
-			}
-
-		case 1:
-			{
-				return 2;
-			}
-
-		case 2:
-			{
-				return 2;
-			}
-
-		case 3:
-			{
-				return 1;
-			}
-
-		default:
-			{
-				return 1;
-			}
-		}
-	}
-
-	public int getModifierFlags()
-	{
-		return ((m_bControlKeyDown ? ToolIF.MODIFIER_CTRL : 0) | (m_bSpaceKeyDown ? ToolIF.MODIFIER_SPACE : 0)
-				| (m_bShiftKeyDown ? ToolIF.MODIFIER_SHIFT : 0) | (m_bShiftKeyDown ? ToolIF.MODIFIER_ALT : 0));
-	}
-
-	private MapCoordinates getPogDragMousePosition()
-	{
-		final Point screenMousePoint = getPogPanel().getGrabPosition();
-		final Point canvasView = UtilityFunctions.getComponentCoordinates(this, screenMousePoint);
-
-		return viewToModel(canvasView);
-	}
-
-	private PogPanel getPogPanel()
-	{
-		return m_frame.getPogPanel();
-	}
-
-	public MapRectangle getVisibleCanvasRect(final int level)
-	{
-		final MapCoordinates topLeft = viewToModel(0, 0);
-
-		int canvasW = 0;
-		int canvasH = 0;
-
-		switch (level)
-		{
-		case 0:
-			{
-				canvasW = getWidth();
-				canvasH = getHeight();
-			}
-			break;
-
-		case 1:
-			{
-				canvasW = (getWidth() * 4) / 3;
-				canvasH = (getHeight() * 4) / 3;
-			}
-			break;
-
-		case 2:
-			{
-				canvasW = getWidth() * 2;
-				canvasH = getHeight() * 2;
-			}
-			break;
-
-		case 3:
-			{
-				canvasW = getWidth() * 4;
-				canvasH = getHeight() * 4;
-			}
-			break;
-
-		case 4:
-			{
-				canvasW = getWidth() * 8;
-				canvasH = getHeight() * 8;
-			}
-			break;
-		}
-
-		// final Point bottomRight = m_canvas.viewToModel(bottomRightX, bottomRightY);
-		final MapRectangle visbleCanvas = new MapRectangle(topLeft, canvasW, canvasH);
-
-		// System.out.println(topLeft.x + " " + topLeft.y);
-		// System.out.println(bottomRight.x + " " + bottomRight.y);
-
-		return visbleCanvas;
-	}
-
-	/**
-	 * Get actual square size based on current zoom level
-	 * 
-	 * @return Size of a square, in pixels
-	 */
-	public int getSquareSize()
-	{
-		return m_squareSize;
-	}
-
-	/**
-	 * Recalculate m_squareSize
-	 */
-	private void updateSquareSize()
-	{
-		int ret = GameTableMap.getBaseSquareSize();
-		switch (m_zoom)
-		{
-		case 0:
-			{
-				ret = GameTableMap.getBaseSquareSize();
-			}
-			break;
-
-		case 1:
-			{
-				ret = (GameTableMap.getBaseSquareSize() / 4) * 3;
-			}
-			break;
-
-		case 2:
-			{
-				ret = GameTableMap.getBaseSquareSize() / 2;
-			}
-			break;
-
-		case 3:
-			{
-				ret = GameTableMap.getBaseSquareSize() / 4;
-			}
-			break;
-
-		case 4:
-			{
-				ret = GameTableMap.getBaseSquareSize() / 8;
-			}
-			break;
-		}
-
-		m_squareSize = ret;
-	}
-
-	protected void init()
-	{
-		m_mapBackground = ImageCache.getImage(new File("assets/mapbk.png"));
-		m_pointingImage = ImageCache.getImage(new File("assets/whiteHand.png"));
-
-		addMouseWheelListener(this);
-
-		setActiveTool(0);
-	}
-
-	public enum BackgroundColor
-	{
-		DEFAULT("Default"), GREEN("Green"), DARK_GREY("Dark Grey"), GREY("Grey"), BLUE("Blue"), BLACK("Black"), WHITE("White"), DARK_BLUE("Dark Blue"), DARK_GREEN(
-				"Dark Green"), BROWN("Brown");
-
-		/**
-		 * Private constructor
-		 * 
-		 * @param text
-		 */
-		private BackgroundColor(String text)
-		{
-			m_text = text;
-		}
-
-		/**
-		 * Get a text representation for the color
-		 * 
-		 * @return string
-		 */
-		public String getText()
-		{
-			return m_text;
-		}
-
-		/**
-		 * Get BackgroundColor object from ordinal value
-		 * 
-		 * @param ordinal
-		 * @return
-		 */
-		public static BackgroundColor fromOrdinal(int ordinal)
-		{
-			for (BackgroundColor val : values())
-				if (val.ordinal() == ordinal)
-					return val;
-
-			return null;
-		}
-
-		private final String	m_text;
-	}
-
-	
-	/**
-	 * Current scroll coordinates, relative to scroll origin
-	 */
-	private Point						m_scrollPos									= new Point(0, 0);
-
-	/**
-	 * Called by the frame when it is notified of a background change
-	 * @param isMapElementType
-	 * @param elementType
-	 * @param color
-	 */
-	protected void onBackgroundChanged(boolean isMapElementType, MapElementTypeIF elementType, BackgroundColor color)
-	{
-		if (isMapElementType)
-		{
-			m_mapBackground = elementType.getImage();
-		}
-		else
-		{
-			Image newBk = null;
-
-			// @revise all 'assets/' images should be within a jar.
-
-			switch (color)
-			{
-			case GREEN:
-				newBk = ImageCache.getImage(new File("assets/mapbk_green.png"));
-				break;
-			case DARK_GREY:
-				newBk = ImageCache.getImage(new File("assets/mapbk_dgrey.png"));
-				break;
-			case GREY:
-				newBk = ImageCache.getImage(new File("assets/mapbk_grey.png"));
-				break;
-			case BLUE:
-				newBk = ImageCache.getImage(new File("assets/mapbk_blue.png"));
-				break;
-			case BLACK:
-				newBk = ImageCache.getImage(new File("assets/mapbk_black.png"));
-				break;
-			case WHITE:
-				newBk = ImageCache.getImage(new File("assets/mapbk_white.png"));
-				break;
-			case DARK_BLUE:
-				newBk = ImageCache.getImage(new File("assets/mapbk_dblue.png"));
-				break;
-			case DARK_GREEN:
-				newBk = ImageCache.getImage(new File("assets/mapbk_dgreen.png"));
-				break;
-			case BROWN:
-				newBk = ImageCache.getImage(new File("assets/mapbk_brown.png"));
-				break;
-			default:
-				newBk = ImageCache.getImage(new File("assets/mapbk.png"));
-				break;
-			}
-
-			if (newBk != null)
-				m_mapBackground = newBk;
-		}
-		
-		repaint();
-	}
-
 	private boolean isPointing()
 	{
 		final Player me = m_core.getPlayer();
 		if (me == null)
 			return false;
-		
+
 		return me.isPointing();
-	}
-
-	public boolean isPointVisible(final MapCoordinates modelPoint)
-	{
-		final MapCoordinates portalTL = viewToModel(0, 0);
-		final MapCoordinates portalBR = viewToModel(getWidth(), getHeight());
-		if (modelPoint.x > portalBR.x)
-		{
-			return false;
-		}
-
-		if (modelPoint.y > portalBR.y)
-		{
-			return false;
-		}
-
-		if (modelPoint.x < portalTL.x)
-		{
-			return false;
-		}
-
-		if (modelPoint.y < portalTL.y)
-		{
-			return false;
-		}
-		return true;
-	}
-
-	/**
-	 * @return
-	 */
-	public boolean isTextFieldFocused()
-	{
-		final Component focused = m_frame.getFocusOwner();
-		if (focused instanceof JTextComponent)
-		{
-			final JTextComponent textComponent = (JTextComponent) focused;
-			return textComponent.isEditable();
-		}
-
-		return false;
-	}
-
-	/**
-	 * Convert coordinates from map coordinates to Graphics device coordinates
-	 * 
-	 * @param modelPoint
-	 * @return
-	 */
-
-	public Point modelToDraw(final MapCoordinates modelPoint)
-	{
-		return new Point(modelToDraw(modelPoint.x), modelToDraw(modelPoint.y));
 	}
 
 	/**
 	 * Convert a coordinate from model to pixels
 	 * 
+	 * NB: Since this one is not type safe, we'll keep it private
+	 * 
 	 * @param c model coordinate to convert
 	 * @return pixel coordinate
 	 */
-	private int modelToDraw(int c)
+	private int modelToView(int c)
 	{
-		final double squaresX = (double) c / (double) GameTableMap.getBaseSquareSize();
-		return (int) Math.round(squaresX * m_squareSize);
-	}
-
-	/**
-	 * Convert coordinates from map coordinates to Graphics device coordinates
-	 * 
-	 * @param modelPoint
-	 * @return
-	 */
-	public Rectangle modelToDraw(MapRectangle modelRect)
-	{
-		Point topLeft = modelToDraw(modelRect.topLeft);
-		Point bottomRight = new Point(modelToDraw(modelRect.topLeft.x + modelRect.width), modelToDraw(modelRect.topLeft.y + modelRect.height));
-		return new Rectangle(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
-	}
-
-	/*
-	 * Modified to accomodate grid distance factor
-	 */
-	public double modelToSquares(final double m)
-	{
-		return (m_frame.getGridMultiplier() * m / GameTableMap.getBaseSquareSize());
-	}
-
-	public Point modelToView(final MapCoordinates modelPoint)
-	{
-		final double squaresX = (double) modelPoint.x / (double) GameTableMap.getBaseSquareSize();
-		final double squaresY = (double) modelPoint.y / (double) GameTableMap.getBaseSquareSize();
-
-		int viewX = (int) Math.round(squaresX * m_squareSize);
-		int viewY = (int) Math.round(squaresY * m_squareSize);
-
-		Point pos = getScrollPosition();
-
-		viewX -= pos.x;
-		viewY -= pos.y;
-
-		return new Point(viewX, viewY);
-	}
-
-	public void mouseClicked(final MouseEvent e)
-	{
-		// Ignore this because java has sucky mouse clicking
-	}
-
-	/** *********************************************************** */
-	// MouseListener/MouseMotionListener overrides:
-	/** *********************************************************** */
-	public void mouseDragged(final MouseEvent e)
-	{
-		// We handle dragging ourselves - don't tread on me, Java!
-		mouseMoved(e);
-	}
-
-	public void mouseEntered(final MouseEvent e)
-	{
-		m_bMouseOnView = true;
-	}
-
-	public void mouseExited(final MouseEvent e)
-	{
-		m_bMouseOnView = false;
-	}
-
-	public void mouseMoved(final MouseEvent e)
-	{
-		m_mouseModelFloat = viewToModel(e.getX(), e.getY());
-		if (isPointing())
-		{
-			return;
-		}
-		m_frame.getToolManager().mouseMoved(m_mouseModelFloat, getModifierFlags());
-		final MapElement prevPog = m_pogMouseOver;
-		if (prevPog != m_pogMouseOver)
-		{
-			repaint();
-		}
-	}
-
-	public void mousePressed(final MouseEvent e)
-	{
-		requestFocus();
-		m_mouseModelFloat = viewToModel(e.getX(), e.getY());
-		if (isPointing())
-		{
-			return;
-		}
-
-		// this code deals with making a right click automatically be the hand tool
-		if (e.getButton() == MouseEvent.BUTTON3)
-		{
-			m_rightClicking = true;
-			m_previousToolId = m_activeToolId;
-			setActiveTool(1); // HACK -- To hand tool
-			m_frame.getToolManager().mouseButtonPressed(m_mouseModelFloat, getModifierFlags());
-		}
-		else
-		{
-			m_rightClicking = false;
-			if (e.getButton() == MouseEvent.BUTTON1)
-			{
-				m_frame.getToolManager().mouseButtonPressed(m_mouseModelFloat, getModifierFlags());
-			}
-		}
-
-	}
-
-	public void mouseReleased(final MouseEvent e)
-	{
-		m_mouseModelFloat = viewToModel(e.getX(), e.getY());
-		if (isPointing())
-		{
-			return;
-		}
-		m_frame.getToolManager().mouseButtonReleased(m_mouseModelFloat, getModifierFlags());
-
-		if (m_rightClicking)
-		{
-			// return to arrow too
-			setActiveTool(m_previousToolId);
-			m_rightClicking = false;
-		}
-	}
-
-	public void mouseWheelMoved(final MouseWheelEvent e)
-	{
-		if (e.getWheelRotation() < 0)
-		{
-			// zoom in
-			centerZoom(-1);
-		}
-		else if (e.getWheelRotation() > 0)
-		{
-			// zoom out
-			centerZoom(1);
-		}
-		repaint();
-	}
-
-	/**
-	 * Move the specified map element and all linked map elements
-	 * @param mapElementID ID of an element to move.  The UI will move all linked elements as well (grouped or selected)
-	 * @param position Destination
-	 */
-	public void moveLinkedMapElements(final MapElementID mapElementID, MapCoordinates position)
-	{
-		// TODO #MoveLinkedMapElements  Actually, group implementation should do this.  Selection implementation as well.  
-		// But we don't want them to double-move for a grouped + selected combo and would like an open arch to allow other grouping components
-		// later on.
-
-		GameTableMap activeMap = m_core.getMap(GameTableCore.MapType.ACTIVE);
-		
-		final MapElement movingMapElement = activeMap.getMapElement(mapElementID);
-		int diffx = position.x - movingMapElement.getPosition().x;
-		int diffy = position.y - movingMapElement.getPosition().y;
-
-		Group group = activeMap.getGroupManager().getGroup(movingMapElement);
-
-		if (isSelected(movingMapElement))
-		{
-			// converted to array to prevent concurrent modification issues
-			for (MapElement mapElement : getSelectedMapElementInstances().toArray(new MapElement[0]))
-			{
-				if (mapElement.getID() != mapElementID)
-				{
-					MapCoordinates newPos = mapElement.getPosition().delta(diffx, diffy);
-					mapElement.setPosition(newPos);
-				}
-			}
-		}
-		else if (group != null)
-		{
-			List<MapElement> mapElements = group.getMapElements();
-
-			for (MapElement mapElement : mapElements)
-			{
-				if (mapElement != movingMapElement)
-				{
-						MapCoordinates newPos = mapElement.getPosition().delta(diffx, diffy);
-						mapElement.setPosition(newPos);
-				}
-			}
-		}
-
-		movingMapElement.setPosition(position);
-	}
-
-	public void replacePogs(final MapElementTypeIF toReplace, final MapElementTypeIF replaceWith)
-	{
-		GameTableMap mapToReplace = m_core.getMap(GameTableCore.MapType.ACTIVE);
-		
-		for (MapElement pog : mapToReplace.getMapElements())
-		{
-			if (pog.getMapElementType() == toReplace)
-			{
-				pog.setMapElementType(replaceWith);
-			}
-		}
-	}
-
-	public void paintComponent(final Graphics graphics)
-	{
-		paintComponent(graphics, getWidth(), getHeight());
+		final double squaresX = (double) c / (double) GameTableMap.getBaseTileSize();
+		return (int) Math.round(squaresX * m_tileSize);
 	}
 
 	/**
@@ -1214,21 +1363,21 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		g.addRenderingHints(Images.getRenderingHints());
 		g.setFont(MAIN_FONT);
 
-		// if they're on the public layer, we draw it first, then the private layer
+		// if they're on the private layer, we draw it first, then the private layer
 		// on top of it at half alpha.
-		// if they're on the priavet layer, we draw the public layer on white at half alpha,
+		// if they're on the priavet layer, we draw the private layer on white at half alpha,
 		// then the private layer at full alpha
 
 		if (m_core.isActiveMapPublic())
 		{
-			// they are on the public map. Draw the public map as normal,
+			// they are on the private map. Draw the private map as normal,
 			g.setColor(Color.WHITE);
 			g.fillRect(0, 0, width, height);
 			paintMap(g, m_core.getMap(GameTableCore.MapType.PUBLIC), width, height);
 		}
 		else
 		{
-			// they're on the private map. First, draw the public map as normal.
+			// they're on the private map. First, draw the private map as normal.
 			// Then draw a 50% alpha sheet over it. then draw the private map
 			paintMap(g, m_core.getMap(GameTableCore.MapType.PUBLIC), width, height);
 
@@ -1242,41 +1391,16 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	}
 
 	/**
-	 * export the map to a jpeg image
-	 * 
-	 * @param mapToExport instance of the map that should be exported. If null will use the active map
-	 * @param outputFile file where to save the result
-	 * @throws IOException if file saving causes an error
+	 * Paint a map on the graphics device
+	 * @param g
+	 * @param mapToDraw
+	 * @param width
+	 * @param height
 	 */
-	public void exportMap(GameTableMap mapToExport, File outputFile) throws IOException
-	{
-		if (mapToExport == null)
-			mapToExport = m_core.getMap(GameTableCore.MapType.ACTIVE);
-
-		MapRectangle mapBoundsModel = mapToExport.getBounds();
-		Rectangle mapBounds = modelToDraw(mapBoundsModel);
-
-		int squareSize = getSquareSize();
-		mapBounds.grow(squareSize, squareSize);
-
-		BufferedImage image = new BufferedImage(mapBounds.width, mapBounds.height, BufferedImage.TYPE_INT_RGB);
-		Graphics g = image.getGraphics();
-
-		Point scrollPos = getScrollPosition();
-
-		setScrollPosition(mapBounds.x, mapBounds.y);
-
-		paintComponent(g, mapBounds.width, mapBounds.height);
-
-		setScrollPosition(scrollPos);
-
-		ImageIO.write(image, "jpg", outputFile);
-	}
-
 	private void paintMap(final Graphics g, final GameTableMap mapToDraw, int width, int height)
 	{
 		Graphics2D g2 = (Graphics2D) g;
-		
+
 		boolean isActiveMap = mapToDraw == m_core.getMap(GameTableCore.MapType.ACTIVE);
 
 		Point scrollPos = getScrollPosition();
@@ -1286,15 +1410,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		// we don't draw the matte if we're on the private map)
 		if (mapToDraw.isPublicMap())
 		{
-			drawMatte(g, scrollPos.x, scrollPos.y, width, height);
+			drawMapBackground(g, scrollPos.x, scrollPos.y, width, height);
 		}
 
 		// draw all the underlays here
-		for (MapElement pog : mapToDraw.getMapElements())
+		for (MapElement mapElement : mapToDraw.getMapElements())
 		{
-			if (pog.getLayer() != Layer.POG)
+			if (mapElement.getLayer() != Layer.POG)
 			{
-				renderPog((Graphics2D) g, pog);
+				renderMapElement(g2, mapElement);
 			}
 		}
 
@@ -1304,34 +1428,34 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		{
 			// if they're dragging an underlay, draw it here
 			// there could be a pog drag in progress
-			if (m_newPogIsBeingDragged)
+			if (m_newMapElementIsBeingDragged)
 			{
-				MapCoordinates mousePos = getPogDragMousePosition();
+				MapCoordinates mousePos = getDraggedMapElementMousePosition();
 				if (isPointVisible(mousePos))
 				{
-					final MapElement pog = getPogPanel().getGrabbedPog();
+					final MapElement mapElement = getPogPanel().getGrabbedPog();
 
-					if (pog.getLayer() != Layer.POG)
+					if (mapElement.getLayer() != Layer.POG)
 					{
-						drawGhostlyToCanvas(pog, g);
+						drawGhostlyToCanvas(mapElement, g);
 					}
 				}
 			}
 		}
 
 		// Overlays
-		for (MapElement pog : mapToDraw.getMapElements())
+		for (MapElement mapElement : mapToDraw.getMapElements())
 		{
-			if (pog.getLayer() == Layer.OVERLAY)
+			if (mapElement.getLayer() == Layer.OVERLAY)
 			{
-				renderPog((Graphics2D) g, pog);
+				renderMapElement(g2, mapElement);
 			}
 		}
 
 		// we don't draw the grid if we're on the private map)
 		if (mapToDraw.isPublicMap())
 		{
-			m_core.getGridMode().drawLines(g2, scrollPos.x, scrollPos.y, width, height);
+			m_core.getGridMode().drawLines(g2, scrollPos.x, scrollPos.y, width, height, this);
 		}
 
 		// lines
@@ -1343,20 +1467,20 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 
 		// env
-		for (MapElement pog : mapToDraw.getMapElements())
+		for (MapElement mapElement : mapToDraw.getMapElements())
 		{
-			if (pog.getLayer() == Layer.ENVIRONMENT)
+			if (mapElement.getLayer() == Layer.ENVIRONMENT)
 			{
-				renderPog((Graphics2D) g, pog);
+				renderMapElement(g2, mapElement);
 			}
 		}
 
 		// pogs
-		for (MapElement pog : mapToDraw.getMapElements())
+		for (MapElement mapElement : mapToDraw.getMapElements())
 		{
-			if (pog.getLayer() == Layer.POG)
+			if (mapElement.getLayer() == Layer.POG)
 			{
-				renderPog((Graphics2D) g, pog);
+				renderMapElement(g2, mapElement);
 			}
 		}
 
@@ -1365,9 +1489,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		if (isActiveMap)
 		{
 			// there could be a pog drag in progress
-			if (m_newPogIsBeingDragged)
+			if (m_newMapElementIsBeingDragged)
 			{
-				if (isPointVisible(getPogDragMousePosition()))
+				if (isPointVisible(getDraggedMapElementMousePosition()))
 				{
 					final MapElement pog = getPogPanel().getGrabbedPog();
 
@@ -1387,7 +1511,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			if (plr.isPointing())
 			{
 				// draw this player's point cursor
-				final Point pointingAt = modelToDraw(plr.getPointingLocation());
+				final Point pointingAt = modelToView(plr.getPointingLocation());
 
 				// 5px offset to align with mouse pointer
 				final int drawX = pointingAt.x;
@@ -1412,7 +1536,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		MapElement mouseOverPog = null;
 		if (m_bMouseOnView || m_frame.shouldShowNames())
 		{
-			mouseOverPog = mapToDraw.getMapElementAt(m_mouseModelFloat);
+			mouseOverPog = mapToDraw.getMapElementAt(m_mousePositionModel);
 			if (m_bShiftKeyDown || m_frame.shouldShowNames())
 			{
 				// this shift key is down. Show all pog data
@@ -1433,118 +1557,40 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		if (isActiveMap)
 		{
-			getActiveTool().paint(g);
+			UIMode mode = m_frame.getUIMode();
+			if (mode != null)
+				mode.paintTool(g2, this);
 		}
 
 		g.translate(scrollPos.x, scrollPos.y);
 	}
 
 	/**
-	 * @param g
-	 * @param canvas
+	 * Render a given map element
+	 * @param g graphics device
+	 * @param mapElement Map element to render
 	 */
-	public void drawGhostlyToCanvas(MapElement el, Graphics g)
-	{
-		final Graphics2D g2 = (Graphics2D) g.create();
-		g2.setComposite(UtilityFunctions.getGhostlyComposite());
-		el.getRenderer().drawToCanvas(g2, this);
-		g2.dispose();
-	}
-
-	/**
-	 * @param g
-	 * @param canvas
-	 */
-	private void renderPog(Graphics2D g, MapElement el)
+	private void renderMapElement(Graphics2D g, MapElement mapElement)
 	{
 		Composite oldComposite = g.getComposite();
 
-		if (isSelected(el))
+		if (m_frame.isSelected(mapElement, MapType.ACTIVE))
 		{
 			g.setComposite(UtilityFunctions.getSelectedComposite());
 		}
-		else if (isHighlighted(el))
+		else if (m_frame.isHighlighted(mapElement))
 		{
 			g.setComposite(UtilityFunctions.getHilightedComposite());
 		}
 
 		try
 		{
-			el.getRenderer().drawToCanvas(g, this);
+			mapElement.getRenderer().drawToCanvas(g, this);
 		}
 		finally
 		{
 			g.setComposite(oldComposite);
 		}
-	}
-
-	// called by the pogs area when a pog is being dragged
-	public void pogDrag()
-	{
-		m_newPogIsBeingDragged = true;
-		updatePogDropLoc();
-
-		repaint();
-	}
-
-	/**
-	 * Called at the end of a drag & drop operation from the MapElementPanel
-	 */
-	protected void onReleaseMapElement()
-	{
-		m_newPogIsBeingDragged = false;
-		updatePogDropLoc();
-
-		final MapElement pog = getPogPanel().getGrabbedPog();
-		if (pog != null)
-		{
-			// only add the pog if it's in the viewport
-			if (isPointVisible(getPogDragMousePosition()))
-			{
-				// #randomrotate
-				if (m_frame.shouldRotatePogs())
-				{
-					boolean fh = false;
-					boolean fv = UtilityFunctions.getRandom(2) == 0 ? false : true;
-
-					int a = UtilityFunctions.getRandom(24) * 15;
-					pog.setAngleFlip(a, fh, fv);
-				}
-				// add this pog to the list
-				m_core.getMap(GameTableCore.MapType.ACTIVE).addMapElement(pog);
-			}
-		}
-
-		// make the arrow the current tool
-		setActiveTool(0);
-	}
-
-	public boolean pogInViewport(final MapElement pog)
-	{
-		// only add the pog if they dropped it in the visible area
-		final int width = (int) (pog.getFaceSize() * GameTableMap.getBaseSquareSize());
-
-		// get the model coords of the viewable area
-		final MapCoordinates portalTL = viewToModel(0, 0);
-		final MapCoordinates portalBR = viewToModel(getWidth(), getHeight());
-
-		if (pog.getPosition().x > portalBR.x)
-		{
-			return false;
-		}
-		if (pog.getPosition().y > portalBR.y)
-		{
-			return false;
-		}
-		if (pog.getPosition().x + width < portalTL.x)
-		{
-			return false;
-		}
-		if (pog.getPosition().y + width < portalTL.y)
-		{
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -1562,163 +1608,37 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 				me.setPointing(false, null);
 				return;
 			}
-	
+
 			me.setPointing(true, pointLocation);
 		}
-		setToolCursor(-1);
-	}
-
-	/*
-	 * Pass the ability to check NetStatus up the chain of object calls
-	 */
-	public NetworkStatus getNetworkStatus()
-	{
-		return m_core.getNetworkStatus();
-	}
-
-	public void scrollMapTo(MapCoordinates modelPoint)
-	{
-		final Point target = modelToDraw(modelPoint);
-		setPrimaryScroll(m_core.getMap(GameTableCore.MapType.ACTIVE), target.x, target.y);
-		repaint();
-	}
-
-	public void scrollToPog(final MapElement pog)
-	{
-		MapCoordinates pogModel = new MapCoordinates(pog.getPosition().x + (pog.getWidth() / 2), pog.getPosition().y + (pog.getHeight() / 2));
-		final Point pogView = modelToView(pogModel);
-		pogView.x -= (getWidth() / 2);
-		pogView.y -= (getHeight() / 2);
-		pogModel = viewToModel(pogView);
-		smoothScrollTo(pogModel);
-	}
-
-	public void setActiveTool(final int index)
-	{
-		final ToolIF oldTool = getActiveTool();
-		oldTool.deactivate();
-
-		m_activeToolId = index;
-
-		final ToolIF tool = getActiveTool();
-		tool.activate(this);
-		setToolCursor(0);
-		m_frame.setToolSelected(m_activeToolId);
-	}
-
-	/*
-	 * This function will set the scroll for all maps, keeping their relative offsets preserved. The x,y values sent in
-	 * will become the scroll values for the desired map. All others maps will preserve offsets from that.
-	 */
-	public void setPrimaryScroll(final GameTableMap mapToSet, final int x, final int y)
-	{
-		setScrollPosition(x, y);
 	}
 
 	/**
-	 * Sets the mouse cursor to be the cursor at the specified index for the currently active tool.
-	 * 
-	 * @param index The cursor of the given index for this tool. A negative number means no cursor.
+	 * Start the smooth scroll process
+	 * @param pos
 	 */
-	public void setToolCursor(final int index)
+	private void smoothScrollTo(MapCoordinates pos)
 	{
-		if (index < 0)
-		{
-			setCursor(m_emptyCursor);
-		}
-		else
-		{
-			setCursor(m_frame.getToolManager().getToolInfo(m_activeToolId).getCursor(index));
-		}
-	}
-
-	/**
-	 * Get current zoom level
-	 * 
-	 * @return
-	 */
-	public int getZoomLevel()
-	{
-		return m_zoom;
-	}
-
-	/**
-	 * Set current zoom level
-	 * 
-	 * @param zl
-	 */
-	public void setZoomLevel(final int zl)
-	{
-		int zoomLevel = zl;
-		if (zoomLevel < 0)
-		{
-			zoomLevel = 0;
-		}
-
-		if (zoomLevel >= GametableFrame.MAX_ZOOM_LEVEL)
-		{
-			zoomLevel = GametableFrame.MAX_ZOOM_LEVEL - 1;
-		}
-
-		if (m_zoom != zoomLevel)
-		{
-			m_zoom = zoomLevel;
-			updateSquareSize();
-			repaint();
-		}
-	}
-
-	public void smoothScrollTo(MapCoordinates pos)
-	{
-		m_startScroll = drawToModel(getScrollPosition());
-		m_deltaScroll = new MapCoordinates(pos.x - m_startScroll.x, pos.y - m_startScroll.y);
+		m_startScroll = viewToModel(getScrollPosition());
+		m_scrollDelta = new MapCoordinates(pos.x - m_startScroll.x, pos.y - m_startScroll.y);
 		m_scrollTime = 0;
-		m_scrollTimeTotal = KEYBOARD_SCROLL_TIME;
+		m_scrollTimeTotal = SMOOTH_SCROLL_TIME;
 		m_scrolling = true;
 	}
 
-	public void snapMapElementToGrid(final MapElement pog)
+	/**
+	 * Snap a map element to the grid
+	 * @param mapElement
+	 */
+	private void snapMapElementToGrid(final MapElement mapElement)
 	{
-		m_core.getGridMode().snapPogToGrid(pog);
+		m_core.getGridMode().snapMapElementToGrid(mapElement);
 	}
 
-	public MapCoordinates snapPoint(final MapCoordinates modelPoint)
-	{
-		return m_core.getGridMode().getSnappedPixelCoordinates(modelPoint);
-	}
-
-	// --- Drawing ---
-
-	public Point snapViewPoint(final Point viewPoint)
-	{
-		final MapCoordinates modelPoint = viewToModel(viewPoint);
-		final MapCoordinates modelSnap = m_core.getGridMode().getSnappedPixelCoordinates(modelPoint);
-		final Point viewSnap = modelToView(modelSnap);
-		return viewSnap;
-	}
-
-	public void tick(final long ms)
-	{
-		if (m_scrolling)
-		{
-			m_scrollTime += ms;
-			float pos = m_scrollTime / (float) m_scrollTimeTotal;
-			if (pos >= 1f)
-			{
-				scrollMapTo(m_startScroll.delta(m_deltaScroll));
-				m_scrolling = false;
-			}
-			else
-			{
-				pos = (float) (Math.sin((pos * Math.PI) - (Math.PI / 2)) + 1) / 2;
-
-				MapCoordinates point = m_startScroll.delta(Math.round(m_deltaScroll.x * pos), Math.round(m_deltaScroll.y * pos));
-				scrollMapTo(point);
-			}
-		}
-	}
-
-	public void updatePogDropLoc()
+	/**
+	 * Part of the drag & drop process
+	 */
+	private void updateMapElementDropLocation()
 	{
 		final PogPanel panel = getPogPanel();
 		final Point screenMousePoint = panel.getGrabPosition();
@@ -1747,336 +1667,256 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 	}
 
-	public MapCoordinates viewToModel(final int viewX, final int viewY)
-	{
-		Point scrollPos = getScrollPosition();
-		final double squaresX = (double) (viewX + scrollPos.x) / (double) m_squareSize;
-		final double squaresY = (double) (viewY + scrollPos.y) / (double) m_squareSize;
-
-		final int modelX = (int) (squaresX * GameTableMap.getBaseSquareSize());
-		final int modelY = (int) (squaresY * GameTableMap.getBaseSquareSize());
-
-		return new MapCoordinates(modelX, modelY);
-
-	}
-
-	public MapCoordinates viewToModel(final Point viewPoint)
-	{
-		return viewToModel(viewPoint.x, viewPoint.y);
-	}
-
 	/**
-	 * Set the scroll position
-	 * 
-	 * @param x x coordinates of the scroll position
-	 * @param y y coordinates of the scroll position
+	 * Recalculate m_squareSize
 	 */
-	public void setScrollPosition(int x, int y)
+	private void updateTileSize()
 	{
-		m_scrollPos.setLocation(x, y);
-	}
-
-	/**
-	 * Set the scroll position
-	 * 
-	 * @param x x coordinates of the scroll position
-	 * @param y y coordinates of the scroll position
-	 */
-	public void setScrollPosition(Point newPos)
-	{
-		m_scrollPos.setLocation(newPos);
-	}
-
-	/**
-	 * Gets the X coordinate of the scroll position
-	 * 
-	 * @return
-	 */
-	public int getScrollX()
-	{
-		return m_scrollPos.x;
-	}
-
-	/**
-	 * Gets the X coordinate of the scroll position
-	 * 
-	 * @return
-	 */
-	public int getScrollY()
-	{
-		return m_scrollPos.y;
-	}
-
-	/**
-	 * Gets the X coordinate of the scroll position
-	 * 
-	 * @return
-	 */
-	public Point getScrollPosition()
-	{
-		return m_scrollPos;
-	}
-
-	public static void drawDottedRect(final Graphics g, final int ix, final int iy, final int iWidth, final int iHeight)
-	{
-		final Graphics2D g2d = (Graphics2D) g;
-		final Stroke oldStroke = g2d.getStroke();
-		g2d.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1f, new float[] { 2f }, 0f));
-
-		int x = ix;
-		int y = iy;
-		int width = iWidth;
-		int height = iHeight;
-		if (width < 0)
+		int ret = GameTableMap.getBaseTileSize();
+		switch (m_zoom)
 		{
-			x += width;
-			width = -width;
+		case 0:
+			ret = GameTableMap.getBaseTileSize();
+			break;
+
+		case 1:
+			ret = (GameTableMap.getBaseTileSize() / 4) * 3;
+			break;
+
+		case 2:
+			ret = GameTableMap.getBaseTileSize() / 2;
+			break;
+
+		case 3:
+			ret = GameTableMap.getBaseTileSize() / 4;
+			break;
+
+		case 4:
+			ret = GameTableMap.getBaseTileSize() / 8;
+			break;
 		}
-		if (height < 0)
+
+		m_tileSize = ret;
+	}
+
+	/**
+	 * Proportion of the visible map to scroll by when scrolling using keyboard
+	 * (ex: 0.5f is half the visible portion of the map)
+	 */
+	private static final float		KEYBOARD_SCROLL_FACTOR	= 0.5f;
+
+	/**
+	 * Main font 
+	 * TODO #Properties
+	 */
+	private static final Font			MAIN_FONT								= Font.decode("sans-12");
+
+	/**
+	 * This is the color used to overlay on top of the private layer when the user is on the private layer. It's white
+	 * with 50% alpha
+	 */
+	private static final Color		OVERLAY_COLOR						= new Color(255, 255, 255, 128);
+
+	/**
+	 * Serialize version
+	 */
+	private static final long			serialVersionUID				= 6250860728974514790L;
+
+	/**
+	 * Smooth scroll duration
+	 */
+	private static final int			SMOOTH_SCROLL_TIME		= 300;
+
+	/**
+	 * ALT key is down
+	 */
+	private boolean								m_bAltKeyDown;
+
+	/**
+	 * CTRL key is down
+	 */
+	private boolean								m_bControlKeyDown;
+
+	/**
+	 * true when mouse is over the map
+	 */
+	private boolean								m_bMouseOnView;
+
+	/**
+	 * SHIFT key is down
+	 */
+	private boolean								m_bShiftKeyDown;
+
+	/**
+	 * SPACE key is down
+	 */
+	private boolean								m_bSpaceKeyDown;
+
+	/**
+	 * Reference to the engine's core 
+	 */
+	private final GameTableCore		m_core;
+
+	/**
+	 * Reference to the frame
+	 */
+	private final GametableFrame	m_frame;
+
+	/**
+	 * Image to use as background for the map
+	 */
+	private Image									m_mapBackground;
+
+	/**
+	 * The mode we switched out of to go to hand tool for a right-click
+	 */
+	private UIMode								m_modePrevious;
+
+	/**
+	 * Current mouse location in model coordinates
+	 */
+	private MapCoordinates				m_mousePositionModel;
+
+	/**
+	 * TODO #PogPanel Move?
+	 */
+	private boolean								m_newMapElementIsBeingDragged;
+
+	/**
+	 * "Pointing" icon
+	 */
+	private Image									m_pointingImage;
+
+	/**
+	 * True if the current mouse action was initiated with a right-click
+	 */
+	private boolean								m_rightClicking;
+
+	/**
+	 * Distance to travel in a smooth scroll operation
+	 */
+	private MapCoordinates				m_scrollDelta;
+
+	/**
+	 * Flag noting if a smooth scroll animation is in progress
+	 */
+	private boolean								m_scrolling;
+
+	/**
+	 * Current scroll coordinates, relative to scroll origin for a smooth scroll animation
+	 */
+	private Point									m_scrollPosition				= new Point(0, 0);
+
+	/**
+	 * Current time marker of a smooth scroll animation
+	 */
+	private long									m_scrollTime;
+
+	/**
+	 * Duration of a smooth scroll animation
+	 */
+	private long									m_scrollTimeTotal;
+
+	/**
+	 * Start position of a 'smooth scroll' animation
+	 */
+	private MapCoordinates				m_startScroll;
+
+	/**
+	 * The size of a tile at the current zoom level
+	 */
+	private int										m_tileSize						= 0;
+
+	/**
+	 * This is the number of screen pixels that are used per model 'pixel'. It's never less than 1
+	 */
+	private int										m_zoom									= 1;
+
+	/**
+	 * TODO Extract to top level class in UI
+	 */
+	public static enum BackgroundColor
+	{
+		BLACK("Black"), BLUE("Blue"), BROWN("Brown"), DARK_BLUE("Dark Blue"), DARK_GREEN("Dark Green"), DARK_GREY("Dark Grey"), DEFAULT("Default"), GREEN(
+				"Green"), GREY("Grey"), WHITE("White");
+
+		/**
+		 * Get BackgroundColor object from ordinal value
+		 * 
+		 * @param ordinal
+		 * @return
+		 */
+		public static BackgroundColor fromOrdinal(int ordinal)
 		{
-			y += height;
-			height = -height;
+			for (BackgroundColor val : values())
+				if (val.ordinal() == ordinal)
+					return val;
+
+			return null;
 		}
-		g.drawRect(x, y, width, height);
-		g2d.setStroke(oldStroke);
+
+		/**
+		 * Private constructor
+		 * 
+		 * @param text
+		 */
+		private BackgroundColor(String text)
+		{
+			m_text = text;
+		}
+
+		/**
+		 * Get a text representation for the color
+		 * 
+		 * @return string
+		 */
+		public String getText()
+		{
+			return m_text;
+		}
+
+		private final String	m_text;
 	}
 
-	public static void drawDottedLine(final Graphics g, final int x, final int y, final int x2, final int y2)
+	// grid modes
+	// TODO Extract to top class, move to data
+	public static enum GridModeID
 	{
-		final Graphics2D g2d = (Graphics2D) g;
-		final Stroke oldStroke = g2d.getStroke();
-		g2d.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1f, new float[] { 2f }, 0f));
-		g.drawLine(x, y, x2, y2);
-		g2d.setStroke(oldStroke);
+		HEX, NONE, SQUARES;
+
+		/**
+		 * Convert from ordinal to enum
+		 * 
+		 * @param value
+		 * @return
+		 */
+		public static GridModeID fromOrdinal(int value)
+		{
+			for (GridModeID gid : GridModeID.values())
+			{
+				if (gid.ordinal() == value)
+					return gid;
+			}
+
+			return NONE;
+		}
 	}
 
-	/**
-	 * Verifies if specified element is selected on the current map
-	 * 
-	 * @param mapElement element to verify
-	 * @return true if selected
-	 */
-	public boolean isSelected(MapElement mapElement)
-	{
-		return isSelected(mapElement, m_core.isActiveMapPublic());
-	}
-
-	/**
-	 * Adds a instance to the selected list on the current map
-	 * 
-	 * @param mapElement Instance to add to selection
-	 * @param select true to select, false to unselect
-	 */
-	public void selectMapElementInstance(MapElement mapElement, boolean select)
-	{
-		selectMapElementInstance(mapElement, m_core.isActiveMapPublic(), select);
-	}
-
-	/**
-	 * Add multiple instances to the selection on the current map
-	 * 
-	 * @param mapElements List of instance to add to the selection
-	 * @param select true to select, false to unselect
-	 */
-	public void selectMapElementInstances(final List<MapElement> mapElements, boolean select)
-	{
-		selectMapElementInstances(mapElements, m_core.isActiveMapPublic(), select);
-	}
-
-	/**
-	 * Remove all instance from selection on the current map
-	 */
-	public void unselectAllMapElementInstances()
-	{
-		unselectAllMapElementInstances(m_core.isActiveMapPublic());
-	}
-
-	/**
-	 * Gets selected map element instances list on the current map
-	 * 
-	 * @return The list of currently selected instances (unmodifiable). Never null.
-	 */
-	public List<MapElement> getSelectedMapElementInstances()
-	{
-		return getSelectedMapElementInstances(m_core.isActiveMapPublic());
-	}
-
-	/**
-	 * Verifies if specified element is selected
-	 * 
-	 * @param mapElement element to verify
-	 * @param publicMap true to query for public map, false for private map
-	 * @return true if selected
-	 */
-	public boolean isSelected(MapElement mapElement, boolean publicMap)
-	{
-		return (publicMap ? m_selectionPublic : m_selectionPrivate).isSelected(mapElement);
-	}
-
-	/**
-	 * Adds a instance to the selected list
-	 * 
-	 * @param mapElement Instance to add to selection
-	 * @param publicMap true to query for public map, false for private map
-	 * @param select true to select, false to unselect
-	 */
-	public void selectMapElementInstance(MapElement mapElement, boolean publicMap, boolean select)
-	{
-		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElement(mapElement, select);
-	}
-
-	/**
-	 * Add multiple instances to the selection
-	 * 
-	 * @param mapElements List of instance to add to the selection
-	 * @param publicMap true to query for public map, false for private map
-	 * @param select true to select, false to unselect
-	 */
-	public void selectMapElementInstances(final List<MapElement> mapElements, boolean publicMap, boolean select)
-	{
-		(publicMap ? m_selectionPublic : m_selectionPrivate).selectMapElements(mapElements, select);
-	}
-
-	/**
-	 * Remove all instance from selection
-	 * 
-	 * @param publicMap true to query for public map, false for private map
-	 */
-	public void unselectAllMapElementInstances(boolean publicMap)
-	{
-		(publicMap ? m_selectionPublic : m_selectionPrivate).unselectAllMapElements();
-	}
-
-	/**
-	 * Gets selected map element instances list
-	 * 
-	 * @param publicMap true to query for public map, false for private map
-	 * @return The list of currently selected instances (unmodifiable). Never null.
-	 */
-	public List<MapElement> getSelectedMapElementInstances(boolean publicMap)
-	{
-		return (publicMap ? m_selectionPublic : m_selectionPrivate).getSelectedMapElements();
-	}
-
-	/**
-	 * Set an element as highlighted
-	 * 
-	 * @param mapElement Map element to highlight
-	 * @param highlight true to highlight, false to 'unhighlight'
-	 */
-	public void highlightMapElementInstance(MapElement mapElement, boolean highlight)
-	{
-		m_highlightedElements.selectMapElement(mapElement, highlight);
-		repaint();
-	}
-
-	/**
-	 * Highlight or 'unhighlight' all element instances
-	 * 
-	 * @param highlight true to highlight, false to 'unhighlight'
-	 */
-	public void highlightAllMapElementInstances(boolean highlight)
-	{
-		if (highlight)
-			m_highlightedElements.selectMapElements(m_core.getMap(GameTableCore.MapType.ACTIVE).getMapElements(), highlight);
-		else
-			m_highlightedElements.unselectAllMapElements();
-
-		repaint();
-	}
-
-	/**
-	 * Highlight or 'unhighlight' a list of instances
-	 * 
-	 * @param mapElements list of instances to change highlight status
-	 * @param highlight true to highlight, false to 'unhighlight'
-	 */
-	public void highlightMapElementInstances(List<MapElement> mapElements, boolean highlight)
-	{
-		m_highlightedElements.selectMapElements(mapElements, highlight);
-		repaint();
-	}
-
-	/**
-	 * Gets the list of highlighted element instances
-	 * 
-	 * @return The list of currently selected instances (unmodifiable). Never null.
-	 */
-	public List<MapElement> getHighlightedMapElementInstances()
-	{
-		return m_highlightedElements.getSelectedMapElements();
-	}
-
-	/**
-	 * Checks if a specific map element is marked as highlighted
-	 * 
-	 * @param mapElement Map element to highlight
-	 * @return true if highlighted
-	 */
-	public boolean isHighlighted(MapElement mapElement)
-	{
-		return m_highlightedElements.isSelected(mapElement);
-	}
-	
 	private class CanvasMapElementListener extends MapElementAdapter
-	{		
+	{
 		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onPositionChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent)
-		{
-			repaint();
-		}
-		
-		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onLayerChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent)
-		{
-			repaint();
-		}
-		
-		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onElementTypeChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onElementTypeChanged(MapElement element, NetworkEvent netEvent)
-		{
-			repaint();
-		}
-		
-		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onFlipChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onFlipChanged(MapElement element, NetworkEvent netEvent)
-		{
-			repaint();
-		}
-		
-		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onAngleChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onAngleChanged(com.galactanet.gametable.data.MapElement,
+		 * com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
 		public void onAngleChanged(MapElement element, NetworkEvent netEvent)
 		{
 			repaint();
 		}
-		
+
 		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onFaceSizeChanged(com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent)
-		{
-			snapMapElementToGrid(element);
-			repaint();
-		}
-		
-		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onAttributeChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String, java.lang.String, boolean, com.galactanet.gametable.net.NetworkEvent)
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onAttributeChanged(com.galactanet.gametable.data.MapElement,
+		 * java.lang.String, java.lang.String, java.lang.String, boolean, com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
 		public void onAttributeChanged(MapElement element, String attributeName, String newValue, String oldValue, boolean batch, NetworkEvent netEvent)
@@ -2084,76 +1924,111 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			if (!batch)
 				repaint();
 		}
-		
+
 		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onAttributesChanged(com.galactanet.gametable.data.MapElement, java.util.Map, com.galactanet.gametable.net.NetworkEvent)
+		 * @see
+		 * com.galactanet.gametable.data.MapElementAdapter#onAttributesChanged(com.galactanet.gametable.data.MapElement,
+		 * java.util.Map, com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
 		public void onAttributesChanged(MapElement element, Map<String, String> attributes, NetworkEvent netEvent)
 		{
 			repaint();
 		}
-		
+
 		/*
-		 * @see com.galactanet.gametable.data.MapElementAdapter#onNameChanged(com.galactanet.gametable.data.MapElement, java.lang.String, java.lang.String, com.galactanet.gametable.net.NetworkEvent)
+		 * @see
+		 * com.galactanet.gametable.data.MapElementAdapter#onElementTypeChanged(com.galactanet.gametable.data.MapElement,
+		 * com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onElementTypeChanged(MapElement element, NetworkEvent netEvent)
+		{
+			repaint();
+		}
+
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onFaceSizeChanged(com.galactanet.gametable.data.MapElement,
+		 * com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onFaceSizeChanged(MapElement element, NetworkEvent netEvent)
+		{
+			snapMapElementToGrid(element);
+			repaint();
+		}
+
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onFlipChanged(com.galactanet.gametable.data.MapElement,
+		 * com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onFlipChanged(MapElement element, NetworkEvent netEvent)
+		{
+			repaint();
+		}
+
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onLayerChanged(com.galactanet.gametable.data.MapElement,
+		 * com.galactanet.gametable.data.MapElementTypeIF.Layer, com.galactanet.gametable.data.MapElementTypeIF.Layer,
+		 * com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onLayerChanged(MapElement element, Layer newLayer, Layer oldLayer, NetworkEvent netEvent)
+		{
+			repaint();
+		}
+
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onNameChanged(com.galactanet.gametable.data.MapElement,
+		 * java.lang.String, java.lang.String, com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
 		public void onNameChanged(MapElement element, String newName, String oldName, NetworkEvent netEvent)
 		{
 			repaint();
 		}
+
+		/*
+		 * @see com.galactanet.gametable.data.MapElementAdapter#onPositionChanged(com.galactanet.gametable.data.MapElement,
+		 * com.galactanet.gametable.data.MapCoordinates, com.galactanet.gametable.data.MapCoordinates,
+		 * com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onPositionChanged(MapElement element, MapCoordinates newPosition, MapCoordinates oldPosition, NetworkEvent netEvent)
+		{
+			repaint();
+		}
 	}
-	
-	private class CanvasMapListener extends GameTableMapAdapter 
+
+	private class CanvasMapListener extends GameTableMapAdapter
 	{
 		/*
 		 * @see
-		 * com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data
-		 * .GameTableMap, com.galactanet.gametable.data.MapElement, boolean)
+		 * com.galactanet.gametable.data.GameTableMapAdapter#onClearLineSegments(com.galactanet.gametable.data.GameTableMap,
+		 * com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
-		public void onMapElementRemoved(GameTableMap map, MapElement mapElement, boolean batch, NetworkEvent netEvent)
+		public void onClearLineSegments(GameTableMap map, NetworkEvent netEvent)
 		{
-			if (!batch)
-			{
-				selectMapElementInstance(mapElement, map.isPublicMap(), false);
-				highlightMapElementInstance(mapElement, false);
-				
-				repaint();				
-			}
-		}
-		
-		/*
-		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstancesRemoved(com.galactanet.gametable.data.GameTableMap, java.util.List, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onMapElementsRemoved(GameTableMap map, List<MapElement> mapElements, NetworkEvent netEvent)
-		{
-			for (MapElement mapElement : mapElements)
-			{
-				selectMapElementInstance(mapElement, map.isPublicMap(), false);
-				highlightMapElementInstance(mapElement, false);
-			}
-			
 			repaint();
 		}
 
 		/*
 		 * @see
-		 * com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstancesCleared(com.galactanet.gametable.data
-		 * .GameTableMap)
+		 * com.galactanet.gametable.data.GameTableMapAdapter#onLineSegmentsCropped(com.galactanet.gametable.data.GameTableMap
+		 * , com.galactanet.gametable.data.MapRectangle, boolean, int, com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
-		public void onMapElementsCleared(GameTableMap map, NetworkEvent netEvent)
+		public void onEraseLineSegments(GameTableMap map, MapRectangle rect, boolean colorSpecific, int color, NetworkEvent netEvent)
 		{
-			unselectAllMapElementInstances(map.isPublicMap());
-			highlightAllMapElementInstances(false);
-			
 			repaint();
 		}
-		
+
 		/*
-		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onLineSegmentAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.LineSegment, boolean)
+		 * @see
+		 * com.galactanet.gametable.data.GameTableMapAdapter#onLineSegmentAdded(com.galactanet.gametable.data.GameTableMap,
+		 * com.galactanet.gametable.data.LineSegment, boolean)
 		 */
 		@Override
 		public void onLineSegmentAdded(GameTableMap map, LineSegment lineSegment, boolean batch, NetworkEvent netEvent)
@@ -2163,41 +2038,70 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		}
 
 		/*
-		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onLineSegmentsCropped(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapRectangle, boolean, int, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onEraseLineSegments(GameTableMap map, MapRectangle rect, boolean colorSpecific, int color, NetworkEvent netEvent)
-		{
-			repaint();
-		}
-		
-		/*
-		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onLineSegmentsAdded(com.galactanet.gametable.data.GameTableMap, java.util.List)
+		 * @see
+		 * com.galactanet.gametable.data.GameTableMapAdapter#onLineSegmentsAdded(com.galactanet.gametable.data.GameTableMap,
+		 * java.util.List)
 		 */
 		@Override
 		public void onLineSegmentsAdded(GameTableMap map, List<LineSegment> lineSegments, NetworkEvent netEvent)
 		{
 			repaint();
 		}
-		
+
 		/*
-		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onClearLineSegments(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.net.NetworkEvent)
-		 */
-		@Override
-		public void onClearLineSegments(GameTableMap map, NetworkEvent netEvent)
-		{
-			repaint();
-		}		
-		
-		/*
-		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceAdded(com.galactanet.gametable.data.GameTableMap, com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
+		 * @seecom.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceAdded(com.galactanet.gametable.data.
+		 * GameTableMap, com.galactanet.gametable.data.MapElement, com.galactanet.gametable.net.NetworkEvent)
 		 */
 		@Override
 		public void onMapElementAdded(GameTableMap map, MapElement mapElement, NetworkEvent netEvent)
 		{
 			repaint();
 		}
+
+		/*
+		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstanceRemoved(com.galactanet.gametable.data
+		 * .GameTableMap, com.galactanet.gametable.data.MapElement, boolean)
+		 */
+		@Override
+		public void onMapElementRemoved(GameTableMap map, MapElement mapElement, boolean batch, NetworkEvent netEvent)
+		{
+			if (!batch)
+			{
+				m_frame.selectMapElementInstance(mapElement, MapType.ACTIVE, false);
+				m_frame.highlightMapElementInstance(mapElement, false);
+
+				repaint();
+			}
+		}
+
+		/*
+		 * @see com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstancesCleared(com.galactanet.gametable.data
+		 * .GameTableMap)
+		 */
+		@Override
+		public void onMapElementsCleared(GameTableMap map, NetworkEvent netEvent)
+		{
+			m_frame.unselectAllMapElementInstances(MapType.ACTIVE);
+			m_frame.highlightAllMapElementInstances(false);
+
+			repaint();
+		}
+
+		/*
+		 * @see
+		 * com.galactanet.gametable.data.GameTableMapAdapter#onMapElementInstancesRemoved(com.galactanet.gametable.data.
+		 * GameTableMap, java.util.List, com.galactanet.gametable.net.NetworkEvent)
+		 */
+		@Override
+		public void onMapElementsRemoved(GameTableMap map, List<MapElement> mapElements, NetworkEvent netEvent)
+		{
+			for (MapElement mapElement : mapElements)
+			{
+				m_frame.selectMapElementInstance(mapElement, MapType.ACTIVE, false);
+				m_frame.highlightMapElementInstance(mapElement, false);
+			}
+
+			repaint();
+		}
 	}
-	
-	private final GameTableCore m_core; 
 }

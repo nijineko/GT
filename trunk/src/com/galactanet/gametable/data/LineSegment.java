@@ -296,8 +296,8 @@ public class LineSegment implements MapElementRendererIF
     public boolean drawToCanvas(final Graphics g, final GametableCanvas canvas)
     {
         // convert to draw coordinates
-        final Point drawStart = canvas.modelToDraw(m_start);
-        final Point drawEnd = canvas.modelToDraw(m_end);
+        final Point drawStart = canvas.modelToView(m_start);
+        final Point drawEnd = canvas.modelToView(m_end);
 
         // don't draw if we're not touching the viewport at any point
 
@@ -327,7 +327,7 @@ public class LineSegment implements MapElementRendererIF
             bDrawLine = true;
 
             // if both ends of the line are on the outside of one of the walls of the visible
-            // area, it can't possibly be onscrene. For instance, if both endpoints'
+            // area, it can't possibly be onscreen. For instance, if both endpoints'
             // x-values are less than the wall's left side, it can't be on screen.
             if ((drawStart.getX() < portalRect.getX()) && (drawEnd.getX() < portalRect.getX()))
             {

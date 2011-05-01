@@ -903,9 +903,9 @@ public class MapElement implements Comparable<MapElement>
 			return;
 		}
 
-		final float targetDimension = GameTableMap.getBaseSquareSize() * faceSize;
+		final float targetDimension = GameTableMap.getBaseTileSize() * faceSize;
 
-		float maxDimension = GameTableMap.getBaseSquareSize();
+		float maxDimension = GameTableMap.getBaseTileSize();
 
 		Image image = m_mapElementType.getImage();
 
@@ -1214,7 +1214,7 @@ public class MapElement implements Comparable<MapElement>
 
 		if (m_mapElementType.getImage() == null)
 		{
-			m_elementSize.setSize(GameTableMap.getBaseSquareSize(), GameTableMap.getBaseSquareSize());
+			m_elementSize.setSize(GameTableMap.getBaseTileSize(), GameTableMap.getBaseTileSize());
 		}
 		else
 		{

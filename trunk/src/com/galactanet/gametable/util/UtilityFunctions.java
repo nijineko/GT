@@ -1060,4 +1060,21 @@ public class UtilityFunctions
   		}
 
   	}
+
+  	/**
+  	 * Create a normalized rectangle from two coordinates
+  	 * @param a
+  	 * @param b
+  	 * @return
+  	 */
+		public static Rectangle createRectangle(final Point a, final Point b)
+		{
+		    final int x = Math.min(a.x, b.x);
+		    final int y = Math.min(a.y, b.y);
+		    
+		    final int width = Math.abs(b.x - a.x);
+		    final int height = Math.abs(b.y - a.y);
+		
+		    return new Rectangle(x, y, width, height);
+		}
 }

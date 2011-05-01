@@ -100,8 +100,8 @@ public class MapElementRenderer implements MapElementRendererIF
 			return false;
 
 		// convert our model coordinates to draw coordinates
-		final Point drawCoords = canvas == null ? new Point(0, 0) : canvas.modelToDraw(m_mapElement.getPosition());
-		final float scale = canvas == null ? 1 : (float) canvas.getSquareSize() / (float) GameTableMap.getBaseSquareSize();
+		final Point drawCoords = canvas == null ? new Point(0, 0) : canvas.modelToView(m_mapElement.getPosition());
+		final float scale = canvas == null ? 1 : (float) canvas.getTileSize() / (float) GameTableMap.getBaseTileSize();
 
 		drawScaled(g, drawCoords.x, drawCoords.y, scale);
 
@@ -196,11 +196,11 @@ public class MapElementRenderer implements MapElementRendererIF
 		final int totalWidth = stringBounds.width + 6;
 		final int totalHeight = stringBounds.height + 1;
 
-		final int squareSize = canvas.getSquareSize();
+		final int squareSize = canvas.getTileSize();
 
-		final Point pogDrawCoords = canvas.modelToDraw(m_mapElement.getPosition());
+		final Point pogDrawCoords = canvas.modelToView(m_mapElement.getPosition());
 
-		final double ratio = (double) squareSize / (double) GameTableMap.getBaseSquareSize();
+		final double ratio = (double) squareSize / (double) GameTableMap.getBaseTileSize();
 		final int viewWidth = (int) (ratio * m_mapElement.getHeight());
 
 		final Rectangle backgroundRect = new Rectangle(pogDrawCoords.x + (viewWidth - totalWidth) / 2, pogDrawCoords.y - totalHeight - 4, totalWidth,

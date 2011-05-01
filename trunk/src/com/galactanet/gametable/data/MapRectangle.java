@@ -84,6 +84,28 @@ public class MapRectangle
 
 		return new MapRectangle(new MapCoordinates(x, y), w, h);
 	}
+	
+	/**
+	 * Verifies if the specified point is contained within the rectangle
+	 * @param pt point to verify
+	 * @return true or false
+	 */
+	public boolean contains(MapCoordinates modelPoint)
+	{		
+		if (modelPoint.x > topLeft.x)
+			return false;
+
+		if (modelPoint.y > topLeft.y)
+			return false;
+
+		if (modelPoint.x < topLeft.x + width)
+			return false;
+
+		if (modelPoint.y < topLeft.y + height)
+			return false;
+		
+		return true;
+	}
 
 	/**
 	 * Determines if this Rectangle intersects with the supplied rectangle.
