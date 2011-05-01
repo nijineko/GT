@@ -164,7 +164,7 @@ public class MapElementMode extends UIMode
 		XProperties properties = m_core.getProperties();
 
 		// TODO #Property groups
-		properties.addBooleanProperty(PROPERTY_DRAG, true, true, PropertyDescriptor.GROUP_TOOLS, -1);
+		properties.addBooleanProperty(PROPERTY_DRAG, true, true, PropertyDescriptor.GROUP_TOOLS, -1, GameTableCore.RESOURCE_PATH);
 	}
 
 	/**

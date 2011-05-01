@@ -13,13 +13,26 @@ Still to do
 [ ] Attribute dialog
 [ ] Start documenting architecture
 [ ] Re-extract language resources
-[ ] Fix nomenclature
+[ ] Fix nomenclature (pogs are now MapElements - a pog is now a layer of map elements representing characters)
 [ ] Check tagged 'TODO' and '@' notations
+	[ ] Document notation syntax
 [ ] Consider using log4j as full-featured logging system (debug only, game logging is better served with a simpler system, I would suppose)
 [ ] Turn 'random rotate' into module/plugin
 [ ] Build menu as plugin
 [ ] Build a legit pog library (can't verify most of these files' source - pretty certain they're not all public domain) 
+[ ] Other toolbar elements as plugins
+[ ] UI Mode as plugins
+[ ] LineSegments could be shapes and areas (or a more versatile component to allow for advanced drawing plugins)
+[ ] Normalizing plugin names and making them static (instead of dynamically linking it to full class name, which will break on refactoring)
 
 Wish list
 [ ] Configure tool bar
 [ ] Configure keyboard shortcuts
+[ ] Export functionality for v2.0 (so maps could be imported in 3.0)
+
+Some modules that could be developped
+[ ] HTTP-based network protocol + server
+[ ] Custom pog libraries (procedural textures, etc)
+[ ] User-defined layers (instead of pogs, enviroment, overlay, underlay)
+[ ] Special layers (we could have a layer for walls, using procedural textures)
+ 

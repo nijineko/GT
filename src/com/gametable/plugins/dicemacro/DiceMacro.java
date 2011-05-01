@@ -27,6 +27,8 @@ import com.gametable.util.UtilityFunctions;
  */
 public class DiceMacro
 {
+	public static final String RESOURCE_PATH = "com.gametable.plugins.dicemacro.resource";
+	
 	// --- Types ---
 
 	/**
