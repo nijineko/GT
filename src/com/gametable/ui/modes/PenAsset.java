@@ -3,7 +3,7 @@
  */
 
 
-package com.gametable.ui.tools;
+package com.gametable.ui.modes;
 
 import java.awt.Color;
 import java.awt.Graphics;

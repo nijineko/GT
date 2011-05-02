@@ -41,8 +41,8 @@ import com.gametable.data.*;
 import com.gametable.data.GameTableCore.MapType;
 import com.gametable.data.MapElementTypeIF.Layer;
 import com.gametable.net.NetworkEvent;
-import com.gametable.ui.tools.HandMode;
-import com.gametable.ui.tools.MapElementMode;
+import com.gametable.ui.modes.HandMode;
+import com.gametable.ui.modes.MapElementMode;
 import com.gametable.util.ImageCache;
 import com.gametable.util.Images;
 import com.gametable.util.UtilityFunctions;
@@ -202,7 +202,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public MapRectangle getVisibleCanvasRect(final int zoomLevel)
 	{
-		final MapCoordinates topLeft = viewToModel(0, 0);
+		final MapCoordinates topLeft = viewToModel(m_scrollPosition);
 
 		int canvasW = 0;
 		int canvasH = 0;
@@ -259,13 +259,13 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 */
 	public boolean isPointVisible(int viewX, int viewY)
 	{
-		if (viewX < 0 || viewY < 0)
+		if (viewX < m_scrollPosition.x || viewY < m_scrollPosition.y)
 			return false;
 
-		if (viewX > getWidth())
+		if (viewX > m_scrollPosition.x + getWidth())
 			return false;
 
-		if (viewY > getHeight())
+		if (viewY > m_scrollPosition.y + getHeight())
 			return false;
 
 		return true;
@@ -339,6 +339,19 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	@Override
 	public void mouseMoved(final MouseEvent e)
 	{
+		/*
+		  	m_mouseModelFloat = viewToModel(e.getX(), e.getY());
+        if (isPointing())
+        {
+            return;
+        }
+        m_gametableFrame.getToolManager().mouseMoved(m_mouseModelFloat, getModifierFlags());
+        final MapElementInstance prevPog = m_pogMouseOver;
+        if (prevPog != m_pogMouseOver)
+        {
+            repaint();
+        }
+		 */
 		int x = e.getX() + m_scrollPosition.x;
 		int y = e.getY() + m_scrollPosition.y;
 
@@ -615,11 +628,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	protected boolean isPointVisible(final MapCoordinates modelPoint)
 	{
 		
+		MapRectangle rect = getVisibleCanvasRect(getZoomLevel());
+		/*
 		MapRectangle rect = new MapRectangle(
 				viewToModel(0, 0),
 				viewToModel(getWidth()),
 				viewToModel(getHeight())
 				);
+				*/
 		
 		return rect.contains(modelPoint);
 	}
@@ -642,7 +658,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	/**
 	 * called by the pogs area when a pog is being dragged
-	 * TODO #PogPanel Should not be here
+	 * TODO #drag&drop new element
 	 */
 	protected void mapElementDrag()
 	{
@@ -723,7 +739,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	/**
 	 * Called at the end of a drag & drop operation from the MapElementPanel
-	 * TODO #PogPanel - This should not be here.
+	 * TODO #drag&drop new element
 	 */
 	protected void onReleaseMapElement()
 	{
@@ -755,7 +771,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	}
 
 	/**
-	 * TODO #PogPanel Should not be here
+	 * TODO #MapElementTypeLibraryPanel Should not be here
 	 * @param toReplace
 	 * @param replaceWith
 	 */
@@ -964,10 +980,10 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	}
 
 	/**
-	 * TODO #PogPanel Move this
+	 * TODO #MapElementTypeLibraryPanel Move this
 	 * @return
 	 */
-	private PogPanel getPogPanel()
+	private MapElementTypeLibraryPanel getPogPanel()
 	{
 		return m_frame.getPogPanel();
 	}
@@ -1637,15 +1653,18 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	/**
 	 * Part of the drag & drop process
+	 * TODO #drag&drop new element
 	 */
 	private void updateMapElementDropLocation()
 	{
-		final PogPanel panel = getPogPanel();
+		final MapElementTypeLibraryPanel panel = getPogPanel();
 		final Point screenMousePoint = panel.getGrabPosition();
 		final Point pogGrabOffset = panel.getGrabOffset();
 
 		// convert to our coordinates
 		final Point canvasView = UtilityFunctions.getComponentCoordinates(this, screenMousePoint);
+		canvasView.x += m_scrollPosition.x;
+		canvasView.y += m_scrollPosition.y;
 
 		// now convert to model coordinates
 		final MapCoordinates canvasModel = viewToModel(canvasView);
@@ -1654,16 +1673,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		// now, snap to grid if they don't have the control key down
 		if (!m_bControlKeyDown)
 		{
-			// Removed the adjustment part, because it was actually making the dragging worse
-			// final Point adjustment = grabbedPog.getSnapDragAdjustment();
-			// grabbedPog.setPosition(canvasModel.x - pogGrabOffset.x + adjustment.x, canvasModel.y - pogGrabOffset.y
-			// + adjustment.y);
-			grabbedPog.setPosition(new MapCoordinates(canvasModel.x - pogGrabOffset.x, canvasModel.y - pogGrabOffset.y));
+			grabbedPog.setPosition(new MapCoordinates(canvasModel.x - viewToModel(pogGrabOffset.x), canvasModel.y - viewToModel(pogGrabOffset.y)));
 			snapMapElementToGrid(grabbedPog);
 		}
 		else
 		{
-			grabbedPog.setPosition(new MapCoordinates(canvasModel.x - pogGrabOffset.x, canvasModel.y - pogGrabOffset.y));
+			grabbedPog.setPosition(new MapCoordinates(canvasModel.x - viewToModel(pogGrabOffset.x), canvasModel.y - viewToModel(pogGrabOffset.y)));
 		}
 	}
 
@@ -1778,7 +1793,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	private MapCoordinates				m_mousePositionModel;
 
 	/**
-	 * TODO #PogPanel Move?
+	 * TODO #MapElementTypeLibraryPanel Move?
 	 */
 	private boolean								m_newMapElementIsBeingDragged;
 
