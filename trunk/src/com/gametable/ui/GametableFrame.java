@@ -37,9 +37,9 @@ import com.gametable.ui.GametableCanvas.GridModeID;
 import com.gametable.ui.chat.ChatLogEntryPane;
 import com.gametable.ui.chat.ChatPanel;
 import com.gametable.ui.chat.SlashCommands;
+import com.gametable.ui.modes.*;
 import com.gametable.ui.net.NetRecenterMap;
 import com.gametable.ui.net.NetSendTypingFlag;
-import com.gametable.ui.tools.*;
 import com.gametable.util.*;
 import com.maziade.messages.MessageDefinition;
 import com.maziade.messages.MessageID;
@@ -345,11 +345,11 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	}
 
 	/**
-	 * TODO #PogPanel - Move
+	 * TODO #MapElementTypeLibraryPanel - Move
 	 * 
 	 * @return The pog panel.
 	 */
-	public PogPanel getPogPanel()
+	public MapElementTypeLibraryPanel getPogPanel()
 	{
 		return m_pogPanel;
 	}
@@ -576,7 +576,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			initializeMapElementTypeLibrary();
 
 			// pogWindow
-			m_pogPanel = new PogPanel(m_core.getMapElementTypeLibrary(), getGametableCanvas());
+			m_pogPanel = new MapElementTypeLibraryPanel(m_core.getMapElementTypeLibrary(), getGametableCanvas());
 			m_pogsTabbedPane.addTab(m_pogPanel, getLanguageResource().POG_LIBRARY);
 
 			for (Module module : m_core.getRegisteredModules())
@@ -2956,7 +2956,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	// pane
 	// is
 	// tabbed
-	private PogPanel										m_pogPanel								= null;																																						// one
+	private MapElementTypeLibraryPanel										m_pogPanel								= null;																																						// one
 
 	// tab
 	// is

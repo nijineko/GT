@@ -14,7 +14,7 @@
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-package com.gametable.ui.tools;
+package com.gametable.ui.modes;
 
 import java.awt.Cursor;
 import java.awt.Graphics2D;
@@ -54,6 +54,9 @@ import com.maziade.props.XProperties;
  */
 public class MapElementMode extends UIMode
 {
+	private final static String PROPERTY_BUNDLE = "com.gametable.ui.modes";
+	public static final String RESOURCE_PATH = "com.gametable.ui.modes.resources";
+	
 	/**
 	 * Gets the instance of this mode
 	 * 
@@ -154,6 +157,8 @@ public class MapElementMode extends UIMode
 			
 			m_lastMousedOver = mapElement;
 		}
+		else
+			m_frame.setMapCursor(null);	// Set default cursor
 	}
 
 	/**
@@ -164,7 +169,7 @@ public class MapElementMode extends UIMode
 		XProperties properties = m_core.getProperties();
 
 		// TODO #Property groups
-		properties.addBooleanProperty(PROPERTY_DRAG, true, true, PropertyDescriptor.GROUP_TOOLS, -1, GameTableCore.RESOURCE_PATH);
+		properties.addBooleanProperty(PROPERTY_DRAG, true, true, PropertyDescriptor.GROUP_TOOLS, -1, RESOURCE_PATH);
 	}
 
 	/**
@@ -694,7 +699,7 @@ public class MapElementMode extends UIMode
 	 */
 	private static MapElementMode		g_mode						= null;
 
-	private static final String		PROPERTY_DRAG					= MapElementMode.class.getName() + ".drag";
+	private static final String		PROPERTY_DRAG					= PROPERTY_BUNDLE + ".drag";
 
 	private boolean								m_clicked					= true;
 
@@ -917,6 +922,7 @@ public class MapElementMode extends UIMode
 				{
 					m_ghostMapElement.setPosition(m_mouseMapPosition.delta(m_grabOffset.x, m_grabOffset.y));
 				}
+
 				m_frame.repaint();
 			}
 			else if (m_startScroll != null)

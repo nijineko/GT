@@ -1,5 +1,5 @@
 /*
- * TestCompositeContext.java
+ * ColorComposite.java
  * 
  * @created 2010-06-21
  * 
@@ -68,7 +68,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getA()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getA()
 		 */
 		@Override
 		public int getA()
@@ -77,7 +77,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getB()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getB()
 		 */
 		@Override
 		public int getB()
@@ -86,7 +86,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getG()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getG()
 		 */
 		@Override
 		public int getG()
@@ -95,7 +95,7 @@ public class ColorComposite implements Composite
 		}
 		
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getR()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getR()
 		 */
 		@Override
 		public int getR()
@@ -103,7 +103,7 @@ public class ColorComposite implements Composite
 			return ((m_pixel >> 16) & 0xFF);
 		}
 		/*
-		 * @see com.gametable.ui.tools.TestCompositeContext.Pixel#getPixel(int, int)
+		 * @see com.gametable.ui.modes.TestCompositeContext.Pixel#getPixel(int, int)
 		 */
 		@Override
 		public void readPixel(int x, int y)
@@ -159,7 +159,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getA()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getA()
 		 */
 		@Override
 		public int getA()
@@ -168,7 +168,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getB()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getB()
 		 */
 		@Override
 		public int getB()
@@ -177,7 +177,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getG()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getG()
 		 */
 		@Override
 		public int getG()
@@ -186,7 +186,7 @@ public class ColorComposite implements Composite
 		}
 		
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getR()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getR()
 		 */
 		@Override
 		public int getR()
@@ -194,7 +194,7 @@ public class ColorComposite implements Composite
 			return m_r;
 		}
 		/*
-		 * @see com.gametable.ui.tools.TestCompositeContext.Pixel#getPixel(int, int)
+		 * @see com.gametable.ui.modes.TestCompositeContext.Pixel#getPixel(int, int)
 		 */
 		@Override
 		public void readPixel(int x, int y)
@@ -344,7 +344,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getA()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getA()
 		 */
 		@Override
 		public int getA()
@@ -356,7 +356,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getB()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getB()
 		 */
 		@Override
 		public int getB()
@@ -368,7 +368,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getG()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getG()
 		 */
 		@Override
 		public int getG()
@@ -380,7 +380,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.ColorComposite.Pixel#getR()
+		 * @see com.gametable.ui.modes.ColorComposite.Pixel#getR()
 		 */
 		@Override
 		public int getR()
@@ -418,7 +418,7 @@ public class ColorComposite implements Composite
 		}
 
 		/*
-		 * @see com.gametable.ui.tools.TestCompositeContext.Pixel#getPixel(int, int)
+		 * @see com.gametable.ui.modes.TestCompositeContext.Pixel#getPixel(int, int)
 		 */
 		@Override
 		public void readPixel(int x, int y)

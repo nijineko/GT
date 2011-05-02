@@ -92,16 +92,16 @@ public class MapRectangle
 	 */
 	public boolean contains(MapCoordinates modelPoint)
 	{		
-		if (modelPoint.x > topLeft.x)
+		if (modelPoint.x < topLeft.x)
 			return false;
 
-		if (modelPoint.y > topLeft.y)
+		if (modelPoint.y < topLeft.y)
 			return false;
 
-		if (modelPoint.x < topLeft.x + width)
+		if (modelPoint.x > topLeft.x + width)
 			return false;
 
-		if (modelPoint.y < topLeft.y + height)
+		if (modelPoint.y > topLeft.y + height)
 			return false;
 		
 		return true;

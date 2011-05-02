@@ -17,6 +17,7 @@ import java.util.Random;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 
 import com.gametable.data.Player;
@@ -204,8 +205,9 @@ public class UtilityFunctions
      */
     public static Point getComponentCoordinates(final Component component, final Point screenPoint)
     {
-        final Point screenPos = getScreenPosition(component);
-        return new Point(screenPoint.x - screenPos.x, screenPoint.y - screenPos.y);
+    	Point pt2 = new Point(screenPoint);
+    	SwingUtilities.convertPointFromScreen(pt2, component);
+    	return pt2;
     }  
 
     public static String getLine(final DataInputStream in)
@@ -333,8 +335,9 @@ public class UtilityFunctions
      */
     public static Point getScreenCoordinates(final Component component, final Point componentPoint)
     {
-        final Point screenPos = getScreenPosition(component);
-        return new Point(componentPoint.x + screenPos.x, componentPoint.y + screenPos.y);
+    	Point pt2 = new Point(componentPoint);
+    	SwingUtilities.convertPointToScreen(pt2, component);
+    	return pt2;
     }
 
     /**
@@ -343,15 +346,13 @@ public class UtilityFunctions
      */
     public static Point getScreenPosition(final Component component)
     {
-        final Point retVal = new Point(component.getX(), component.getY());
-
-        final Container container = component.getParent();
-        if (container != null)
-        {
-            final Point parentPos = getScreenPosition(container);
-            return new Point(retVal.x + parentPos.x, retVal.y + parentPos.y);
-        }
-        return retVal;
+      Point pt2 = component.getLocation();
+      final Container container = component.getParent();
+      
+      if (container != null)
+      	SwingUtilities.convertPointToScreen(pt2, container);
+      
+    	return pt2;
     }
  
     /**

@@ -270,7 +270,6 @@ public class GameTableMap implements MapElementRepositoryIF
 	 */
 	public void addMapElement(MapElement mapElement, NetworkEvent netEvent)
 	{
-System.out.println("Add mapElement"); // TODO #Remove		
 		m_mapElements.add(mapElement);
 		
 		mapElement.addListener(m_elementListener);
@@ -334,7 +333,6 @@ System.out.println("Add mapElement"); // TODO #Remove
 	{
 		ArrayList<MapElement> mapElements = new ArrayList<MapElement>(m_mapElements);
 		
-		System.out.println("Clear mapElement"); // TODO #Remove		
 		m_mapElements.clear();
 		
 		for (GameTableMapListenerIF listener : m_listeners)
@@ -600,7 +598,6 @@ System.out.println("Add mapElement"); // TODO #Remove
 	 */
 	public void removeMapElement(final MapElement mapElement, NetworkEvent netEvent)
 	{
-		System.out.println("Remove mapElement"); // TODO #Remove		
 		m_mapElements.remove(mapElement);
 		
 		mapElement.removeListener(m_elementListener);
@@ -631,7 +628,6 @@ System.out.println("Add mapElement"); // TODO #Remove
 		List<MapElement> instances = new ArrayList<MapElement>(mapElements);
 		
 		// Remove
-		System.out.println("Remvoe all mapElement"); // TODO #Remove		
 		m_mapElements.removeAll(instances);			
 
 		// Clear listeners

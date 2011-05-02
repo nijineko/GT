@@ -61,6 +61,7 @@ import com.maziade.tools.XMLUtils.XMLOutputProperties;
  */
 public class GameTableCore implements MapElementRepositoryIF
 {
+	private final static String PROPERTY_BUNDLE = "com.gametable.data";
 	public static final String RESOURCE_PATH = "com.gametable.data.resources";
 
 	/**
@@ -1944,8 +1945,8 @@ public class GameTableCore implements MapElementRepositoryIF
 		}
 	}
 	
-	private final static String PROP_PLAYER_NAME = GameTableCore.class.getName() + ".player_name";
-	private final static String PROP_CHARACTER_NAME = GameTableCore.class.getName() + ".character_name";
+	private final static String PROP_PLAYER_NAME = PROPERTY_BUNDLE + ".player_name";
+	private final static String PROP_CHARACTER_NAME = PROPERTY_BUNDLE + ".character_name";
 	
 	/**
 	 * Save the current map to XML file
