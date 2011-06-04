@@ -38,9 +38,9 @@ import com.gametable.GametableApp;
 import com.gametable.data.*;
 import com.gametable.data.GameTableCore.MapType;
 import com.gametable.data.MapElementTypeIF.Layer;
+import com.gametable.data.grid.GridModeID;
 import com.gametable.data.prefs.PropertyDescriptor;
 import com.gametable.ui.*;
-import com.gametable.ui.GametableCanvas.GridModeID;
 import com.gametable.util.UtilityFunctions;
 import com.maziade.props.XProperties;
 

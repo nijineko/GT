@@ -12,6 +12,7 @@ import com.gametable.data.GameTableMap;
 import com.gametable.data.GridMode;
 import com.gametable.data.MapCoordinates;
 import com.gametable.ui.GametableCanvas;
+import com.gametable.ui.GametableCanvas.ZoomLevel;
 
 
 
@@ -33,7 +34,7 @@ public class SquareGridMode extends GridMode
     @Override
     public void drawLines(Graphics2D g, int topLeftX, int topLeftY, int width, int height, GametableCanvas canvas)    
     {
-        if (canvas.getZoomLevel() == 4)
+        if (canvas.getZoomLevel() == ZoomLevel.LEVEL_MAX)
         {
             // we don't draw lines at the furthest zoom level
             return;
@@ -77,7 +78,7 @@ public class SquareGridMode extends GridMode
         // draw a square grid
         int squareSize = canvas.getTileSize();
         
-        if (canvas.getZoomLevel() < 4)
+        if (canvas.getZoomLevel().ordinal() < ZoomLevel.LEVEL_MAX.ordinal())
         {
             for (int i = 0; i < vLines; i++)
             {

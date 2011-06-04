@@ -27,12 +27,12 @@ import com.gametable.GametableApp;
 import com.gametable.data.*;
 import com.gametable.data.ChatEngineIF.MessageType;
 import com.gametable.data.GameTableCore.MapType;
+import com.gametable.data.grid.GridModeID;
 import com.gametable.data.net.NetLoadMap;
 import com.gametable.module.Module;
 import com.gametable.net.*;
 import com.gametable.plugins.cards.CardModule;
-import com.gametable.ui.GametableCanvas.BackgroundColor;
-import com.gametable.ui.GametableCanvas.GridModeID;
+import com.gametable.ui.GametableCanvas.ZoomLevel;
 import com.gametable.ui.chat.ChatLogEntryPane;
 import com.gametable.ui.chat.ChatPanel;
 import com.gametable.ui.chat.SlashCommands;
@@ -182,7 +182,23 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 
 		Point pt = XProperties.toPoint(props.getTextPropertyValue(PROP_SCROLL_POSITION), new Point(0, 0));
 		getGametableCanvas().setScrollPosition(pt.x, pt.y);
-		getGametableCanvas().setZoomLevel(props.getNumberPropertyValue(PROP_ZOOM_LEVEL));
+		
+		ZoomLevel level = ZoomLevel.LEVEL1;
+		
+		try
+		{
+			level = ZoomLevel.valueOf(props.getTextPropertyValue(PROP_ZOOM_LEVEL));
+		}
+		catch (IllegalArgumentException e)
+		{
+			// Ignore, keep default
+		}
+		catch (NullPointerException e)
+		{
+			// Ignore, keep default
+		}
+		
+		getGametableCanvas().setZoomLevel(level);
 
 		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		m_windowSize = XProperties.toDimension(props.getTextPropertyValue(PROP_WINDOW_SIZE), new Dimension(DEFAULT_WINDOWSIZE_WIDTH,
@@ -218,7 +234,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 * @param zoomLevel Requested zoom level
 	 * @param netEvent Network event
 	 */
-	public void centerView(MapCoordinates modelCenter, final int zoomLevel, NetworkEvent netEvent)
+	public void centerView(MapCoordinates modelCenter, final ZoomLevel zoomLevel, NetworkEvent netEvent)
 	{
 		if (shouldPropagateChanges(netEvent))
 			m_core.sendBroadcast(NetRecenterMap.makePacket(modelCenter, zoomLevel));
@@ -1092,7 +1108,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		props.setBooleanPropertyValue(PROP_SHOW_NAMES_ON_MAP, m_showNamesCheckbox.isSelected());
 		props.setBooleanPropertyValue(PROP_USE_CHAT_MECHANICS, m_chatPanel.getUseMechanicsLog());
 		props.setTextPropertyValue(PROP_SCROLL_POSITION, XProperties.fromPoint(m_gametableCanvas.getScrollPosition()));
-		props.setNumberPropertyValue(PROP_ZOOM_LEVEL, m_gametableCanvas.getZoomLevel());
+		props.setTextPropertyValue(PROP_ZOOM_LEVEL, m_gametableCanvas.getZoomLevel().name());
 		props.setTextPropertyValue(PROP_WINDOW_SIZE, XProperties.fromDimension(m_windowSize));
 		props.setTextPropertyValue(PROP_WINDOW_POSITION, XProperties.fromPoint(m_windowPos));
 		props.setBooleanPropertyValue(PROP_MAXIMIZED, m_bMaximized);
@@ -1176,7 +1192,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 * @param modelCenter Coordinates we want to center on
 	 * @param zoomLevel Requested zoom level
 	 */
-	private void centerView(MapCoordinates modelCenter, final int zoomLevel)
+	private void centerView(MapCoordinates modelCenter, final ZoomLevel zoomLevel)
 	{
 		centerView(modelCenter, zoomLevel);
 	}
@@ -2807,7 +2823,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 			new Integer(new Color(0, 132, 0).getRGB()), new Integer(new Color(0, 132, 132).getRGB()), new Integer(new Color(132, 0, 0).getRGB()),
 			new Integer(new Color(132, 0, 132).getRGB()), new Integer(new Color(132, 132, 0).getRGB()), new Integer(new Color(132, 132, 132).getRGB()) };
 
-	public final static int							MAX_ZOOM_LEVEL						= 5;
+	//public final static int							MAX_ZOOM_LEVEL						= 5;
 
 	public static String								PATH_CURSORS							= "images" + File.separator + "cursors" + File.separator;
 

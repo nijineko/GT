@@ -24,9 +24,9 @@ package com.gametable.data;
 
 import java.util.List;
 
+import com.gametable.data.grid.GridModeID;
 import com.gametable.net.NetworkEvent;
-import com.gametable.ui.GametableCanvas.BackgroundColor;
-import com.gametable.ui.GametableCanvas.GridModeID;
+import com.gametable.ui.BackgroundColor;
 
 
 /**
