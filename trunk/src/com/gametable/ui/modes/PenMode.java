@@ -18,7 +18,6 @@ package com.gametable.ui.modes;
 
 import java.awt.Cursor;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.util.List;
 
@@ -67,7 +66,7 @@ public class PenMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorPen = m_frame.createMapCursor(CURSOR_PEN, CURSOR_PEN_HOTSPOT);
+		m_cursorPen = m_frame.createMapCursor(CURSOR_PEN);
 	}
 
 	/*
@@ -96,12 +95,7 @@ public class PenMode extends UIMode
 	/**
 	 * Box cursor name
 	 */
-	public static final String CURSOR_PEN = "pen_cursor.png";
-
-	/**
-	 * Box cursor hot spot
-	 */
-	private static final Point CURSOR_PEN_HOTSPOT = new Point(7, 7);
+	public static final String CURSOR_PEN = "pen_cursor";
 
 	/**
 	 * Single instance of this mode

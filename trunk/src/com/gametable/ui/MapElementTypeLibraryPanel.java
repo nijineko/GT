@@ -1080,7 +1080,7 @@ public class MapElementTypeLibraryPanel extends JPanel
 				else
 				{
 					if (m_markedPog != m_tomarkPog)
-						replacePogs(m_markedPog, m_tomarkPog);
+						replaceMapElementTypes(m_markedPog, m_tomarkPog);
 					m_markedPog = null;
 				}
 				m_tomarkPog = null;
@@ -1094,20 +1094,42 @@ public class MapElementTypeLibraryPanel extends JPanel
 		menu.show(this, m_mousePosition.x, m_mousePosition.y);
 	}
 
-	private void replacePogs(final PogNode toReplace, final PogNode replaceWith)
+	/**
+	 * 
+	 * @param toReplace
+	 * @param replaceWith
+	 */
+	private void replaceMapElementTypes(final PogNode toReplace, final PogNode replaceWith)
 	{
 		final int res = UtilityFunctions.yesNoDialog(m_canvas, "Are you sure you wish to replace the unknown Pog with this Pog.",
 				"Confirm Pog Replacement.");
 		if (res != UtilityFunctions.YES)
 			return;
-		m_canvas.replacePogs(toReplace.getPog(), replaceWith.getPog());
+		replaceMapElementsTypes(toReplace.getPog(), replaceWith.getPog());
 		if (toReplace.getPog().isLoaded())
 		{
 			toReplace.parent.library.removeElementType(toReplace.getPog());
 			populateChildren();
 			repaint();
 		}
+	}
+	
+	/**
+	 * @param lookForType
+	 * @param replaceWithType
+	 */
+	private void replaceMapElementsTypes(final MapElementTypeIF lookForType, final MapElementTypeIF replaceWithType)
+	{
+		GameTableCore core = GametableApp.getCore();
+		GameTableMap mapToReplace = core.getMap(GameTableCore.MapType.ACTIVE);
 
+		for (MapElement pog : mapToReplace.getMapElements())
+		{
+			if (pog.getMapElementType() == lookForType)
+			{
+				pog.setMapElementType(replaceWithType);
+			}
+		}
 	}
 
 }

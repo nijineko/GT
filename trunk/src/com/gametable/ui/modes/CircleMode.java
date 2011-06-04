@@ -69,7 +69,7 @@ public class CircleMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorCircle = m_frame.createMapCursor(CURSOR_CIRCLE, CURSOR_CIRCLE_HOTSPOT);
+		m_cursorCircle = m_frame.createMapCursor(CURSOR_CIRCLE);
 	}
 
 	/*
@@ -152,12 +152,7 @@ public class CircleMode extends UIMode
 	/**
 	 * Box cursor name
 	 */
-	public static final String CURSOR_CIRCLE = "circle_cursor.png";
-
-	/**
-	 * Box cursor hot spot
-	 */
-	private static final Point CURSOR_CIRCLE_HOTSPOT = new Point(7, 7);
+	public static final String CURSOR_CIRCLE = "circle_cursor";
 	
 	/**
 	 * Singleton instance of the mode
