@@ -27,7 +27,7 @@ import com.gametable.GametableApp;
 import com.gametable.data.MapElementTypeIF;
 import com.gametable.data.MapElementTypeLibrary;
 import com.gametable.net.*;
-import com.gametable.ui.GametableCanvas.BackgroundColor;
+import com.gametable.ui.BackgroundColor;
 import com.gametable.util.Log;
 
 /**

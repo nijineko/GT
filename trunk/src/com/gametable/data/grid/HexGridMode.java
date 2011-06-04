@@ -15,6 +15,7 @@ import com.gametable.data.GridMode;
 import com.gametable.data.MapCoordinates;
 import com.gametable.ui.GametableCanvas;
 import com.gametable.ui.GametableFrame;
+import com.gametable.ui.GametableCanvas.ZoomLevel;
 import com.gametable.util.ImageCache;
 
 
@@ -26,10 +27,10 @@ import com.gametable.util.ImageCache;
  */
 public class HexGridMode extends GridMode
 {
-    private final int[]   m_hexImageOffsets = new int[GametableFrame.MAX_ZOOM_LEVEL];  // how far
+    private final int[]   m_hexImageOffsets = new int[GametableCanvas.ZoomLevel.values().length];  // how far
 
     // data
-    private final Image[] m_hexImages       = new Image[GametableFrame.MAX_ZOOM_LEVEL]; // one hex
+    private final Image[] m_hexImages       = new Image[GametableCanvas.ZoomLevel.values().length]; // one hex
     
     private boolean m_initialized = false;
 
@@ -45,7 +46,7 @@ public class HexGridMode extends GridMode
     {
     	GametableFrame frame = GametableApp.getUserInterface();
     	
-        if (canvas.getZoomLevel() == 4)
+        if (canvas.getZoomLevel() == ZoomLevel.LEVEL_MAX)
         {
             // we don't draw lines at the furthest zoom level
             return;
@@ -85,7 +86,7 @@ public class HexGridMode extends GridMode
         final int vLines = width / tilingSquareX + 2;
         final int hLines = height / tilingSquareY + 2;
         
-        int zoomLevel = canvas.getZoomLevel();
+        int zoomLevel = canvas.getZoomLevel().ordinal();
 
         // draw a hex grid
         final Image toTile = m_hexImages[zoomLevel];

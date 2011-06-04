@@ -55,7 +55,8 @@ import com.gametable.util.UtilityFunctions;
  * All methods dealing with pixels are found within GametableCanvas
  * 
  * @author sogetsu
- * 
+ *
+ * TODO Cleanup
  *         #GT-AUDIT GametableCanvas
  */
 public class GametableCanvas extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener
@@ -137,18 +138,15 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	{
 		switch (m_zoom)
 		{
-		case 0:
+		case LEVEL1:
 			return 3;
 
-		case 1:
+		case LEVEL2:
+		case LEVEL3:
 			return 2;
 
-		case 2:
-			return 2;
-
-		case 3:
-			return 1;
-
+		case LEVEL4:
+		case LEVEL5:
 		default:
 			return 1;
 		}
@@ -200,7 +198,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 * @param zoomLevel
 	 * @return rectangle in model coordinates
 	 */
-	public MapRectangle getVisibleCanvasRect(final int zoomLevel)
+	public MapRectangle getVisibleCanvasRect(final ZoomLevel zoomLevel)
 	{
 		final MapCoordinates topLeft = viewToModel(m_scrollPosition);
 
@@ -209,27 +207,27 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		switch (zoomLevel)
 		{
-		case 0:
+		case LEVEL1:
 			canvasW = getWidth();
 			canvasH = getHeight();
 			break;
 
-		case 1:
+		case LEVEL2:
 			canvasW = (getWidth() * 4) / 3;
 			canvasH = (getHeight() * 4) / 3;
 			break;
 
-		case 2:
+		case LEVEL3:
 			canvasW = getWidth() * 2;
 			canvasH = getHeight() * 2;
 			break;
 
-		case 3:
+		case LEVEL4:
 			canvasW = getWidth() * 4;
 			canvasH = getHeight() * 4;
 			break;
 
-		case 4:
+		case LEVEL5:
 			canvasW = getWidth() * 8;
 			canvasH = getHeight() * 8;
 			break;
@@ -245,7 +243,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 * 
 	 * @return
 	 */
-	public int getZoomLevel()
+	public ZoomLevel getZoomLevel()
 	{
 		return m_zoom;
 	}
@@ -439,12 +437,12 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		if (e.getWheelRotation() < 0)
 		{
 			// zoom in
-			centerZoom(-1);
+			centerZoom(true);
 		}
 		else if (e.getWheelRotation() > 0)
 		{
 			// zoom out
-			centerZoom(1);
+			centerZoom(false);
 		}
 		repaint();
 	}
@@ -547,7 +545,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 * @param modelCenter
 	 * @param zoomLevel
 	 */
-	protected void centerView(MapCoordinates modelCenter, final int zoomLevel)
+	protected void centerView(MapCoordinates modelCenter, final ZoomLevel zoomLevel)
 	{
 		// if you re-center for any reason, your tool action is canceled
 
@@ -794,16 +792,11 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	 * Set the current zoom level
 	 * 
 	 * @param zoomLevel
-	 * 
-	 * TODO #ZoomLevel Consider using enums instead of numbers
 	 */
-	protected void setZoomLevel(int zoomLevel)
+	protected void setZoomLevel(ZoomLevel zoomLevel)
 	{
-		if (zoomLevel < 0)
-			zoomLevel = 0;
-
-		if (zoomLevel >= GametableFrame.MAX_ZOOM_LEVEL)
-			zoomLevel = GametableFrame.MAX_ZOOM_LEVEL - 1;
+		if (zoomLevel == null)
+			zoomLevel = ZoomLevel.LEVEL1;
 
 		if (m_zoom != zoomLevel)
 		{
@@ -840,9 +833,9 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	/**
 	 * Modify zoom level, keeping the map centered
-	 * @param delta
+	 * @param zoomIn true to zoom in, false to zoom out
 	 */
-	private void centerZoom(final int delta)
+	private void centerZoom(boolean zoomIn)
 	{
 		// can't do this at all if we're dragging
 		if (m_newMapElementIsBeingDragged)
@@ -853,7 +846,8 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		final MapCoordinates modelCenter = viewToModel(getWidth() / 2, getHeight() / 2);
 
 		// do the zoom
-		setZoomLevel(m_zoom + delta);
+		ZoomLevel level = zoomIn ? m_zoom.zoomIn() : m_zoom.zoomOut();
+		setZoomLevel(level);
 
 		// note the view location of the model center
 		final Point viewCenter = modelToView(modelCenter);
@@ -934,8 +928,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	/**
 	 * Initializes all the keys for the canvas.
-	 * 
-	 * TODO #WishList Make keystrokes configurable
 	 */
 	private void initializeKeys()
 	{
@@ -1141,7 +1133,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 					return;
 				}
 
-				centerZoom(1);
+				centerZoom(true);
 			}
 
 			/**
@@ -1162,7 +1154,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 					return;
 				}
 
-				centerZoom(-1);
+				centerZoom(false);
 			}
 
 			/**
@@ -1634,23 +1626,23 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		int ret = GameTableMap.getBaseTileSize();
 		switch (m_zoom)
 		{
-		case 0:
+		case LEVEL1:
 			ret = GameTableMap.getBaseTileSize();
 			break;
 
-		case 1:
+		case LEVEL2:
 			ret = (GameTableMap.getBaseTileSize() / 4) * 3;
 			break;
 
-		case 2:
+		case LEVEL3:
 			ret = GameTableMap.getBaseTileSize() / 2;
 			break;
 
-		case 3:
+		case LEVEL4:
 			ret = GameTableMap.getBaseTileSize() / 4;
 			break;
 
-		case 4:
+		case LEVEL5:
 			ret = GameTableMap.getBaseTileSize() / 8;
 			break;
 		}
@@ -1666,7 +1658,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 	/**
 	 * Main font 
-	 * TODO #Properties
+	 * TODO #Properties Turn some of these into properties (fonts, colors)
 	 */
 	private static final Font			MAIN_FONT								= Font.decode("sans-12");
 
@@ -1789,77 +1781,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	/**
 	 * This is the number of screen pixels that are used per model 'pixel'. It's never less than 1
 	 */
-	private int										m_zoom									= 1;
-
-	/**
-	 * TODO Extract to top level class in UI
-	 */
-	public static enum BackgroundColor
-	{
-		BLACK("Black"), BLUE("Blue"), BROWN("Brown"), DARK_BLUE("Dark Blue"), DARK_GREEN("Dark Green"), DARK_GREY("Dark Grey"), DEFAULT("Default"), GREEN(
-				"Green"), GREY("Grey"), WHITE("White");
-
-		/**
-		 * Get BackgroundColor object from ordinal value
-		 * 
-		 * @param ordinal
-		 * @return
-		 */
-		public static BackgroundColor fromOrdinal(int ordinal)
-		{
-			for (BackgroundColor val : values())
-				if (val.ordinal() == ordinal)
-					return val;
-
-			return null;
-		}
-
-		/**
-		 * Private constructor
-		 * 
-		 * @param text
-		 */
-		private BackgroundColor(String text)
-		{
-			m_text = text;
-		}
-
-		/**
-		 * Get a text representation for the color
-		 * 
-		 * @return string
-		 */
-		public String getText()
-		{
-			return m_text;
-		}
-
-		private final String	m_text;
-	}
-
-	// grid modes
-	// TODO Extract to top class, move to data
-	public static enum GridModeID
-	{
-		HEX, NONE, SQUARES;
-
-		/**
-		 * Convert from ordinal to enum
-		 * 
-		 * @param value
-		 * @return
-		 */
-		public static GridModeID fromOrdinal(int value)
-		{
-			for (GridModeID gid : GridModeID.values())
-			{
-				if (gid.ordinal() == value)
-					return gid;
-			}
-
-			return NONE;
-		}
-	}
+	private ZoomLevel										m_zoom									= ZoomLevel.LEVEL1;
 
 	private class CanvasMapElementListener extends MapElementAdapter
 	{
@@ -2061,6 +1983,48 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			}
 
 			repaint();
+		}
+	}
+	
+	/**
+	 * Type strong zoom level indicator
+	 * Represent the number of screen pixels that are used per model coordinate units. 
+	 */
+	public static enum ZoomLevel { 
+		LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5;
+		
+		public static final ZoomLevel LEVEL_MAX = LEVEL5;
+		
+		/**
+		 * Get ZoomLevel from ordinal value
+		 */
+		public static ZoomLevel fromOrdinal(int ordinal)
+		{	
+			ZoomLevel levels[] = ZoomLevel.values();
+			
+			if (ordinal < 0)
+				ordinal = 0;
+			
+			if (ordinal >= levels.length)
+				ordinal = levels.length - 1;
+			
+			return levels[ordinal];
+		}
+		
+		/**
+		 * @return the previous zoom level
+		 */
+		public ZoomLevel zoomIn()
+		{
+			return ZoomLevel.fromOrdinal(ordinal() - 1);
+		}
+		
+		/**
+		 * @return the next zoom level
+		 */
+		public ZoomLevel zoomOut()
+		{
+			return ZoomLevel.fromOrdinal(ordinal() +1);
 		}
 	}
 }

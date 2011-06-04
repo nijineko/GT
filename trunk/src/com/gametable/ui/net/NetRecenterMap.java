@@ -29,6 +29,7 @@ import com.gametable.GametableApp;
 import com.gametable.data.MapCoordinates;
 import com.gametable.net.*;
 import com.gametable.ui.GametableFrame;
+import com.gametable.ui.GametableCanvas.ZoomLevel;
 import com.gametable.util.Log;
 
 /**
@@ -62,7 +63,7 @@ public class NetRecenterMap implements NetworkMessageTypeIF
 	 * @param zoom Zoom level
 	 * @return data packet
 	 */
-	public static byte[] makePacket(MapCoordinates mapCenter, final int zoom)
+	public static byte[] makePacket(MapCoordinates mapCenter, final ZoomLevel zoom)
 	{
 		try
 		{
@@ -71,7 +72,7 @@ public class NetRecenterMap implements NetworkMessageTypeIF
 			
 			dos.writeInt(mapCenter.x);
       dos.writeInt(mapCenter.y);
-      dos.writeInt(zoom);
+      dos.writeUTF(zoom.name());
 
 			return dos.toByteArray();
 		}
@@ -93,7 +94,18 @@ public class NetRecenterMap implements NetworkMessageTypeIF
 			return;
 		
 		MapCoordinates pos = new MapCoordinates(dis.readInt(), dis.readInt());
-    final int zoom = dis.readInt();
+		String zoomName = dis.readUTF();
+		ZoomLevel zoom = ZoomLevel.LEVEL1;
+		
+		try
+		{
+			if (zoomName != null)
+				zoom = ZoomLevel.valueOf(zoomName);
+		}
+		catch (IllegalArgumentException e)
+		{
+			// Ignore - keep default zoom level value
+		}
 
     // tell the model
     frame.centerView(pos, zoom, event);

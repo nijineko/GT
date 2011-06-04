@@ -27,8 +27,8 @@ import java.io.IOException;
 
 import com.gametable.GametableApp;
 import com.gametable.data.GameTableCore;
+import com.gametable.data.grid.GridModeID;
 import com.gametable.net.*;
-import com.gametable.ui.GametableCanvas.GridModeID;
 import com.gametable.util.Log;
 
 /**

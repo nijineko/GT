@@ -1,6 +1,7 @@
 Currently cleaning up the UI package
 
 Still to do
+[ ] Line colors are not saved
 [x] Properties dialog - grouping.  make pretty.  consider adding com.maziade source code directly to gametable  project (potential fork of my lib)
 [ ] Dynamic module system
 [ ] GametableFrame - Cleanup
