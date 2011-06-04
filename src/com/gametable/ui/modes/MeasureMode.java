@@ -67,7 +67,7 @@ public class MeasureMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorMeasure = m_frame.createMapCursor(CURSOR_MEASURE, CURSOR_MEASURE_HOTSPOT);
+		m_cursorMeasure = m_frame.createMapCursor(CURSOR_MEASURE);
 	}
 
 	/*
@@ -143,13 +143,8 @@ public class MeasureMode extends UIMode
 	/**
 	 * Measure cursor name
 	 */
-	public static final String CURSOR_MEASURE = "ruler_cursor.png";
-
-	/**
-	 * Measure cursor hot spot
-	 */
-	private static final Point CURSOR_MEASURE_HOTSPOT = new Point(7, 7);
-
+	public static final String CURSOR_MEASURE = "ruler_cursor";
+	
 	/**
 	 * Single instance of this mode
 	 */

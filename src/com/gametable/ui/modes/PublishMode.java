@@ -68,7 +68,7 @@ public class PublishMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorPublish = m_frame.createMapCursor(CURSOR_PUBLISH, CURSOR_PUBLISH_HOTSPOT);
+		m_cursorPublish = m_frame.createMapCursor(CURSOR_PUBLISH);
 	}
 
 	/*
@@ -137,12 +137,7 @@ public class PublishMode extends UIMode
 	/**
 	 * Box cursor name
 	 */
-	public static final String CURSOR_PUBLISH = "publish_cursor.png";
-
-	/**
-	 * Box cursor hot spot
-	 */
-	private static final Point CURSOR_PUBLISH_HOTSPOT = new Point(7, 7);
+	public static final String CURSOR_PUBLISH = "publish_cursor";
 
 	/**
 	 * Single instance of this mode

@@ -68,7 +68,7 @@ public class SelectMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorSelect = m_frame.createMapCursor(CURSOR_SELECT, CURSOR_SELECT_HOTSPOT);
+		m_cursorSelect = m_frame.createMapCursor(CURSOR_SELECT);
 	}
 
 	/*
@@ -139,12 +139,7 @@ public class SelectMode extends UIMode
 	/**
 	 * Box cursor name
 	 */
-	public static final String CURSOR_SELECT = "select_cursor.png";
-
-	/**
-	 * Box cursor hot spot
-	 */
-	private static final Point CURSOR_SELECT_HOTSPOT = new Point(7, 7);
+	public static final String CURSOR_SELECT = "select_cursor";
 
 	/**
 	 * Single instance of this mode

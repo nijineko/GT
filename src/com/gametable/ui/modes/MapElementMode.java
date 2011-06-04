@@ -92,8 +92,8 @@ public class MapElementMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorHand = m_frame.createMapCursor(CURSOR_HAND, CURSOR_HAND_HOTSPOT);
-		m_cursorGrab = m_frame.createMapCursor(CURSOR_GRAB, CURSOR_GRAB_HOTSPOT);
+		m_cursorHand = m_frame.createMapCursor(HandMode.CURSOR_HAND);
+		m_cursorGrab = m_frame.createMapCursor(HandMode.CURSOR_GRAB);
 	}
 
 	/*
@@ -673,26 +673,6 @@ public class MapElementMode extends UIMode
 			m_snapping = true;
 		}
 	}
-
-	/**
-	 * Grab cursor name
-	 */
-	public static final String CURSOR_GRAB = "grab.png";
-
-	/**
-	 * Hand cursor name
-	 */
-	public static final String CURSOR_HAND = "hand.png";
-
-	/**
-	 * Grab cursor hot spot
-	 */
-	private static final Point CURSOR_GRAB_HOTSPOT = new Point(8, 8);	// TODO #Cursor file desc?
-
-	/**
-	 * Hand cursor hot spot
-	 */
-	private static final Point CURSOR_HAND_HOTSPOT = new Point(8, 8);
 
 	/**
 	 * Single instance of this mode

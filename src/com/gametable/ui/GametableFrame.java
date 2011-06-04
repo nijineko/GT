@@ -6,14 +6,13 @@ package com.gametable.ui;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -164,10 +163,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	 *          Frame can use any of the standard values set into the Action object. Additionally, you can set
 	 *          ACTION_DEFAULT_AS_BUTTON to true to request that this action be added to the toolbar (user settings could
 	 *          override this)
-	 * 
-	 *          TODO #RoadMap Support of the UndoableEdit interface should be added for v3 release, allowing undo TODO
-	 *          #RoadMap Actions could also be accessible through a menu and configured as buttons, keyboard shortcuts or
-	 *          other accessible means by the user
+	 *
 	 */
 	public void addUserInterfaceAction(Action action)
 	{
@@ -240,26 +236,55 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 		final MapElement newMapElement = new MapElement(mapElement);
 		m_core.getMap(GameTableCore.MapType.ACTIVE).addMapElement(newMapElement);
 	}
-
+	
 	/**
-	 * Create a cursor matching the cursor file name.
+	 * Create a cursor from resource
 	 * 
-	 * @param cursorFileName Name of the cursor file (will look within PATH_CURSORS)
-	 * @param cursorHotspot Location of the cursor's hot spot
+	 * @param cursorFileName Name of the cursor file (will look within PATH_CURSORS for the props file containing other information)
 	 * @return Cursor instance
-	 * 
-	 *         TODO #Cusros enhance cursor file format
 	 */
-	public Cursor createMapCursor(String cursorFileName, Point cursorHotspot)
+	public Cursor createMapCursor(String cursorName)
 	{
-		Cursor cursor = m_cursors.get(cursorFileName);
+		Cursor cursor = m_cursors.get(cursorName);
+		if (cursor != null)
+			return cursor;
+		
+		Properties props = new Properties();
+		try
+		{
+			props.load(new FileReader(new File(GametableFrame.PATH_CURSORS + cursorName + ".props")));
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+		
+		String imageFile = GametableFrame.PATH_CURSORS + props.getProperty("image");
 
-		Image cursorImage = ImageCache.getImage(new File(GametableFrame.PATH_CURSORS + cursorFileName));
+		Image cursorImage = ImageCache.getImage(new File(imageFile));
 		if (cursorImage != null)
-			cursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, cursorHotspot, cursorFileName);
+		{
+			Toolkit kit = Toolkit.getDefaultToolkit();
+			int w = cursorImage.getWidth(this);
+			int h = cursorImage.getHeight(this);
+			
+			Dimension d = kit.getBestCursorSize(w, h);
+			if (d.width !=  w || d.height != h)
+			{
+				BufferedImage image = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_ARGB);
+				Graphics g = image.getGraphics();
+		    g.drawImage(cursorImage, 0, 0, null);
+		    
+		    cursorImage = image;
+			}
+			
+			Point cursorHotspot = XProperties.toPoint(props.getProperty("hotspot"), new Point(0, 0));
+			cursor = kit.createCustomCursor(cursorImage, cursorHotspot, cursorName);
+		}
 
 		if (cursor != null)
-			m_cursors.put(cursorFileName, cursor);
+			m_cursors.put(cursorName, cursor);
 
 		return cursor;
 	}
@@ -784,12 +809,12 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Verifies if map coordinates are currently visible on screen
 	 * 
-	 * @param modelPoint
+	 * @param mapPos Position on the map
 	 * @return true if visible, false otherwise
 	 */
-	public boolean isPointVisible(final MapCoordinates modelPoint)
+	public boolean areMapCoordinatesVisible(final MapCoordinates mapPos)
 	{
-		return m_gametableCanvas.isPointVisible(modelPoint);
+		return m_gametableCanvas.areMapCoordinatesVisible(mapPos);
 	}
 
 	/**

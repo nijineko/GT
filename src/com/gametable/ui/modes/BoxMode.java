@@ -73,7 +73,7 @@ public class BoxMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorBox = m_frame.createMapCursor(CURSOR_BOX, CURSOR_BOX_HOTSPOT);		
+		m_cursorBox = m_frame.createMapCursor(CURSOR_BOX);		
 	}
 
 	/*
@@ -169,12 +169,7 @@ public class BoxMode extends UIMode
 	/**
 	 * Box cursor name
 	 */
-	public static final String CURSOR_BOX = "box_cursor.png";
-
-	/**
-	 * Box cursor hot spot
-	 */
-	private static final Point CURSOR_BOX_HOTSPOT = new Point(7, 7);
+	public static final String CURSOR_BOX = "box_cursor";
 
 	/**
 	 * Single instance of this mode

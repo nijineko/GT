@@ -67,7 +67,7 @@ public class LineMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorLine = m_frame.createMapCursor(CURSOR_LINE, CURSOR_LINE_HOTSPOT);
+		m_cursorLine = m_frame.createMapCursor(CURSOR_LINE);
 	}
 
 	/*
@@ -142,13 +142,8 @@ public class LineMode extends UIMode
 	/**
 	 * Line cursor name
 	 */
-	public static final String CURSOR_LINE = "line_cursor.png";
-
-	/**
-	 * Line cursor hot spot
-	 */
-	private static final Point CURSOR_LINE_HOTSPOT = new Point(7, 7);
-
+	public static final String CURSOR_LINE = "line_cursor";
+	
 	/**
 	 * Single instance of this mode
 	 */

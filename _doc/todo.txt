@@ -1,7 +1,7 @@
 Currently cleaning up the UI package
 
 Still to do
-[ ] Properties dialog - grouping.  make pretty.  consider adding com.maziade source code directly to gametable  project (potential fork of my lib)
+[x] Properties dialog - grouping.  make pretty.  consider adding com.maziade source code directly to gametable  project (potential fork of my lib)
 [ ] Dynamic module system
 [ ] GametableFrame - Cleanup
 [ ] MapElementTyleLibraryPanel - cleanup
@@ -27,6 +27,7 @@ Wish list
 [ ] Configure tool bar
 [ ] Configure keyboard shortcuts
 [ ] Export functionality for v2.0 (so maps could be imported in 3.0)
+[ ] Use the media wiki as gametable's main page? (interesting setup for a wiki: http://wiki.filezilla-project.org/Main_Page  )
 
 Some modules that could be developped
 [ ] HTTP-based network protocol + server
@@ -34,5 +35,12 @@ Some modules that could be developped
 [ ] User-defined layers (instead of pogs, enviroment, overlay, underlay)
 [ ] Special layers (we could have a layer for walls, using procedural textures)
  
+ 
+Roadmap ?
+[ ] Support of UndoableEdit interface 
+[ ] Actions could also be accessible through a menu and configured as buttons, keyboard shortcuts or other accessible means by the user
+ 
 Done
 [x] 'tools' now modes
+
+

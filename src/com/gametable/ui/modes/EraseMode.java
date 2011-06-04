@@ -86,8 +86,8 @@ public class EraseMode extends UIMode
 		
 		m_frame.addUserInterfaceAction(action);
 		
-		m_cursorErase = m_frame.createMapCursor(CURSOR_ERASE, CURSOR_ERASE_HOTSPOT);
-		m_cursorEraseColor = m_frame.createMapCursor(CURSOR_ERASE_COLOR, CURSOR_ERASE_COLOR_HOTSPOT);
+		m_cursorErase = m_frame.createMapCursor(CURSOR_ERASE);
+		m_cursorEraseColor = m_frame.createMapCursor(CURSOR_ERASE_COLOR);
 	}
 
 	/*
@@ -130,22 +130,12 @@ public class EraseMode extends UIMode
 	/**
 	 * Box cursor name
 	 */
-	public static final String CURSOR_ERASE = "eraser_cursor.png";
+	public static final String CURSOR_ERASE = "eraser_cursor";
 
 	/**
 	 * Box cursor name
 	 */
-	public static final String CURSOR_ERASE_COLOR = "red_eraser_cursor.png";
-
-	/**
-	 * Box cursor hot spot
-	 */
-	private static final Point CURSOR_ERASE_COLOR_HOTSPOT = new Point(7, 7);
-
-	/**
-	 * Box cursor hot spot
-	 */
-	private static final Point CURSOR_ERASE_HOTSPOT = new Point(7, 7);
+	public static final String CURSOR_ERASE_COLOR = "red_eraser_cursor";
 
 	/**
 	 * Single instance of this mode

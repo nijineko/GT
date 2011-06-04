@@ -620,23 +620,14 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 	/**
 	 * Verifies if map coordinates are visible within the canvas. Plug-ins should call the method from GametableFrame
 	 * 
-	 * @param modelPoint
+	 * @param modelPoint 
 	 * @return
-	 * 
-	 * TODO #Move to Frame?
+	 *
 	 */
-	protected boolean isPointVisible(final MapCoordinates modelPoint)
+	protected boolean areMapCoordinatesVisible(final MapCoordinates modelPoint)
 	{
 		
 		MapRectangle rect = getVisibleCanvasRect(getZoomLevel());
-		/*
-		MapRectangle rect = new MapRectangle(
-				viewToModel(0, 0),
-				viewToModel(getWidth()),
-				viewToModel(getHeight())
-				);
-				*/
-		
 		return rect.contains(modelPoint);
 	}
 
@@ -684,8 +675,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		else
 		{
 			Image newBk = null;
-
-			// @revise should all 'assets/' images be within a jar instead?
 
 			switch (color)
 			{
@@ -750,7 +739,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		if (pog != null)
 		{
 			// only add the pog if it's in the viewport
-			if (isPointVisible(getDraggedMapElementMousePosition()))
+			if (areMapCoordinatesVisible(getDraggedMapElementMousePosition()))
 			{
 				// #randomrotate
 				if (m_frame.shouldRotateMapElements())
@@ -768,24 +757,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 
 		// make the arrow the current tool
 		m_frame.setUIMode(null);
-	}
-
-	/**
-	 * TODO #MapElementTypeLibraryPanel Should not be here
-	 * @param toReplace
-	 * @param replaceWith
-	 */
-	protected void replacePogs(final MapElementTypeIF toReplace, final MapElementTypeIF replaceWith)
-	{
-		GameTableMap mapToReplace = m_core.getMap(GameTableCore.MapType.ACTIVE);
-
-		for (MapElement pog : mapToReplace.getMapElements())
-		{
-			if (pog.getMapElementType() == toReplace)
-			{
-				pog.setMapElementType(replaceWith);
-			}
-		}
 	}
 
 	/**
@@ -898,33 +869,6 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 		
 		setScrollPosition(scrX, scrY);
 	}
-
-	//TODO #Cleanup
-//	private MapCoordinates drawToModel(final int modelX, final int modelY)
-//	{
-//		return drawToModel(new Point(modelX, modelY));
-//	}
-//
-//	private MapCoordinates drawToModel(final Point drawPoint)
-//	{
-//		final double squaresX = (double) (drawPoint.x) / (double) m_squareSize;
-//		final double squaresY = (double) (drawPoint.y) / (double) m_squareSize;
-//
-//		final int modelX = (int) (squaresX * GameTableMap.getBaseSquareSize());
-//		final int modelY = (int) (squaresY * GameTableMap.getBaseSquareSize());
-//
-//		return new MapCoordinates(modelX, modelY);
-//	}
-
-	//
-	// protected ToolIF getActiveTool()
-	// {
-	// if (m_activeToolId < 0)
-	// {
-	// return NULL_TOOL;
-	// }
-	// return m_frame.getToolManager().getToolInfo(m_activeToolId).getTool();
-	// }
 
 	/**
 	 * Draw the map background
@@ -1447,7 +1391,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			if (m_newMapElementIsBeingDragged)
 			{
 				MapCoordinates mousePos = getDraggedMapElementMousePosition();
-				if (isPointVisible(mousePos))
+				if (areMapCoordinatesVisible(mousePos))
 				{
 					final MapElement mapElement = getPogPanel().getGrabbedPog();
 
@@ -1507,7 +1451,7 @@ public class GametableCanvas extends JComponent implements MouseListener, MouseM
 			// there could be a pog drag in progress
 			if (m_newMapElementIsBeingDragged)
 			{
-				if (isPointVisible(getDraggedMapElementMousePosition()))
+				if (areMapCoordinatesVisible(getDraggedMapElementMousePosition()))
 				{
 					final MapElement pog = getPogPanel().getGrabbedPog();
 
