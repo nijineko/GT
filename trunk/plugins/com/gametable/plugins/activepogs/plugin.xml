@@ -1,0 +1,7 @@
+<plugin>
+	<name>Active Pogs Module</name>
+	<version></version>
+	<author></author>
+	<url></url>
+	<class>com.gametable.plugins.activepogs.ActivePogsModule</class>
+</plugin>
