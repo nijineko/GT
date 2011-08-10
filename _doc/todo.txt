@@ -1,7 +1,7 @@
 Currently cleaning up the UI package
 
 Still to do
-[ ] Line colors are not saved
+[x] Line colors are not saved
 [x] Properties dialog - grouping.  make pretty.  consider adding com.maziade source code directly to gametable  project (potential fork of my lib)
 [ ] Dynamic module system
 [ ] GametableFrame - Cleanup
@@ -14,7 +14,6 @@ Still to do
 [ ] Fix nomenclature (pogs are now MapElements - a pog is now a layer of map elements representing characters)
 [ ] Check tagged 'TODO' and '@' notations
 	[ ] Document notation syntax
-[ ] Consider using log4j as full-featured logging system (debug only, game logging is probably better served with the simpler logging system)
 [ ] Turn 'random rotate' into module/plugin
 [ ] Build menu as plugin
 [ ] Build a legit pog/map elements library (can't verify most of these files' source - pretty certain they're not all public domain) 
@@ -29,6 +28,7 @@ Wish list
 [ ] Configure keyboard shortcuts
 [ ] Export functionality for v2.0 (so maps could be imported in 3.0)
 [ ] Use the media wiki as gametable's main page? (interesting setup for a wiki: http://wiki.filezilla-project.org/Main_Page  )
+[ ] Consider using log4j as full-featured logging system (debug only, game logging is probably better served with the simpler logging system)
 
 Some modules that could be developped
 [ ] HTTP-based network protocol + server

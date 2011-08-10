@@ -468,7 +468,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	/**
 	 * Performs initialization. Called by the main application only
 	 * 
-	 * TODO #Initialize - make this visible only to application instance
+	 * todo #Initialize - make this visible only to application instance
 	 */
 	public void initialize()
 	{
@@ -789,7 +789,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	}
 
 	/**
-	 * Initialize properties before load - called by core TODO #Initialize visibility - restrict to core
+	 * Initialize properties before load - called by core todo #Initialize visibility - restrict to core
 	 */
 	public void initializeProperties()
 	{
@@ -999,16 +999,6 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	public void setMapCursor(Cursor cursor)
 	{
 		m_gametableCanvas.setCursor(cursor);
-	}
-
-	/**
-	 * TODO #Remove
-	 * @param toolId
-	 */
-	@Deprecated
-	public void setToolSelected(final int toolId)
-	{
-		m_toolButtons[toolId].setSelected(true);
 	}
 
 	/**
@@ -3043,9 +3033,6 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 	// Controls in the Frame
 	// The toolbar goes at the top of the pane
 	private final JToolBar							m_toolBar									= new JToolBar();																																	// The
-
-	@Deprecated // TODO #Remove
-	private JToggleButton								m_toolButtons[]						= null;
 
 	/**
 	 * List of players currently typing
