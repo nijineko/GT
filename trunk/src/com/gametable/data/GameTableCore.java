@@ -25,8 +25,13 @@ package com.gametable.data;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -120,7 +125,51 @@ public class GameTableCore implements MapElementRepositoryIF
 		initializeNetworkModule();
 
 		// todo #Plugins Automated module loading mechanism
+		
+		File files[] = new File(PLUGIN_FOLDER).listFiles();
+		for (File f : files)
+		{
+			if (f.isDirectory())
+				continue;
+			
+			try
+			{
+				JarFile jar = new JarFile(f);
+				Enumeration <JarEntry> entries = jar.entries();
+				while (entries.hasMoreElements())
+				{
+					JarEntry entry = entries.nextElement();
+					
+					String name = entry.getName();
+					int pos = name.lastIndexOf('/');
+					if (pos > -1)
+					{
+						name = name.substring(pos + 1);
+						if (name.equals(PLUGIN_CONFIG_FILE))
+						{
+							Document xml = XMLUtils.parseXMLDocument(jar.getInputStream(entry), null);
+							
+							Element classEl = XMLUtils.getFirstChildElementByTagName(xml.getDocumentElement(), "class");
+							if (classEl != null)
+							{
+								String className = XMLUtils.getNodeValue(classEl);
+								Module m = loadJarModule(f, className);
+								if (m != null)
+									registerModule(m);								 
+							}
+						}
+					}
+				}
+				
+			}
+			catch (Exception e)
+			{
+				// TODO #Module - better handling
+				e.printStackTrace();
+			}
+		}
 
+		// TODO #Module - these should no longer be encoded
 		registerModule(CardModule.getModule());
 		registerModule(DiceMacroModule.getModule());
 		registerModule(ActivePogsModule.getModule());
@@ -135,6 +184,61 @@ public class GameTableCore implements MapElementRepositoryIF
 		addPlayer(new Player(m_playerName, m_characterName, -1, true));
 	}
 	
+	/**
+	 * Load a jar dynamically by hacking into the class loader and adding a new valid URL
+	 * @param jarFile Jar file to load
+	 * @param class Name name of main module class
+	 * @return Module instance or null 
+	 * @throws Exception
+	 */
+	private Module loadJarModule(File jarFile, String className) throws Exception 
+	{
+		URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+		
+	  // Before we start hacking away, see if the module is available from currently loaded source code (very useful for debugging)
+		Class<?> moduleClass = null;
+		
+		
+		try
+		{
+			moduleClass = classLoader.loadClass(className);
+		}
+		catch (ClassNotFoundException e)
+		{
+			// Yeah, ok
+		}
+
+	  // Not found - then lets add the JAR to the list of supported URLS in the system class loader
+	  if (moduleClass == null)
+	  {	  
+				URL url = jarFile.toURI().toURL();
+				
+			  Class<?> clazz= URLClassLoader.class;
+		
+			  // Use reflection to call 'addURL'
+			  java.lang.reflect.Method method= clazz.getDeclaredMethod("addURL", new Class[] { URL.class });
+			  method.setAccessible(true);
+			  method.invoke(classLoader, new Object[] { url });
+			  
+			  // Try again to load the class - this time we let the exception trigger
+			  moduleClass = classLoader.loadClass(className);
+	  }
+	  
+	  // Now we create instance
+	  if (moduleClass != null)
+	  {
+	  	Method getMethod = moduleClass.getMethod("getModule");
+	  	
+	  	if (getMethod != null)
+	  	{
+	  		Module module = (Module)getMethod.invoke(null);
+	  		return module;
+	  	}
+	  }
+	  
+	  return null;
+	}
+
 	
 	/**
 	 * Verifies whether changes to the data should be propagated over the network
@@ -344,6 +448,8 @@ public class GameTableCore implements MapElementRepositoryIF
 	 */
 	public static void registerModule(Module module)
 	{
+		// TODO #Plugins Handle plugin information (disabled? new?)
+		
 		g_modules.remove(module);
 		g_modules.add(module);
 	}
@@ -2064,4 +2170,8 @@ public class GameTableCore implements MapElementRepositoryIF
 			e.printStackTrace();
 		}
 	}
+	
+	private static final String PLUGIN_FOLDER = "osu-plugins";
+	private static final String PLUGIN_CONFIG_FILE = "osu-plugin.xml";
+	
 }
