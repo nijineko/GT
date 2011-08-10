@@ -39,7 +39,6 @@ import com.gametable.data.*;
 import com.gametable.data.GameTableCore.MapType;
 import com.gametable.data.MapElementTypeIF.Layer;
 import com.gametable.data.grid.GridModeID;
-import com.gametable.data.prefs.PropertyDescriptor;
 import com.gametable.ui.*;
 import com.gametable.util.UtilityFunctions;
 import com.maziade.props.XProperties;
@@ -169,7 +168,7 @@ public class MapElementMode extends UIMode
 		XProperties properties = m_core.getProperties();
 
 		// TODO #Property groups
-		properties.addBooleanProperty(PROPERTY_DRAG, true, true, PropertyDescriptor.GROUP_TOOLS, -1, RESOURCE_PATH);
+		properties.addBooleanProperty(PROPERTY_DRAG, true, true, "tools", -1, RESOURCE_PATH);
 	}
 
 	/**

@@ -110,6 +110,7 @@ public class GametableApp
      * Sets a system property in the application
      * @param key Property key name
      * @param value Property value
+     * TODO #Properties What's that?
      */
     static public void setProperty(String key, String value)
     {
@@ -120,6 +121,7 @@ public class GametableApp
      * Sets a system property in the application
      * @param key Property key name
      * @param value Property value
+     * TODO #Properties What's that?
      */
     static public void setProperty(String key, int value)
     {
@@ -131,6 +133,7 @@ public class GametableApp
      * Get a system property value from the application
      * @param key Property key name
      * @return String value
+     * TODO #Properties What's that?
      */
     static public String getProperty(String key)
     {
@@ -141,6 +144,7 @@ public class GametableApp
      * Get a system property value from the application
      * @param key Property key name
      * @return Integer value (parsed from string)
+     * TODO #Properties What's that?
      */
     static public int getIntegerProperty(String key)
     {

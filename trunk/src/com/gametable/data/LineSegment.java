@@ -70,12 +70,23 @@ public class LineSegment implements MapElementRendererIF
     public LineSegment(Element parent)
     {
     	Element colorEl = XMLUtils.getFirstChildElementByTagName(parent, "color");
-    	String rgb = XMLUtils.getElementValue(colorEl);
+    	String rgb = XMLUtils.getElementValue(colorEl);    	
+    	
     	Color c;
     	try
     	{
-	    	int iRGB = Integer.parseInt(rgb, 8);
-	    	c = new Color(iRGB, true);
+    		boolean hasAlpha = false;
+    		
+    		if (rgb.length() > 6)
+    			hasAlpha = true;
+
+    		// Converting to long first to get alpha channel value - parseInt won't automatically convert to signed.
+    		long lRGB = Long.parseLong(rgb, 16);
+    		
+    		// ... but casting will convert it properly
+    		int iRGB = (int)lRGB;    		
+	    	
+	    	c = new Color(iRGB, hasAlpha);
     	}
     	catch (NumberFormatException e)
     	{
