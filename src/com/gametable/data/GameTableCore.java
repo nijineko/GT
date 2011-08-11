@@ -25,6 +25,7 @@ package com.gametable.data;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -46,10 +47,6 @@ import com.gametable.data.net.*;
 import com.gametable.data.net.NetGroupAction.Action;
 import com.gametable.module.Module;
 import com.gametable.net.*;
-import com.gametable.plugins.activepogs.ActivePogsModule;
-import com.gametable.plugins.cards.CardModule;
-import com.gametable.plugins.dicemacro.DiceMacroModule;
-import com.gametable.plugins.network.NetworkModule;
 import com.gametable.ui.BackgroundColor;
 import com.gametable.ui.GametableFrame;
 import com.gametable.util.Log;
@@ -121,8 +118,6 @@ public class GameTableCore implements MapElementRepositoryIF
 		
 		m_squareGridMode.initialize();
 		m_gridMode = m_squareGridMode;
-		
-		initializeNetworkModule();
 
 		// todo #Plugins Automated module loading mechanism
 		
@@ -153,26 +148,29 @@ public class GameTableCore implements MapElementRepositoryIF
 							if (classEl != null)
 							{
 								String className = XMLUtils.getNodeValue(classEl);
-								Module m = loadJarModule(f, className);
-								if (m != null)
-									registerModule(m);								 
+								try
+								{
+									loadJarModule(f, className);	
+								}
+								catch (Exception e)
+								{
+									// TODO #Module - better error handling
+									e.printStackTrace();
+								}
 							}
 						}
 					}
 				}
 				
+				registerDetectedModules();
+				
 			}
 			catch (Exception e)
 			{
-				// TODO #Module - better handling
+				// TODO #Module - better error handling
 				e.printStackTrace();
 			}
 		}
-
-		// TODO #Module - these should no longer be encoded
-		registerModule(CardModule.getModule());
-		registerModule(DiceMacroModule.getModule());
-		registerModule(ActivePogsModule.getModule());
 		
 		initializeGroupManager();
 
@@ -191,7 +189,7 @@ public class GameTableCore implements MapElementRepositoryIF
 	 * @return Module instance or null 
 	 * @throws Exception
 	 */
-	private Module loadJarModule(File jarFile, String className) throws Exception 
+	private void loadJarModule(File jarFile, String className) throws Exception 
 	{
 		URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
 		
@@ -205,7 +203,7 @@ public class GameTableCore implements MapElementRepositoryIF
 		}
 		catch (ClassNotFoundException e)
 		{
-			// Yeah, ok
+			// Yeah, ok - we'll have to load dynamically
 		}
 
 	  // Not found - then lets add the JAR to the list of supported URLS in the system class loader
@@ -221,24 +219,96 @@ public class GameTableCore implements MapElementRepositoryIF
 			  method.invoke(classLoader, new Object[] { url });
 			  
 			  // Try again to load the class - this time we let the exception trigger
-			  moduleClass = classLoader.loadClass(className);
+			  moduleClass = classLoader.loadClass(className);			  
 	  }
 	  
-	  // Now we create instance
-	  if (moduleClass != null)
-	  {
-	  	Method getMethod = moduleClass.getMethod("getModule");
-	  	
-	  	if (getMethod != null)
-	  	{
-	  		Module module = (Module)getMethod.invoke(null);
-	  		return module;
-	  	}
-	  }
-	  
-	  return null;
+	  registerModule(moduleClass);
 	}
-
+	
+	/**
+	 * 
+	 * @param moduleClass
+	 */
+	@SuppressWarnings("unchecked")
+	private void registerModule(Class<?> moduleClass)
+	{	
+		if (moduleClass == null)
+			return;
+		
+		// TODO #Plugins Handle plugin configurations - is this a new plugin?  was this plugin disabled?  These would be useful
+		
+		Log.log(Log.SYS, "Detected dynamic module : " + moduleClass.getCanonicalName());
+		
+		// See if it is a network module
+		if (NetworkModuleIF.class.isAssignableFrom(moduleClass))
+		{
+			try
+			{
+				Method getMethod = moduleClass.getMethod("getNetworkModule");
+	  		NetworkModuleIF module = (NetworkModuleIF)getMethod.invoke(null);
+	  		initializeNetworkModule(module);
+			}
+			catch (InvocationTargetException e)
+			{
+				e.printStackTrace();
+				Log.log(Log.SYS, "getNetworkModule method failed in " + moduleClass.getCanonicalName() + " " + e.getMessage());
+			}
+			catch (IllegalAccessException e)
+			{
+				e.printStackTrace();
+				Log.log(Log.SYS, "getNetworkModule method failed in " + moduleClass.getCanonicalName() + " " + e.getMessage());
+			}
+			catch (NoSuchMethodException e)
+			{
+				e.printStackTrace();
+				Log.log(Log.SYS, "getNetworkModule method not found in " + moduleClass.getCanonicalName());				
+			}
+		}
+		
+		// If it is a module module, we need to store it to initialize it later (second pass)
+		if (Module.class.isAssignableFrom(moduleClass))
+			g_moduleClasses.add((Class<Module>)moduleClass);
+	}
+	
+	/**
+	 * Register modules that were detected in the previous pass
+	 */
+	private void registerDetectedModules()
+	{
+		for (Class<Module> moduleClass : g_moduleClasses)
+		{
+			try
+			{
+			  Method getMethod = moduleClass.getMethod("getModule");
+			  	
+		  	if (getMethod != null)
+		  	{
+		  		Module module = (Module)getMethod.invoke(null);
+		  		
+		  		if (module != null)
+		  		{
+			  		g_modules.remove(module);	  		
+			  		g_modules.add(module);
+		  		}
+		  	}
+			}
+			catch (InvocationTargetException e)
+			{
+				e.printStackTrace();
+				Log.log(Log.SYS, "getModule method failed in " + moduleClass.getCanonicalName() + " " + e.getMessage());
+			}
+			catch (IllegalAccessException e)
+			{
+				e.printStackTrace();
+				Log.log(Log.SYS, "getModule method failed in " + moduleClass.getCanonicalName() + " " + e.getMessage());
+			}
+			catch (NoSuchMethodException e)
+			{
+				e.printStackTrace();
+				Log.log(Log.SYS, "getModule method not found in " + moduleClass.getCanonicalName());				
+			}
+		}
+	}
 	
 	/**
 	 * Verifies whether changes to the data should be propagated over the network
@@ -275,9 +345,9 @@ public class GameTableCore implements MapElementRepositoryIF
 	/**
 	 * Initialize network module
 	 */
-	private void initializeNetworkModule()
+	private void initializeNetworkModule(NetworkModuleIF networkModule)
 	{
-		m_networkModule = NetworkModule.getNetworkModule();	// .todo Allow other network modules
+		m_networkModule = networkModule;
 
 		m_networkModule.registerMessageType(NetAddLineSegments.getMessageType());
 		m_networkModule.registerMessageType(NetAddMapElement.getMessageType());
@@ -440,24 +510,17 @@ public class GameTableCore implements MapElementRepositoryIF
 			}
 		}
 	}
-	
-	/**
-	 * Register a new module with the core
-	 * 
-	 * @param module
-	 */
-	public static void registerModule(Module module)
-	{
-		// TODO #Plugins Handle plugin information (disabled? new?)
-		
-		g_modules.remove(module);
-		g_modules.add(module);
-	}
+
 
 	/**
 	 * List of registered modules
 	 */
 	private static List<Module>						g_modules		= new ArrayList<Module>();
+	
+	/**
+	 * List of registered modules classes
+	 */
+	private static List<Class<Module>>		g_moduleClasses		= new ArrayList<Class<Module>>();
 
 	/**
 	 * Broadcasts a packet through the networking module.  Everyone but logged player receives the message.

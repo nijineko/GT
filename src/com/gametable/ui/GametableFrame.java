@@ -31,7 +31,6 @@ import com.gametable.data.grid.GridModeID;
 import com.gametable.data.net.NetLoadMap;
 import com.gametable.module.Module;
 import com.gametable.net.*;
-import com.gametable.plugins.cards.CardModule;
 import com.gametable.ui.GametableCanvas.ZoomLevel;
 import com.gametable.ui.chat.ChatLogEntryPane;
 import com.gametable.ui.chat.ChatPanel;
@@ -2383,7 +2382,7 @@ public class GametableFrame extends JFrame implements ActionListener, MessageLis
 
 	private void initializeMapElementTypeLibrary() throws IOException
 	{
-		MSGID_REFRESH_MAP_LIBRARY = MessageID.acquire(CardModule.class.getCanonicalName() + ".DISCARD");
+		MSGID_REFRESH_MAP_LIBRARY = MessageID.acquire(MapElementTypeLibrary.class.getCanonicalName() + ".REFRESH");
 		MSG_REFRESH_MAP_LIBRARY = new MessageDefinition(MSGID_REFRESH_MAP_LIBRARY, MessagePriority.LOW);
 
 		MapElementTypeLibraryListenerIF listener = new MapElementTypeLibraryListenerIF() {
