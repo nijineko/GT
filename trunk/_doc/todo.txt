@@ -2,9 +2,9 @@ Currently cleaning up the UI package
 
 Still to do
 [x] Line colors are not saved
-[x] Properties dialog - grouping.  make pretty.  consider adding com.maziade source code directly to gametable  project (potential fork of my lib)
+[ ] Properties dialog - grouping.  make pretty.  consider adding com.maziade source code directly to gametable  project (potential fork of my lib)
 [ ] Dynamic module system
-		[ ] Loading modules from module folder is in place, but we need configuration options (probably a config file at first - but whole set of UI later)
+		[x] Loading modules from module folder is in place, but we need configuration options (probably a config file at first - but whole set of UI later)
 [ ] GametableFrame - Cleanup
 [ ] MapElementTyleLibraryPanel - cleanup
 [ ] PogWindow - tabbed pane - Find a name for that.  It is the docked window on the left side (default).  Might change to an 'outlook'-style bar in later version, so tabbed pane is not good.  Find a name based on function, not design
