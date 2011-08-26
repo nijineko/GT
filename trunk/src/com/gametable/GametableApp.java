@@ -7,6 +7,7 @@ package com.gametable;
 
 import java.awt.Toolkit;
 import java.io.File;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.swing.UIManager;
@@ -14,6 +15,9 @@ import javax.swing.UIManager;
 import com.gametable.data.GameTableCore;
 import com.gametable.ui.GametableFrame;
 import com.gametable.util.Log;
+import com.gametable.util.Strings;
+import com.maziade.tools.Utils;
+import com.sun.corba.se.impl.encoding.OSFCodeSetRegistry.Entry;
 
 
 
@@ -25,7 +29,12 @@ import com.gametable.util.Log;
  */
 public class GametableApp
 {
-	public static File USER_FILES_PATH;
+		/**
+		 * Home path for user files, gathered from first argument.  Logs and pogs will be stored there under a OSU-gt path.
+		 * If no user path is specified, will use user home path
+		 */
+		public static File USER_FILES_PATH;
+		
     /**
      * Name of the networking log file
      */
@@ -68,9 +77,29 @@ public class GametableApp
         try
         {
         	if (args.length > 0)
+        	{
         		USER_FILES_PATH = new File(args[0]);
+        	}
         	else
-        		USER_FILES_PATH = new File(".").getCanonicalFile();
+        	{
+        		// TODO !Set log files and copy pog libraries over to user home (if paths do not exist).  Confirm copying.
+        		// Display user home in chat window.
+//        		for (Map.Entry<Object, Object> entry : System.getProperties().entrySet())
+//        		{
+//        			System.out.println(entry.getKey() + " = " + entry.getValue());
+//        			
+//        		}
+        		String userHome = System.getProperty("user.home");
+        		String appData = System.getenv("APPDATA");
+        		
+        		if (!com.maziade.tools.Strings.isEmpty(appData))
+        			userHome = appData;
+        		
+        		userHome = userHome + File.separator + "osu-gt";
+        		
+        		//USER_FILES_PATH = new File(".").getCanonicalFile();
+        		USER_FILES_PATH = new File(userHome).getCanonicalFile();
+        	}
         	
         	if (!USER_FILES_PATH.exists())
         		USER_FILES_PATH.mkdirs();
