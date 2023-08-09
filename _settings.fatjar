@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Thu Jul 08 09:08:37 EDT 2010
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=_export/gametable.jar
+manifest.mergeall=true
+manifest.mainclass=com.galactanet.gametable.GametableApp
+manifest.file=<createnew>
+jarname.isextern=false
+onejar.expand=
+excludes=
+includes=
