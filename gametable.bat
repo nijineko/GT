@@ -1,1 +1,0 @@
-start javaw -jar -Xmx1024M -Xms512M gametable.jar
