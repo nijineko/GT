@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DOCUMENT type="Advanced Installer" CreateVersion="7.1.3" version="7.1.3" modules="java" RootPath="." Language="en">
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
+    <ROW Property="ALLUSERS" Value="2"/>
+    <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
+    <ROW Property="ARPHELPLINK" Value="https://sourceforge.net/apps/phpbb/gametable/"/>
+    <ROW Property="ARPURLINFOABOUT" Value="https://sourceforge.net/projects/gametable/"/>
+    <ROW Property="BannerBitmap" MultiBuildValue="DefaultBuild:default_banner.bmp#BuildMacOS:default_banner.bmp" Type="1"/>
+    <ROW Property="DialogBitmap" MultiBuildValue="DefaultBuild:default_dialog.bmp#BuildMacOS:default_dialog.bmp" Type="1"/>
+    <ROW Property="Manufacturer" Value="OSU-gt" ValueLocId="*"/>
+    <ROW Property="ProductCode" Value="1033:{16C426FC-B3A4-41B8-9BED-BDAB6836F54D} " Type="16"/>
+    <ROW Property="ProductLanguage" Value="1033"/>
+    <ROW Property="ProductName" Value="OSU-gt RC9" ValueLocId="*"/>
+    <ROW Property="ProductVersion" Value="2.0.0"/>
+    <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
+    <ROW Property="UpgradeCode" Value="{21CC62C7-F5D3-403C-9C1D-068F0D7B2615}"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
+    <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
+    <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
+    <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
+    <ROW Directory="assets_DIR" Directory_Parent="APPDIR" DefaultDir="assets"/>
+    <ROW Directory="decks_DIR" Directory_Parent="APPDIR" DefaultDir="decks"/>
+    <ROW Directory="environment_DIR" Directory_Parent="APPDIR" DefaultDir="enviro~1|environment"/>
+    <ROW Directory="language_DIR" Directory_Parent="APPDIR" DefaultDir="language"/>
+    <ROW Directory="lib_DIR" Directory_Parent="APPDIR" DefaultDir="lib"/>
+    <ROW Directory="logs_DIR" Directory_Parent="APPDIR" DefaultDir="logs"/>
+    <ROW Directory="pogs_DIR" Directory_Parent="APPDIR" DefaultDir="pogs"/>
+    <ROW Directory="underlays_DIR" Directory_Parent="APPDIR" DefaultDir="underl~1|underlays"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
+    <ROW Component="En.txt" ComponentId="{7E2FC947-771F-41A8-BBC2-11A744C2D9C2}" Directory_="language_DIR" Attributes="0" KeyPath="En.txt" Type="0"/>
+    <ROW Component="OSU_gt.exe" ComponentId="{D997E768-F8EA-47EB-B6E4-1E38B96C0F6E}" Directory_="APPDIR" Attributes="0" KeyPath="OSU_gt.exe"/>
+    <ROW Component="SHORTCUTDIR" ComponentId="{174B6FD3-03E2-49B3-BCC0-E91A4D44A69B}" Directory_="SHORTCUTDIR" Attributes="0"/>
+    <ROW Component="arrow.png" ComponentId="{AAD4D31D-8156-4E72-BF4E-FB9B9856DFF0}" Directory_="assets_DIR" Attributes="0" KeyPath="arrow.png" Type="0"/>
+    <ROW Component="boulder_1.png" ComponentId="{59508398-DF9F-47AB-A488-FE95EB9F09B6}" Directory_="environment_DIR" Attributes="0" KeyPath="boulder_1.png" Type="0"/>
+    <ROW Component="catan.xml" ComponentId="{EF185BFB-8FD1-4A37-8687-B17BB17AAC13}" Directory_="decks_DIR" Attributes="0" KeyPath="catan.xml" Type="0"/>
+    <ROW Component="classpath" ComponentId="{EEE64216-126F-427A-A2D0-B41660412F17}" Directory_="APPDIR" Attributes="0" KeyPath="readme.txt" Type="0"/>
+    <ROW Component="cloudgiant.png" ComponentId="{BD949027-B727-48DB-8903-34CCE474FFC1}" Directory_="pogs_DIR" Attributes="0" KeyPath="cloudgiant.png" Type="0"/>
+    <ROW Component="create" ComponentId="{C251128F-E100-4C5D-90C1-29CBF6E657A7}" Directory_="lib_DIR" Attributes="0" KeyPath="create" Type="0"/>
+    <ROW Component="hall.png" ComponentId="{D8EF3C04-192B-4066-A0FD-785489BEE70A}" Directory_="underlays_DIR" Attributes="0" KeyPath="hall.png" Type="0"/>
+    <ROW Component="logs" ComponentId="{4BD6FD48-C142-48D5-978F-CD2A54B21736}" Directory_="logs_DIR" Attributes="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Attributes="0" Components="classpath arrow.png catan.xml boulder_1.png En.txt create cloudgiant.png hall.png OSU_gt.exe SHORTCUTDIR logs"/>
+    <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
+    <ROW File="En.txt" Component_="En.txt" FileName="En.txt" Attributes="0" SourcePath="..\language\En.txt" SelfReg="false" Sequence="103"/>
+    <ROW File="Hole.png" Component_="boulder_1.png" FileName="Hole.png" Attributes="0" SourcePath="..\environment\Hole.png" SelfReg="false" Sequence="79"/>
+    <ROW File="Mound.png" Component_="boulder_1.png" FileName="Mound.png" Attributes="0" SourcePath="..\environment\Mound.png" SelfReg="false" Sequence="89"/>
+    <ROW File="OSU_gt.exe" Component_="OSU_gt.exe" FileName="OSU-gt.exe" Attributes="0" SourcePath="&lt;AI_STUBS&gt;aijclw.exe" SelfReg="false" Sequence="201" DigSign="true"/>
+    <ROW File="Statue.png" Component_="boulder_1.png" FileName="Statue.png" Attributes="0" SourcePath="..\environment\Statue.png" SelfReg="false" Sequence="96"/>
+    <ROW File="Wall3.png" Component_="hall.png" FileName="Wall3.png" Attributes="0" SourcePath="..\underlays\Wall3.png" SelfReg="false" Sequence="190"/>
+    <ROW File="Wall4.png" Component_="hall.png" FileName="Wall4.png" Attributes="0" SourcePath="..\underlays\Wall4.png" SelfReg="false" Sequence="191"/>
+    <ROW File="arrow.png" Component_="arrow.png" FileName="arrow.png" Attributes="0" SourcePath="..\assets\arrow.png" SelfReg="false" Sequence="1"/>
+    <ROW File="blueHand.png" Component_="arrow.png" FileName="blueHand.png" Attributes="0" SourcePath="..\assets\blueHand.png" SelfReg="false" Sequence="2"/>
+    <ROW File="blueHand_small.png" Component_="arrow.png" FileName="blueHa~1.png|blueHand_small.png" Attributes="0" SourcePath="..\assets\blueHand_small.png" SelfReg="false" Sequence="3"/>
+    <ROW File="bold.png" Component_="arrow.png" FileName="bold.png" Attributes="0" SourcePath="..\assets\bold.png" SelfReg="false" Sequence="4"/>
+    <ROW File="boulder_1.png" Component_="boulder_1.png" FileName="boulde~1.png|boulder_1.png" Attributes="0" SourcePath="..\environment\boulder_1.png" SelfReg="false" Sequence="67"/>
+    <ROW File="boulder_2.png" Component_="boulder_1.png" FileName="boulde~2.png|boulder_2.png" Attributes="0" SourcePath="..\environment\boulder_2.png" SelfReg="false" Sequence="68"/>
+    <ROW File="boulder_3.png" Component_="boulder_1.png" FileName="boulde~3.png|boulder_3.png" Attributes="0" SourcePath="..\environment\boulder_3.png" SelfReg="false" Sequence="69"/>
+    <ROW File="boulder_4.png" Component_="boulder_1.png" FileName="boulde~4.png|boulder_4.png" Attributes="0" SourcePath="..\environment\boulder_4.png" SelfReg="false" Sequence="70"/>
+    <ROW File="boulder_5.png" Component_="boulder_1.png" FileName="boulde~5.png|boulder_5.png" Attributes="0" SourcePath="..\environment\boulder_5.png" SelfReg="false" Sequence="71"/>
+    <ROW File="boulder_6.png" Component_="boulder_1.png" FileName="boulde~6.png|boulder_6.png" Attributes="0" SourcePath="..\environment\boulder_6.png" SelfReg="false" Sequence="72"/>
+    <ROW File="box.png" Component_="arrow.png" FileName="box.png" Attributes="0" SourcePath="..\assets\box.png" SelfReg="false" Sequence="5"/>
+    <ROW File="box_cursor.png" Component_="arrow.png" FileName="box_cu~1.png|box_cursor.png" Attributes="0" SourcePath="..\assets\box_cursor.png" SelfReg="false" Sequence="6"/>
+    <ROW File="brownHand.png" Component_="arrow.png" FileName="brownH~1.png|brownHand.png" Attributes="0" SourcePath="..\assets\brownHand.png" SelfReg="false" Sequence="7"/>
+    <ROW File="brownHand_small.png" Component_="arrow.png" FileName="brownH~2.png|brownHand_small.png" Attributes="0" SourcePath="..\assets\brownHand_small.png" SelfReg="false" Sequence="8"/>
+    <ROW File="bush2_large.png" Component_="boulder_1.png" FileName="bush2_~1.png|bush2_large.png" Attributes="0" SourcePath="..\environment\bush2_large.png" SelfReg="false" Sequence="73"/>
+    <ROW File="bush2_small.png" Component_="boulder_1.png" FileName="bush2_~2.png|bush2_small.png" Attributes="0" SourcePath="..\environment\bush2_small.png" SelfReg="false" Sequence="74"/>
+    <ROW File="bush_large.png" Component_="boulder_1.png" FileName="bush_l~1.png|bush_large.png" Attributes="0" SourcePath="..\environment\bush_large.png" SelfReg="false" Sequence="75"/>
+    <ROW File="bush_small.png" Component_="boulder_1.png" FileName="bush_s~1.png|bush_small.png" Attributes="0" SourcePath="..\environment\bush_small.png" SelfReg="false" Sequence="76"/>
+    <ROW File="c15_1.png" Component_="hall.png" FileName="c15_1.png" Attributes="0" SourcePath="..\underlays\c15_1.png" SelfReg="false" Sequence="146"/>
+    <ROW File="c15_2.png" Component_="hall.png" FileName="c15_2.png" Attributes="0" SourcePath="..\underlays\c15_2.png" SelfReg="false" Sequence="147"/>
+    <ROW File="c15_3.png" Component_="hall.png" FileName="c15_3.png" Attributes="0" SourcePath="..\underlays\c15_3.png" SelfReg="false" Sequence="148"/>
+    <ROW File="c15_4.png" Component_="hall.png" FileName="c15_4.png" Attributes="0" SourcePath="..\underlays\c15_4.png" SelfReg="false" Sequence="149"/>
+    <ROW File="c15_5.png" Component_="hall.png" FileName="c15_5.png" Attributes="0" SourcePath="..\underlays\c15_5.png" SelfReg="false" Sequence="150"/>
+    <ROW File="c15_6.png" Component_="hall.png" FileName="c15_6.png" Attributes="0" SourcePath="..\underlays\c15_6.png" SelfReg="false" Sequence="151"/>
+    <ROW File="c15_7.png" Component_="hall.png" FileName="c15_7.png" Attributes="0" SourcePath="..\underlays\c15_7.png" SelfReg="false" Sequence="152"/>
+    <ROW File="c15_8.png" Component_="hall.png" FileName="c15_8.png" Attributes="0" SourcePath="..\underlays\c15_8.png" SelfReg="false" Sequence="153"/>
+    <ROW File="catan.xml" Component_="catan.xml" FileName="catan.xml" Attributes="0" SourcePath="..\decks\catan.xml" SelfReg="false" Sequence="65"/>
+    <ROW File="circle.png" Component_="arrow.png" FileName="circle.png" Attributes="0" SourcePath="..\assets\circle.png" SelfReg="false" Sequence="9"/>
+    <ROW File="circle_cursor.png" Component_="arrow.png" FileName="circle~1.png|circle_cursor.png" Attributes="0" SourcePath="..\assets\circle_cursor.png" SelfReg="false" Sequence="10"/>
+    <ROW File="cloudgiant.png" Component_="cloudgiant.png" FileName="cloudg~1.png|cloudgiant.png" Attributes="0" SourcePath="..\pogs\cloudgiant.png" SelfReg="false" Sequence="105"/>
+    <ROW File="collapse.png" Component_="arrow.png" FileName="collapse.png" Attributes="0" SourcePath="..\assets\collapse.png" SelfReg="false" Sequence="11"/>
+    <ROW File="corner1.png" Component_="hall.png" FileName="corner1.png" Attributes="0" SourcePath="..\underlays\corner1.png" SelfReg="false" Sequence="154"/>
+    <ROW File="corner2.png" Component_="hall.png" FileName="corner2.png" Attributes="0" SourcePath="..\underlays\corner2.png" SelfReg="false" Sequence="155"/>
+    <ROW File="corner3.png" Component_="hall.png" FileName="corner3.png" Attributes="0" SourcePath="..\underlays\corner3.png" SelfReg="false" Sequence="156"/>
+    <ROW File="corner4.png" Component_="hall.png" FileName="corner4.png" Attributes="0" SourcePath="..\underlays\corner4.png" SelfReg="false" Sequence="157"/>
+    <ROW File="create" Component_="create" FileName="create~1|.create" Attributes="0" SourcePath="..\lib\.create" SelfReg="false" Sequence="104"/>
+    <ROW File="cross.png" Component_="hall.png" FileName="cross.png" Attributes="0" SourcePath="..\underlays\cross.png" SelfReg="false" Sequence="158"/>
+    <ROW File="dcorner1.png" Component_="hall.png" FileName="dcorner1.png" Attributes="0" SourcePath="..\underlays\dcorner1.png" SelfReg="false" Sequence="159"/>
+    <ROW File="dcorner2.png" Component_="hall.png" FileName="dcorner2.png" Attributes="0" SourcePath="..\underlays\dcorner2.png" SelfReg="false" Sequence="160"/>
+    <ROW File="dcorner3.png" Component_="hall.png" FileName="dcorner3.png" Attributes="0" SourcePath="..\underlays\dcorner3.png" SelfReg="false" Sequence="161"/>
+    <ROW File="dcorner4.png" Component_="hall.png" FileName="dcorner4.png" Attributes="0" SourcePath="..\underlays\dcorner4.png" SelfReg="false" Sequence="162"/>
+    <ROW File="dead_tree.png" Component_="boulder_1.png" FileName="dead_t~1.png|dead_tree.png" Attributes="0" SourcePath="..\environment\dead_tree.png" SelfReg="false" Sequence="77"/>
+    <ROW File="dead_tree_large.png" Component_="boulder_1.png" FileName="dead_t~2.png|dead_tree_large.png" Attributes="0" SourcePath="..\environment\dead_tree_large.png" SelfReg="false" Sequence="78"/>
+    <ROW File="delete.png" Component_="arrow.png" FileName="delete.png" Attributes="0" SourcePath="..\assets\delete.png" SelfReg="false" Sequence="12"/>
+    <ROW File="dhall1.png" Component_="hall.png" FileName="dhall1.png" Attributes="0" SourcePath="..\underlays\dhall1.png" SelfReg="false" Sequence="163"/>
+    <ROW File="dhall1small.png" Component_="hall.png" FileName="dhall1~1.png|dhall1small.png" Attributes="0" SourcePath="..\underlays\dhall1small.png" SelfReg="false" Sequence="164"/>
+    <ROW File="dhall2.png" Component_="hall.png" FileName="dhall2.png" Attributes="0" SourcePath="..\underlays\dhall2.png" SelfReg="false" Sequence="165"/>
+    <ROW File="dhall2small.png" Component_="hall.png" FileName="dhall2~1.png|dhall2small.png" Attributes="0" SourcePath="..\underlays\dhall2small.png" SelfReg="false" Sequence="166"/>
+    <ROW File="diagcross.png" Component_="hall.png" FileName="diagcr~1.png|diagcross.png" Attributes="0" SourcePath="..\underlays\diagcross.png" SelfReg="false" Sequence="167"/>
+    <ROW File="diagtee1.png" Component_="hall.png" FileName="diagtee1.png" Attributes="0" SourcePath="..\underlays\diagtee1.png" SelfReg="false" Sequence="168"/>
+    <ROW File="diagtee2.png" Component_="hall.png" FileName="diagtee2.png" Attributes="0" SourcePath="..\underlays\diagtee2.png" SelfReg="false" Sequence="169"/>
+    <ROW File="diagtee3.png" Component_="hall.png" FileName="diagtee3.png" Attributes="0" SourcePath="..\underlays\diagtee3.png" SelfReg="false" Sequence="170"/>
+    <ROW File="diagtee4.png" Component_="hall.png" FileName="diagtee4.png" Attributes="0" SourcePath="..\underlays\diagtee4.png" SelfReg="false" Sequence="171"/>
+    <ROW File="edit.png" Component_="arrow.png" FileName="edit.png" Attributes="0" SourcePath="..\assets\edit.png" SelfReg="false" Sequence="13"/>
+    <ROW File="emptyCurs.png" Component_="arrow.png" FileName="emptyC~1.png|emptyCurs.png" Attributes="0" SourcePath="..\assets\emptyCurs.png" SelfReg="false" Sequence="14"/>
+    <ROW File="eraser.png" Component_="arrow.png" FileName="eraser.png" Attributes="0" SourcePath="..\assets\eraser.png" SelfReg="false" Sequence="15"/>
+    <ROW File="eraser_cursor.png" Component_="arrow.png" FileName="eraser~1.png|eraser_cursor.png" Attributes="0" SourcePath="..\assets\eraser_cursor.png" SelfReg="false" Sequence="16"/>
+    <ROW File="expand.png" Component_="arrow.png" FileName="expand.png" Attributes="0" SourcePath="..\assets\expand.png" SelfReg="false" Sequence="17"/>
+    <ROW File="gametable.bat" Component_="classpath" FileName="gameta~1.bat|gametable.bat" Attributes="0" SourcePath="..\gametable.bat" SelfReg="false" Sequence="203"/>
+    <ROW File="gametable.jar" Component_="classpath" FileName="gameta~1.jar|gametable.jar" Attributes="0" SourcePath="..\_export\gametable.jar" SelfReg="false" Sequence="200"/>
+    <ROW File="gametable.sh" Component_="classpath" FileName="gameta~1.sh|gametable.sh" Attributes="0" SourcePath="..\gametable.sh" SelfReg="false" Sequence="202"/>
+    <ROW File="grab.png" Component_="arrow.png" FileName="grab.png" Attributes="0" SourcePath="..\assets\grab.png" SelfReg="false" Sequence="18"/>
+    <ROW File="greenHand.png" Component_="arrow.png" FileName="greenH~1.png|greenHand.png" Attributes="0" SourcePath="..\assets\greenHand.png" SelfReg="false" Sequence="19"/>
+    <ROW File="greenHand_small.png" Component_="arrow.png" FileName="greenH~2.png|greenHand_small.png" Attributes="0" SourcePath="..\assets\greenHand_small.png" SelfReg="false" Sequence="20"/>
+    <ROW File="greyHand.png" Component_="arrow.png" FileName="greyHand.png" Attributes="0" SourcePath="..\assets\greyHand.png" SelfReg="false" Sequence="21"/>
+    <ROW File="greyHand_small.png" Component_="arrow.png" FileName="greyHa~1.png|greyHand_small.png" Attributes="0" SourcePath="..\assets\greyHand_small.png" SelfReg="false" Sequence="22"/>
+    <ROW File="hall.png" Component_="hall.png" FileName="3hall.png" Attributes="0" SourcePath="..\underlays\3hall.png" SelfReg="false" Sequence="144"/>
+    <ROW File="hallb.png" Component_="hall.png" FileName="3hallb.png" Attributes="0" SourcePath="..\underlays\3hallb.png" SelfReg="false" Sequence="145"/>
+    <ROW File="hand.png" Component_="arrow.png" FileName="hand.png" Attributes="0" SourcePath="..\assets\hand.png" SelfReg="false" Sequence="23"/>
+    <ROW File="hexes_16.png" Component_="arrow.png" FileName="hexes_16.png" Attributes="0" SourcePath="..\assets\hexes_16.png" SelfReg="false" Sequence="24"/>
+    <ROW File="hexes_32.png" Component_="arrow.png" FileName="hexes_32.png" Attributes="0" SourcePath="..\assets\hexes_32.png" SelfReg="false" Sequence="25"/>
+    <ROW File="hexes_48.png" Component_="arrow.png" FileName="hexes_48.png" Attributes="0" SourcePath="..\assets\hexes_48.png" SelfReg="false" Sequence="26"/>
+    <ROW File="hexes_64.png" Component_="arrow.png" FileName="hexes_64.png" Attributes="0" SourcePath="..\assets\hexes_64.png" SelfReg="false" Sequence="27"/>
+    <ROW File="italics.png" Component_="arrow.png" FileName="italics.png" Attributes="0" SourcePath="..\assets\italics.png" SelfReg="false" Sequence="28"/>
+    <ROW File="large_foliage_1.png" Component_="boulder_1.png" FileName="large_~1.png|large_foliage_1.png" Attributes="0" SourcePath="..\environment\large_foliage_1.png" SelfReg="false" Sequence="80"/>
+    <ROW File="large_foliage_2.png" Component_="boulder_1.png" FileName="large_~2.png|large_foliage_2.png" Attributes="0" SourcePath="..\environment\large_foliage_2.png" SelfReg="false" Sequence="81"/>
+    <ROW File="large_foliage_3.png" Component_="boulder_1.png" FileName="large_~3.png|large_foliage_3.png" Attributes="0" SourcePath="..\environment\large_foliage_3.png" SelfReg="false" Sequence="82"/>
+    <ROW File="large_foliage_4.png" Component_="boulder_1.png" FileName="large_~4.png|large_foliage_4.png" Attributes="0" SourcePath="..\environment\large_foliage_4.png" SelfReg="false" Sequence="83"/>
+    <ROW File="large_foliage_5.png" Component_="boulder_1.png" FileName="large_~5.png|large_foliage_5.png" Attributes="0" SourcePath="..\environment\large_foliage_5.png" SelfReg="false" Sequence="84"/>
+    <ROW File="large_foliage_6.png" Component_="boulder_1.png" FileName="large_~6.png|large_foliage_6.png" Attributes="0" SourcePath="..\environment\large_foliage_6.png" SelfReg="false" Sequence="85"/>
+    <ROW File="large_foliage_7.png" Component_="boulder_1.png" FileName="large_~7.png|large_foliage_7.png" Attributes="0" SourcePath="..\environment\large_foliage_7.png" SelfReg="false" Sequence="86"/>
+    <ROW File="line.png" Component_="arrow.png" FileName="line.png" Attributes="0" SourcePath="..\assets\line.png" SelfReg="false" Sequence="29"/>
+    <ROW File="line_cursor.png" Component_="arrow.png" FileName="line_c~1.png|line_cursor.png" Attributes="0" SourcePath="..\assets\line_cursor.png" SelfReg="false" Sequence="30"/>
+    <ROW File="longWall1.png" Component_="hall.png" FileName="longWa~1.png|longWall1.png" Attributes="0" SourcePath="..\underlays\longWall1.png" SelfReg="false" Sequence="172"/>
+    <ROW File="longWall2.png" Component_="hall.png" FileName="longWa~2.png|longWall2.png" Attributes="0" SourcePath="..\underlays\longWall2.png" SelfReg="false" Sequence="173"/>
+    <ROW File="mapbk.png" Component_="arrow.png" FileName="mapbk.png" Attributes="0" SourcePath="..\assets\mapbk.png" SelfReg="false" Sequence="31"/>
+    <ROW File="mapbk_black.png" Component_="arrow.png" FileName="mapbk_~1.png|mapbk_black.png" Attributes="0" SourcePath="..\assets\mapbk_black.png" SelfReg="false" Sequence="32"/>
+    <ROW File="mapbk_blue.png" Component_="arrow.png" FileName="mapbk_~2.png|mapbk_blue.png" Attributes="0" SourcePath="..\assets\mapbk_blue.png" SelfReg="false" Sequence="33"/>
+    <ROW File="mapbk_brown.png" Component_="arrow.png" FileName="mapbk_~3.png|mapbk_brown.png" Attributes="0" SourcePath="..\assets\mapbk_brown.png" SelfReg="false" Sequence="34"/>
+    <ROW File="mapbk_dblue.png" Component_="arrow.png" FileName="mapbk_~4.png|mapbk_dblue.png" Attributes="0" SourcePath="..\assets\mapbk_dblue.png" SelfReg="false" Sequence="35"/>
+    <ROW File="mapbk_dgreen.png" Component_="arrow.png" FileName="mapbk_~5.png|mapbk_dgreen.png" Attributes="0" SourcePath="..\assets\mapbk_dgreen.png" SelfReg="false" Sequence="36"/>
+    <ROW File="mapbk_dgrey.png" Component_="arrow.png" FileName="mapbk_~6.png|mapbk_dgrey.png" Attributes="0" SourcePath="..\assets\mapbk_dgrey.png" SelfReg="false" Sequence="37"/>
+    <ROW File="mapbk_green.png" Component_="arrow.png" FileName="mapbk_~7.png|mapbk_green.png" Attributes="0" SourcePath="..\assets\mapbk_green.png" SelfReg="false" Sequence="38"/>
+    <ROW File="mapbk_grey.png" Component_="arrow.png" FileName="mapbk_~8.png|mapbk_grey.png" Attributes="0" SourcePath="..\assets\mapbk_grey.png" SelfReg="false" Sequence="39"/>
+    <ROW File="mapbk_white.png" Component_="arrow.png" FileName="mapbk_~9.png|mapbk_white.png" Attributes="0" SourcePath="..\assets\mapbk_white.png" SelfReg="false" Sequence="40"/>
+    <ROW File="mnt_1.png" Component_="boulder_1.png" FileName="mnt_1.png" Attributes="0" SourcePath="..\environment\mnt_1.png" SelfReg="false" Sequence="87"/>
+    <ROW File="mnt_2.png" Component_="boulder_1.png" FileName="mnt_2.png" Attributes="0" SourcePath="..\environment\mnt_2.png" SelfReg="false" Sequence="88"/>
+    <ROW File="olive_bush_large.png" Component_="boulder_1.png" FileName="olive_~1.png|olive_bush_large.png" Attributes="0" SourcePath="..\environment\olive_bush_large.png" SelfReg="false" Sequence="90"/>
+    <ROW File="olive_bush_medium.png" Component_="boulder_1.png" FileName="olive_~2.png|olive_bush_medium.png" Attributes="0" SourcePath="..\environment\olive_bush_medium.png" SelfReg="false" Sequence="91"/>
+    <ROW File="olive_bush_small.png" Component_="boulder_1.png" FileName="olive_~3.png|olive_bush_small.png" Attributes="0" SourcePath="..\environment\olive_bush_small.png" SelfReg="false" Sequence="92"/>
+    <ROW File="olive_bush_wide.png" Component_="boulder_1.png" FileName="olive_~4.png|olive_bush_wide.png" Attributes="0" SourcePath="..\environment\olive_bush_wide.png" SelfReg="false" Sequence="93"/>
+    <ROW File="pen.png" Component_="arrow.png" FileName="pen.png" Attributes="0" SourcePath="..\assets\pen.png" SelfReg="false" Sequence="41"/>
+    <ROW File="pen_cursor.png" Component_="arrow.png" FileName="pen_cu~1.png|pen_cursor.png" Attributes="0" SourcePath="..\assets\pen_cursor.png" SelfReg="false" Sequence="42"/>
+    <ROW File="pog1.png" Component_="cloudgiant.png" FileName="pog1.png" Attributes="0" SourcePath="..\pogs\pog1.png" SelfReg="false" Sequence="106"/>
+    <ROW File="pog10.png" Component_="cloudgiant.png" FileName="pog10.png" Attributes="0" SourcePath="..\pogs\pog10.png" SelfReg="false" Sequence="107"/>
+    <ROW File="pog11.png" Component_="cloudgiant.png" FileName="pog11.png" Attributes="0" SourcePath="..\pogs\pog11.png" SelfReg="false" Sequence="108"/>
+    <ROW File="pog12.png" Component_="cloudgiant.png" FileName="pog12.png" Attributes="0" SourcePath="..\pogs\pog12.png" SelfReg="false" Sequence="109"/>
+    <ROW File="pog13.png" Component_="cloudgiant.png" FileName="pog13.png" Attributes="0" SourcePath="..\pogs\pog13.png" SelfReg="false" Sequence="110"/>
+    <ROW File="pog14.png" Component_="cloudgiant.png" FileName="pog14.png" Attributes="0" SourcePath="..\pogs\pog14.png" SelfReg="false" Sequence="111"/>
+    <ROW File="pog15.png" Component_="cloudgiant.png" FileName="pog15.png" Attributes="0" SourcePath="..\pogs\pog15.png" SelfReg="false" Sequence="112"/>
+    <ROW File="pog16.png" Component_="cloudgiant.png" FileName="pog16.png" Attributes="0" SourcePath="..\pogs\pog16.png" SelfReg="false" Sequence="113"/>
+    <ROW File="pog17.png" Component_="cloudgiant.png" FileName="pog17.png" Attributes="0" SourcePath="..\pogs\pog17.png" SelfReg="false" Sequence="114"/>
+    <ROW File="pog18.png" Component_="cloudgiant.png" FileName="pog18.png" Attributes="0" SourcePath="..\pogs\pog18.png" SelfReg="false" Sequence="115"/>
+    <ROW File="pog19.png" Component_="cloudgiant.png" FileName="pog19.png" Attributes="0" SourcePath="..\pogs\pog19.png" SelfReg="false" Sequence="116"/>
+    <ROW File="pog2.png" Component_="cloudgiant.png" FileName="pog2.png" Attributes="0" SourcePath="..\pogs\pog2.png" SelfReg="false" Sequence="117"/>
+    <ROW File="pog20.png" Component_="cloudgiant.png" FileName="pog20.png" Attributes="0" SourcePath="..\pogs\pog20.png" SelfReg="false" Sequence="118"/>
+    <ROW File="pog21.png" Component_="cloudgiant.png" FileName="pog21.png" Attributes="0" SourcePath="..\pogs\pog21.png" SelfReg="false" Sequence="119"/>
+    <ROW File="pog22.png" Component_="cloudgiant.png" FileName="pog22.png" Attributes="0" SourcePath="..\pogs\pog22.png" SelfReg="false" Sequence="120"/>
+    <ROW File="pog23.png" Component_="cloudgiant.png" FileName="pog23.png" Attributes="0" SourcePath="..\pogs\pog23.png" SelfReg="false" Sequence="121"/>
+    <ROW File="pog24.png" Component_="cloudgiant.png" FileName="pog24.png" Attributes="0" SourcePath="..\pogs\pog24.png" SelfReg="false" Sequence="122"/>
+    <ROW File="pog25.png" Component_="cloudgiant.png" FileName="pog25.png" Attributes="0" SourcePath="..\pogs\pog25.png" SelfReg="false" Sequence="123"/>
+    <ROW File="pog26.png" Component_="cloudgiant.png" FileName="pog26.png" Attributes="0" SourcePath="..\pogs\pog26.png" SelfReg="false" Sequence="124"/>
+    <ROW File="pog27.png" Component_="cloudgiant.png" FileName="pog27.png" Attributes="0" SourcePath="..\pogs\pog27.png" SelfReg="false" Sequence="125"/>
+    <ROW File="pog28.png" Component_="cloudgiant.png" FileName="pog28.png" Attributes="0" SourcePath="..\pogs\pog28.png" SelfReg="false" Sequence="126"/>
+    <ROW File="pog29.png" Component_="cloudgiant.png" FileName="pog29.png" Attributes="0" SourcePath="..\pogs\pog29.png" SelfReg="false" Sequence="127"/>
+    <ROW File="pog3.png" Component_="cloudgiant.png" FileName="pog3.png" Attributes="0" SourcePath="..\pogs\pog3.png" SelfReg="false" Sequence="128"/>
+    <ROW File="pog30.png" Component_="cloudgiant.png" FileName="pog30.png" Attributes="0" SourcePath="..\pogs\pog30.png" SelfReg="false" Sequence="129"/>
+    <ROW File="pog31.png" Component_="cloudgiant.png" FileName="pog31.png" Attributes="0" SourcePath="..\pogs\pog31.png" SelfReg="false" Sequence="130"/>
+    <ROW File="pog32.png" Component_="cloudgiant.png" FileName="pog32.png" Attributes="0" SourcePath="..\pogs\pog32.png" SelfReg="false" Sequence="131"/>
+    <ROW File="pog33.png" Component_="cloudgiant.png" FileName="pog33.png" Attributes="0" SourcePath="..\pogs\pog33.png" SelfReg="false" Sequence="132"/>
+    <ROW File="pog34.png" Component_="cloudgiant.png" FileName="pog34.png" Attributes="0" SourcePath="..\pogs\pog34.png" SelfReg="false" Sequence="133"/>
+    <ROW File="pog35.png" Component_="cloudgiant.png" FileName="pog35.png" Attributes="0" SourcePath="..\pogs\pog35.png" SelfReg="false" Sequence="134"/>
+    <ROW File="pog36.png" Component_="cloudgiant.png" FileName="pog36.png" Attributes="0" SourcePath="..\pogs\pog36.png" SelfReg="false" Sequence="135"/>
+    <ROW File="pog4.png" Component_="cloudgiant.png" FileName="pog4.png" Attributes="0" SourcePath="..\pogs\pog4.png" SelfReg="false" Sequence="136"/>
+    <ROW File="pog5.png" Component_="cloudgiant.png" FileName="pog5.png" Attributes="0" SourcePath="..\pogs\pog5.png" SelfReg="false" Sequence="137"/>
+    <ROW File="pog6.png" Component_="cloudgiant.png" FileName="pog6.png" Attributes="0" SourcePath="..\pogs\pog6.png" SelfReg="false" Sequence="138"/>
+    <ROW File="pog7.png" Component_="cloudgiant.png" FileName="pog7.png" Attributes="0" SourcePath="..\pogs\pog7.png" SelfReg="false" Sequence="139"/>
+    <ROW File="pog8.png" Component_="cloudgiant.png" FileName="pog8.png" Attributes="0" SourcePath="..\pogs\pog8.png" SelfReg="false" Sequence="140"/>
+    <ROW File="pog9.png" Component_="cloudgiant.png" FileName="pog9.png" Attributes="0" SourcePath="..\pogs\pog9.png" SelfReg="false" Sequence="141"/>
+    <ROW File="pog_unk_1.png" Component_="arrow.png" FileName="pog_un~1.png|pog_unk_1.png" Attributes="0" SourcePath="..\assets\pog_unk_1.png" SelfReg="false" Sequence="43"/>
+    <ROW File="pog_unk_2.png" Component_="arrow.png" FileName="pog_un~2.png|pog_unk_2.png" Attributes="0" SourcePath="..\assets\pog_unk_2.png" SelfReg="false" Sequence="44"/>
+    <ROW File="pog_unk_3.png" Component_="arrow.png" FileName="pog_un~3.png|pog_unk_3.png" Attributes="0" SourcePath="..\assets\pog_unk_3.png" SelfReg="false" Sequence="45"/>
+    <ROW File="poker.xml" Component_="catan.xml" FileName="poker.xml" Attributes="0" SourcePath="..\decks\poker.xml" SelfReg="false" Sequence="66"/>
+    <ROW File="publish.png" Component_="arrow.png" FileName="publish.png" Attributes="0" SourcePath="..\assets\publish.png" SelfReg="false" Sequence="46"/>
+    <ROW File="publish_cursor.png" Component_="arrow.png" FileName="publis~1.png|publish_cursor.png" Attributes="0" SourcePath="..\assets\publish_cursor.png" SelfReg="false" Sequence="47"/>
+    <ROW File="purpleHand.png" Component_="arrow.png" FileName="purple~1.png|purpleHand.png" Attributes="0" SourcePath="..\assets\purpleHand.png" SelfReg="false" Sequence="48"/>
+    <ROW File="purpleHand_small.png" Component_="arrow.png" FileName="purple~2.png|purpleHand_small.png" Attributes="0" SourcePath="..\assets\purpleHand_small.png" SelfReg="false" Sequence="49"/>
+    <ROW File="rad20.png" Component_="hall.png" FileName="rad20.png" Attributes="0" SourcePath="..\underlays\rad20.png" SelfReg="false" Sequence="174"/>
+    <ROW File="readme.txt" Component_="classpath" FileName="readme.txt" Attributes="0" SourcePath="..\readme.txt" SelfReg="false" Sequence="143"/>
+    <ROW File="redEraser.png" Component_="arrow.png" FileName="redEra~1.png|redEraser.png" Attributes="0" SourcePath="..\assets\redEraser.png" SelfReg="false" Sequence="50"/>
+    <ROW File="redEraser_cursor.png" Component_="arrow.png" FileName="redEra~2.png|redEraser_cursor.png" Attributes="0" SourcePath="..\assets\redEraser_cursor.png" SelfReg="false" Sequence="51"/>
+    <ROW File="redHand.png" Component_="arrow.png" FileName="redHand.png" Attributes="0" SourcePath="..\assets\redHand.png" SelfReg="false" Sequence="52"/>
+    <ROW File="redHand_small.png" Component_="arrow.png" FileName="redHan~1.png|redHand_small.png" Attributes="0" SourcePath="..\assets\redHand_small.png" SelfReg="false" Sequence="53"/>
+    <ROW File="rocks.png" Component_="boulder_1.png" FileName="rocks.png" Attributes="0" SourcePath="..\environment\rocks.png" SelfReg="false" Sequence="94"/>
+    <ROW File="rocks_sm.png" Component_="boulder_1.png" FileName="rocks_sm.png" Attributes="0" SourcePath="..\environment\rocks_sm.png" SelfReg="false" Sequence="95"/>
+    <ROW File="roll.png" Component_="arrow.png" FileName="roll.png" Attributes="0" SourcePath="..\assets\roll.png" SelfReg="false" Sequence="54"/>
+    <ROW File="ruler.png" Component_="arrow.png" FileName="ruler.png" Attributes="0" SourcePath="..\assets\ruler.png" SelfReg="false" Sequence="55"/>
+    <ROW File="ruler_cursor.png" Component_="arrow.png" FileName="ruler_~1.png|ruler_cursor.png" Attributes="0" SourcePath="..\assets\ruler_cursor.png" SelfReg="false" Sequence="56"/>
+    <ROW File="select.png" Component_="arrow.png" FileName="select.png" Attributes="0" SourcePath="..\assets\select.png" SelfReg="false" Sequence="57"/>
+    <ROW File="select_cursor.png" Component_="arrow.png" FileName="select~1.png|select_cursor.png" Attributes="0" SourcePath="..\assets\select_cursor.png" SelfReg="false" Sequence="58"/>
+    <ROW File="smalldoor1.png" Component_="hall.png" FileName="smalld~1.png|smalldoor1.png" Attributes="0" SourcePath="..\underlays\smalldoor1.png" SelfReg="false" Sequence="175"/>
+    <ROW File="smalldoor2.png" Component_="hall.png" FileName="smalld~2.png|smalldoor2.png" Attributes="0" SourcePath="..\underlays\smalldoor2.png" SelfReg="false" Sequence="176"/>
+    <ROW File="smallsquare.png" Component_="hall.png" FileName="smalls~1.png|smallsquare.png" Attributes="0" SourcePath="..\underlays\smallsquare.png" SelfReg="false" Sequence="177"/>
+    <ROW File="tarasque.png" Component_="cloudgiant.png" FileName="tarasque.png" Attributes="0" SourcePath="..\pogs\tarasque.png" SelfReg="false" Sequence="142"/>
+    <ROW File="teeeast.png" Component_="hall.png" FileName="teeeast.png" Attributes="0" SourcePath="..\underlays\teeeast.png" SelfReg="false" Sequence="178"/>
+    <ROW File="teenorth.png" Component_="hall.png" FileName="teenorth.png" Attributes="0" SourcePath="..\underlays\teenorth.png" SelfReg="false" Sequence="179"/>
+    <ROW File="teesouth.png" Component_="hall.png" FileName="teesouth.png" Attributes="0" SourcePath="..\underlays\teesouth.png" SelfReg="false" Sequence="180"/>
+    <ROW File="teewest.png" Component_="hall.png" FileName="teewest.png" Attributes="0" SourcePath="..\underlays\teewest.png" SelfReg="false" Sequence="181"/>
+    <ROW File="tools.properties" Component_="arrow.png" FileName="tools~1.pro|tools.properties" Attributes="0" SourcePath="..\assets\tools.properties" SelfReg="false" Sequence="59"/>
+    <ROW File="transhall1.png" Component_="hall.png" FileName="transh~1.png|transhall1.png" Attributes="0" SourcePath="..\underlays\transhall1.png" SelfReg="false" Sequence="182"/>
+    <ROW File="transhall2.png" Component_="hall.png" FileName="transh~2.png|transhall2.png" Attributes="0" SourcePath="..\underlays\transhall2.png" SelfReg="false" Sequence="183"/>
+    <ROW File="transhall3.png" Component_="hall.png" FileName="transh~3.png|transhall3.png" Attributes="0" SourcePath="..\underlays\transhall3.png" SelfReg="false" Sequence="184"/>
+    <ROW File="transhall4.png" Component_="hall.png" FileName="transh~4.png|transhall4.png" Attributes="0" SourcePath="..\underlays\transhall4.png" SelfReg="false" Sequence="185"/>
+    <ROW File="transhall5.png" Component_="hall.png" FileName="transh~5.png|transhall5.png" Attributes="0" SourcePath="..\underlays\transhall5.png" SelfReg="false" Sequence="186"/>
+    <ROW File="transhall6.png" Component_="hall.png" FileName="transh~6.png|transhall6.png" Attributes="0" SourcePath="..\underlays\transhall6.png" SelfReg="false" Sequence="187"/>
+    <ROW File="transhall7.png" Component_="hall.png" FileName="transh~7.png|transhall7.png" Attributes="0" SourcePath="..\underlays\transhall7.png" SelfReg="false" Sequence="188"/>
+    <ROW File="transhall8.png" Component_="hall.png" FileName="transh~8.png|transhall8.png" Attributes="0" SourcePath="..\underlays\transhall8.png" SelfReg="false" Sequence="189"/>
+    <ROW File="tree_1.png" Component_="boulder_1.png" FileName="tree_1.png" Attributes="0" SourcePath="..\environment\tree_1.png" SelfReg="false" Sequence="97"/>
+    <ROW File="tree_2.png" Component_="boulder_1.png" FileName="tree_2.png" Attributes="0" SourcePath="..\environment\tree_2.png" SelfReg="false" Sequence="98"/>
+    <ROW File="tree_3.png" Component_="boulder_1.png" FileName="tree_3.png" Attributes="0" SourcePath="..\environment\tree_3.png" SelfReg="false" Sequence="99"/>
+    <ROW File="tree_large_1.png" Component_="boulder_1.png" FileName="tree_l~1.png|tree_large_1.png" Attributes="0" SourcePath="..\environment\tree_large_1.png" SelfReg="false" Sequence="100"/>
+    <ROW File="tree_large_2.png" Component_="boulder_1.png" FileName="tree_l~2.png|tree_large_2.png" Attributes="0" SourcePath="..\environment\tree_large_2.png" SelfReg="false" Sequence="101"/>
+    <ROW File="tree_large_3.png" Component_="boulder_1.png" FileName="tree_l~3.png|tree_large_3.png" Attributes="0" SourcePath="..\environment\tree_large_3.png" SelfReg="false" Sequence="102"/>
+    <ROW File="underline.png" Component_="arrow.png" FileName="underl~1.png|underline.png" Attributes="0" SourcePath="..\assets\underline.png" SelfReg="false" Sequence="60"/>
+    <ROW File="whiteHand.png" Component_="arrow.png" FileName="whiteH~1.png|whiteHand.png" Attributes="0" SourcePath="..\assets\whiteHand.png" SelfReg="false" Sequence="61"/>
+    <ROW File="whiteHand_small.png" Component_="arrow.png" FileName="whiteH~2.png|whiteHand_small.png" Attributes="0" SourcePath="..\assets\whiteHand_small.png" SelfReg="false" Sequence="62"/>
+    <ROW File="y1.png" Component_="hall.png" FileName="y1.png" Attributes="0" SourcePath="..\underlays\y1.png" SelfReg="false" Sequence="192"/>
+    <ROW File="y2.png" Component_="hall.png" FileName="y2.png" Attributes="0" SourcePath="..\underlays\y2.png" SelfReg="false" Sequence="193"/>
+    <ROW File="y3.png" Component_="hall.png" FileName="y3.png" Attributes="0" SourcePath="..\underlays\y3.png" SelfReg="false" Sequence="194"/>
+    <ROW File="y4.png" Component_="hall.png" FileName="y4.png" Attributes="0" SourcePath="..\underlays\y4.png" SelfReg="false" Sequence="195"/>
+    <ROW File="yb1.png" Component_="hall.png" FileName="yb1.png" Attributes="0" SourcePath="..\underlays\yb1.png" SelfReg="false" Sequence="196"/>
+    <ROW File="yb2.png" Component_="hall.png" FileName="yb2.png" Attributes="0" SourcePath="..\underlays\yb2.png" SelfReg="false" Sequence="197"/>
+    <ROW File="yb3.png" Component_="hall.png" FileName="yb3.png" Attributes="0" SourcePath="..\underlays\yb3.png" SelfReg="false" Sequence="198"/>
+    <ROW File="yb4.png" Component_="hall.png" FileName="yb4.png" Attributes="0" SourcePath="..\underlays\yb4.png" SelfReg="false" Sequence="199"/>
+    <ROW File="yellowHand.png" Component_="arrow.png" FileName="yellow~1.png|yellowHand.png" Attributes="0" SourcePath="..\assets\yellowHand.png" SelfReg="false" Sequence="63"/>
+    <ROW File="yellowHand_small.png" Component_="arrow.png" FileName="yellow~2.png|yellowHand_small.png" Attributes="0" SourcePath="..\assets\yellowHand_small.png" SelfReg="false" Sequence="64"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
+    <ROW BuildKey="BuildMacOS" BuildName="BuildMacOS" BuildOrder="2" BuildType="2" Languages="en" MacDefaultMemorySize="128"/>
+    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="1" Languages="en" InstallationType="4"/>
+    <ATTRIBUTE name="CurrentBuild" value="DefaultBuild"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
+    <ROW Path="&lt;AI_DICTS&gt;ui.ail"/>
+    <ROW Path="&lt;AI_DICTS&gt;ui_en.ail"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
+    <ROW Fragment="FolderDlg.aip" Path="&lt;AI_FRAGS&gt;FolderDlg.aip"/>
+    <ROW Fragment="Sequences.aip" Path="&lt;AI_FRAGS&gt;Sequences.aip"/>
+    <ROW Fragment="StaticUIStrings.aip" Path="&lt;AI_FRAGS&gt;StaticUIStrings.aip"/>
+    <ROW Fragment="UI.aip" Path="&lt;AI_FRAGS&gt;UI.aip"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
+    <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
+    <ROW Name="default_banner.bmp" SourcePath="&lt;AI_RES&gt;default-banner.bmp"/>
+    <ROW Name="default_dialog.bmp" SourcePath="&lt;AI_RES&gt;default-dialog.bmp"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
+    <ATTRIBUTE name="FixedSizeBitmaps" value="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
+    <ROW Dialog_="FolderDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="FolderDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_INSTALL" Ordering="3"/>
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceWelcomeDlg" Condition="AI_MAINT" Ordering="1"/>
+    <ROW Dialog_="MaintenanceWelcomeDlg" Control_="Next" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT" Ordering="2"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="PatchWelcomeDlg" Condition="AI_PATCH" Ordering="1"/>
+    <ROW Dialog_="PatchWelcomeDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_PATCH" Ordering="3"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
+    <ROW Directory_="SHORTCUTDIR" Component_="SHORTCUTDIR"/>
+    <ROW Directory_="logs_DIR" Component_="logs"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
+    <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
+    <ROW Action="AI_PREPARE_UPGRADE" Type="65" Source="aicustact.dll" Target="PrepareUpgrade"/>
+    <ROW Action="AI_RESTORE_LOCATION" Type="65" Source="aicustact.dll" Target="RestoreLocation"/>
+    <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]"/>
+    <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
+    <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiIniFileComponent">
+    <ROW IniFile="Application_Type" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Application" Key="Application Type" Value="gui" Action="0" Component_="OSU_gt.exe"/>
+    <ROW IniFile="Class_Path" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Class Path" Key="Class Path" Value="[#gametable.jar];" Action="0" Component_="OSU_gt.exe"/>
+    <ROW IniFile="Failure_Check" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Application" Key="Failure Check" Value="yes" Action="0" Component_="OSU_gt.exe"/>
+    <ROW IniFile="Main_Class" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Java Runtime Environment" Key="Main Class" Value="com.galactanet.gametable.GametableApp" Action="0" Component_="OSU_gt.exe"/>
+    <ROW IniFile="Maximum_Version" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Java Runtime Environment" Key="Maximum Version" Value="any" Action="0" Component_="OSU_gt.exe"/>
+    <ROW IniFile="Minimum_Version" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Java Runtime Environment" Key="Minimum Version" Value="1.4" Action="0" Component_="OSU_gt.exe"/>
+    <ROW IniFile="VM_Provider" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Java Runtime Environment" Key="VM Provider" Value="favor_sun" Action="0" Component_="OSU_gt.exe"/>
+    <ROW IniFile="Virtual_Machine_Parameters" FileName="OSU-gt.ini" DirProperty="APPDIR" Section="Java Runtime Environment" Key="Virtual Machine Parameters" Value="-esa -Xmx80:2:1200P " Action="0" Component_="OSU_gt.exe"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
+    <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749"/>
+    <ROW Action="AI_STORE_LOCATION" Condition="Not Installed" Sequence="1501"/>
+    <ROW Action="AI_PREPARE_UPGRADE" Condition="AI_UPGRADE=&quot;No&quot; AND (Not Installed)" Sequence="1399"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiJavaComponent">
+    <ROW Name="OSU-gt.exe" Launcher="OSU_gt.exe" MainClass="Main_Class" ClassPath="Class_Path" VMParams="Virtual_Machine_Parameters" JREMin="Minimum_Version" JREMax="Maximum_Version" AppType="Application_Type" PlusList="APPDIR;" MinusList="#OSU_gt.exe;" MacVersion="10.3.0" MacDescription="[|CurrentJavaProductName] [|ProductVersion] © [|Manufacturer], Inc, 2010" MacBundleId="com.[|Manufacturer].[|ProductName].[|CurrentJavaProductName]" FailureCheck="Failure_Check" UACExecutionLevel="0" VMProviderOptions="VM_Provider"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiShortsComponent">
+    <ROW Shortcut="OSU_gt.exe" Directory_="SHORTCUTDIR" Name="OSU_gt.exe" Component_="OSU_gt.exe" Target="[#OSU_gt.exe]" Description="OSU_gt.exe" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
+    <ROW UpgradeCode="[|UpgradeCode]" VersionMax="[|ProductVersion]" Attributes="1025" ActionProperty="OLDPRODUCTS"/>
+    <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.SynchronizedFolderComponent">
+    <ROW Directory_="assets_DIR" SourcePath="..\assets" ExcludePattern="*~|#*#|%*%|._|CVS|.cvsignore|SCCS|vssver.scc|mssccprj.scc|vssver2.scc|.svn|.DS_Store" ExcludeFlags="6"/>
+    <ROW Directory_="decks_DIR" SourcePath="..\decks" ExcludePattern="*~|#*#|%*%|._|CVS|.cvsignore|SCCS|vssver.scc|mssccprj.scc|vssver2.scc|.svn|.DS_Store" ExcludeFlags="6"/>
+    <ROW Directory_="environment_DIR" SourcePath="..\environment" ExcludePattern="*~|#*#|%*%|._|CVS|.cvsignore|SCCS|vssver.scc|mssccprj.scc|vssver2.scc|.svn|.DS_Store" ExcludeFlags="6"/>
+    <ROW Directory_="language_DIR" SourcePath="..\language" ExcludePattern="*~|#*#|%*%|._|CVS|.cvsignore|SCCS|vssver.scc|mssccprj.scc|vssver2.scc|.svn|.DS_Store" ExcludeFlags="6"/>
+    <ROW Directory_="pogs_DIR" SourcePath="..\pogs" ExcludePattern="*~|#*#|%*%|._|CVS|.cvsignore|SCCS|vssver.scc|mssccprj.scc|vssver2.scc|.svn|.DS_Store" ExcludeFlags="6"/>
+    <ROW Directory_="underlays_DIR" SourcePath="..\underlays" ExcludePattern="*~|#*#|%*%|._|CVS|.cvsignore|SCCS|vssver.scc|mssccprj.scc|vssver2.scc|.svn|.DS_Store" ExcludeFlags="6"/>
+  </COMPONENT>
+</DOCUMENT>
