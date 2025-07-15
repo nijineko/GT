@@ -1,3 +1,5 @@
+(Original ReadMe written by ATW)
+
 Gametable - By Andy Weir and David Ghandehari
 Gametable is freeware. knock yourself out, man.
 
